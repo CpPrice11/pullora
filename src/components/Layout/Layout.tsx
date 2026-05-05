@@ -9,12 +9,26 @@ interface LayoutProps {
   children: React.ReactNode
   activeTab: Tab
   onTabChange: (tab: Tab) => void
+  updatesCount?: number
+  checking?: boolean
+  onCheckUpdates?: () => void
 }
 
-function Layout({ children, activeTab, onTabChange }: LayoutProps) {
+function Layout({
+  children,
+  activeTab,
+  onTabChange,
+  updatesCount = 0,
+  checking = false,
+  onCheckUpdates,
+}: LayoutProps) {
   return (
     <div className="layout">
-      <Header />
+      <Header
+        updatesCount={updatesCount}
+        checking={checking}
+        onCheckUpdates={onCheckUpdates}
+      />
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
         <main className="layout-content">

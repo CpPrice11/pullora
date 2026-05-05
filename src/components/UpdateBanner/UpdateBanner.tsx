@@ -1,0 +1,50 @@
+import type { UpdateAvailable } from '../../types'
+import './UpdateBanner.css'
+
+interface UpdateBannerProps {
+  updates: UpdateAvailable[]
+  onDismiss: (owner: string, repo: string) => void
+  onInstall: (update: UpdateAvailable) => void
+}
+
+function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
+  if (updates.length === 0) return null
+
+  return (
+    <div className="update-banner">
+      <div className="update-banner-header">
+        <span className="update-icon">⬆</span>
+        <strong>
+          {updates.length === 1
+            ? `Update available for ${updates[0].appName}`
+            : `${updates.length} updates available`}
+        </strong>
+      </div>
+
+      <div className="update-list">
+        {updates.map((u) => (
+          <div key={`${u.owner}/${u.repo}`} className="update-row">
+            <span className="update-name">{u.appName}</span>
+            <span className="update-versions">
+              {u.currentVersion} → <strong>{u.latestVersion}</strong>
+            </span>
+            <div className="update-actions">
+              <button className="update-install-btn" onClick={() => onInstall(u)}>
+                Install
+              </button>
+              <button
+                className="update-dismiss-btn"
+                onClick={() => onDismiss(u.owner, u.repo)}
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default UpdateBanner
