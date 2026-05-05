@@ -10,10 +10,12 @@ const FALLBACK_SETTINGS: AppSettings = {
   installationPath: '',
   autoUpdateCheck: true,
   checkIntervalHours: 24,
-  githubOwner: '',
+  githubOwner: 'CpPrice11',
   theme: 'auto',
-  language: 'en',
+  language: 'uk',
 }
+
+const DEFAULT_GITHUB_OWNER = 'CpPrice11'
 
 function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -43,7 +45,13 @@ function SettingsPage() {
     setSaving(true)
     setError(null)
     try {
-      await updateSettings(settings)
+      const normalizedSettings = {
+        ...settings,
+        githubOwner: settings.githubOwner?.trim() || DEFAULT_GITHUB_OWNER,
+        language: settings.language || 'uk',
+      }
+      await updateSettings(normalizedSettings)
+      setSettings(normalizedSettings)
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
@@ -116,7 +124,7 @@ function SettingsPage() {
                   githubOwner: e.target.value.trim() || undefined,
                 })
               }
-              placeholder="твій-github-username"
+              placeholder="CpPrice11"
               autoComplete="off"
             />
             <p className="help-text">

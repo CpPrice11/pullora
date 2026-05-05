@@ -11,9 +11,18 @@ const DEFAULT_SETTINGS: AppSettings = {
   installationPath: '',
   autoUpdateCheck: true,
   checkIntervalHours: 24,
-  githubOwner: '',
+  githubOwner: 'CpPrice11',
   theme: 'auto',
-  language: 'en',
+  language: 'uk',
+}
+
+function normalizeSettings(settings: AppSettings): AppSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+    githubOwner: settings.githubOwner?.trim() || DEFAULT_SETTINGS.githubOwner,
+    language: settings.language || DEFAULT_SETTINGS.language,
+  }
 }
 
 export function useSettings() {
@@ -24,16 +33,20 @@ export function useSettings() {
   useEffect(() => {
     async function load() {
       try {
-        const [s, first] = await Promise.all([getSettings(), checkIsFirstLaunch()])
-        setSettings(s)
+        const [loadedSettings, first] = await Promise.all([
+          getSettings(),
+          checkIsFirstLaunch(),
+        ])
+        setSettings(normalizeSettings(loadedSettings))
         setIsFirstLaunch(first)
       } catch {
-        // Running in browser without Tauri — treat as first launch
+        // Browser preview fallback.
         setIsFirstLaunch(true)
       } finally {
         setLoading(false)
       }
     }
+
     load()
   }, [])
 
