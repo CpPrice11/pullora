@@ -23,10 +23,10 @@ impl Default for AppSettings {
             installation_path: None,
             auto_update_check: true,
             check_interval_hours: 24,
-            github_owner: None,
+            github_owner: Some("CpPrice11".to_string()),
             github_token: None,
             theme: "auto".to_string(),
-            language: "en".to_string(),
+            language: "uk".to_string(),
         }
     }
 }

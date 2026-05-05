@@ -137,11 +137,22 @@ impl GitHubClient {
 
         let raw_items: Vec<Repository> = response.json().await.map_err(|e| e.to_string())?;
         let has_more = raw_items.len() == per_page as usize;
-        let items = raw_items
+        let mut items = Vec::new();
+
+        for repo in raw_items
             .into_iter()
             .filter(|repo| !repo.private && !repo.fork && !repo.archived)
-            .filter(|repo| !releases_only || repo.has_releases)
-            .collect();
+        {
+            if releases_only
+                && !self
+                    .repository_has_release_assets(&repo.owner.login, &repo.name)
+                    .await
+            {
+                continue;
+            }
+
+            items.push(repo);
+        }
 
         let data = OwnerRepositoriesResponse {
             items,
@@ -193,6 +204,17 @@ impl GitHubClient {
         }
 
         Ok(data)
+    }
+
+    async fn repository_has_release_assets(&self, owner: &str, repo: &str) -> bool {
+        self.get_releases(owner, repo)
+            .await
+            .map(|releases| {
+                releases
+                    .iter()
+                    .any(|release| !release.draft && !release.assets.is_empty())
+            })
+            .unwrap_or(false)
     }
 
     pub fn clear_cache(&self) {
