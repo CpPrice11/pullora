@@ -16,7 +16,8 @@
       "Bash(cargo install *)",
       "Bash(rustup default *)",
       "Bash(cargo tauri *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(gh --version)"
     ]
   }
 }

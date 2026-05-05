@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app (installer + msi)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Air Launcher ${{ github.ref_name }}'
+          releaseBody: |
+            ## Air Launcher ${{ github.ref_name }}
+
+            ### Downloads
+            | File | Description |
+            |------|-------------|
+            | `Air.Launcher_*_x64-setup.exe` | Installer (recommended) |
+            | `Air.Launcher_*_x64.msi` | MSI installer |
+            | `Air.Launcher_*_x64-portable.zip` | Portable (no install needed) |
+
+            ### Installation
+            - **Installer**: run `*-setup.exe`, follows the wizard
+            - **MSI**: for enterprise/GPO deployment
+            - **Portable**: extract the zip and run `air-launcher.exe` directly
+
+            ### Requirements
+            - Windows 10 / 11 (64-bit)
+            - WebView2 runtime (included in Windows 11, auto-installed on Windows 10)
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: false
+
+      # --- Portable ZIP ---
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $exePath = "src-tauri\target\release\air-launcher.exe"
+          $outDir  = "portable"
+          New-Item -ItemType Directory -Force $outDir | Out-Null
+          Copy-Item $exePath "$outDir\air-launcher.exe"
+          Compress-Archive -Path "$outDir\*" `
+            -DestinationPath "Air.Launcher_${version}_x64-portable.zip" -Force
+
+      - name: Upload portable ZIP to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Air.Launcher_*_x64-portable.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
