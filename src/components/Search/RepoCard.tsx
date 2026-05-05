@@ -61,7 +61,7 @@ function RepoCard({
     onLaunch?.()
   }
 
-  const updatedDate = new Date(repo.updated_at).toLocaleDateString()
+  const updatedDate = new Date(repo.updated_at).toLocaleDateString('uk-UA')
 
   return (
     <div className="repo-card" onClick={onSelect}>
@@ -76,7 +76,7 @@ function RepoCard({
             <div className="repo-name-row">
               <h3 className="repo-name">{repo.name}</h3>
               <span className={`repo-status ${hasUpdate ? 'update' : isInstalled ? 'installed' : ''}`}>
-                {hasUpdate ? 'Update' : isInstalled ? 'Installed' : 'Ready'}
+                {hasUpdate ? 'Оновлення' : isInstalled ? 'Встановлено' : 'Готово'}
               </span>
             </div>
             <span className="repo-owner">{repo.owner.login}</span>
@@ -86,9 +86,9 @@ function RepoCard({
           className={`fav-btn ${isFav ? 'active' : ''}`}
           onClick={toggleFavorite}
           disabled={favLoading}
-          title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+          title={isFav ? 'Прибрати з обраного' : 'Додати в обране'}
         >
-          {isFav ? 'Starred' : 'Star'}
+          {isFav ? 'В обраному' : 'В обране'}
         </button>
       </div>
 
@@ -97,31 +97,31 @@ function RepoCard({
       )}
 
       <div className="repo-meta">
-        <span className="repo-stars">{repo.stargazers_count.toLocaleString()} stars</span>
+        <span className="repo-stars">{repo.stargazers_count.toLocaleString()} зірок</span>
         {repo.language && (
           <span className="repo-lang">{repo.language}</span>
         )}
         {installedApp && (
           <span className="repo-installed-version">
-            Active {installedApp.activeVersion}
+            Активна {installedApp.activeVersion}
           </span>
         )}
         {hasUpdate && latestVersion && (
           <span className="repo-update-version">
-            Latest {latestVersion}
+            Нова {latestVersion}
           </span>
         )}
-        <span className="repo-updated">Updated {updatedDate}</span>
+        <span className="repo-updated">Оновлено {updatedDate}</span>
       </div>
 
       <div className="repo-card-actions">
         {isInstalled && (
           <button className="launch-btn" onClick={handleLaunch}>
-            Launch
+            Запустити
           </button>
         )}
         <button className="install-btn" onClick={onSelect}>
-          {hasUpdate ? 'Update' : isInstalled ? 'Versions' : 'Install'}
+          {hasUpdate ? 'Оновити' : isInstalled ? 'Версії' : 'Встановити'}
         </button>
       </div>
     </div>

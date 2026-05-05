@@ -96,7 +96,7 @@ function SearchPage() {
     try {
       await launchApp(repo.owner.login, repo.name)
     } catch (err) {
-      setLaunchError(err instanceof Error ? err.message : 'Failed to launch app')
+      setLaunchError(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
     }
   }
 
@@ -104,10 +104,10 @@ function SearchPage() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Library</h2>
+          <h2>Бібліотека</h2>
           {owner && (
             <p className="page-subtitle">
-              Public GitHub repositories from {owner} with releases
+              Публічні репозиторії GitHub від {owner}, у яких є релізи
             </p>
           )}
         </div>
@@ -118,14 +118,14 @@ function SearchPage() {
             onClick={() => loadRepositories(1)}
             disabled={state.loading}
           >
-            {state.loading ? 'Refreshing...' : 'Refresh'}
+            {state.loading ? 'Оновлюємо...' : 'Оновити'}
           </button>
         )}
       </div>
 
       {!owner && !settingsLoading && (
         <div className="empty-state">
-          <p>Set your GitHub owner in Settings to load your public repositories.</p>
+          <p>Вкажи власника GitHub у налаштуваннях, щоб завантажити публічні репозиторії.</p>
         </div>
       )}
 
@@ -134,7 +134,7 @@ function SearchPage() {
           <div className="search-form">
             <input
               type="text"
-              placeholder="Filter your library..."
+              placeholder="Фільтр бібліотеки..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="search-input"
@@ -151,41 +151,41 @@ function SearchPage() {
                   onClick={() => setFilter(item)}
                 >
                   {item === 'all'
-                    ? 'All'
+                    ? 'Усі'
                     : item === 'installed'
-                      ? 'Installed'
+                      ? 'Встановлені'
                       : item === 'updates'
-                        ? 'Updates'
-                        : 'Available'}
+                        ? 'Оновлення'
+                        : 'Доступні'}
                 </button>
               ))}
             </div>
 
             <label className="sort-control">
-              Sort
+              Сортувати
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as LibrarySort)}
               >
-                <option value="updated">Recently updated</option>
-                <option value="status">Status</option>
-                <option value="name">Name</option>
+                <option value="updated">Нещодавно оновлені</option>
+                <option value="status">Статус</option>
+                <option value="name">Назва</option>
               </select>
             </label>
           </div>
 
           {state.error && (
-            <div className="error-banner">Warning: {state.error}</div>
+            <div className="error-banner">Увага: {state.error}</div>
           )}
 
           {launchError && (
-            <div className="error-banner">Warning: {launchError}</div>
+            <div className="error-banner">Увага: {launchError}</div>
           )}
 
           <p className="results-count">
-            {visibleRepositories.length.toLocaleString()} of{' '}
-            {state.repositories.length.toLocaleString()} release-ready repositories
-            {checkingUpdates ? ' - checking installed versions...' : ''}
+            {visibleRepositories.length.toLocaleString()} із{' '}
+            {state.repositories.length.toLocaleString()} репозиторіїв з релізами
+            {checkingUpdates ? ' - перевіряємо встановлені версії...' : ''}
           </p>
 
           <div className="search-results">
@@ -193,8 +193,8 @@ function SearchPage() {
               <div className="empty-state">
                 <p>
                   {state.repositories.length === 0
-                    ? 'No public repositories with releases were found.'
-                    : 'No repositories match this filter.'}
+                    ? 'Публічних репозиторіїв з релізами не знайдено.'
+                    : 'Немає репозиторіїв для цього фільтра.'}
                 </p>
               </div>
             )}
@@ -213,7 +213,7 @@ function SearchPage() {
 
           {state.hasMore && !state.loading && (
             <button onClick={loadMore} className="load-more-btn">
-              Load More
+              Завантажити ще
             </button>
           )}
         </>

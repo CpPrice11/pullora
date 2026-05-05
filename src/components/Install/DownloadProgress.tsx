@@ -14,11 +14,11 @@ function formatBytes(bytes: number) {
 
 function statusLabel(status: DL['status']) {
   switch (status) {
-    case 'pending':     return 'Waiting...'
-    case 'downloading': return 'Downloading'
-    case 'extracting':  return 'Extracting'
-    case 'completed':   return 'Done'
-    case 'failed':      return 'Failed'
+    case 'pending':     return 'Очікує...'
+    case 'downloading': return 'Завантаження'
+    case 'extracting':  return 'Розпакування'
+    case 'completed':   return 'Готово'
+    case 'failed':      return 'Помилка'
   }
 }
 
@@ -27,7 +27,7 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
 
   return (
     <div className="download-panel">
-      <h3 className="download-panel-title">Downloads</h3>
+      <h3 className="download-panel-title">Завантаження</h3>
       <div className="download-list">
         {downloads.map((download) => (
           <div
@@ -43,9 +43,9 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
                 <button
                   className="cancel-btn"
                   onClick={() => onCancel(download.id)}
-                  title="Cancel download"
+                  title="Скасувати завантаження"
                 >
-                  Cancel
+                  Скасувати
                 </button>
               )}
             </div>
@@ -64,10 +64,10 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
                 </span>
               )}
               {download.status === 'completed' && (
-                <span className="done-text">Installed successfully</span>
+                <span className="done-text">Успішно встановлено</span>
               )}
               {download.status === 'failed' && (
-                <span className="error-text">{download.error ?? 'Unknown error'}</span>
+                <span className="error-text">{download.error ?? 'Невідома помилка'}</span>
               )}
               <span className="download-pct">{Math.round(download.progress)}%</span>
             </div>

@@ -1,90 +1,93 @@
 # Air Launcher
 
-Air Launcher is a lightweight desktop launcher for applications published through public GitHub repositories and releases.
+Air Launcher — легкий десктопний лаунчер для застосунків, які публікуються через публічні репозиторії GitHub і GitHub Releases.
 
-The project uses:
+Проєкт використовує:
 
-- Tauri 2 for the desktop shell and native capabilities.
-- Rust for GitHub access, downloads, storage, extraction, and launching apps.
-- React, TypeScript, and Vite for the UI.
+- Tauri 2 для десктопної оболонки та нативних можливостей.
+- Rust для доступу до GitHub, завантажень, локального сховища, розпакування й запуску застосунків.
+- React, TypeScript і Vite для інтерфейсу.
 
-## Current Direction
+## Напрям проєкту
 
-Air Launcher is being built as a personal/public GitHub release launcher:
+Air Launcher створюється як персональний лаунчер для публічних GitHub-релізів:
 
-- Configure a GitHub owner in Settings.
-- Show that owner's public repositories that have GitHub Releases.
-- Install release assets locally.
-- Launch installed apps from the library.
-- Keep the app fast, polished, and lightweight.
+- вказуєш GitHub owner у налаштуваннях;
+- бачиш тільки публічні репозиторії цього власника, у яких є релізи;
+- встановлюєш файли з GitHub Releases;
+- запускаєш встановлені застосунки з бібліотеки;
+- отримуєш швидкий, акуратний і легкий інтерфейс.
 
-See [ROADMAP.md](ROADMAP.md) for the product plan and progress log.
+Детальний план і журнал прогресу збережені в [ROADMAP.md](ROADMAP.md).
 
-## Development
+## Розробка
 
-Install dependencies:
+Встановити залежності:
 
 ```bash
 npm ci
 ```
 
-Run the Vite frontend:
+Запустити Vite frontend:
 
 ```bash
 npm run dev
 ```
 
-Run the Tauri app in development:
+Запустити Tauri-застосунок у dev-режимі:
 
 ```bash
 npm run tauri-dev
 ```
 
-Build the frontend:
+Зібрати frontend:
 
 ```bash
 npm run build
 ```
 
-Check the Rust/Tauri backend:
+Перевірити Rust/Tauri backend:
 
 ```bash
 cd src-tauri
 cargo check
 ```
 
-Build the desktop app:
+Зібрати десктопний застосунок:
 
 ```bash
 npm run tauri-build
 ```
 
-## Releases
+## Релізи
 
-The GitHub Actions release workflow builds Windows artifacts when a tag matching `v*` is pushed.
+GitHub Actions release workflow збирає Windows-артефакти, коли пушиться тег формату `v*`.
 
-Example:
+Приклад:
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-## Repository Hygiene
+Перший локально перевірений EXE збирається окремо від Git-папки, щоб у репозиторій не потрапляли build-артефакти.
 
-Committed:
+## Структура репозиторію
 
-- Source code.
-- Tauri icons and configuration.
-- `package-lock.json`.
-- `src-tauri/Cargo.lock`.
-- Roadmap and project documentation.
+У Git зберігаються:
 
-Ignored:
+- вихідний код;
+- Tauri icons і конфігурація;
+- `package-lock.json`;
+- `src-tauri/Cargo.lock`;
+- roadmap і документація.
 
-- `node_modules/`
-- `dist/`
-- `src-tauri/target/`
-- `src-tauri/gen/schemas/`
-- IDE folders such as `.vs/`, `.vscode/`, and `.idea/`
-- Local assistant/tool settings such as `.claude/`
+Ігноруються:
+
+- `node_modules/`;
+- `dist/`;
+- `src-tauri/target/`;
+- `src-tauri/gen/`;
+- IDE-папки на кшталт `.vs/`, `.vscode/`, `.idea/`;
+- локальні assistant/tool налаштування на кшталт `.claude/`;
+- зібрані локальні артефакти, зокрема `*.exe`.

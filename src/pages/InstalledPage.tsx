@@ -18,7 +18,7 @@ function InstalledPage() {
       const data = await getInstalledApps()
       setApps(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load installed apps')
+      setError(err instanceof Error ? err.message : 'Не вдалося завантажити встановлені застосунки')
     } finally {
       setLoading(false)
     }
@@ -34,7 +34,7 @@ function InstalledPage() {
   }
 
   const handleUninstall = async (owner: string, repo: string, tag: string) => {
-    if (!confirm(`Uninstall ${repo} version ${tag}?`)) return
+    if (!confirm(`Видалити ${repo} версії ${tag}?`)) return
     await uninstallVersion(owner, repo, tag)
     loadApps()
   }
@@ -43,28 +43,28 @@ function InstalledPage() {
     try {
       await launchApp(owner, repo)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to launch app')
+      alert(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
     }
   }
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Installed Applications</h2>
-        <button onClick={loadApps} className="refresh-btn">Refresh</button>
+        <h2>Встановлені застосунки</h2>
+        <button onClick={loadApps} className="refresh-btn">Оновити</button>
       </div>
 
-      {error && <div className="error-banner">Warning: {error}</div>}
+      {error && <div className="error-banner">Увага: {error}</div>}
 
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
 
       <div className="apps-list">
-        {loading && <p>Loading installed apps...</p>}
+        {loading && <p>Завантажуємо встановлені застосунки...</p>}
 
         {!loading && apps.length === 0 && (
           <div className="empty-state">
-            <p>No applications installed yet</p>
-            <p>Go to Library to find and install applications from GitHub</p>
+            <p>Поки що немає встановлених застосунків</p>
+            <p>Перейди в Бібліотеку, щоб знайти й встановити застосунки з GitHub</p>
           </div>
         )}
 
@@ -83,13 +83,13 @@ function InstalledPage() {
 
               <div className="app-actions">
                 <button onClick={() => handleLaunch(app.owner, app.repo)}>
-                  Launch
+                  Запустити
                 </button>
                 <button
                   onClick={() => setExpandedApp(isExpanded ? null : key)}
                   className="secondary-btn"
                 >
-                  {isExpanded ? 'Hide Versions' : `Versions (${app.versions.length})`}
+                  {isExpanded ? 'Сховати версії' : `Версії (${app.versions.length})`}
                 </button>
               </div>
 
@@ -112,17 +112,17 @@ function InstalledPage() {
                             className="small-btn"
                             onClick={() => handleSwitch(app.owner, app.repo, version.tag)}
                           >
-                            Switch
+                            Активувати
                           </button>
                         )}
                         {version.tag === app.activeVersion && (
-                          <span className="active-label">Active</span>
+                          <span className="active-label">Активна</span>
                         )}
                         <button
                           className="small-btn danger"
                           onClick={() => handleUninstall(app.owner, app.repo, version.tag)}
                         >
-                          Remove
+                          Видалити
                         </button>
                       </div>
                     </div>

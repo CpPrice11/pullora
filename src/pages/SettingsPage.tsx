@@ -47,7 +47,7 @@ function SettingsPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings')
+      setError(err instanceof Error ? err.message : 'Не вдалося зберегти налаштування')
     } finally {
       setSaving(false)
     }
@@ -55,26 +55,26 @@ function SettingsPage() {
 
   const handleClearCache = async () => {
     await clearGithubCache().catch(() => {})
-    alert('Cache cleared')
+    alert('Кеш очищено')
   }
 
   if (loading || !settings) {
     return (
       <div className="page">
-        <p>Loading settings...</p>
+        <p>Завантажуємо налаштування...</p>
       </div>
     )
   }
 
   return (
     <div className="page">
-      <h2>Settings</h2>
+      <h2>Налаштування</h2>
 
       <div className="settings-form">
         <section className="settings-section">
-          <h3>Installation</h3>
+          <h3>Встановлення</h3>
           <div className="form-group">
-            <label htmlFor="installPath">Installation Directory</label>
+            <label htmlFor="installPath">Папка встановлення</label>
             <div className="path-input-row">
               <input
                 id="installPath"
@@ -83,19 +83,19 @@ function SettingsPage() {
                 onChange={(e) =>
                   setSettings({ ...settings, installationPath: e.target.value })
                 }
-                placeholder="Choose a folder..."
+                placeholder="Обери папку..."
               />
               <button type="button" onClick={handleBrowse}>
-                Browse...
+                Обрати...
               </button>
               {settings.installationPath && (
                 <button
                   type="button"
                   className="secondary-btn"
                   onClick={() => openDir(settings.installationPath).catch(() => {})}
-                  title="Open in file explorer"
+                  title="Відкрити у файловому менеджері"
                 >
-                  Open
+                  Відкрити
                 </button>
               )}
             </div>
@@ -105,7 +105,7 @@ function SettingsPage() {
         <section className="settings-section">
           <h3>GitHub</h3>
           <div className="form-group">
-            <label htmlFor="githubOwner">Public repository owner</label>
+            <label htmlFor="githubOwner">Власник публічних репозиторіїв</label>
             <input
               id="githubOwner"
               type="text"
@@ -116,17 +116,17 @@ function SettingsPage() {
                   githubOwner: e.target.value.trim() || undefined,
                 })
               }
-              placeholder="your-github-username"
+              placeholder="твій-github-username"
               autoComplete="off"
             />
             <p className="help-text">
-              Air Launcher will show public repositories from this owner that have GitHub Releases.
+              Air Launcher покаже публічні репозиторії цього власника, у яких є GitHub Releases.
             </p>
           </div>
         </section>
 
         <section className="settings-section">
-          <h3>Updates</h3>
+          <h3>Оновлення</h3>
           <div className="form-group">
             <label className="checkbox-label">
               <input
@@ -136,12 +136,12 @@ function SettingsPage() {
                   setSettings({ ...settings, autoUpdateCheck: e.target.checked })
                 }
               />
-              Check for updates automatically
+              Автоматично перевіряти оновлення
             </label>
           </div>
 
           <div className="form-group">
-            <label htmlFor="checkInterval">Check interval (hours)</label>
+            <label htmlFor="checkInterval">Інтервал перевірки (години)</label>
             <input
               id="checkInterval"
               type="number"
@@ -161,9 +161,9 @@ function SettingsPage() {
         </section>
 
         <section className="settings-section">
-          <h3>Appearance</h3>
+          <h3>Вигляд</h3>
           <div className="form-group">
-            <label htmlFor="theme">Theme</label>
+            <label htmlFor="theme">Тема</label>
             <select
               id="theme"
               value={settings.theme}
@@ -175,25 +175,25 @@ function SettingsPage() {
               }
               style={{ width: 160 }}
             >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="auto">Auto (system)</option>
+              <option value="light">Світла</option>
+              <option value="dark">Темна</option>
+              <option value="auto">Авто (системна)</option>
             </select>
           </div>
         </section>
 
-        {error && <div className="error-banner">Warning: {error}</div>}
+        {error && <div className="error-banner">Увага: {error}</div>}
 
         <div className="form-actions">
           <button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : saved ? 'Saved' : 'Save Settings'}
+            {saving ? 'Зберігаємо...' : saved ? 'Збережено' : 'Зберегти налаштування'}
           </button>
         </div>
 
         <section className="danger-zone">
-          <h3>Danger Zone</h3>
+          <h3>Небезпечна зона</h3>
           <button className="danger-btn" onClick={handleClearCache}>
-            Clear API Cache
+            Очистити API-кеш
           </button>
         </section>
       </div>

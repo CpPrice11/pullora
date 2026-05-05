@@ -5,6 +5,7 @@ import SearchPage from './pages/SearchPage'
 import InstalledPage from './pages/InstalledPage'
 import FavoritesPage from './pages/FavoritesPage'
 import SettingsPage from './pages/SettingsPage'
+import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import ReleaseSelector from './components/Search/ReleaseSelector'
@@ -12,7 +13,7 @@ import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
 import type { UpdateAvailable } from './types'
 
-type Tab = 'search' | 'installed' | 'favorites' | 'settings'
+type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search')
@@ -48,6 +49,7 @@ function App() {
       case 'installed': return <InstalledPage />
       case 'favorites': return <FavoritesPage />
       case 'settings':  return <SettingsPage />
+      case 'about':     return <AboutPage />
       default:          return <SearchPage />
     }
   }

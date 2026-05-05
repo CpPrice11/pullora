@@ -13,31 +13,31 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
   return (
     <div className="update-banner">
       <div className="update-banner-header">
-        <span className="update-icon">⬆</span>
+        <span className="update-icon">UP</span>
         <strong>
           {updates.length === 1
-            ? `Update available for ${updates[0].appName}`
-            : `${updates.length} updates available`}
+            ? `Доступне оновлення для ${updates[0].appName}`
+            : `Доступно оновлень: ${updates.length}`}
         </strong>
       </div>
 
       <div className="update-list">
-        {updates.map((u) => (
-          <div key={`${u.owner}/${u.repo}`} className="update-row">
-            <span className="update-name">{u.appName}</span>
+        {updates.map((update) => (
+          <div key={`${update.owner}/${update.repo}`} className="update-row">
+            <span className="update-name">{update.appName}</span>
             <span className="update-versions">
-              {u.currentVersion} → <strong>{u.latestVersion}</strong>
+              {update.currentVersion} {'->'} <strong>{update.latestVersion}</strong>
             </span>
             <div className="update-actions">
-              <button className="update-install-btn" onClick={() => onInstall(u)}>
-                Install
+              <button className="update-install-btn" onClick={() => onInstall(update)}>
+                Встановити
               </button>
               <button
                 className="update-dismiss-btn"
-                onClick={() => onDismiss(u.owner, u.repo)}
-                title="Dismiss"
+                onClick={() => onDismiss(update.owner, update.repo)}
+                title="Сховати"
               >
-                ✕
+                Закрити
               </button>
             </div>
           </div>

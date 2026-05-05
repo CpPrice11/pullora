@@ -96,7 +96,7 @@ function ReleaseSelector({
         selectedRelease.tag_name,
       )
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+      setDownloadError(err instanceof Error ? err.message : 'Завантаження не вдалося')
     } finally {
       setDownloading(false)
     }
@@ -111,22 +111,22 @@ function ReleaseSelector({
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
           <button className="close-btn" onClick={onClose}>
-            Close
+            Закрити
           </button>
         </div>
 
         <div className="release-body">
-          {loading && <p className="loading-text">Loading releases...</p>}
+          {loading && <p className="loading-text">Завантажуємо релізи...</p>}
           {error && <div className="error-message">{error}</div>}
 
           {!loading && releases.length === 0 && (
-            <p className="no-releases">No releases found for this repository.</p>
+            <p className="no-releases">Для цього репозиторію релізів не знайдено.</p>
           )}
 
           {releases.length > 0 && (
             <>
               <div className="form-group">
-                <label htmlFor="release-select">Version</label>
+                <label htmlFor="release-select">Версія</label>
                 <select
                   id="release-select"
                   value={selectedRelease?.id ?? ''}
@@ -138,10 +138,10 @@ function ReleaseSelector({
                   {releases.map((release) => (
                     <option key={release.id} value={release.id}>
                       {release.tag_name}
-                      {release.prerelease ? ' (pre-release)' : ''}
-                      {release.draft ? ' (draft)' : ''}
+                      {release.prerelease ? ' (передреліз)' : ''}
+                      {release.draft ? ' (чернетка)' : ''}
                       {release.published_at
-                        ? ` - ${new Date(release.published_at).toLocaleDateString()}`
+                        ? ` - ${new Date(release.published_at).toLocaleDateString('uk-UA')}`
                         : ''}
                     </option>
                   ))}
@@ -150,7 +150,7 @@ function ReleaseSelector({
 
               {selectedRelease && selectedRelease.assets.length > 0 && (
                 <div className="form-group">
-                  <label htmlFor="asset-select">File</label>
+                  <label htmlFor="asset-select">Файл</label>
                   <select
                     id="asset-select"
                     value={selectedAsset?.id ?? ''}
@@ -172,7 +172,7 @@ function ReleaseSelector({
 
               {selectedRelease && selectedRelease.assets.length === 0 && (
                 <p className="no-assets">
-                  This release has no binary assets. Only source code is available.
+                  У цьому релізі немає готових файлів. Доступний тільки вихідний код.
                 </p>
               )}
 
@@ -186,7 +186,7 @@ function ReleaseSelector({
                   disabled={!selectedAsset || downloading}
                   className="download-btn"
                 >
-                  {downloading ? 'Starting...' : `Download ${selectedAsset?.name ?? ''}`}
+                  {downloading ? 'Починаємо...' : `Завантажити ${selectedAsset?.name ?? ''}`}
                 </button>
                 <a
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}
@@ -194,7 +194,7 @@ function ReleaseSelector({
                   rel="noreferrer"
                   className="view-release-link"
                 >
-                  View on GitHub
+                  Відкрити на GitHub
                 </a>
               </div>
             </>

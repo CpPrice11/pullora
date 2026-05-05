@@ -19,7 +19,7 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedPath.trim()) {
-      setError('Please select an installation directory')
+      setError('Обери папку для встановлення')
       return
     }
     setLoading(true)
@@ -27,7 +27,7 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
     try {
       await onPathSelected(selectedPath)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set installation path')
+      setError(err instanceof Error ? err.message : 'Не вдалося задати папку встановлення')
       setLoading(false)
     }
   }
@@ -36,28 +36,28 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Welcome to Air Launcher</h2>
+          <h2>Вітаємо в Air Launcher</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <p className="modal-description">
-            Choose where downloaded applications will be installed.
-            The folder will be created automatically if it doesn't exist.
+            Обери, куди встановлювати завантажені застосунки.
+            Папка буде створена автоматично, якщо її ще немає.
           </p>
 
           <div className="form-group">
-            <label htmlFor="installPath">Installation Directory</label>
+            <label htmlFor="installPath">Папка встановлення</label>
             <div className="path-input-group">
               <input
                 id="installPath"
                 type="text"
                 value={selectedPath}
                 onChange={(e) => setSelectedPath(e.target.value)}
-                placeholder="Click Browse or type a path..."
+                placeholder="Натисни Обрати або введи шлях..."
                 disabled={loading}
               />
               <button type="button" onClick={handleBrowse} disabled={loading}>
-                Browse...
+                Обрати...
               </button>
             </div>
           </div>
@@ -66,13 +66,13 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
 
           <div className="modal-actions">
             <button type="submit" disabled={loading || !selectedPath.trim()}>
-              {loading ? 'Setting up...' : 'Continue'}
+              {loading ? 'Налаштовуємо...' : 'Продовжити'}
             </button>
           </div>
         </form>
 
         <p className="modal-footer-text">
-          You can change this directory later in Settings.
+          Цю папку можна змінити пізніше в налаштуваннях.
         </p>
       </div>
     </div>
