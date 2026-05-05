@@ -70,7 +70,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}" -replace '^v', ''
-          $exePath = "src-tauri\target\release\air-launcher.exe"
+          $exePath = "src-tauri\target\release\app.exe"
           $outDir  = "portable"
           New-Item -ItemType Directory -Force $outDir | Out-Null
           Copy-Item $exePath "$outDir\air-launcher.exe"
