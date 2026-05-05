@@ -31,7 +31,10 @@ struct InstalledStore {
 
 impl Default for InstalledStore {
     fn default() -> Self {
-        Self { version: 1, apps: vec![] }
+        Self {
+            version: 1,
+            apps: vec![],
+        }
     }
 }
 
@@ -68,7 +71,11 @@ pub fn add_version(
     let key = format!("{}/{}", owner, repo);
     let tag = version.tag.clone();
 
-    if let Some(app) = store.apps.iter_mut().find(|a| format!("{}/{}", a.owner, a.repo) == key) {
+    if let Some(app) = store
+        .apps
+        .iter_mut()
+        .find(|a| format!("{}/{}", a.owner, a.repo) == key)
+    {
         app.versions.retain(|v| v.tag != tag);
         app.versions.push(version);
         app.active_version = tag;
@@ -94,7 +101,11 @@ pub fn set_active_version(
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", owner, repo);
 
-    if let Some(app) = store.apps.iter_mut().find(|a| format!("{}/{}", a.owner, a.repo) == key) {
+    if let Some(app) = store
+        .apps
+        .iter_mut()
+        .find(|a| format!("{}/{}", a.owner, a.repo) == key)
+    {
         if app.versions.iter().any(|v| v.tag == tag) {
             app.active_version = tag.to_string();
         } else {
@@ -114,14 +125,24 @@ pub fn remove_version(
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", owner, repo);
 
-    if let Some(app) = store.apps.iter_mut().find(|a| format!("{}/{}", a.owner, a.repo) == key) {
+    if let Some(app) = store
+        .apps
+        .iter_mut()
+        .find(|a| format!("{}/{}", a.owner, a.repo) == key)
+    {
         app.versions.retain(|v| v.tag != tag);
         if app.active_version == tag {
-            app.active_version = app.versions.last().map(|v| v.tag.clone()).unwrap_or_default();
+            app.active_version = app
+                .versions
+                .last()
+                .map(|v| v.tag.clone())
+                .unwrap_or_default();
         }
         if app.versions.is_empty() {
             let app_key = key.clone();
-            store.apps.retain(|a| format!("{}/{}", a.owner, a.repo) != app_key);
+            store
+                .apps
+                .retain(|a| format!("{}/{}", a.owner, a.repo) != app_key);
         }
     }
 

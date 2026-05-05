@@ -1,6 +1,8 @@
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde::Serialize;
+use std::collections::HashSet;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
@@ -32,12 +34,14 @@ pub enum DownloadStatus {
 
 pub struct DownloadManager {
     active: Arc<Mutex<Vec<DownloadProgress>>>,
+    cancelled: Arc<Mutex<HashSet<String>>>,
 }
 
 impl DownloadManager {
     pub fn new() -> Self {
         Self {
             active: Arc::new(Mutex::new(vec![])),
+            cancelled: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -53,6 +57,7 @@ impl DownloadManager {
         tag: String,
     ) -> Result<String, String> {
         let active = self.active.clone();
+        let cancelled = self.cancelled.clone();
 
         let progress = DownloadProgress {
             id: id.clone(),
@@ -69,30 +74,50 @@ impl DownloadManager {
             list.retain(|p| p.id != id);
             list.push(progress.clone());
         }
+        {
+            let mut cancelled_ids = cancelled.lock().await;
+            cancelled_ids.remove(&id);
+        }
 
-        // Spawn the download task
         let id_clone = id.clone();
         let active_clone = active.clone();
+        let cancelled_clone = cancelled.clone();
         tokio::spawn(async move {
+            log_download_event(&owner, &repo, &tag, "download started");
+
             let result = download_task(
                 app.clone(),
                 id_clone.clone(),
                 url,
                 file_name,
                 dest_dir,
-                owner,
-                repo,
-                tag,
+                owner.clone(),
+                repo.clone(),
+                tag.clone(),
                 active_clone.clone(),
+                cancelled_clone.clone(),
             )
             .await;
 
-            if let Err(e) = result {
-                let mut list = active_clone.lock().await;
-                if let Some(p) = list.iter_mut().find(|p| p.id == id_clone) {
-                    p.status = DownloadStatus::Failed;
-                    p.error = Some(e.clone());
-                    let _ = app.emit("download-progress", p.clone());
+            match result {
+                Ok(()) => {
+                    log_download_event(&owner, &repo, &tag, "download installed successfully");
+                }
+                Err(e) => {
+                    if is_cancelled(&cancelled_clone, &id_clone).await {
+                        let mut cancelled_ids = cancelled_clone.lock().await;
+                        cancelled_ids.remove(&id_clone);
+                        log_download_event(&owner, &repo, &tag, "download canceled");
+                        return;
+                    }
+
+                    log_download_event(&owner, &repo, &tag, &format!("download failed: {}", e));
+                    let mut list = active_clone.lock().await;
+                    if let Some(p) = list.iter_mut().find(|p| p.id == id_clone) {
+                        p.status = DownloadStatus::Failed;
+                        p.error = Some(e);
+                        let _ = app.emit("download-progress", p.clone());
+                    }
                 }
             }
         });
@@ -106,9 +131,21 @@ impl DownloadManager {
     }
 
     pub async fn cancel(&self, id: &str) {
+        let mut cancelled_ids = self.cancelled.lock().await;
+        cancelled_ids.insert(id.to_string());
+        drop(cancelled_ids);
+
         let mut list = self.active.lock().await;
         list.retain(|p| p.id != id);
     }
+}
+
+fn log_download_event(owner: &str, repo: &str, tag: &str, message: &str) {
+    let config_dir = crate::storage::get_config_dir();
+    let _ = crate::storage::logs::append_log(
+        &config_dir,
+        &format!("install {}/{}@{}: {}", owner, repo, tag, message),
+    );
 }
 
 async fn download_task(
@@ -121,6 +158,7 @@ async fn download_task(
     repo: String,
     tag: String,
     active: Arc<Mutex<Vec<DownloadProgress>>>,
+    cancelled: Arc<Mutex<HashSet<String>>>,
 ) -> Result<(), String> {
     let client = Client::builder()
         .user_agent("Air-Launcher/0.1.0")
@@ -136,15 +174,18 @@ async fn download_task(
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(0);
 
+    stop_if_cancelled(&cancelled, &id).await?;
+
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Downloading;
         p.total_size = total_size;
     })
     .await;
 
-    // Download to temp file
-    let tmp_path = dest_dir.join(format!("__tmp_{}", &file_name));
     std::fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
+    let download_dir = dest_dir.join(".air-launcher-downloads");
+    std::fs::create_dir_all(&download_dir).map_err(|e| e.to_string())?;
+    let tmp_path = download_dir.join(format!("{}-{}", id, safe_file_name(&file_name)));
 
     let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
     if !response.status().is_success() {
@@ -159,10 +200,22 @@ async fn download_task(
     let mut downloaded: u64 = 0;
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| e.to_string())?;
-        tokio::io::AsyncWriteExt::write_all(&mut out, &chunk)
-            .await
-            .map_err(|e| e.to_string())?;
+        if is_cancelled(&cancelled, &id).await {
+            let _ = fs::remove_file(&tmp_path);
+            return Err("Download canceled".to_string());
+        }
+
+        let chunk = match chunk {
+            Ok(chunk) => chunk,
+            Err(error) => {
+                let _ = fs::remove_file(&tmp_path);
+                return Err(error.to_string());
+            }
+        };
+        if let Err(error) = tokio::io::AsyncWriteExt::write_all(&mut out, &chunk).await {
+            let _ = fs::remove_file(&tmp_path);
+            return Err(error.to_string());
+        }
         downloaded += chunk.len() as u64;
 
         let progress = if total_size > 0 {
@@ -179,33 +232,68 @@ async fn download_task(
     }
     drop(out);
 
-    // Extract
+    if is_cancelled(&cancelled, &id).await {
+        let _ = fs::remove_file(&tmp_path);
+        return Err("Download canceled".to_string());
+    }
+
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Extracting;
         p.progress = 100.0;
     })
     .await;
 
-    let version_dir = dest_dir.join(format!("{}-{}", owner, repo)).join(&tag);
-    let executable =
-        tokio::task::spawn_blocking(move || extractor::extract(&tmp_path, &version_dir))
-            .await
-            .map_err(|e| e.to_string())??;
+    let app_dir = dest_dir.join(format!("{}-{}", owner, repo));
+    let version_dir = app_dir.join(&tag);
+    let partial_dir = app_dir.join(format!("{}.partial-{}", tag, id));
+    let backup_dir = app_dir.join(format!("{}.backup-{}", tag, id));
 
-    // Remove temp download file
-    let tmp_cleanup = dest_dir.join(format!("__tmp_{}", &file_name));
-    let _ = std::fs::remove_file(&tmp_cleanup);
+    cleanup_path(&partial_dir)?;
 
-    // Record in installed_apps.json
-    let config_dir = crate::storage::get_config_dir();
-    let version_info = crate::storage::installed::VersionInfo {
-        tag: tag.clone(),
-        installed_at: chrono::Utc::now(),
-        executable: executable.clone(),
-        size_bytes: downloaded,
+    let extract_tmp_path = tmp_path.clone();
+    let extract_partial_dir = partial_dir.clone();
+    let executable = match tokio::task::spawn_blocking(move || {
+        extractor::extract(&extract_tmp_path, &extract_partial_dir)
+    })
+    .await
+    {
+        Ok(Ok(executable)) => executable,
+        Ok(Err(error)) => {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&partial_dir);
+            return Err(error);
+        }
+        Err(error) => {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&partial_dir);
+            return Err(error.to_string());
+        }
     };
-    crate::storage::installed::add_version(&config_dir, &owner, &repo, version_info)
-        .map_err(|e| e.to_string())?;
+
+    if is_cancelled(&cancelled, &id).await {
+        let _ = fs::remove_file(&tmp_path);
+        let _ = cleanup_path(&partial_dir);
+        return Err("Download canceled".to_string());
+    }
+
+    if let Err(error) = replace_version_dir(&partial_dir, &version_dir, &backup_dir) {
+        let _ = fs::remove_file(&tmp_path);
+        let _ = cleanup_path(&partial_dir);
+        return Err(error);
+    }
+
+    let install_record_result =
+        record_installed_version(&owner, &repo, &tag, executable.clone(), downloaded);
+
+    if let Err(error) = install_record_result {
+        let _ = fs::remove_file(&tmp_path);
+        let _ = cleanup_path(&version_dir);
+        let _ = restore_backup_dir(&backup_dir, &version_dir);
+        return Err(error);
+    }
+
+    cleanup_path(&backup_dir)?;
+    let _ = fs::remove_file(&tmp_path);
 
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Completed;
@@ -214,6 +302,24 @@ async fn download_task(
     .await;
 
     Ok(())
+}
+
+fn record_installed_version(
+    owner: &str,
+    repo: &str,
+    tag: &str,
+    executable: String,
+    downloaded: u64,
+) -> Result<(), String> {
+    let config_dir = crate::storage::get_config_dir();
+    let version_info = crate::storage::installed::VersionInfo {
+        tag: tag.to_string(),
+        installed_at: chrono::Utc::now(),
+        executable,
+        size_bytes: downloaded,
+    };
+    crate::storage::installed::add_version(&config_dir, owner, repo, version_info)
+        .map_err(|e| e.to_string())
 }
 
 async fn emit_progress<F>(
@@ -229,4 +335,71 @@ async fn emit_progress<F>(
         mutate(p);
         let _ = app.emit("download-progress", p.clone());
     }
+}
+
+async fn is_cancelled(cancelled: &Arc<Mutex<HashSet<String>>>, id: &str) -> bool {
+    let cancelled_ids = cancelled.lock().await;
+    cancelled_ids.contains(id)
+}
+
+async fn stop_if_cancelled(
+    cancelled: &Arc<Mutex<HashSet<String>>>,
+    id: &str,
+) -> Result<(), String> {
+    if is_cancelled(cancelled, id).await {
+        Err("Download canceled".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+fn safe_file_name(file_name: &str) -> String {
+    std::path::Path::new(file_name)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.trim().is_empty())
+        .unwrap_or("download.bin")
+        .to_string()
+}
+
+fn cleanup_path(path: &std::path::Path) -> Result<(), String> {
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let metadata = fs::metadata(path).map_err(|e| e.to_string())?;
+    if metadata.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| e.to_string())
+    } else {
+        fs::remove_file(path).map_err(|e| e.to_string())
+    }
+}
+
+fn replace_version_dir(
+    partial_dir: &std::path::Path,
+    version_dir: &std::path::Path,
+    backup_dir: &std::path::Path,
+) -> Result<(), String> {
+    cleanup_path(backup_dir)?;
+
+    if version_dir.exists() {
+        fs::rename(version_dir, backup_dir).map_err(|e| e.to_string())?;
+    }
+
+    fs::rename(partial_dir, version_dir).map_err(|e| {
+        let _ = restore_backup_dir(backup_dir, version_dir);
+        e.to_string()
+    })
+}
+
+fn restore_backup_dir(
+    backup_dir: &std::path::Path,
+    version_dir: &std::path::Path,
+) -> Result<(), String> {
+    if !backup_dir.exists() {
+        return Ok(());
+    }
+
+    cleanup_path(version_dir)?;
+    fs::rename(backup_dir, version_dir).map_err(|e| e.to_string())
 }

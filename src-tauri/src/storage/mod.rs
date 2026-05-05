@@ -1,5 +1,6 @@
 pub mod favorites;
 pub mod installed;
+pub mod logs;
 pub mod settings;
 
 #[derive(Debug)]

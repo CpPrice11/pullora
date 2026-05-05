@@ -23,10 +23,28 @@ Completed:
 - Reworked the first tab from generic GitHub Search into a Library view.
 - Library now loads release-ready public repositories for the configured owner.
 - Added local filtering and refresh for the Library view.
+- Added installed status to Library repository cards.
+- Added direct Launch action for installed apps from Library.
+- Added install completion refresh so Library status updates after a download completes.
+- Improved release asset preference to choose portable `.zip` files before direct `.exe` and `.msi` assets on Windows.
+- Cleaned mojibake from the install and installed-app UI controls touched by this flow.
+- Added update-aware Library badges by comparing installed active versions with latest GitHub releases.
+- Extracted installed/update status into a shared Library status hook.
+- Added Library filters for all, installed, updates, and available apps.
+- Added Library sorting by recent updates, status, and name.
+- Added real download cancellation so canceled downloads cannot finish installing in the background.
+- Added partial install directories and backup/restore replacement for safe retries.
+- Hardened ZIP and TAR extraction against unsafe archive paths.
+- Added local logs for install and launch events in the app config directory.
+- Improved launch failure messages with recovery guidance.
+- Verified TypeScript, frontend production build, Rust check, and Tauri production build.
+- Built a Windows production executable outside the Git folder:
+  `C:\Users\sasha\OneDrive\Документи\Projects\Air Launcher Local Build\Air Launcher.exe`.
+- Confirmed the generated executable starts without immediately crashing.
 
 Current next step:
 
-- Improve the install/run flow for release assets so the Library can move from browsing repositories to launching installed apps.
+- Prepare a clean GitHub release flow: fix GitHub authentication, commit current changes, push the branch, and decide whether the first public artifact should be a portable EXE, installer, or both.
 
 ## MVP
 

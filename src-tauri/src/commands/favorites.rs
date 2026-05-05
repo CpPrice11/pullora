@@ -1,6 +1,8 @@
 use tauri::State;
 
-use crate::storage::favorites::{add_favorite, is_favorite, list_favorites, remove_favorite, FavoriteApp};
+use crate::storage::favorites::{
+    add_favorite, is_favorite, list_favorites, remove_favorite, FavoriteApp,
+};
 use crate::storage::get_config_dir;
 use crate::AppState;
 
