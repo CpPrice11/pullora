@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
-import { AppSettings } from '../types'
+import type { AppSettings } from '../types'
+import {
+  getSettings,
+  setInstallationPath as saveInstallationPath,
+  updateSettings as saveSettings,
+  checkIsFirstLaunch,
+} from '../services/settings'
 
 const DEFAULT_SETTINGS: AppSettings = {
   installationPath: '',
@@ -11,39 +17,36 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export function useSettings() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [isFirstLaunch, setIsFirstLaunch] = useState(true)
+  const [isFirstLaunch, setIsFirstLaunch] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // TODO: Load settings from storage using Tauri
-    // For now, simulate loading
-    setTimeout(() => {
-      setLoading(false)
-    }, 100)
+    async function load() {
+      try {
+        const [s, first] = await Promise.all([getSettings(), checkIsFirstLaunch()])
+        setSettings(s)
+        setIsFirstLaunch(first)
+      } catch {
+        // Running in browser without Tauri — treat as first launch
+        setIsFirstLaunch(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
-  const setInstallationPath = async (path: string): Promise<void> => {
-    // TODO: Save to storage using Tauri
-    setSettings({
-      ...settings,
-      installationPath: path,
-    })
+  const setInstallationPath = async (path: string) => {
+    await saveInstallationPath(path)
+    setSettings((prev) => ({ ...prev, installationPath: path }))
     setIsFirstLaunch(false)
   }
 
-  const updateSettings = async (newSettings: Partial<AppSettings>): Promise<void> => {
-    // TODO: Save to storage using Tauri
-    setSettings({
-      ...settings,
-      ...newSettings,
-    })
+  const updateSettings = async (partial: Partial<AppSettings>) => {
+    const next = { ...settings, ...partial }
+    await saveSettings(next)
+    setSettings(next)
   }
 
-  return {
-    settings,
-    isFirstLaunch,
-    loading,
-    setInstallationPath,
-    updateSettings,
-  }
+  return { settings, isFirstLaunch, loading, setInstallationPath, updateSettings }
 }

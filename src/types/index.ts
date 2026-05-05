@@ -1,12 +1,4 @@
-export interface AppSettings {
-  installationPath: string
-  autoUpdateCheck: boolean
-  checkIntervalHours: number
-  githubToken?: string
-  theme: 'light' | 'dark' | 'auto'
-  language: string
-}
-
+// GitHub API types (match Rust struct field names from Tauri commands)
 export interface GitHubSearchResult {
   id: number
   name: string
@@ -19,6 +11,8 @@ export interface GitHubSearchResult {
   stargazers_count: number
   updated_at: string
   html_url: string
+  language: string | null
+  topics: string[] | null
 }
 
 export interface GitHubRelease {
@@ -27,7 +21,8 @@ export interface GitHubRelease {
   name: string | null
   draft: boolean
   prerelease: boolean
-  published_at: string
+  published_at: string | null
+  body: string | null
   assets: GitHubAsset[]
 }
 
@@ -37,6 +32,25 @@ export interface GitHubAsset {
   browser_download_url: string
   size: number
   content_type: string
+  download_count: number
+}
+
+// App settings — matches Rust AppSettings (Tauri returns snake_case by default, but serde renames to camelCase via Tauri)
+export interface AppSettings {
+  installationPath: string
+  autoUpdateCheck: boolean
+  checkIntervalHours: number
+  githubToken?: string
+  theme: 'light' | 'dark' | 'auto'
+  language: string
+}
+
+// Installed app types
+export interface VersionInfo {
+  tag: string
+  installedAt: string
+  executable: string
+  sizeBytes: number
 }
 
 export interface InstalledApp {
@@ -45,16 +59,9 @@ export interface InstalledApp {
   repo: string
   versions: VersionInfo[]
   activeVersion: string
-  isFavorite: boolean
 }
 
-export interface VersionInfo {
-  tag: string
-  installedAt: string
-  executable: string
-  sizeBytes: number
-}
-
+// Favorites
 export interface FavoriteApp {
   owner: string
   repo: string
@@ -63,19 +70,13 @@ export interface FavoriteApp {
   lastChecked?: string
 }
 
+// Download progress
 export interface DownloadProgress {
   id: string
   fileName: string
   progress: number
   totalSize: number
   downloadedSize: number
-  status: 'downloading' | 'extracting' | 'completed' | 'failed'
+  status: 'pending' | 'downloading' | 'extracting' | 'completed' | 'failed'
   error?: string
-}
-
-export interface UpdateAvailable {
-  appName: string
-  currentVersion: string
-  latestVersion: string
-  releaseUrl: string
 }

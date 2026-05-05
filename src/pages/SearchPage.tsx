@@ -1,56 +1,78 @@
 import { useState } from 'react'
+import { useGitHubSearch } from '../hooks/useGitHub'
+import RepoCard from '../components/Search/RepoCard'
+import ReleaseSelector from '../components/Search/ReleaseSelector'
+import type { GitHubSearchResult } from '../types'
 import './PageStyles.css'
 
 function SearchPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [input, setInput] = useState('')
+  const { state, handleSearch, loadMore } = useGitHubSearch()
+  const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!searchQuery.trim()) return
-
-    setLoading(true)
-    // TODO: Implement GitHub API search
-    setTimeout(() => {
-      setResults([])
-      setLoading(false)
-    }, 500)
+    handleSearch(input)
   }
 
   return (
     <div className="page">
       <h2>Search GitHub Repositories</h2>
 
-      <form onSubmit={handleSearch} className="search-form">
+      <form onSubmit={onSubmit} className="search-form">
         <input
           type="text"
-          placeholder="Search for a repository (e.g., 'deno', 'rust')..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search for a repository (e.g., 'neovim', 'zig', 'helix')..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           className="search-input"
         />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Searching...' : 'Search'}
+        <button type="submit" disabled={state.loading}>
+          {state.loading ? 'Searching...' : 'Search'}
         </button>
       </form>
 
+      {state.error && (
+        <div className="error-banner">⚠ {state.error}</div>
+      )}
+
+      {state.totalCount > 0 && (
+        <p className="results-count">
+          Found {state.totalCount.toLocaleString()} repositories
+        </p>
+      )}
+
       <div className="search-results">
-        {results.length === 0 && !loading && (
+        {state.results.length === 0 && !state.loading && (
           <div className="empty-state">
             <p>Search for a repository to get started</p>
           </div>
         )}
 
-        {loading && <p>Loading results...</p>}
-
-        {results.map((result) => (
-          <div key={result.id} className="result-card">
-            <h3>{result.name}</h3>
-            <p>{result.description}</p>
-          </div>
+        {state.results.map((repo) => (
+          <RepoCard
+            key={repo.id}
+            repo={repo}
+            onSelect={() => setSelectedRepo(repo)}
+          />
         ))}
       </div>
+
+      {state.hasMore && !state.loading && (
+        <button onClick={loadMore} className="load-more-btn">
+          Load More
+        </button>
+      )}
+
+      {selectedRepo && (
+        <ReleaseSelector
+          owner={selectedRepo.owner.login}
+          repo={selectedRepo.name}
+          displayName={selectedRepo.name}
+          description={selectedRepo.description ?? undefined}
+          onClose={() => setSelectedRepo(null)}
+        />
+      )}
     </div>
   )
 }
