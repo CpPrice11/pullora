@@ -7,10 +7,10 @@ interface SidebarProps {
 
 function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const navItems: { id: Tab; icon: string; label: string }[] = [
-    { id: 'search', icon: '🔍', label: 'Search' },
-    { id: 'installed', icon: '📦', label: 'Installed' },
-    { id: 'favorites', icon: '⭐', label: 'Favorites' },
-    { id: 'settings', icon: '⚙️', label: 'Settings' },
+    { id: 'search', icon: 'L', label: 'Library' },
+    { id: 'installed', icon: 'I', label: 'Installed' },
+    { id: 'favorites', icon: 'F', label: 'Favorites' },
+    { id: 'settings', icon: 'S', label: 'Settings' },
   ]
 
   return (

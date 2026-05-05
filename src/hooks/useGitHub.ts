@@ -1,10 +1,22 @@
 import { useState, useCallback } from 'react'
 import type { GitHubSearchResult, GitHubRelease } from '../types'
-import { searchRepositories, getReleases } from '../services/github'
+import {
+  searchRepositories,
+  listOwnerRepositories,
+  getReleases,
+} from '../services/github'
 
 interface SearchState {
   results: GitHubSearchResult[]
   totalCount: number
+  loading: boolean
+  error: string | null
+  page: number
+  hasMore: boolean
+}
+
+interface OwnerRepositoriesState {
+  repositories: GitHubSearchResult[]
   loading: boolean
   error: string | null
   page: number
@@ -59,6 +71,65 @@ export function useGitHubSearch() {
   }, [state.hasMore, state.loading, state.page, query, search])
 
   return { query, state, handleSearch, loadMore }
+}
+
+export function useOwnerRepositories(owner: string | undefined) {
+  const [state, setState] = useState<OwnerRepositoriesState>({
+    repositories: [],
+    loading: false,
+    error: null,
+    page: 1,
+    hasMore: false,
+  })
+
+  const loadRepositories = useCallback(
+    async (page = 1) => {
+      const normalizedOwner = owner?.trim()
+
+      if (!normalizedOwner) {
+        setState({
+          repositories: [],
+          loading: false,
+          error: null,
+          page: 1,
+          hasMore: false,
+        })
+        return
+      }
+
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      try {
+        const data = await listOwnerRepositories(normalizedOwner, page, true)
+        setState((prev) => ({
+          repositories:
+            page === 1
+              ? data.items
+              : [...prev.repositories, ...data.items],
+          loading: false,
+          error: null,
+          page: data.page,
+          hasMore: data.has_more,
+        }))
+      } catch (err) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error:
+            err instanceof Error
+              ? err.message
+              : 'Failed to load repositories',
+        }))
+      }
+    },
+    [owner],
+  )
+
+  const loadMore = useCallback(() => {
+    if (!state.hasMore || state.loading) return
+    loadRepositories(state.page + 1)
+  }, [state.hasMore, state.loading, state.page, loadRepositories])
+
+  return { state, loadRepositories, loadMore }
 }
 
 export function useReleases(owner: string, repo: string) {

@@ -13,6 +13,16 @@ export interface GitHubSearchResult {
   html_url: string
   language: string | null
   topics: string[] | null
+  has_releases: boolean
+  fork: boolean
+  archived: boolean
+  private: boolean
+}
+
+export interface OwnerRepositoriesResponse {
+  items: GitHubSearchResult[]
+  page: number
+  has_more: boolean
 }
 
 export interface GitHubRelease {
@@ -40,6 +50,7 @@ export interface AppSettings {
   installationPath: string
   autoUpdateCheck: boolean
   checkIntervalHours: number
+  githubOwner?: string
   githubToken?: string
   theme: 'light' | 'dark' | 'auto'
   language: string

@@ -1,5 +1,9 @@
 import { callTauri } from './tauri'
-import type { GitHubSearchResult, GitHubRelease } from '../types'
+import type {
+  GitHubSearchResult,
+  GitHubRelease,
+  OwnerRepositoriesResponse,
+} from '../types'
 
 interface SearchResponse {
   total_count: number
@@ -12,6 +16,18 @@ export async function searchRepositories(
   page = 1,
 ): Promise<SearchResponse> {
   return callTauri<SearchResponse>('search_repositories', { query, page })
+}
+
+export async function listOwnerRepositories(
+  owner: string,
+  page = 1,
+  releasesOnly = true,
+): Promise<OwnerRepositoriesResponse> {
+  return callTauri<OwnerRepositoriesResponse>('list_owner_repositories', {
+    owner,
+    page,
+    releasesOnly,
+  })
 }
 
 export async function getReleases(

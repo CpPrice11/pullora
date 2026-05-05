@@ -8,6 +8,13 @@ pub struct SearchResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OwnerRepositoriesResponse {
+    pub items: Vec<Repository>,
+    pub page: u32,
+    pub has_more: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Repository {
     pub id: u64,
     pub name: String,
@@ -19,6 +26,14 @@ pub struct Repository {
     pub html_url: String,
     pub language: Option<String>,
     pub topics: Option<Vec<String>>,
+    #[serde(default)]
+    pub has_releases: bool,
+    #[serde(default)]
+    pub fork: bool,
+    #[serde(default)]
+    pub archived: bool,
+    #[serde(default)]
+    pub private: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
