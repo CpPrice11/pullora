@@ -21,6 +21,7 @@ target/
 .DS_Store
 
 # Tauri
+src-tauri/gen/
 src-tauri/target/
 src-tauri/target*/
 
