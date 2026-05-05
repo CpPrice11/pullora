@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useReleases } from '../../hooks/useGitHub'
+import { useDownload } from '../../hooks/useDownload'
 import type { GitHubRelease, GitHubAsset } from '../../types'
+import DownloadProgressPanel from '../Install/DownloadProgress'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -19,13 +21,10 @@ function formatBytes(bytes: number) {
 }
 
 function pickBestAsset(assets: GitHubAsset[]): GitHubAsset | null {
-  // Prefer Windows exe/zip/msi on Windows, linux deb/AppImage/tar.gz on Linux
   const platform = navigator.platform.toLowerCase()
   const isWin = platform.includes('win')
-
   const winExt = ['.exe', '.msi', '.zip']
   const linExt = ['.appimage', '.deb', '.tar.gz', '.tar.xz']
-
   const preferred = isWin ? winExt : linExt
   for (const ext of preferred) {
     const match = assets.find((a) => a.name.toLowerCase().endsWith(ext))
@@ -36,12 +35,13 @@ function pickBestAsset(assets: GitHubAsset[]): GitHubAsset | null {
 
 function ReleaseSelector({ owner, repo, displayName, description, onClose }: ReleaseSelectorProps) {
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
+  const { downloads, download, cancel } = useDownload()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchReleases()
-  }, [fetchReleases])
+  useEffect(() => { fetchReleases() }, [fetchReleases])
 
   useEffect(() => {
     if (releases.length > 0 && !selectedRelease) {
@@ -56,10 +56,23 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
     setSelectedAsset(pickBestAsset(release.assets))
   }
 
-  const handleDownload = () => {
-    if (!selectedAsset) return
-    // TODO: Phase 3 — wire up Tauri download command
-    alert(`Download will be implemented in Phase 3!\n\nFile: ${selectedAsset.name}\nURL: ${selectedAsset.browser_download_url}`)
+  const handleDownload = async () => {
+    if (!selectedAsset || !selectedRelease) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      await download(
+        selectedAsset.browser_download_url,
+        selectedAsset.name,
+        owner,
+        repo,
+        selectedRelease.tag_name,
+      )
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -75,10 +88,7 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
 
         <div className="release-body">
           {loading && <p className="loading-text">Loading releases...</p>}
-
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
+          {error && <div className="error-message">{error}</div>}
 
           {!loading && releases.length === 0 && (
             <p className="no-releases">No releases found for this repository.</p>
@@ -137,13 +147,17 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
                 </p>
               )}
 
+              {downloadError && (
+                <div className="error-message">{downloadError}</div>
+              )}
+
               <div className="release-actions">
                 <button
                   onClick={handleDownload}
-                  disabled={!selectedAsset}
+                  disabled={!selectedAsset || downloading}
                   className="download-btn"
                 >
-                  ⬇ Download {selectedAsset?.name ?? ''}
+                  {downloading ? 'Starting...' : `⬇ Download ${selectedAsset?.name ?? ''}`}
                 </button>
                 <a
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}
@@ -156,6 +170,8 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
               </div>
             </>
           )}
+
+          <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
         </div>
       </div>
     </div>

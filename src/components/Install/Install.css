@@ -1,0 +1,112 @@
+.download-panel {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.download-panel-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.download-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.download-item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.download-item--completed {
+  border-color: var(--color-success);
+  background: #f0fff4;
+}
+
+.download-item--failed {
+  border-color: var(--color-error);
+  background: #fff0f0;
+}
+
+.download-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.download-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-status {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.cancel-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.cancel-btn:hover {
+  background: var(--color-border);
+  color: var(--color-error);
+  box-shadow: none;
+}
+
+.progress-bar-wrap {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.download-item--completed .progress-bar-fill {
+  background: var(--color-success);
+}
+
+.download-item--failed .progress-bar-fill {
+  background: var(--color-error);
+}
+
+.download-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.done-text  { color: var(--color-success); }
+.error-text { color: var(--color-error); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.download-pct { font-weight: 600; flex-shrink: 0; }

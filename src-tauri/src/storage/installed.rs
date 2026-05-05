@@ -58,7 +58,6 @@ pub fn list_installed(config_dir: &PathBuf) -> Result<Vec<InstalledApp>, Storage
     Ok(store.apps)
 }
 
-#[allow(dead_code)]
 pub fn add_version(
     config_dir: &PathBuf,
     owner: &str,
