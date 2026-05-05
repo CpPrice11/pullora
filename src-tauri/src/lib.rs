@@ -2,15 +2,18 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 mod commands;
+mod download;
 mod github;
 mod storage;
 
+use download::DownloadManager;
 use github::GitHubClient;
 use storage::{get_config_dir, settings::load_settings};
 
 pub struct AppState {
     pub github_client: Arc<Mutex<GitHubClient>>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
+    pub download_manager: Arc<DownloadManager>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -22,6 +25,7 @@ pub fn run() {
     let state = AppState {
         github_client: Arc::new(Mutex::new(GitHubClient::new(token))),
         settings: Arc::new(Mutex::new(settings)),
+        download_manager: Arc::new(DownloadManager::new()),
     };
 
     tauri::Builder::default()
@@ -52,6 +56,9 @@ pub fn run() {
             commands::installed::switch_version,
             commands::installed::uninstall_version,
             commands::installed::launch_app,
+            commands::download::start_download,
+            commands::download::get_downloads,
+            commands::download::cancel_download,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

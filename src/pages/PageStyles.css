@@ -5,8 +5,119 @@
   max-width: 1200px;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.page-header h2 {
+  margin: 0;
+}
+
 .page h2 {
   margin: 0 0 var(--spacing-md) 0;
+}
+
+.refresh-btn {
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.refresh-btn:hover {
+  background: var(--color-border);
+  box-shadow: none;
+}
+
+/* Version management */
+.version-list {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+}
+
+.version-row.active {
+  background: var(--color-primary-light);
+  border-left: 3px solid var(--color-primary);
+}
+
+.version-tag {
+  font-family: monospace;
+  font-weight: 600;
+  flex: 1;
+}
+
+.version-size {
+  color: var(--color-text-secondary);
+}
+
+.version-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.active-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.small-btn {
+  padding: 2px var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.small-btn:hover {
+  background: var(--color-border);
+  box-shadow: none;
+}
+
+.small-btn.danger {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.small-btn.danger:hover {
+  background: var(--color-error);
+  color: white;
+}
+
+/* Favorites */
+.fav-remove-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #f5c518;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  line-height: 1;
+}
+
+.fav-remove-btn:hover {
+  transform: scale(1.15);
+  background: none;
+  box-shadow: none;
+  color: var(--color-text-secondary);
 }
 
 /* Search Form */
