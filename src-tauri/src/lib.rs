@@ -5,6 +5,7 @@ mod commands;
 mod download;
 mod github;
 mod storage;
+mod version;
 
 use download::DownloadManager;
 use github::GitHubClient;
@@ -30,6 +31,8 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(state)
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -59,6 +62,8 @@ pub fn run() {
             commands::download::start_download,
             commands::download::get_downloads,
             commands::download::cancel_download,
+            commands::updates::check_for_updates,
+            commands::updates::open_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

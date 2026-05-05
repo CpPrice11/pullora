@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { pickDirectory } from '../../services/dialog'
 import './Modal.css'
 
 interface InstallationPathModalProps {
@@ -11,22 +12,18 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   const [error, setError] = useState('')
 
   const handleBrowse = async () => {
-    // TODO: Implement directory picker using Tauri file dialog
-    // For now, we'll show a placeholder
-    setSelectedPath('/home/user/.local/air-launcher/apps')
+    const dir = await pickDirectory()
+    if (dir) setSelectedPath(dir)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!selectedPath.trim()) {
       setError('Please select an installation directory')
       return
     }
-
     setLoading(true)
     setError('')
-
     try {
       await onPathSelected(selectedPath)
     } catch (err) {
@@ -39,13 +36,13 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Choose Installation Directory</h2>
+          <h2>Welcome to Air Launcher</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <p className="modal-description">
-            Select where you would like to install downloaded applications.
-            This directory will be created if it doesn't exist.
+            Choose where downloaded applications will be installed.
+            The folder will be created automatically if it doesn't exist.
           </p>
 
           <div className="form-group">
@@ -56,14 +53,10 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
                 type="text"
                 value={selectedPath}
                 onChange={(e) => setSelectedPath(e.target.value)}
-                placeholder="/home/user/.local/air-launcher/apps"
+                placeholder="Click Browse or type a path..."
                 disabled={loading}
               />
-              <button
-                type="button"
-                onClick={handleBrowse}
-                disabled={loading}
-              >
+              <button type="button" onClick={handleBrowse} disabled={loading}>
                 Browse...
               </button>
             </div>
@@ -72,17 +65,14 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
           {error && <div className="error-message">{error}</div>}
 
           <div className="modal-actions">
-            <button
-              type="submit"
-              disabled={loading || !selectedPath.trim()}
-            >
+            <button type="submit" disabled={loading || !selectedPath.trim()}>
               {loading ? 'Setting up...' : 'Continue'}
             </button>
           </div>
         </form>
 
         <p className="modal-footer-text">
-          You can change this directory later in the Settings.
+          You can change this directory later in Settings.
         </p>
       </div>
     </div>

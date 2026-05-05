@@ -1,0 +1,93 @@
+.update-banner {
+  background: #fff8e1;
+  border: 1px solid #f5c518;
+  border-left: 4px solid #f5c518;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.update-banner-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-base);
+}
+
+.update-icon {
+  font-size: 18px;
+}
+
+.update-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.update-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: rgba(255,255,255,0.7);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.update-name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 120px;
+}
+
+.update-versions {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.update-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.update-install-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 4px var(--spacing-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.update-install-btn:hover {
+  background: var(--color-primary-dark);
+}
+
+.update-dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.update-dismiss-btn:hover {
+  background: rgba(0,0,0,0.06);
+  box-shadow: none;
+  color: var(--color-text);
+}

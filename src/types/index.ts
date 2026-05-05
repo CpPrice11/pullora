@@ -70,6 +70,16 @@ export interface FavoriteApp {
   lastChecked?: string
 }
 
+// Update check
+export interface UpdateAvailable {
+  owner: string
+  repo: string
+  appName: string
+  currentVersion: string
+  latestVersion: string
+  releaseUrl: string
+}
+
 // Download progress
 export interface DownloadProgress {
   id: string
