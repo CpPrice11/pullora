@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReleases } from '../../hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
 import type { GitHubRelease, GitHubAsset } from '../../types'
@@ -12,6 +12,7 @@ interface ReleaseSelectorProps {
   displayName: string
   description?: string
   onClose: () => void
+  onInstalled?: () => void
 }
 
 function formatBytes(bytes: number) {
@@ -23,25 +24,39 @@ function formatBytes(bytes: number) {
 function pickBestAsset(assets: GitHubAsset[]): GitHubAsset | null {
   const platform = navigator.platform.toLowerCase()
   const isWin = platform.includes('win')
-  const winExt = ['.exe', '.msi', '.zip']
+  const winExt = ['.zip', '.exe', '.msi']
   const linExt = ['.appimage', '.deb', '.tar.gz', '.tar.xz']
   const preferred = isWin ? winExt : linExt
+
   for (const ext of preferred) {
-    const match = assets.find((a) => a.name.toLowerCase().endsWith(ext))
+    const match = assets.find((asset) =>
+      asset.name.toLowerCase().endsWith(ext),
+    )
     if (match) return match
   }
+
   return assets[0] ?? null
 }
 
-function ReleaseSelector({ owner, repo, displayName, description, onClose }: ReleaseSelectorProps) {
+function ReleaseSelector({
+  owner,
+  repo,
+  displayName,
+  description,
+  onClose,
+  onInstalled,
+}: ReleaseSelectorProps) {
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
   const { downloads, download, cancel } = useDownload()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const reportedCompletedDownloads = useRef<Set<string>>(new Set())
 
-  useEffect(() => { fetchReleases() }, [fetchReleases])
+  useEffect(() => {
+    fetchReleases()
+  }, [fetchReleases])
 
   useEffect(() => {
     if (releases.length > 0 && !selectedRelease) {
@@ -50,6 +65,18 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
       setSelectedAsset(pickBestAsset(first.assets))
     }
   }, [releases, selectedRelease])
+
+  useEffect(() => {
+    downloads.forEach((downloadItem) => {
+      if (
+        downloadItem.status === 'completed' &&
+        !reportedCompletedDownloads.current.has(downloadItem.id)
+      ) {
+        reportedCompletedDownloads.current.add(downloadItem.id)
+        onInstalled?.()
+      }
+    })
+  }, [downloads, onInstalled])
 
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
@@ -83,7 +110,9 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
             <h2>{displayName}</h2>
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <button className="close-btn" onClick={onClose}>
+            Close
+          </button>
         </div>
 
         <div className="release-body">
@@ -102,17 +131,17 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
                   id="release-select"
                   value={selectedRelease?.id ?? ''}
                   onChange={(e) => {
-                    const rel = releases.find((r) => r.id === Number(e.target.value))
-                    if (rel) handleReleaseChange(rel)
+                    const release = releases.find((item) => item.id === Number(e.target.value))
+                    if (release) handleReleaseChange(release)
                   }}
                 >
-                  {releases.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.tag_name}
-                      {r.prerelease ? ' (pre-release)' : ''}
-                      {r.draft ? ' (draft)' : ''}
-                      {r.published_at
-                        ? ` — ${new Date(r.published_at).toLocaleDateString()}`
+                  {releases.map((release) => (
+                    <option key={release.id} value={release.id}>
+                      {release.tag_name}
+                      {release.prerelease ? ' (pre-release)' : ''}
+                      {release.draft ? ' (draft)' : ''}
+                      {release.published_at
+                        ? ` - ${new Date(release.published_at).toLocaleDateString()}`
                         : ''}
                     </option>
                   ))}
@@ -127,14 +156,14 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
                     value={selectedAsset?.id ?? ''}
                     onChange={(e) => {
                       const asset = selectedRelease.assets.find(
-                        (a) => a.id === Number(e.target.value),
+                        (item) => item.id === Number(e.target.value),
                       )
                       if (asset) setSelectedAsset(asset)
                     }}
                   >
-                    {selectedRelease.assets.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({formatBytes(a.size)})
+                    {selectedRelease.assets.map((asset) => (
+                      <option key={asset.id} value={asset.id}>
+                        {asset.name} ({formatBytes(asset.size)})
                       </option>
                     ))}
                   </select>
@@ -157,7 +186,7 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
                   disabled={!selectedAsset || downloading}
                   className="download-btn"
                 >
-                  {downloading ? 'Starting...' : `⬇ Download ${selectedAsset?.name ?? ''}`}
+                  {downloading ? 'Starting...' : `Download ${selectedAsset?.name ?? ''}`}
                 </button>
                 <a
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}
@@ -165,7 +194,7 @@ function ReleaseSelector({ owner, repo, displayName, description, onClose }: Rel
                   rel="noreferrer"
                   className="view-release-link"
                 >
-                  View on GitHub ↗
+                  View on GitHub
                 </a>
               </div>
             </>

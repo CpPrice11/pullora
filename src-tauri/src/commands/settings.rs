@@ -1,7 +1,7 @@
 use tauri::State;
 
-use crate::storage::settings::{save_settings, AppSettings};
 use crate::storage::get_config_dir;
+use crate::storage::settings::{save_settings, AppSettings};
 use crate::AppState;
 
 #[tauri::command]
@@ -28,10 +28,7 @@ pub async fn update_settings(
 }
 
 #[tauri::command]
-pub async fn set_installation_path(
-    path: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn set_installation_path(path: String, state: State<'_, AppState>) -> Result<(), String> {
     std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
 
     let mut settings = state.settings.lock().await;

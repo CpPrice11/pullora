@@ -22,7 +22,10 @@ struct FavoritesStore {
 
 impl Default for FavoritesStore {
     fn default() -> Self {
-        Self { version: 1, favorites: vec![] }
+        Self {
+            version: 1,
+            favorites: vec![],
+        }
     }
 }
 
@@ -52,7 +55,9 @@ pub fn list_favorites(config_dir: &PathBuf) -> Result<Vec<FavoriteApp>, StorageE
 pub fn add_favorite(config_dir: &PathBuf, app: FavoriteApp) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", app.owner, app.repo);
-    store.favorites.retain(|f| format!("{}/{}", f.owner, f.repo) != key);
+    store
+        .favorites
+        .retain(|f| format!("{}/{}", f.owner, f.repo) != key);
     store.favorites.push(app);
     save_store(config_dir, &store)
 }
@@ -60,13 +65,19 @@ pub fn add_favorite(config_dir: &PathBuf, app: FavoriteApp) -> Result<(), Storag
 pub fn remove_favorite(config_dir: &PathBuf, owner: &str, repo: &str) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", owner, repo);
-    store.favorites.retain(|f| format!("{}/{}", f.owner, f.repo) != key);
+    store
+        .favorites
+        .retain(|f| format!("{}/{}", f.owner, f.repo) != key);
     save_store(config_dir, &store)
 }
 
 pub fn is_favorite(config_dir: &PathBuf, owner: &str, repo: &str) -> bool {
     let key = format!("{}/{}", owner, repo);
     load_store(config_dir)
-        .map(|s| s.favorites.iter().any(|f| format!("{}/{}", f.owner, f.repo) == key))
+        .map(|s| {
+            s.favorites
+                .iter()
+                .any(|f| format!("{}/{}", f.owner, f.repo) == key)
+        })
         .unwrap_or(false)
 }

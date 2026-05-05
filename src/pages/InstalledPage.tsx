@@ -13,6 +13,7 @@ function InstalledPage() {
   const { downloads, cancel } = useDownload()
 
   const loadApps = useCallback(async () => {
+    setError(null)
     try {
       const data = await getInstalledApps()
       setApps(data)
@@ -23,7 +24,9 @@ function InstalledPage() {
     }
   }, [])
 
-  useEffect(() => { loadApps() }, [loadApps])
+  useEffect(() => {
+    loadApps()
+  }, [loadApps])
 
   const handleSwitch = async (owner: string, repo: string, tag: string) => {
     await switchVersion(owner, repo, tag)
@@ -48,10 +51,10 @@ function InstalledPage() {
     <div className="page">
       <div className="page-header">
         <h2>Installed Applications</h2>
-        <button onClick={loadApps} className="refresh-btn">↻ Refresh</button>
+        <button onClick={loadApps} className="refresh-btn">Refresh</button>
       </div>
 
-      {error && <div className="error-banner">⚠ {error}</div>}
+      {error && <div className="error-banner">Warning: {error}</div>}
 
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
 
@@ -61,7 +64,7 @@ function InstalledPage() {
         {!loading && apps.length === 0 && (
           <div className="empty-state">
             <p>No applications installed yet</p>
-            <p>Go to Search to find and install applications from GitHub</p>
+            <p>Go to Library to find and install applications from GitHub</p>
           </div>
         )}
 
@@ -80,7 +83,7 @@ function InstalledPage() {
 
               <div className="app-actions">
                 <button onClick={() => handleLaunch(app.owner, app.repo)}>
-                  ▶ Launch
+                  Launch
                 </button>
                 <button
                   onClick={() => setExpandedApp(isExpanded ? null : key)}
@@ -92,25 +95,32 @@ function InstalledPage() {
 
               {isExpanded && (
                 <div className="version-list">
-                  {app.versions.map((v) => (
-                    <div key={v.tag} className={`version-row ${v.tag === app.activeVersion ? 'active' : ''}`}>
-                      <span className="version-tag">{v.tag}</span>
-                      <span className="version-size">{(v.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                  {app.versions.map((version) => (
+                    <div
+                      key={version.tag}
+                      className={`version-row ${
+                        version.tag === app.activeVersion ? 'active' : ''
+                      }`}
+                    >
+                      <span className="version-tag">{version.tag}</span>
+                      <span className="version-size">
+                        {(version.sizeBytes / 1024 / 1024).toFixed(1)} MB
+                      </span>
                       <div className="version-actions">
-                        {v.tag !== app.activeVersion && (
+                        {version.tag !== app.activeVersion && (
                           <button
                             className="small-btn"
-                            onClick={() => handleSwitch(app.owner, app.repo, v.tag)}
+                            onClick={() => handleSwitch(app.owner, app.repo, version.tag)}
                           >
                             Switch
                           </button>
                         )}
-                        {v.tag === app.activeVersion && (
+                        {version.tag === app.activeVersion && (
                           <span className="active-label">Active</span>
                         )}
                         <button
                           className="small-btn danger"
-                          onClick={() => handleUninstall(app.owner, app.repo, v.tag)}
+                          onClick={() => handleUninstall(app.owner, app.repo, version.tag)}
                         >
                           Remove
                         </button>

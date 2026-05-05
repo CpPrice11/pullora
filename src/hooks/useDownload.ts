@@ -37,14 +37,8 @@ export function useDownload() {
       owner: string,
       repo: string,
       tag: string,
-    ): Promise<string | null> => {
-      try {
-        const id = await startDownload(url, fileName, owner, repo, tag)
-        return id
-      } catch (err) {
-        console.error('Download failed:', err)
-        return null
-      }
+    ): Promise<string> => {
+      return startDownload(url, fileName, owner, repo, tag)
     },
     [],
   )

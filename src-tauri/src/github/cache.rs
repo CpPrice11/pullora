@@ -33,9 +33,9 @@ impl ApiCache {
             search_cache: HashMap::new(),
             owner_repositories_cache: HashMap::new(),
             release_cache: HashMap::new(),
-            search_ttl: 3600,   // 1 hour for search results
+            search_ttl: 3600, // 1 hour for search results
             owner_repositories_ttl: 3600,
-            release_ttl: 300,   // 5 minutes for release data
+            release_ttl: 300, // 5 minutes for release data
         }
     }
 

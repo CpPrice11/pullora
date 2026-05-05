@@ -39,9 +39,7 @@ impl GitHubClient {
     }
 
     fn auth_header(&self) -> Option<String> {
-        self.token
-            .as_ref()
-            .map(|t| format!("Bearer {}", t))
+        self.token.as_ref().map(|t| format!("Bearer {}", t))
     }
 
     pub async fn search_repositories(
@@ -159,11 +157,7 @@ impl GitHubClient {
         Ok(data)
     }
 
-    pub async fn get_releases(
-        &self,
-        owner: &str,
-        repo: &str,
-    ) -> Result<Vec<Release>, String> {
+    pub async fn get_releases(&self, owner: &str, repo: &str) -> Result<Vec<Release>, String> {
         let cache_key = format!("releases:{}/{}", owner, repo);
 
         {

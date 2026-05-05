@@ -29,23 +29,23 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
     <div className="download-panel">
       <h3 className="download-panel-title">Downloads</h3>
       <div className="download-list">
-        {downloads.map((dl) => (
+        {downloads.map((download) => (
           <div
-            key={dl.id}
-            className={`download-item download-item--${dl.status}`}
+            key={download.id}
+            className={`download-item download-item--${download.status}`}
           >
             <div className="download-header">
-              <span className="download-name" title={dl.fileName}>
-                {dl.fileName}
+              <span className="download-name" title={download.fileName}>
+                {download.fileName}
               </span>
-              <span className="download-status">{statusLabel(dl.status)}</span>
-              {(dl.status === 'downloading' || dl.status === 'pending') && (
+              <span className="download-status">{statusLabel(download.status)}</span>
+              {(download.status === 'downloading' || download.status === 'pending') && (
                 <button
                   className="cancel-btn"
-                  onClick={() => onCancel(dl.id)}
+                  onClick={() => onCancel(download.id)}
                   title="Cancel download"
                 >
-                  ✕
+                  Cancel
                 </button>
               )}
             </div>
@@ -53,23 +53,23 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
             <div className="progress-bar-wrap">
               <div
                 className="progress-bar-fill"
-                style={{ width: `${dl.progress}%` }}
+                style={{ width: `${download.progress}%` }}
               />
             </div>
 
             <div className="download-meta">
-              {dl.status === 'downloading' && dl.totalSize > 0 && (
+              {download.status === 'downloading' && download.totalSize > 0 && (
                 <span>
-                  {formatBytes(dl.downloadedSize)} / {formatBytes(dl.totalSize)}
+                  {formatBytes(download.downloadedSize)} / {formatBytes(download.totalSize)}
                 </span>
               )}
-              {dl.status === 'completed' && (
-                <span className="done-text">✓ Installed successfully</span>
+              {download.status === 'completed' && (
+                <span className="done-text">Installed successfully</span>
               )}
-              {dl.status === 'failed' && (
-                <span className="error-text">✕ {dl.error ?? 'Unknown error'}</span>
+              {download.status === 'failed' && (
+                <span className="error-text">{download.error ?? 'Unknown error'}</span>
               )}
-              <span className="download-pct">{Math.round(dl.progress)}%</span>
+              <span className="download-pct">{Math.round(download.progress)}%</span>
             </div>
           </div>
         ))}
