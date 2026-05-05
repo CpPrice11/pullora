@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npm view *)",
+      "Bash(cargo --version)",
+      "Bash(rustc --version)",
+      "Bash(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs)",
+      "Bash(sh -s -- -y)",
+      "PowerShell(cargo --version)",
+      "PowerShell(rustc --version)",
+      "PowerShell($env:PATH = $env:PATH + \";$env:USERPROFILE\\\\.cargo\\\\bin\"; cargo --version; rustc --version)",
+      "Bash(export PATH=\"$PATH:$HOME/.cargo/bin\")",
+      "Bash(cargo install *)",
+      "Bash(rustup default *)",
+      "Bash(cargo tauri *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
