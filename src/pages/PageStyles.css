@@ -16,6 +16,12 @@
   margin: 0;
 }
 
+.page-subtitle {
+  margin: var(--spacing-xs) 0 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 .page h2 {
   margin: 0 0 var(--spacing-md) 0;
 }

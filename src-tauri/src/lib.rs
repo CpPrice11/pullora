@@ -45,6 +45,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::github::search_repositories,
+            commands::github::list_owner_repositories,
             commands::github::get_releases,
             commands::github::clear_github_cache,
             commands::settings::get_settings,

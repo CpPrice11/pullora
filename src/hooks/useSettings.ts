@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   installationPath: '',
   autoUpdateCheck: true,
   checkIntervalHours: 24,
+  githubOwner: '',
   theme: 'auto',
   language: 'en',
 }

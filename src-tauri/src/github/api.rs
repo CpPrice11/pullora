@@ -2,7 +2,7 @@ use reqwest::Client;
 use std::sync::{Arc, Mutex};
 
 use super::cache::ApiCache;
-use super::models::{Release, SearchResponse};
+use super::models::{OwnerRepositoriesResponse, Release, Repository, SearchResponse};
 
 pub struct GitHubClient {
     client: Client,
@@ -85,6 +85,75 @@ impl GitHubClient {
         {
             let mut cache = self.cache.lock().unwrap();
             cache.set_search(cache_key, data.clone());
+        }
+
+        Ok(data)
+    }
+
+    pub async fn list_owner_repositories(
+        &self,
+        owner: &str,
+        page: u32,
+        releases_only: bool,
+    ) -> Result<OwnerRepositoriesResponse, String> {
+        let normalized_owner = owner.trim().to_lowercase();
+        if normalized_owner.is_empty() {
+            return Err("GitHub owner is required.".to_string());
+        }
+
+        let cache_key = format!("owner:{}:{}:{}", normalized_owner, page, releases_only);
+
+        {
+            let cache = self.cache.lock().unwrap();
+            if let Some(cached) = cache.get_owner_repositories(&cache_key) {
+                return Ok(cached.clone());
+            }
+        }
+
+        let per_page = 30;
+        let url = format!(
+            "https://api.github.com/users/{}/repos?type=owner&sort=updated&direction=desc&per_page={}&page={}",
+            urlencoding::encode(&normalized_owner),
+            per_page,
+            page
+        );
+
+        let mut req = self.client.get(&url);
+        if let Some(auth) = self.auth_header() {
+            req = req.header(reqwest::header::AUTHORIZATION, auth);
+        }
+
+        let response = req.send().await.map_err(|e| e.to_string())?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            if status.as_u16() == 404 {
+                return Err(format!("GitHub owner \"{}\" was not found.", owner.trim()));
+            }
+            if status.as_u16() == 403 {
+                return Err("GitHub API rate limit exceeded. Try again later.".to_string());
+            }
+            return Err(format!("GitHub API error {}: {}", status, body));
+        }
+
+        let raw_items: Vec<Repository> = response.json().await.map_err(|e| e.to_string())?;
+        let has_more = raw_items.len() == per_page as usize;
+        let items = raw_items
+            .into_iter()
+            .filter(|repo| !repo.private && !repo.fork && !repo.archived)
+            .filter(|repo| !releases_only || repo.has_releases)
+            .collect();
+
+        let data = OwnerRepositoriesResponse {
+            items,
+            page,
+            has_more,
+        };
+
+        {
+            let mut cache = self.cache.lock().unwrap();
+            cache.set_owner_repositories(cache_key, data.clone());
         }
 
         Ok(data)

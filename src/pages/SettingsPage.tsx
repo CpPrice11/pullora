@@ -6,6 +6,15 @@ import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import './PageStyles.css'
 
+const FALLBACK_SETTINGS: AppSettings = {
+  installationPath: '',
+  autoUpdateCheck: true,
+  checkIntervalHours: 24,
+  githubOwner: '',
+  theme: 'auto',
+  language: 'en',
+}
+
 function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,14 +26,7 @@ function SettingsPage() {
     getSettings()
       .then(setSettings)
       .catch(() => {
-        // Browser preview fallback
-        setSettings({
-          installationPath: '',
-          autoUpdateCheck: true,
-          checkIntervalHours: 24,
-          theme: 'auto',
-          language: 'en',
-        })
+        setSettings(FALLBACK_SETTINGS)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -57,7 +59,11 @@ function SettingsPage() {
   }
 
   if (loading || !settings) {
-    return <div className="page"><p>Loading settings...</p></div>
+    return (
+      <div className="page">
+        <p>Loading settings...</p>
+      </div>
+    )
   }
 
   return (
@@ -65,8 +71,6 @@ function SettingsPage() {
       <h2>Settings</h2>
 
       <div className="settings-form">
-
-        {/* Installation path */}
         <section className="settings-section">
           <h3>Installation</h3>
           <div className="form-group">
@@ -76,7 +80,9 @@ function SettingsPage() {
                 id="installPath"
                 type="text"
                 value={settings.installationPath}
-                onChange={(e) => setSettings({ ...settings, installationPath: e.target.value })}
+                onChange={(e) =>
+                  setSettings({ ...settings, installationPath: e.target.value })
+                }
                 placeholder="Choose a folder..."
               />
               <button type="button" onClick={handleBrowse}>
@@ -89,14 +95,36 @@ function SettingsPage() {
                   onClick={() => openDir(settings.installationPath).catch(() => {})}
                   title="Open in file explorer"
                 >
-                  Open ↗
+                  Open
                 </button>
               )}
             </div>
           </div>
         </section>
 
-        {/* Auto-update */}
+        <section className="settings-section">
+          <h3>GitHub</h3>
+          <div className="form-group">
+            <label htmlFor="githubOwner">Public repository owner</label>
+            <input
+              id="githubOwner"
+              type="text"
+              value={settings.githubOwner ?? ''}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  githubOwner: e.target.value.trim() || undefined,
+                })
+              }
+              placeholder="your-github-username"
+              autoComplete="off"
+            />
+            <p className="help-text">
+              Air Launcher will show public repositories from this owner that have GitHub Releases.
+            </p>
+          </div>
+        </section>
+
         <section className="settings-section">
           <h3>Updates</h3>
           <div className="form-group">
@@ -121,7 +149,10 @@ function SettingsPage() {
               max={168}
               value={settings.checkIntervalHours}
               onChange={(e) =>
-                setSettings({ ...settings, checkIntervalHours: Number(e.target.value) })
+                setSettings({
+                  ...settings,
+                  checkIntervalHours: Number(e.target.value),
+                })
               }
               style={{ width: 100 }}
               disabled={!settings.autoUpdateCheck}
@@ -129,29 +160,6 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* GitHub token */}
-        <section className="settings-section">
-          <h3>GitHub</h3>
-          <div className="form-group">
-            <label htmlFor="githubToken">Personal Access Token (optional)</label>
-            <input
-              id="githubToken"
-              type="password"
-              value={settings.githubToken ?? ''}
-              onChange={(e) =>
-                setSettings({ ...settings, githubToken: e.target.value || undefined })
-              }
-              placeholder="ghp_..."
-              autoComplete="off"
-            />
-            <p className="help-text">
-              Increases API rate limit from 60 to 5 000 requests/hour. Generate at{' '}
-              <em>github.com → Settings → Developer settings → Personal access tokens</em>.
-            </p>
-          </div>
-        </section>
-
-        {/* Appearance */}
         <section className="settings-section">
           <h3>Appearance</h3>
           <div className="form-group">
@@ -160,7 +168,10 @@ function SettingsPage() {
               id="theme"
               value={settings.theme}
               onChange={(e) =>
-                setSettings({ ...settings, theme: e.target.value as AppSettings['theme'] })
+                setSettings({
+                  ...settings,
+                  theme: e.target.value as AppSettings['theme'],
+                })
               }
               style={{ width: 160 }}
             >
@@ -171,16 +182,14 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* Save */}
-        {error && <div className="error-banner">⚠ {error}</div>}
+        {error && <div className="error-banner">Warning: {error}</div>}
 
         <div className="form-actions">
           <button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Settings'}
+            {saving ? 'Saving...' : saved ? 'Saved' : 'Save Settings'}
           </button>
         </div>
 
-        {/* Danger zone */}
         <section className="danger-zone">
           <h3>Danger Zone</h3>
           <button className="danger-btn" onClick={handleClearCache}>
