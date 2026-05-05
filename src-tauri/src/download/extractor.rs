@@ -30,11 +30,12 @@ fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
     let file = fs::File::open(archive_path).map_err(|e| e.to_string())?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
 
-    let mut main_exe: Option<String> = None;
+    let mut main_exe: Option<(String, u8)> = None;
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
-        let out_path = dest_dir.join(entry.name());
+        let entry_name = entry.name().to_string();
+        let out_path = dest_dir.join(&entry_name);
 
         if entry.is_dir() {
             fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
@@ -46,13 +47,14 @@ fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
             io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
             make_executable(&out_path).ok();
 
-            if is_executable_name(entry.name()) && main_exe.is_none() {
-                main_exe = Some(entry.name().to_string());
+            let score = executable_score(&entry_name);
+            if score > 0 && main_exe.as_ref().map_or(true, |(_, s)| score > *s) {
+                main_exe = Some((entry_name, score));
             }
         }
     }
 
-    Ok(main_exe.unwrap_or_default())
+    Ok(main_exe.map(|(name, _)| name).unwrap_or_default())
 }
 
 fn extract_tar_gz(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
@@ -68,7 +70,7 @@ fn extract_tar(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
 
 fn extract_tar_from_reader<R: io::Read>(reader: R, dest_dir: &Path) -> Result<String, String> {
     let mut archive = tar::Archive::new(reader);
-    let mut main_exe: Option<String> = None;
+    let mut main_exe: Option<(String, u8)> = None;
 
     for entry in archive.entries().map_err(|e| e.to_string())? {
         let mut entry = entry.map_err(|e| e.to_string())?;
@@ -85,23 +87,26 @@ fn extract_tar_from_reader<R: io::Read>(reader: R, dest_dir: &Path) -> Result<St
             make_executable(&out_path).ok();
 
             let name = path.to_string_lossy().to_string();
-            if is_executable_name(&name) && main_exe.is_none() {
-                main_exe = Some(name);
+            let score = executable_score(&name);
+            if score > 0 && main_exe.as_ref().map_or(true, |(_, s)| score > *s) {
+                main_exe = Some((name, score));
             }
         }
     }
 
-    Ok(main_exe.unwrap_or_default())
+    Ok(main_exe.map(|(name, _)| name).unwrap_or_default())
 }
 
-fn is_executable_name(name: &str) -> bool {
+fn executable_score(name: &str) -> u8 {
     let lower = name.to_lowercase();
-    // Exclude known non-executable extensions
-    let non_exe = [".dll", ".so", ".dylib", ".md", ".txt", ".LICENSE", ".sh", ".bat"];
-    let ends_with_non_exe = non_exe.iter().any(|ext| lower.ends_with(ext));
-    !ends_with_non_exe && !lower.contains('/')
-        || lower.ends_with(".exe")
-        || lower.ends_with(".appimage")
+    // Prefer root-level EXEs over nested ones
+    if lower.ends_with(".exe") && !lower.contains('/') && !lower.contains('\\') {
+        2
+    } else if lower.ends_with(".exe") || lower.ends_with(".appimage") {
+        1
+    } else {
+        0
+    }
 }
 
 #[cfg(unix)]

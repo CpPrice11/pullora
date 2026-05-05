@@ -4,6 +4,29 @@ use crate::storage::installed::{list_installed, set_active_version, remove_versi
 use crate::storage::get_config_dir;
 use crate::AppState;
 
+fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
+    fn scan(dir: &std::path::Path, best: &mut Option<std::path::PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan(&path, best);
+            } else if path.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("exe")).unwrap_or(false) {
+                // Prefer shorter paths (fewer directory levels = closer to root)
+                let is_better = best.as_ref().map_or(true, |b: &std::path::PathBuf| {
+                    path.components().count() < b.components().count()
+                });
+                if is_better {
+                    *best = Some(path);
+                }
+            }
+        }
+    }
+    let mut best = None;
+    scan(dir, &mut best);
+    best
+}
+
 #[tauri::command]
 pub async fn get_installed_apps(_state: State<'_, AppState>) -> Result<Vec<InstalledApp>, String> {
     let config_dir = get_config_dir();
@@ -67,16 +90,22 @@ pub async fn launch_app(
     let install_path = settings.installation_path.as_ref()
         .ok_or("Installation path not configured")?;
 
-    let exe_path = std::path::PathBuf::from(install_path)
+    let version_dir = std::path::PathBuf::from(install_path)
         .join(format!("{}-{}", owner, repo))
-        .join(&version.tag)
-        .join(&version.executable);
+        .join(&version.tag);
 
-    if !exe_path.exists() {
-        return Err(format!("Executable not found: {}", exe_path.display()));
-    }
+    let exe_path = version_dir.join(&version.executable);
 
-    std::process::Command::new(&exe_path)
+    let resolved = if exe_path.exists() {
+        exe_path
+    } else {
+        // Fallback: scan version dir for any .exe
+        find_exe_in_dir(&version_dir)
+            .ok_or_else(|| format!("No executable found in {}", version_dir.display()))?
+    };
+
+    std::process::Command::new(&resolved)
+        .current_dir(resolved.parent().unwrap_or(&version_dir))
         .spawn()
         .map_err(|e| format!("Failed to launch: {}", e))?;
 
