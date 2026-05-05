@@ -36,21 +36,14 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    },
-    "nsis": {
-      "displayLanguageSelector": false,
-      "languages": ["English"],
-      "installerIcon": "icons/icon.ico",
-      "headerImage": null,
-      "sidebarImage": null,
-      "installMode": "currentUser",
-      "shortcutName": "Air Launcher",
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "perMachineInstallMode": false
+      "timestampUrl": "",
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico"
+      }
     }
   }
 }
