@@ -12,6 +12,48 @@ The project should not be rewritten to another language unless the product goals
 - Keep the UI fast, beautiful, and focused on a library/launcher experience.
 - Avoid GitHub OAuth or private repository access for the first version.
 
+## Release 0.2.0: Fluent Design
+
+Goal: ship a focused design/UX release with Figma as the source of truth before code changes.
+
+Figma source of truth:
+
+- Create or update `Air Launcher Fluent Redesign` in Figma before implementing UI changes.
+- Cover the five main screens: Library, Installed, Favorites, Settings, and About.
+- Include light, dark, and auto-theme examples.
+- Include key states: loading, empty, error, hover, selected, active version, update available, and rollback/update.
+- Do not use Canva for app UI design; Figma is the UI/layout/spec artifact.
+
+UI direction:
+
+- Keep a practical Windows 11 Fluent style: Segoe UI, compact layout, mica-like surfaces, calm borders, 8px controls, 12px panels.
+- Header contains only the logo, `Air Launcher`, and the update/check action.
+- Sidebar uses icon + label navigation without explanatory subtitles.
+- Library keeps update discovery inside the existing Library filter; do not restore a separate Updates sidebar page.
+- Repository cards should feel closer to a Windows app list: compact metadata, clear status chips, and stronger primary actions.
+
+UX polishing:
+
+- GitHub errors show a short reason and one clear retry action.
+- Empty Library and no-release states should feel intentional, not broken.
+- Settings keeps autosave, visible saving/saved/error status, and no save button.
+- About focuses on current launcher version, launcher releases, active state, update, rollback, and retry.
+- Add lightweight micro-interactions for navigation, cards, modals, banners, and theme changes while respecting `prefers-reduced-motion`.
+
+Implementation notes:
+
+- Keep the current Tauri + Rust + React + TypeScript stack.
+- Do not add a heavy UI framework.
+- Do not change GitHub owner/public repository logic, install/update backend, self-update backend, or release behavior for this design release unless a user-facing message needs to be shortened.
+- Main code work should stay around CSS tokens, layout/sidebar/header styles, repository cards, segmented controls, settings panels, about release rows, and modal styling.
+- Bump the app version to `0.2.0` only after the Figma design is approved, implemented, verified, and a Windows EXE is built.
+
+Release checklist:
+
+- Figma visual review: Library, Library empty/error/loading, Installed, Favorites, Settings light/dark/auto, About launcher versions.
+- Code checks: `npx tsc --noEmit`, production frontend build outside Git, `cargo check` with external `cargo-target`, Tauri EXE build, EXE smoke-test.
+- Visual QA: light theme, dark theme, auto theme, `1000x700` minimum desktop window, wide desktop viewport, no overlapping text in buttons/cards/sidebar.
+
 ## Progress Log
 
 Completed:
