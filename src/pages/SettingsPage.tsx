@@ -5,16 +5,8 @@ import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
+import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 import './PageStyles.css'
-
-const FALLBACK_SETTINGS: AppSettings = {
-  installationPath: '',
-  autoUpdateCheck: true,
-  checkIntervalHours: 24,
-  githubOwner: 'CpPrice11',
-  theme: 'auto',
-  language: 'uk',
-}
 
 function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -26,12 +18,13 @@ function SettingsPage() {
   useEffect(() => {
     getSettings()
       .then((loadedSettings) => {
-        setSettings(loadedSettings)
-        applyThemePreference(loadedSettings.theme)
+        const normalizedSettings = normalizeSettings(loadedSettings)
+        setSettings(normalizedSettings)
+        applyThemePreference(normalizedSettings.theme)
       })
       .catch(() => {
-        setSettings(FALLBACK_SETTINGS)
-        applyThemePreference(FALLBACK_SETTINGS.theme)
+        setSettings(DEFAULT_SETTINGS)
+        applyThemePreference(DEFAULT_SETTINGS.theme)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -40,12 +33,10 @@ function SettingsPage() {
     if (!settings) return
 
     const previousSettings = settings
-    const nextSettings = {
+    const nextSettings = normalizeSettings({
       ...settings,
-      githubOwner: 'CpPrice11',
-      language: settings.language || 'uk',
       theme,
-    }
+    })
 
     setSettings(nextSettings)
     applyThemePreference(theme, true)
@@ -76,11 +67,7 @@ function SettingsPage() {
     setSaving(true)
     setError(null)
     try {
-      const normalizedSettings = {
-        ...settings,
-        githubOwner: 'CpPrice11',
-        language: settings.language || 'uk',
-      }
+      const normalizedSettings = normalizeSettings(settings)
       await updateSettings(normalizedSettings)
       setSettings(normalizedSettings)
       setSaved(true)
@@ -95,6 +82,27 @@ function SettingsPage() {
   const handleClearCache = async () => {
     await clearGithubCache().catch(() => {})
     alert('Кеш очищено')
+  }
+
+  const handleResetSettings = async () => {
+    if (!window.confirm('Скинути всі налаштування до стандартних?')) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
+      await updateSettings(resetSettings)
+      setSettings(resetSettings)
+      applyThemePreference(resetSettings.theme, true)
+      notifyThemePreference(resetSettings.theme)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не вдалося скинути налаштування')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading || !settings) {
@@ -203,6 +211,9 @@ function SettingsPage() {
 
         <section className="danger-zone">
           <h3>Небезпечна зона</h3>
+          <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
+            Скинути налаштування
+          </button>
           <button className="danger-btn" onClick={handleClearCache}>
             Очистити API-кеш
           </button>

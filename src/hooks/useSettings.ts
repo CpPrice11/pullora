@@ -6,24 +6,7 @@ import {
   updateSettings as saveSettings,
   checkIsFirstLaunch,
 } from '../services/settings'
-
-const DEFAULT_SETTINGS: AppSettings = {
-  installationPath: '',
-  autoUpdateCheck: true,
-  checkIntervalHours: 24,
-  githubOwner: 'CpPrice11',
-  theme: 'auto',
-  language: 'uk',
-}
-
-function normalizeSettings(settings: AppSettings): AppSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-    githubOwner: DEFAULT_SETTINGS.githubOwner,
-    language: settings.language || DEFAULT_SETTINGS.language,
-  }
-}
+import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 
 export function useSettings() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)

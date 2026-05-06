@@ -47,11 +47,12 @@ export interface GitHubAsset {
 
 // App settings — matches Rust AppSettings (Tauri returns snake_case by default, but serde renames to camelCase via Tauri)
 export interface AppSettings {
+  version?: number
   installationPath: string
   autoUpdateCheck: boolean
   checkIntervalHours: number
   githubOwner?: string
-  githubToken?: string
+  githubToken?: string | null
   theme: 'light' | 'dark' | 'auto'
   language: string
 }
