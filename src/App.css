@@ -34,6 +34,34 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
+:root[data-theme='dark'] {
+  --color-primary: #4f9cff;
+  --color-primary-dark: #2f7fe6;
+  --color-primary-light: #14345c;
+  --color-bg: #101418;
+  --color-bg-secondary: #171d23;
+  --color-text: #f3f6f8;
+  --color-text-secondary: #a8b3bd;
+  --color-border: #2b3540;
+  --color-success: #3ccf7a;
+  --color-error: #ff6b75;
+  --color-warning: #ffd166;
+  --color-info: #5ec7e8;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 18px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='dark'] button {
+  color: #ffffff;
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select {
+  background-color: #111820;
+}
+
 * {
   margin: 0;
   padding: 0;

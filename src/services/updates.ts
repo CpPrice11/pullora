@@ -8,3 +8,10 @@ export async function checkForUpdates(): Promise<UpdateAvailable[]> {
 export async function openDir(path: string): Promise<void> {
   return callTauri('open_dir', { path })
 }
+
+export async function installLauncherRelease(
+  version: string,
+  assetUrl: string,
+): Promise<void> {
+  return callTauri('install_launcher_release', { version, assetUrl })
+}

@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
 import { getReleases } from '../services/github'
+import { installLauncherRelease } from '../services/updates'
 import type { GitHubRelease } from '../types'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
+const CURRENT_VERSION = 'v0.1.3'
 
 function AboutPage() {
   const [releases, setReleases] = useState<GitHubRelease[]>([])
   const [loadingReleases, setLoadingReleases] = useState(true)
+  const [installingVersion, setInstallingVersion] = useState<string | null>(null)
+  const [installError, setInstallError] = useState<string | null>(null)
 
   useEffect(() => {
     getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
@@ -16,6 +20,28 @@ function AboutPage() {
       .catch(() => setReleases([]))
       .finally(() => setLoadingReleases(false))
   }, [])
+
+  const handleActivateRelease = async (release: GitHubRelease) => {
+    const asset = release.assets.find((item) =>
+      item.name.toLowerCase().endsWith('.exe'),
+    )
+
+    if (!asset) {
+      setInstallError('У цьому релізі немає EXE-файлу.')
+      return
+    }
+
+    setInstallError(null)
+    setInstallingVersion(release.tag_name)
+    try {
+      await installLauncherRelease(release.tag_name, asset.browser_download_url)
+    } catch (err) {
+      setInstallError(
+        err instanceof Error ? err.message : 'Не вдалося активувати версію лаунчера.',
+      )
+      setInstallingVersion(null)
+    }
+  }
 
   return (
     <div className="page">
@@ -57,7 +83,7 @@ function AboutPage() {
             </div>
             <div>
               <dt>Поточна версія</dt>
-              <dd>0.1.2</dd>
+              <dd>{CURRENT_VERSION.replace(/^v/, '')}</dd>
             </div>
             <div>
               <dt>Стек</dt>
@@ -68,6 +94,7 @@ function AboutPage() {
 
         <section className="about-panel about-panel-wide">
           <h3>Релізи Air Launcher</h3>
+          {installError && <div className="error-banner">Увага: {installError}</div>}
           {loadingReleases && <p>Завантажуємо релізи...</p>}
           {!loadingReleases && releases.length === 0 && (
             <p>Релізи лаунчера поки що не вдалося завантажити.</p>
@@ -75,20 +102,36 @@ function AboutPage() {
           {!loadingReleases && releases.length > 0 && (
             <div className="about-release-list">
               {releases.map((release) => (
-                <a
+                <div
                   key={release.id}
-                  className="about-release-link"
-                  href={`https://github.com/${LAUNCHER_OWNER}/${LAUNCHER_REPO}/releases/tag/${release.tag_name}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  className={`about-release-link ${
+                    release.tag_name === CURRENT_VERSION ? 'active' : ''
+                  }`}
                 >
-                  <span>{release.tag_name}</span>
-                  <span>
-                    {release.published_at
-                      ? new Date(release.published_at).toLocaleDateString('uk-UA')
-                      : 'без дати'}
-                  </span>
-                </a>
+                  <div>
+                    <span>{release.tag_name}</span>
+                    <span>
+                      {release.published_at
+                        ? new Date(release.published_at).toLocaleDateString('uk-UA')
+                        : 'без дати'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    disabled={
+                      release.tag_name === CURRENT_VERSION ||
+                      installingVersion !== null
+                    }
+                    onClick={() => handleActivateRelease(release)}
+                  >
+                    {release.tag_name === CURRENT_VERSION
+                      ? 'Активна'
+                      : installingVersion === release.tag_name
+                        ? 'Активуємо...'
+                        : 'Активувати'}
+                  </button>
+                </div>
               ))}
             </div>
           )}

@@ -30,6 +30,22 @@ function App() {
   const [updateTarget, setUpdateTarget] = useState<UpdateAvailable | null>(null)
 
   useEffect(() => {
+    const root = document.documentElement
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+
+    const applyTheme = () => {
+      const theme = settings.theme === 'auto'
+        ? media.matches ? 'dark' : 'light'
+        : settings.theme
+      root.dataset.theme = theme
+    }
+
+    applyTheme()
+    media.addEventListener('change', applyTheme)
+    return () => media.removeEventListener('change', applyTheme)
+  }, [settings.theme])
+
+  useEffect(() => {
     setShowPathModal(isFirstLaunch)
   }, [isFirstLaunch])
 

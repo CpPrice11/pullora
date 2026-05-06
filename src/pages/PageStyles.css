@@ -504,6 +504,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+.about-release-link.active {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.about-release-link > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
 .about-release-link span:first-child {
   font-weight: 700;
 }
