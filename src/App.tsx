@@ -11,6 +11,7 @@ import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import ReleaseSelector from './components/Search/ReleaseSelector'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
+import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import type { UpdateAvailable } from './types'
 
 type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
@@ -18,6 +19,7 @@ type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search')
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
+  const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [showPathModal, setShowPathModal] = useState(false)
 
   // Start auto-update after settings are loaded
@@ -30,20 +32,33 @@ function App() {
   const [updateTarget, setUpdateTarget] = useState<UpdateAvailable | null>(null)
 
   useEffect(() => {
-    const root = document.documentElement
+    setThemePreference(settings.theme)
+  }, [settings.theme])
+
+  useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
 
     const applyTheme = () => {
-      const theme = settings.theme === 'auto'
-        ? media.matches ? 'dark' : 'light'
-        : settings.theme
-      root.dataset.theme = theme
+      applyThemePreference(themePreference)
+    }
+
+    const handleThemeChange = (event: Event) => {
+      const nextTheme = (event as CustomEvent<{ theme: ThemePreference }>).detail?.theme
+      if (nextTheme) {
+        setThemePreference(nextTheme)
+        applyThemePreference(nextTheme, true)
+      }
     }
 
     applyTheme()
     media.addEventListener('change', applyTheme)
-    return () => media.removeEventListener('change', applyTheme)
-  }, [settings.theme])
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+
+    return () => {
+      media.removeEventListener('change', applyTheme)
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
+    }
+  }, [themePreference])
 
   useEffect(() => {
     setShowPathModal(isFirstLaunch)

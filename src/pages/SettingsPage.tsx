@@ -4,6 +4,7 @@ import { getSettings, updateSettings } from '../services/settings'
 import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
+import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import './PageStyles.css'
 
 const FALLBACK_SETTINGS: AppSettings = {
@@ -24,12 +25,23 @@ function SettingsPage() {
 
   useEffect(() => {
     getSettings()
-      .then(setSettings)
+      .then((loadedSettings) => {
+        setSettings(loadedSettings)
+        applyThemePreference(loadedSettings.theme)
+      })
       .catch(() => {
         setSettings(FALLBACK_SETTINGS)
+        applyThemePreference(FALLBACK_SETTINGS.theme)
       })
       .finally(() => setLoading(false))
   }, [])
+
+  const handleThemeChange = (theme: ThemePreference) => {
+    if (!settings) return
+    setSettings({ ...settings, theme })
+    applyThemePreference(theme, true)
+    notifyThemePreference(theme)
+  }
 
   const handleBrowse = async () => {
     const dir = await pickDirectory()
@@ -150,12 +162,7 @@ function SettingsPage() {
             <select
               id="theme"
               value={settings.theme}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  theme: e.target.value as AppSettings['theme'],
-                })
-              }
+              onChange={(e) => handleThemeChange(e.target.value as ThemePreference)}
               style={{ width: 160 }}
             >
               <option value="light">Світла</option>

@@ -39,11 +39,25 @@
   --font-size-2xl: 24px;
 
   --transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  --motion-fast: 120ms cubic-bezier(0.33, 0, 0.67, 1);
+  --motion-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-slow: 320ms cubic-bezier(0.16, 1, 0.3, 1);
   --shadow-control: 0 1px 1px rgba(0, 0, 0, 0.05);
   --shadow-control-hover: 0 2px 6px rgba(0, 0, 0, 0.08);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
+}
+
+:root.theme-transition *,
+:root.theme-transition *::before,
+:root.theme-transition *::after {
+  transition:
+    background-color var(--motion-slow),
+    border-color var(--motion-slow),
+    color var(--motion-slow),
+    box-shadow var(--motion-slow),
+    opacity var(--motion-slow) !important;
 }
 
 :root[data-theme='dark'] {
@@ -104,6 +118,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   line-height: 1.5;
+  transition: background-color var(--motion-slow), color var(--motion-slow);
 }
 
 #root {
@@ -120,7 +135,7 @@ button {
   border: 1px solid transparent;
   border-radius: var(--border-radius);
   padding: var(--spacing-sm) var(--spacing-md);
-  transition: var(--transition);
+  transition: var(--transition), filter var(--motion-fast);
   background-color: var(--color-primary);
   color: white;
   font-weight: 600;
@@ -133,6 +148,7 @@ button:hover {
 
 button:active {
   transform: scale(0.985);
+  filter: brightness(0.98);
 }
 
 button:disabled {
@@ -151,6 +167,7 @@ select {
   background-color: var(--color-control);
   color: var(--color-text);
   min-height: 36px;
+  transition: var(--transition);
 }
 
 input:focus,
@@ -209,4 +226,48 @@ p {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
+}
+
+@keyframes fluent-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fluent-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fluent-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

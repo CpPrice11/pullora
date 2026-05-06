@@ -1,4 +1,5 @@
 .repo-card {
+  animation: fluent-fade-up var(--motion-normal);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -91,7 +92,7 @@
 .fav-btn:hover,
 .fav-btn.active {
   color: var(--color-text);
-  transform: none;
+  transform: translateY(-1px) scale(1.03);
   background: var(--color-control-hover);
   box-shadow: var(--shadow-control);
 }
@@ -154,6 +155,7 @@
 
 .install-btn:hover {
   background: var(--color-primary-dark);
+  transform: translateY(-1px);
 }
 
 .launch-btn {
@@ -170,10 +172,12 @@
 .launch-btn:hover {
   background: var(--color-control-hover);
   box-shadow: var(--shadow-control-hover);
+  transform: translateY(-1px);
 }
 
 /* Search page extras */
 .error-banner {
+  animation: fluent-fade-up var(--motion-normal);
   align-items: center;
   background: color-mix(in srgb, var(--color-error) 12%, var(--color-bg-elevated));
   color: var(--color-error);
@@ -209,6 +213,7 @@
 
 .load-more-btn:hover {
   background: var(--color-control-hover);
+  transform: translateY(-1px);
 }
 
 /* Release modal extras */
@@ -243,6 +248,7 @@
   color: var(--color-text);
   background: none;
   box-shadow: none;
+  transform: rotate(90deg);
 }
 
 .release-body {
@@ -291,6 +297,7 @@
 .loading-text,
 .no-releases,
 .no-assets {
+  animation: fluent-fade-up var(--motion-normal);
   color: var(--color-text-secondary);
   text-align: center;
   padding: var(--spacing-lg) 0;
