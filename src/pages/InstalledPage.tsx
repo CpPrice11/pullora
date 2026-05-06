@@ -89,7 +89,7 @@ function InstalledPage() {
 
       {error && (
         <div className="error-banner">
-          <span>Увага: {error}</span>
+          <span>{error}</span>
           {repairTarget && (
             <button type="button" onClick={() => setRepairTarget(repairTarget)}>
               Відновити
@@ -101,11 +101,17 @@ function InstalledPage() {
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
 
       <div className="apps-list">
-        {loading && <p>Завантажуємо встановлені застосунки...</p>}
+        {loading && (
+          <div className="library-skeleton" aria-label="Завантажуємо встановлені">
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+          </div>
+        )}
 
         {!loading && apps.length === 0 && (
           <div className="empty-state">
-            <p>Встановлених застосунків ще немає.</p>
+            <h3>Встановлених застосунків немає</h3>
+            <p>Встанови проєкт із бібліотеки, і він зʼявиться тут.</p>
           </div>
         )}
 
@@ -129,7 +135,12 @@ function InstalledPage() {
                 <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
                   Відновити
                 </button>
-                <button className="secondary-btn" onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) => setError(err instanceof Error ? err.message : 'Не вдалося відкрити папку'))}>
+                <button
+                  className="secondary-btn"
+                  onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) =>
+                    setError(err instanceof Error ? err.message : 'Не вдалося відкрити папку'),
+                  )}
+                >
                   Папка
                 </button>
                 <button

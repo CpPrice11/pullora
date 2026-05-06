@@ -13,7 +13,7 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
   return (
     <div className="update-banner">
       <div className="update-banner-header">
-        <span className="update-icon">UP</span>
+        <span className="update-icon">↻</span>
         <strong>
           {updates.length === 1
             ? `Доступне оновлення для ${updates[0].appName}`

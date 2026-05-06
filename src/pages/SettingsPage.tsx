@@ -121,7 +121,9 @@ function SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="page">
-        <p>Завантажуємо налаштування...</p>
+        <div className="empty-state">
+          <p>Завантажуємо налаштування...</p>
+        </div>
       </div>
     )
   }
@@ -183,8 +185,8 @@ function SettingsPage() {
             </label>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="checkInterval">Інтервал перевірки (години)</label>
+          <div className="form-group compact-control">
+            <label htmlFor="checkInterval">Інтервал перевірки</label>
             <input
               id="checkInterval"
               type="number"
@@ -196,7 +198,6 @@ function SettingsPage() {
                 const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
                 persistSettings({ ...settings, checkIntervalHours }, settings)
               }}
-              style={{ width: 100 }}
               disabled={!settings.autoUpdateCheck}
             />
           </div>
@@ -214,7 +215,7 @@ function SettingsPage() {
             </label>
           </div>
 
-          <div className="form-group">
+          <div className="form-group compact-control">
             <label htmlFor="assetStrategy">Файли релізів</label>
             <select
               id="assetStrategy"
@@ -225,7 +226,6 @@ function SettingsPage() {
                   assetStrategy: event.target.value as AppSettings['assetStrategy'],
                 }, settings)
               }
-              style={{ width: 220 }}
             >
               <option value="portableFirst">Portable ZIP спочатку</option>
               <option value="installerFirst">EXE/MSI спочатку</option>
@@ -236,13 +236,12 @@ function SettingsPage() {
 
         <section className="settings-section">
           <h3>Вигляд</h3>
-          <div className="form-group">
+          <div className="form-group compact-control">
             <label htmlFor="theme">Тема</label>
             <select
               id="theme"
               value={settings.theme}
               onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
-              style={{ width: 160 }}
             >
               <option value="light">Світла</option>
               <option value="dark">Темна</option>
@@ -251,10 +250,10 @@ function SettingsPage() {
           </div>
         </section>
 
-        {error && <div className="error-banner">Увага: {error}</div>}
+        {error && <div className="error-banner">{error}</div>}
 
         <section className="danger-zone">
-          <h3>Небезпечна зона</h3>
+          <h3>Службові дії</h3>
           <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
             Скинути налаштування
           </button>

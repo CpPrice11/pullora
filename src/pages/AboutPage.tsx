@@ -6,7 +6,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.1.10'
+const CURRENT_VERSION = 'v0.2.0'
 
 function AboutPage() {
   const [releases, setReleases] = useState<GitHubRelease[]>([])
@@ -70,7 +70,7 @@ function AboutPage() {
 
         <section className="about-panel about-panel-wide">
           <h3>Версії лаунчера</h3>
-          {installError && <div className="error-banner">Увага: {installError}</div>}
+          {installError && <div className="error-banner">{installError}</div>}
           {loadingReleases && <p>Завантажуємо релізи...</p>}
           {!loadingReleases && releases.length === 0 && (
             <p>Релізи лаунчера не вдалося завантажити.</p>
