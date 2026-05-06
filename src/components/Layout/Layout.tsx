@@ -3,7 +3,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import './Layout.css'
 
-type Tab = 'search' | 'updates' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 
 interface LayoutProps {
   children: React.ReactNode

@@ -14,7 +14,7 @@ import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import type { UpdateAvailable } from './types'
 
-type Tab = 'search' | 'updates' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search')
@@ -77,7 +77,6 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return <SearchPage />
-      case 'updates':   return <SearchPage initialFilter="updates" title="Оновлення" />
       case 'installed': return <InstalledPage />
       case 'favorites': return <FavoritesPage />
       case 'settings':  return <SettingsPage />

@@ -1,4 +1,4 @@
-type Tab = 'search' | 'updates' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 
 interface SidebarProps {
   activeTab: Tab
@@ -8,7 +8,6 @@ interface SidebarProps {
 function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const navItems: { id: Tab; icon: string; label: string }[] = [
     { id: 'search', icon: '⌂', label: 'Бібліотека' },
-    { id: 'updates', icon: '↻', label: 'Оновлення' },
     { id: 'installed', icon: '▦', label: 'Встановлені' },
     { id: 'favorites', icon: '☆', label: 'Обране' },
     { id: 'settings', icon: '⚙', label: 'Налаштування' },
