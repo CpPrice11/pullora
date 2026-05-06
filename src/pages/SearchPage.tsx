@@ -11,9 +11,14 @@ import './PageStyles.css'
 type LibraryFilter = 'all' | 'installed' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 
-function SearchPage() {
+interface SearchPageProps {
+  initialFilter?: LibraryFilter
+  title?: string
+}
+
+function SearchPage({ initialFilter = 'all', title = 'Бібліотека' }: SearchPageProps) {
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<LibraryFilter>('all')
+  const [filter, setFilter] = useState<LibraryFilter>(initialFilter)
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
@@ -104,7 +109,7 @@ function SearchPage() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Бібліотека</h2>
+          <h2>{title}</h2>
           {owner && (
             <p className="page-subtitle">
               Твої публічні репозиторії GitHub з релізами
@@ -161,7 +166,7 @@ function SearchPage() {
               ))}
             </div>
 
-            <label className="sort-control">
+            <label className="sort-control" aria-label="Сортування">
               Сортувати
               <select
                 value={sort}

@@ -1,8 +1,16 @@
+use serde::Serialize;
 use tauri::State;
 
 use crate::storage::get_config_dir;
 use crate::storage::installed::{list_installed, remove_version, set_active_version, InstalledApp};
 use crate::AppState;
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledAppHealth {
+    pub ok: bool,
+    pub message: String,
+}
 
 fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     fn scan(dir: &std::path::Path, best: &mut Option<std::path::PathBuf>) {
@@ -32,6 +40,38 @@ fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     let mut best = None;
     scan(dir, &mut best);
     best
+}
+
+fn installed_app_dir(install_path: &str, owner: &str, repo: &str) -> std::path::PathBuf {
+    std::path::PathBuf::from(install_path).join(format!("{}-{}", owner, repo))
+}
+
+fn active_version_dir(install_path: &str, owner: &str, repo: &str, tag: &str) -> std::path::PathBuf {
+    installed_app_dir(install_path, owner, repo).join(tag)
+}
+
+fn resolve_active_app(
+    owner: &str,
+    repo: &str,
+    install_path: &str,
+) -> Result<(InstalledApp, std::path::PathBuf), String> {
+    let config_dir = get_config_dir();
+    let apps = list_installed(&config_dir).map_err(|e| e.to_string())?;
+    let key = format!("{}/{}", owner, repo);
+
+    let app = apps
+        .into_iter()
+        .find(|a| format!("{}/{}", a.owner, a.repo) == key)
+        .ok_or("Застосунок не встановлено")?;
+
+    let version = app
+        .versions
+        .iter()
+        .find(|v| v.tag == app.active_version)
+        .ok_or("Активну версію не знайдено")?;
+
+    let version_dir = active_version_dir(install_path, owner, repo, &version.tag);
+    Ok((app, version_dir))
 }
 
 #[tauri::command]
@@ -78,35 +118,116 @@ pub async fn uninstall_version(
 }
 
 #[tauri::command]
+pub async fn validate_installed_app(
+    owner: String,
+    repo: String,
+    state: State<'_, AppState>,
+) -> Result<InstalledAppHealth, String> {
+    let settings = state.settings.lock().await;
+    let install_path = settings
+        .installation_path
+        .as_ref()
+        .ok_or("Папку встановлення не налаштовано")?;
+
+    let (app, version_dir) = resolve_active_app(&owner, &repo, install_path)?;
+    let version = app
+        .versions
+        .iter()
+        .find(|v| v.tag == app.active_version)
+        .ok_or("Активну версію не знайдено")?;
+
+    let expected_exe = version_dir.join(&version.executable);
+    if expected_exe.exists() || find_exe_in_dir(&version_dir).is_some() {
+        return Ok(InstalledAppHealth {
+            ok: true,
+            message: "Готово до запуску".to_string(),
+        });
+    }
+
+    Ok(InstalledAppHealth {
+        ok: false,
+        message: format!(
+            "Файл запуску для {} {} не знайдено. Віднови або перевстанови версію.",
+            repo, version.tag
+        ),
+    })
+}
+
+#[tauri::command]
+pub async fn open_installed_app_dir(
+    owner: String,
+    repo: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let settings = state.settings.lock().await;
+    let install_path = settings
+        .installation_path
+        .as_ref()
+        .ok_or("Папку встановлення не налаштовано")?;
+    let app_dir = installed_app_dir(install_path, &owner, &repo);
+    drop(settings);
+
+    crate::commands::updates::open_dir(app_dir.display().to_string()).await
+}
+
+#[tauri::command]
+pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<usize, String> {
+    let settings = state.settings.lock().await;
+    let install_path = settings
+        .installation_path
+        .as_ref()
+        .ok_or("Папку встановлення не налаштовано")?
+        .clone();
+    drop(settings);
+
+    let root = std::path::PathBuf::from(install_path);
+    if !root.exists() {
+        return Ok(0);
+    }
+
+    let mut removed = 0;
+    let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
+    for app_entry in entries.flatten() {
+        let app_path = app_entry.path();
+        if !app_path.is_dir() {
+            continue;
+        }
+
+        let Ok(version_entries) = std::fs::read_dir(&app_path) else {
+            continue;
+        };
+        for version_entry in version_entries.flatten() {
+            let path = version_entry.path();
+            let name = version_entry.file_name().to_string_lossy().to_string();
+            if path.is_dir() && (name.contains(".partial-") || name.contains(".backup-")) {
+                std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+                removed += 1;
+            }
+        }
+    }
+
+    Ok(removed)
+}
+
+#[tauri::command]
 pub async fn launch_app(
     owner: String,
     repo: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    let config_dir = get_config_dir();
-    let apps = list_installed(&config_dir).map_err(|e| e.to_string())?;
-    let key = format!("{}/{}", owner, repo);
-
-    let app = apps
-        .iter()
-        .find(|a| format!("{}/{}", a.owner, a.repo) == key)
-        .ok_or("App not installed")?;
-
-    let version = app
-        .versions
-        .iter()
-        .find(|v| v.tag == app.active_version)
-        .ok_or("Active version not found")?;
-
     let settings = state.settings.lock().await;
     let install_path = settings
         .installation_path
         .as_ref()
-        .ok_or("Installation path not configured")?;
+        .ok_or("Папку встановлення не налаштовано")?;
 
-    let version_dir = std::path::PathBuf::from(install_path)
-        .join(format!("{}-{}", owner, repo))
-        .join(&version.tag);
+    let (app, version_dir) = resolve_active_app(&owner, &repo, install_path)?;
+    let version = app
+        .versions
+        .iter()
+        .find(|v| v.tag == app.active_version)
+        .ok_or("Активну версію не знайдено")?;
+
 
     let exe_path = version_dir.join(&version.executable);
 
@@ -121,7 +242,7 @@ pub async fn launch_app(
                 "launch failed: no executable found",
             );
             format!(
-                "No executable found for {} {}. Reinstall or choose another release asset.",
+                "Файл запуску для {} {} не знайдено. Натисни «Відновити» або встанови версію ще раз.",
                 repo, version.tag
             )
         })?
@@ -138,7 +259,7 @@ pub async fn launch_app(
                 &format!("launch failed: {}", e),
             );
             format!(
-                "Failed to launch {} {}. Check that the executable still exists and is not blocked by Windows: {}",
+                "Не вдалося запустити {} {}. Перевір, чи файл існує і не заблокований Windows: {}",
                 repo, version.tag, e
             )
         })?;

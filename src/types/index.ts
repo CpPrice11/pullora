@@ -51,6 +51,8 @@ export interface AppSettings {
   installationPath: string
   autoUpdateCheck: boolean
   checkIntervalHours: number
+  includePrereleases?: boolean
+  assetStrategy?: 'portableFirst' | 'installerFirst' | 'manual'
   githubOwner?: string
   githubToken?: string | null
   theme: 'light' | 'dark' | 'auto'
@@ -71,6 +73,11 @@ export interface InstalledApp {
   repo: string
   versions: VersionInfo[]
   activeVersion: string
+}
+
+export interface InstalledAppHealth {
+  ok: boolean
+  message: string
 }
 
 // Favorites

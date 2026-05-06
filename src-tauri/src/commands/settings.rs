@@ -15,6 +15,14 @@ pub async fn update_settings(
     new_settings: AppSettings,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    if let Some(path) = new_settings.installation_path.as_ref() {
+        if !path.trim().is_empty() {
+            std::fs::create_dir_all(path).map_err(|e| {
+                format!("Не вдалося підготувати папку встановлення: {}", e)
+            })?;
+        }
+    }
+
     let config_dir = get_config_dir();
     save_settings(&config_dir, &new_settings).map_err(|e| e.to_string())?;
 

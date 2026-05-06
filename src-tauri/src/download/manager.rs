@@ -282,6 +282,41 @@ async fn download_task(
         return Err(error);
     }
 
+    let executable_path = version_dir.join(&executable);
+    if executable.trim().is_empty() || !executable_path.exists() {
+        let fallback_executable = find_executable_in_dir(&version_dir).ok_or_else(|| {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&version_dir);
+            let _ = restore_backup_dir(&backup_dir, &version_dir);
+            "Реліз встановлено неповністю: файл запуску не знайдено.".to_string()
+        })?;
+        let relative = fallback_executable
+            .strip_prefix(&version_dir)
+            .unwrap_or(&fallback_executable)
+            .to_string_lossy()
+            .to_string();
+        let install_record_result =
+            record_installed_version(&owner, &repo, &tag, relative, downloaded);
+
+        if let Err(error) = install_record_result {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&version_dir);
+            let _ = restore_backup_dir(&backup_dir, &version_dir);
+            return Err(error);
+        }
+
+        cleanup_path(&backup_dir)?;
+        let _ = fs::remove_file(&tmp_path);
+
+        emit_progress(&app, &active, &id, |p| {
+            p.status = DownloadStatus::Completed;
+            p.progress = 100.0;
+        })
+        .await;
+
+        return Ok(());
+    }
+
     let install_record_result =
         record_installed_version(&owner, &repo, &tag, executable.clone(), downloaded);
 
@@ -402,4 +437,34 @@ fn restore_backup_dir(
 
     cleanup_path(version_dir)?;
     fs::rename(backup_dir, version_dir).map_err(|e| e.to_string())
+}
+
+fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
+    fn scan(dir: &std::path::Path, best: &mut Option<std::path::PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan(&path, best);
+            } else if path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.eq_ignore_ascii_case("exe") || e.eq_ignore_ascii_case("appimage"))
+                .unwrap_or(false)
+            {
+                let is_better = best.as_ref().map_or(true, |current| {
+                    path.components().count() < current.components().count()
+                });
+                if is_better {
+                    *best = Some(path);
+                }
+            }
+        }
+    }
+
+    let mut best = None;
+    scan(dir, &mut best);
+    best
 }

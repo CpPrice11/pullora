@@ -10,10 +10,18 @@ pub struct AppSettings {
     pub installation_path: Option<String>,
     pub auto_update_check: bool,
     pub check_interval_hours: u32,
+    #[serde(default)]
+    pub include_prereleases: bool,
+    #[serde(default = "default_asset_strategy")]
+    pub asset_strategy: String,
     pub github_owner: Option<String>,
     pub github_token: Option<String>,
     pub theme: String,
     pub language: String,
+}
+
+fn default_asset_strategy() -> String {
+    "portableFirst".to_string()
 }
 
 impl Default for AppSettings {
@@ -23,6 +31,8 @@ impl Default for AppSettings {
             installation_path: None,
             auto_update_check: true,
             check_interval_hours: 24,
+            include_prereleases: false,
+            asset_strategy: default_asset_strategy(),
             github_owner: Some("CpPrice11".to_string()),
             github_token: None,
             theme: "auto".to_string(),

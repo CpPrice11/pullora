@@ -6,7 +6,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.1.8'
+const CURRENT_VERSION = 'v0.1.9'
 
 function AboutPage() {
   const [releases, setReleases] = useState<GitHubRelease[]>([])
@@ -46,34 +46,10 @@ function AboutPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <div>
-          <h2>Про застосунок</h2>
-          <p className="page-subtitle">
-            Air Launcher допомагає встановлювати й запускати програми з твоїх публічних GitHub Releases.
-          </p>
-        </div>
+        <h2>Про застосунок</h2>
       </div>
 
       <div className="about-grid">
-        <section className="about-panel">
-          <h3>Що це</h3>
-          <p>
-            Легкий десктопний лаунчер для твоїх публічних репозиторіїв GitHub.
-            Він показує проєкти з релізами, завантажує файли релізу, встановлює
-            їх локально і запускає активну версію.
-          </p>
-        </section>
-
-        <section className="about-panel">
-          <h3>Принципи</h3>
-          <ul>
-            <li>Бібліотека показує тільки твої публічні проєкти з релізами.</li>
-            <li>Сам Air Launcher не показується у бібліотеці застосунків.</li>
-            <li>Пріоритет для portable ZIP, потім EXE або MSI.</li>
-            <li>Build-файли не зберігаються в Git-проєкті.</li>
-          </ul>
-        </section>
-
         <section className="about-panel">
           <h3>Версія</h3>
           <dl className="about-facts">
@@ -93,11 +69,11 @@ function AboutPage() {
         </section>
 
         <section className="about-panel about-panel-wide">
-          <h3>Релізи Air Launcher</h3>
+          <h3>Версії лаунчера</h3>
           {installError && <div className="error-banner">Увага: {installError}</div>}
           {loadingReleases && <p>Завантажуємо релізи...</p>}
           {!loadingReleases && releases.length === 0 && (
-            <p>Релізи лаунчера поки що не вдалося завантажити.</p>
+            <p>Релізи лаунчера не вдалося завантажити.</p>
           )}
           {!loadingReleases && releases.length > 0 && (
             <div className="about-release-list">
@@ -129,7 +105,9 @@ function AboutPage() {
                       ? 'Активна'
                       : installingVersion === release.tag_name
                         ? 'Активуємо...'
-                        : 'Активувати'}
+                        : release.tag_name > CURRENT_VERSION
+                          ? 'Оновити'
+                          : 'Відкотитися'}
                   </button>
                 </div>
               ))}

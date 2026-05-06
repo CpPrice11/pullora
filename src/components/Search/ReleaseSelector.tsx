@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useReleases } from '../../hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
+import { useSettings } from '../../hooks/useSettings'
 import type { GitHubRelease, GitHubAsset } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
 import './SearchComponents.css'
@@ -21,10 +22,17 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-function pickBestAsset(assets: GitHubAsset[]): GitHubAsset | null {
+function pickBestAsset(
+  assets: GitHubAsset[],
+  strategy: 'portableFirst' | 'installerFirst' | 'manual' = 'portableFirst',
+): GitHubAsset | null {
+  if (strategy === 'manual') return assets[0] ?? null
+
   const platform = navigator.platform.toLowerCase()
   const isWin = platform.includes('win')
-  const winExt = ['.zip', '.exe', '.msi']
+  const winExt = strategy === 'installerFirst'
+    ? ['.exe', '.msi', '.zip']
+    : ['.zip', '.exe', '.msi']
   const linExt = ['.appimage', '.deb', '.tar.gz', '.tar.xz']
   const preferred = isWin ? winExt : linExt
 
@@ -48,23 +56,31 @@ function ReleaseSelector({
 }: ReleaseSelectorProps) {
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
   const { downloads, download, cancel } = useDownload()
+  const { settings } = useSettings()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
 
+  const visibleReleases = useMemo(
+    () => releases.filter((release) =>
+      settings.includePrereleases ? !release.draft : !release.draft && !release.prerelease,
+    ),
+    [releases, settings.includePrereleases],
+  )
+
   useEffect(() => {
     fetchReleases()
   }, [fetchReleases])
 
   useEffect(() => {
-    if (releases.length > 0 && !selectedRelease) {
-      const first = releases[0]
+    if (visibleReleases.length > 0 && !selectedRelease) {
+      const first = visibleReleases[0]
       setSelectedRelease(first)
-      setSelectedAsset(pickBestAsset(first.assets))
+      setSelectedAsset(pickBestAsset(first.assets, settings.assetStrategy))
     }
-  }, [releases, selectedRelease])
+  }, [selectedRelease, settings.assetStrategy, visibleReleases])
 
   useEffect(() => {
     downloads.forEach((downloadItem) => {
@@ -80,7 +96,7 @@ function ReleaseSelector({
 
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
-    setSelectedAsset(pickBestAsset(release.assets))
+    setSelectedAsset(pickBestAsset(release.assets, settings.assetStrategy))
   }
 
   const handleDownload = async () => {
@@ -119,27 +135,28 @@ function ReleaseSelector({
           {loading && <p className="loading-text">Завантажуємо релізи...</p>}
           {error && <div className="error-message">{error}</div>}
 
-          {!loading && releases.length === 0 && (
-            <p className="no-releases">Для цього репозиторію релізів не знайдено.</p>
+          {!loading && visibleReleases.length === 0 && (
+            <p className="no-releases">
+              Релізів для вибраного каналу не знайдено.
+            </p>
           )}
 
-          {releases.length > 0 && (
+          {visibleReleases.length > 0 && (
             <>
               <div className="form-group">
                 <label htmlFor="release-select">Версія</label>
                 <select
                   id="release-select"
                   value={selectedRelease?.id ?? ''}
-                  onChange={(e) => {
-                    const release = releases.find((item) => item.id === Number(e.target.value))
+                  onChange={(event) => {
+                    const release = visibleReleases.find((item) => item.id === Number(event.target.value))
                     if (release) handleReleaseChange(release)
                   }}
                 >
-                  {releases.map((release) => (
+                  {visibleReleases.map((release) => (
                     <option key={release.id} value={release.id}>
                       {release.tag_name}
-                      {release.prerelease ? ' (передреліз)' : ''}
-                      {release.draft ? ' (чернетка)' : ''}
+                      {release.prerelease ? ' (prerelease)' : ''}
                       {release.published_at
                         ? ` - ${new Date(release.published_at).toLocaleDateString('uk-UA')}`
                         : ''}
@@ -154,9 +171,9 @@ function ReleaseSelector({
                   <select
                     id="asset-select"
                     value={selectedAsset?.id ?? ''}
-                    onChange={(e) => {
+                    onChange={(event) => {
                       const asset = selectedRelease.assets.find(
-                        (item) => item.id === Number(e.target.value),
+                        (item) => item.id === Number(event.target.value),
                       )
                       if (asset) setSelectedAsset(asset)
                     }}
@@ -172,7 +189,7 @@ function ReleaseSelector({
 
               {selectedRelease && selectedRelease.assets.length === 0 && (
                 <p className="no-assets">
-                  У цьому релізі немає готових файлів. Доступний тільки вихідний код.
+                  У цьому релізі немає готових файлів.
                 </p>
               )}
 
@@ -194,7 +211,7 @@ function ReleaseSelector({
                   rel="noreferrer"
                   className="view-release-link"
                 >
-                  Відкрити на GitHub
+                  GitHub
                 </a>
               </div>
             </>

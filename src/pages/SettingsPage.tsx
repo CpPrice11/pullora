@@ -31,7 +31,7 @@ function SettingsPage() {
 
   const showSavedState = () => {
     setSaved(true)
-    setTimeout(() => setSaved(false), 1600)
+    window.setTimeout(() => setSaved(false), 1600)
   }
 
   const persistSettings = async (
@@ -41,6 +41,7 @@ function SettingsPage() {
     const normalizedSettings = normalizeSettings(nextSettings)
 
     setSettings(normalizedSettings)
+    setSaving(true)
     setError(null)
 
     try {
@@ -53,6 +54,8 @@ function SettingsPage() {
       }
       setError(err instanceof Error ? err.message : 'Не вдалося зберегти налаштування')
       return null
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -65,6 +68,7 @@ function SettingsPage() {
     setSettings(nextSettings)
     applyThemePreference(theme, true)
     notifyThemePreference(theme)
+    setSaving(true)
     setError(null)
 
     try {
@@ -75,6 +79,8 @@ function SettingsPage() {
       applyThemePreference(previousSettings.theme, true)
       notifyThemePreference(previousSettings.theme)
       setError(err instanceof Error ? err.message : 'Не вдалося зберегти тему')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -90,40 +96,26 @@ function SettingsPage() {
     await persistSettings(settings, settings)
   }
 
-  const handleAutoUpdateCheckChange = async (autoUpdateCheck: boolean) => {
-    if (!settings) return
-    await persistSettings({ ...settings, autoUpdateCheck }, settings)
-  }
-
-  const handleCheckIntervalChange = async (value: number) => {
-    if (!settings) return
-    const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
-    await persistSettings({ ...settings, checkIntervalHours }, settings)
-  }
-
-  const handleClearCache = async () => {
-    await clearGithubCache().catch(() => {})
-    alert('Кеш очищено')
+  const handleInstallationPathKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.currentTarget.blur()
+    }
   }
 
   const handleResetSettings = async () => {
     if (!window.confirm('Скинути всі налаштування до стандартних?')) return
 
-    setSaving(true)
-    setError(null)
-
-    try {
-      const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
-      await updateSettings(resetSettings)
-      setSettings(resetSettings)
-      applyThemePreference(resetSettings.theme, true)
-      notifyThemePreference(resetSettings.theme)
-      showSavedState()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося скинути налаштування')
-    } finally {
-      setSaving(false)
+    const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
+    const savedSettings = await persistSettings(resetSettings, settings)
+    if (savedSettings) {
+      applyThemePreference(savedSettings.theme, true)
+      notifyThemePreference(savedSettings.theme)
     }
+  }
+
+  const handleClearCache = async () => {
+    await clearGithubCache().catch(() => {})
+    alert('Кеш очищено')
   }
 
   if (loading || !settings) {
@@ -138,7 +130,8 @@ function SettingsPage() {
     <div className="page">
       <div className="page-header">
         <h2>Налаштування</h2>
-        {saved && <span className="saved-indicator">Збережено</span>}
+        {saving && <span className="saved-indicator">Зберігаємо</span>}
+        {!saving && saved && <span className="saved-indicator">Збережено</span>}
       </div>
 
       <div className="settings-form">
@@ -152,9 +145,10 @@ function SettingsPage() {
                 type="text"
                 value={settings.installationPath}
                 onBlur={handleInstallationPathBlur}
-                onChange={(e) =>
-                  setSettings({ ...settings, installationPath: e.target.value })
+                onChange={(event) =>
+                  setSettings({ ...settings, installationPath: event.target.value })
                 }
+                onKeyDown={handleInstallationPathKeyDown}
                 placeholder="Обери папку..."
               />
               <button type="button" onClick={handleBrowse}>
@@ -181,7 +175,9 @@ function SettingsPage() {
               <input
                 type="checkbox"
                 checked={settings.autoUpdateCheck}
-                onChange={(e) => handleAutoUpdateCheckChange(e.target.checked)}
+                onChange={(event) =>
+                  persistSettings({ ...settings, autoUpdateCheck: event.target.checked }, settings)
+                }
               />
               Автоматично перевіряти оновлення
             </label>
@@ -195,10 +191,46 @@ function SettingsPage() {
               min={1}
               max={168}
               value={settings.checkIntervalHours}
-              onChange={(e) => handleCheckIntervalChange(Number(e.target.value))}
+              onChange={(event) => {
+                const value = Number(event.target.value)
+                const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
+                persistSettings({ ...settings, checkIntervalHours }, settings)
+              }}
               style={{ width: 100 }}
               disabled={!settings.autoUpdateCheck}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={Boolean(settings.includePrereleases)}
+                onChange={(event) =>
+                  persistSettings({ ...settings, includePrereleases: event.target.checked }, settings)
+                }
+              />
+              Показувати prerelease
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="assetStrategy">Файли релізів</label>
+            <select
+              id="assetStrategy"
+              value={settings.assetStrategy}
+              onChange={(event) =>
+                persistSettings({
+                  ...settings,
+                  assetStrategy: event.target.value as AppSettings['assetStrategy'],
+                }, settings)
+              }
+              style={{ width: 220 }}
+            >
+              <option value="portableFirst">Portable ZIP спочатку</option>
+              <option value="installerFirst">EXE/MSI спочатку</option>
+              <option value="manual">Вручну</option>
+            </select>
           </div>
         </section>
 
@@ -209,7 +241,7 @@ function SettingsPage() {
             <select
               id="theme"
               value={settings.theme}
-              onChange={(e) => handleThemeChange(e.target.value as ThemePreference)}
+              onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
               style={{ width: 160 }}
             >
               <option value="light">Світла</option>

@@ -1,7 +1,16 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { InstalledApp } from '../types'
-import { getInstalledApps, switchVersion, uninstallVersion, launchApp } from '../services/installed'
+import {
+  cleanupIncompleteInstalls,
+  getInstalledApps,
+  launchApp,
+  openInstalledAppDir,
+  switchVersion,
+  uninstallVersion,
+  validateInstalledApp,
+} from '../services/installed'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
+import ReleaseSelector from '../components/Search/ReleaseSelector'
 import { useDownload } from '../hooks/useDownload'
 import './PageStyles.css'
 
@@ -10,6 +19,7 @@ function InstalledPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedApp, setExpandedApp] = useState<string | null>(null)
+  const [repairTarget, setRepairTarget] = useState<InstalledApp | null>(null)
   const { downloads, cancel } = useDownload()
 
   const loadApps = useCallback(async () => {
@@ -34,27 +44,59 @@ function InstalledPage() {
   }
 
   const handleUninstall = async (owner: string, repo: string, tag: string) => {
-    if (!confirm(`Видалити ${repo} версії ${tag}?`)) return
+    if (!confirm(`Видалити ${repo} ${tag}?`)) return
     await uninstallVersion(owner, repo, tag)
     loadApps()
   }
 
-  const handleLaunch = async (owner: string, repo: string) => {
+  const handleLaunch = async (app: InstalledApp) => {
+    setError(null)
     try {
-      await launchApp(owner, repo)
+      const health = await validateInstalledApp(app.owner, app.repo)
+      if (!health.ok) {
+        setError(health.message)
+        setRepairTarget(app)
+        return
+      }
+      await launchApp(app.owner, app.repo)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
+      setError(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
+      setRepairTarget(app)
+    }
+  }
+
+  const handleCleanup = async () => {
+    setError(null)
+    try {
+      const removed = await cleanupIncompleteInstalls()
+      alert(removed > 0 ? `Очищено незавершених папок: ${removed}` : 'Незавершених встановлень не знайдено')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не вдалося очистити незавершені встановлення')
     }
   }
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Встановлені застосунки</h2>
-        <button onClick={loadApps} className="refresh-btn">Оновити</button>
+        <h2>Встановлені</h2>
+        <div className="page-actions">
+          <button type="button" className="secondary-btn" onClick={handleCleanup}>
+            Очистити незавершені
+          </button>
+          <button onClick={loadApps} className="refresh-btn">Оновити</button>
+        </div>
       </div>
 
-      {error && <div className="error-banner">Увага: {error}</div>}
+      {error && (
+        <div className="error-banner">
+          <span>Увага: {error}</span>
+          {repairTarget && (
+            <button type="button" onClick={() => setRepairTarget(repairTarget)}>
+              Відновити
+            </button>
+          )}
+        </div>
+      )}
 
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
 
@@ -63,8 +105,7 @@ function InstalledPage() {
 
         {!loading && apps.length === 0 && (
           <div className="empty-state">
-            <p>Поки що немає встановлених застосунків</p>
-            <p>Перейди в Бібліотеку, щоб знайти й встановити застосунки з GitHub</p>
+            <p>Встановлених застосунків ще немає.</p>
           </div>
         )}
 
@@ -82,14 +123,20 @@ function InstalledPage() {
               </div>
 
               <div className="app-actions">
-                <button onClick={() => handleLaunch(app.owner, app.repo)}>
+                <button onClick={() => handleLaunch(app)}>
                   Запустити
+                </button>
+                <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
+                  Відновити
+                </button>
+                <button className="secondary-btn" onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) => setError(err instanceof Error ? err.message : 'Не вдалося відкрити папку'))}>
+                  Папка
                 </button>
                 <button
                   onClick={() => setExpandedApp(isExpanded ? null : key)}
                   className="secondary-btn"
                 >
-                  {isExpanded ? 'Сховати версії' : `Версії (${app.versions.length})`}
+                  {isExpanded ? 'Сховати' : `Версії (${app.versions.length})`}
                 </button>
               </div>
 
@@ -98,9 +145,7 @@ function InstalledPage() {
                   {app.versions.map((version) => (
                     <div
                       key={version.tag}
-                      className={`version-row ${
-                        version.tag === app.activeVersion ? 'active' : ''
-                      }`}
+                      className={`version-row ${version.tag === app.activeVersion ? 'active' : ''}`}
                     >
                       <span className="version-tag">{version.tag}</span>
                       <span className="version-size">
@@ -133,6 +178,19 @@ function InstalledPage() {
           )
         })}
       </div>
+
+      {repairTarget && (
+        <ReleaseSelector
+          owner={repairTarget.owner}
+          repo={repairTarget.repo}
+          displayName={repairTarget.name}
+          onClose={() => setRepairTarget(null)}
+          onInstalled={() => {
+            setRepairTarget(null)
+            loadApps()
+          }}
+        />
+      )}
     </div>
   )
 }
