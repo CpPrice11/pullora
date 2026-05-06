@@ -36,11 +36,32 @@ function SettingsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleThemeChange = (theme: ThemePreference) => {
+  const handleThemeChange = async (theme: ThemePreference) => {
     if (!settings) return
-    setSettings({ ...settings, theme })
+
+    const previousSettings = settings
+    const nextSettings = {
+      ...settings,
+      githubOwner: 'CpPrice11',
+      language: settings.language || 'uk',
+      theme,
+    }
+
+    setSettings(nextSettings)
     applyThemePreference(theme, true)
     notifyThemePreference(theme)
+    setError(null)
+
+    try {
+      await updateSettings(nextSettings)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1600)
+    } catch (err) {
+      setSettings(previousSettings)
+      applyThemePreference(previousSettings.theme, true)
+      notifyThemePreference(previousSettings.theme)
+      setError(err instanceof Error ? err.message : 'Не вдалося зберегти тему')
+    }
   }
 
   const handleBrowse = async () => {
