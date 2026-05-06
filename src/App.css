@@ -1,16 +1,26 @@
 :root {
-  --color-primary: #0066cc;
-  --color-primary-dark: #0052a3;
-  --color-primary-light: #e6f0ff;
-  --color-bg: #ffffff;
-  --color-bg-secondary: #f5f5f5;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #666666;
-  --color-border: #d0d0d0;
-  --color-success: #28a745;
-  --color-error: #dc3545;
-  --color-warning: #ffc107;
-  --color-info: #17a2b8;
+  color-scheme: light;
+  --color-primary: #0067c0;
+  --color-primary-dark: #005a9e;
+  --color-primary-light: #e8f2ff;
+  --color-accent-wash: rgba(0, 103, 192, 0.12);
+  --color-bg: #f6f6f6;
+  --color-bg-elevated: #ffffff;
+  --color-bg-secondary: #f3f3f3;
+  --color-mica: rgba(255, 255, 255, 0.84);
+  --color-sidebar: rgba(243, 243, 243, 0.92);
+  --color-control: rgba(255, 255, 255, 0.78);
+  --color-control-hover: rgba(255, 255, 255, 0.95);
+  --color-nav-active: rgba(255, 255, 255, 0.9);
+  --color-text: #1f1f1f;
+  --color-text-secondary: #5f5f5f;
+  --color-text-tertiary: #7a7a7a;
+  --color-border: #d1d1d1;
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  --color-success: #0f7b0f;
+  --color-error: #c42b1c;
+  --color-warning: #f9d849;
+  --color-info: #0078d4;
 
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -18,38 +28,52 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 
-  --border-radius: 6px;
+  --border-radius: 8px;
   --border-radius-lg: 12px;
 
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-size-sm: 12px;
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --font-size-xl: 18px;
   --font-size-2xl: 24px;
 
-  --transition: all 0.2s ease;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  --shadow-control: 0 1px 1px rgba(0, 0, 0, 0.05);
+  --shadow-control-hover: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
 }
 
 :root[data-theme='dark'] {
-  --color-primary: #4f9cff;
-  --color-primary-dark: #2f7fe6;
-  --color-primary-light: #14345c;
-  --color-bg: #101418;
-  --color-bg-secondary: #171d23;
-  --color-text: #f3f6f8;
-  --color-text-secondary: #a8b3bd;
-  --color-border: #2b3540;
-  --color-success: #3ccf7a;
-  --color-error: #ff6b75;
-  --color-warning: #ffd166;
-  --color-info: #5ec7e8;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 8px 18px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+  --color-primary: #60cdff;
+  --color-primary-dark: #4cc2ff;
+  --color-primary-light: rgba(96, 205, 255, 0.14);
+  --color-accent-wash: rgba(96, 205, 255, 0.12);
+  --color-bg: #1b1b1b;
+  --color-bg-elevated: #242424;
+  --color-bg-secondary: #202020;
+  --color-mica: rgba(32, 32, 32, 0.88);
+  --color-sidebar: rgba(32, 32, 32, 0.92);
+  --color-control: rgba(255, 255, 255, 0.06);
+  --color-control-hover: rgba(255, 255, 255, 0.1);
+  --color-nav-active: rgba(255, 255, 255, 0.08);
+  --color-text: #ffffff;
+  --color-text-secondary: #c8c8c8;
+  --color-text-tertiary: #9d9d9d;
+  --color-border: rgba(255, 255, 255, 0.13);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-success: #6ccb5f;
+  --color-error: #ff99a4;
+  --color-warning: #f9d849;
+  --color-info: #60cdff;
+  --shadow-control: 0 1px 1px rgba(0, 0, 0, 0.35);
+  --shadow-control-hover: 0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 22px 46px rgba(0, 0, 0, 0.42);
 }
 
 :root[data-theme='dark'] button {
@@ -93,12 +117,13 @@ button {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--border-radius);
   padding: var(--spacing-sm) var(--spacing-md);
   transition: var(--transition);
   background-color: var(--color-primary);
   color: white;
+  font-weight: 600;
 }
 
 button:hover {
@@ -107,7 +132,7 @@ button:hover {
 }
 
 button:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 
 button:disabled {
@@ -123,8 +148,9 @@ select {
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
-  background-color: var(--color-bg);
+  background-color: var(--color-control);
   color: var(--color-text);
+  min-height: 36px;
 }
 
 input:focus,

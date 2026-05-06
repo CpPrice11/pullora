@@ -1,18 +1,23 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  max-width: 1200px;
+  gap: 22px;
+  max-width: 1240px;
+  width: 100%;
 }
 
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: 16px;
+  min-height: 52px;
 }
 
 .page-header h2 {
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: 0;
   margin: 0;
 }
 
@@ -27,16 +32,18 @@
 }
 
 .refresh-btn {
-  background: var(--color-bg-secondary);
+  background: var(--color-control);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-control);
+  min-height: 38px;
+  padding: 0 18px;
+  font-size: 14px;
 }
 
 .refresh-btn:hover {
-  background: var(--color-border);
-  box-shadow: none;
+  background: var(--color-control-hover);
+  box-shadow: var(--shadow-control-hover);
 }
 
 /* Version management */
@@ -129,15 +136,19 @@
 /* Search Form */
 .search-form {
   display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .search-input {
   flex: 1;
-  padding: var(--spacing-md);
-  font-size: var(--font-size-lg);
+  background: var(--color-control);
+  border-radius: 10px;
+  box-shadow: var(--shadow-control);
+  font-size: 15px;
+  min-height: 46px;
   min-width: 300px;
+  padding: 0 18px;
 }
 
 .search-form button {
@@ -149,34 +160,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: 14px;
   flex-wrap: wrap;
 }
 
 .segmented-control {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  background: var(--color-bg-secondary);
+  gap: 3px;
+  background: var(--color-control);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 3px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-control);
+  padding: 4px;
 }
 
 .segmented-control button {
   background: transparent;
   border: none;
   color: var(--color-text-secondary);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
+  min-height: 34px;
+  padding: 0 16px;
+  font-size: 13px;
   box-shadow: none;
 }
 
 .segmented-control button:hover,
 .segmented-control button.active {
-  background: var(--color-bg);
+  background: var(--color-bg-elevated);
   color: var(--color-text);
-  box-shadow: none;
+  box-shadow: var(--shadow-control);
 }
 
 .sort-control {
@@ -190,22 +203,25 @@
 
 .sort-control select {
   width: auto;
-  min-width: 160px;
-  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 220px;
+  padding: 0 14px;
 }
 
 /* Results and Apps List */
 .search-results,
 .apps-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
 }
 
 .empty-state {
+  background: var(--color-mica);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
   grid-column: 1 / -1;
   text-align: center;
-  padding: var(--spacing-xl);
+  padding: 54px 28px;
   color: var(--color-text-secondary);
 }
 
@@ -213,13 +229,39 @@
   margin: var(--spacing-sm) 0;
 }
 
+.error-banner {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--color-error) 28%, var(--color-border-subtle));
+  border-left: 4px solid var(--color-error);
+  border-radius: 12px;
+  color: var(--color-error);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.error-banner button {
+  background: var(--color-control);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+.error-banner button:hover {
+  background: var(--color-control-hover);
+  box-shadow: var(--shadow-control-hover);
+}
+
 /* Cards */
 .result-card,
 .app-card {
-  background-color: var(--color-bg);
+  background-color: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-control);
+  padding: 18px;
   transition: var(--transition);
   display: flex;
   flex-direction: column;
@@ -229,7 +271,7 @@
 .result-card:hover,
 .app-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
 }
 
 .result-card h3,
@@ -301,7 +343,7 @@
 
 /* Settings Form */
 .settings-form {
-  max-width: 600px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
@@ -311,9 +353,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  background: var(--color-bg-secondary);
-  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  background: var(--color-mica);
+  border-radius: 14px;
   border: 1px solid var(--color-border);
 }
 
@@ -322,7 +364,7 @@
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .path-input-row {
@@ -392,13 +434,14 @@
 }
 
 .secondary-btn {
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-control);
   color: var(--color-text);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-control);
 }
 
 .secondary-btn:hover {
-  background-color: var(--color-border);
+  background-color: var(--color-control-hover);
 }
 
 .danger-zone {
@@ -430,10 +473,11 @@
 }
 
 .about-panel {
-  background: var(--color-bg-secondary);
+  background: var(--color-mica);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
+  border-radius: 14px;
+  box-shadow: var(--shadow-control);
+  padding: 22px;
 }
 
 .about-panel h3 {
@@ -490,11 +534,12 @@
 .about-release-link {
   align-items: center;
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
+  background: var(--color-bg-elevated);
+  border-radius: 10px;
   color: var(--color-text);
   display: flex;
   justify-content: space-between;
-  padding: var(--spacing-md);
+  padding: 12px 14px;
   text-decoration: none;
   transition: var(--transition);
 }

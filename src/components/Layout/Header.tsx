@@ -8,15 +8,22 @@ function Header({ updatesCount = 0, checking = false, onCheckUpdates }: HeaderPr
   return (
     <header className="header">
       <div className="header-content">
-        <h1 className="header-title">Air Launcher</h1>
+        <div className="brand-mark" aria-hidden="true">
+          <span />
+        </div>
+        <div>
+          <h1 className="header-title">Air Launcher</h1>
+          <p className="header-subtitle">Лаунчер релізів у стилі Windows 11 Fluent</p>
+        </div>
         <div className="header-actions">
           <button
             className={`icon-button ${checking ? 'spinning' : ''}`}
             title={checking ? 'Перевіряємо оновлення...' : 'Перевірити оновлення'}
             onClick={onCheckUpdates}
             disabled={checking}
+            aria-label="Перевірити оновлення"
           >
-            R
+            <span className="fluent-icon">Sync</span>
           </button>
           {updatesCount > 0 && (
             <span className="update-badge" title={`Доступно оновлень: ${updatesCount}`}>
