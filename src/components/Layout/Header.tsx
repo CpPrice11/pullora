@@ -13,7 +13,6 @@ function Header({ updatesCount = 0, checking = false, onCheckUpdates }: HeaderPr
         </div>
         <div>
           <h1 className="header-title">Air Launcher</h1>
-          <p className="header-subtitle">Лаунчер релізів у стилі Windows 11 Fluent</p>
         </div>
         <div className="header-actions">
           <button

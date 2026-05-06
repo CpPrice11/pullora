@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings } from '../services/settings'
 import { openDir } from '../services/updates'
@@ -29,14 +29,38 @@ function SettingsPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const showSavedState = () => {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1600)
+  }
+
+  const persistSettings = async (
+    nextSettings: AppSettings,
+    previousSettings: AppSettings | null = settings,
+  ) => {
+    const normalizedSettings = normalizeSettings(nextSettings)
+
+    setSettings(normalizedSettings)
+    setError(null)
+
+    try {
+      await updateSettings(normalizedSettings)
+      showSavedState()
+      return normalizedSettings
+    } catch (err) {
+      if (previousSettings) {
+        setSettings(previousSettings)
+      }
+      setError(err instanceof Error ? err.message : 'Не вдалося зберегти налаштування')
+      return null
+    }
+  }
+
   const handleThemeChange = async (theme: ThemePreference) => {
     if (!settings) return
 
     const previousSettings = settings
-    const nextSettings = normalizeSettings({
-      ...settings,
-      theme,
-    })
+    const nextSettings = normalizeSettings({ ...settings, theme })
 
     setSettings(nextSettings)
     applyThemePreference(theme, true)
@@ -45,8 +69,7 @@ function SettingsPage() {
 
     try {
       await updateSettings(nextSettings)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 1600)
+      showSavedState()
     } catch (err) {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
@@ -58,25 +81,24 @@ function SettingsPage() {
   const handleBrowse = async () => {
     const dir = await pickDirectory()
     if (dir && settings) {
-      setSettings({ ...settings, installationPath: dir })
+      await persistSettings({ ...settings, installationPath: dir }, settings)
     }
   }
 
-  const handleSave = async () => {
+  const handleInstallationPathBlur = async () => {
     if (!settings) return
-    setSaving(true)
-    setError(null)
-    try {
-      const normalizedSettings = normalizeSettings(settings)
-      await updateSettings(normalizedSettings)
-      setSettings(normalizedSettings)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося зберегти налаштування')
-    } finally {
-      setSaving(false)
-    }
+    await persistSettings(settings, settings)
+  }
+
+  const handleAutoUpdateCheckChange = async (autoUpdateCheck: boolean) => {
+    if (!settings) return
+    await persistSettings({ ...settings, autoUpdateCheck }, settings)
+  }
+
+  const handleCheckIntervalChange = async (value: number) => {
+    if (!settings) return
+    const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
+    await persistSettings({ ...settings, checkIntervalHours }, settings)
   }
 
   const handleClearCache = async () => {
@@ -96,8 +118,7 @@ function SettingsPage() {
       setSettings(resetSettings)
       applyThemePreference(resetSettings.theme, true)
       notifyThemePreference(resetSettings.theme)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      showSavedState()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не вдалося скинути налаштування')
     } finally {
@@ -115,7 +136,10 @@ function SettingsPage() {
 
   return (
     <div className="page">
-      <h2>Налаштування</h2>
+      <div className="page-header">
+        <h2>Налаштування</h2>
+        {saved && <span className="saved-indicator">Збережено</span>}
+      </div>
 
       <div className="settings-form">
         <section className="settings-section">
@@ -127,6 +151,7 @@ function SettingsPage() {
                 id="installPath"
                 type="text"
                 value={settings.installationPath}
+                onBlur={handleInstallationPathBlur}
                 onChange={(e) =>
                   setSettings({ ...settings, installationPath: e.target.value })
                 }
@@ -156,9 +181,7 @@ function SettingsPage() {
               <input
                 type="checkbox"
                 checked={settings.autoUpdateCheck}
-                onChange={(e) =>
-                  setSettings({ ...settings, autoUpdateCheck: e.target.checked })
-                }
+                onChange={(e) => handleAutoUpdateCheckChange(e.target.checked)}
               />
               Автоматично перевіряти оновлення
             </label>
@@ -172,12 +195,7 @@ function SettingsPage() {
               min={1}
               max={168}
               value={settings.checkIntervalHours}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  checkIntervalHours: Number(e.target.value),
-                })
-              }
+              onChange={(e) => handleCheckIntervalChange(Number(e.target.value))}
               style={{ width: 100 }}
               disabled={!settings.autoUpdateCheck}
             />
@@ -196,18 +214,12 @@ function SettingsPage() {
             >
               <option value="light">Світла</option>
               <option value="dark">Темна</option>
-              <option value="auto">Авто (системна)</option>
+              <option value="auto">Авто</option>
             </select>
           </div>
         </section>
 
         {error && <div className="error-banner">Увага: {error}</div>}
-
-        <div className="form-actions">
-          <button onClick={handleSave} disabled={saving}>
-            {saving ? 'Зберігаємо...' : saved ? 'Збережено' : 'Зберегти налаштування'}
-          </button>
-        </div>
 
         <section className="danger-zone">
           <h3>Небезпечна зона</h3>
