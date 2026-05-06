@@ -107,7 +107,7 @@ function SearchPage() {
           <h2>Бібліотека</h2>
           {owner && (
             <p className="page-subtitle">
-              Публічні репозиторії GitHub від {owner}, у яких є релізи
+              Твої публічні репозиторії GitHub з релізами
             </p>
           )}
         </div>

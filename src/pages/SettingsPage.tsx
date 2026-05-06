@@ -15,8 +15,6 @@ const FALLBACK_SETTINGS: AppSettings = {
   language: 'uk',
 }
 
-const DEFAULT_GITHUB_OWNER = 'CpPrice11'
-
 function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +45,7 @@ function SettingsPage() {
     try {
       const normalizedSettings = {
         ...settings,
-        githubOwner: settings.githubOwner?.trim() || DEFAULT_GITHUB_OWNER,
+        githubOwner: 'CpPrice11',
         language: settings.language || 'uk',
       }
       await updateSettings(normalizedSettings)
@@ -107,29 +105,6 @@ function SettingsPage() {
                 </button>
               )}
             </div>
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <h3>GitHub</h3>
-          <div className="form-group">
-            <label htmlFor="githubOwner">Власник публічних репозиторіїв</label>
-            <input
-              id="githubOwner"
-              type="text"
-              value={settings.githubOwner ?? ''}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  githubOwner: e.target.value.trim() || undefined,
-                })
-              }
-              placeholder="CpPrice11"
-              autoComplete="off"
-            />
-            <p className="help-text">
-              Air Launcher покаже публічні репозиторії цього власника, у яких є GitHub Releases.
-            </p>
           </div>
         </section>
 

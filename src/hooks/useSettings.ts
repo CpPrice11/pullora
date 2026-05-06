@@ -20,7 +20,7 @@ function normalizeSettings(settings: AppSettings): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...settings,
-    githubOwner: settings.githubOwner?.trim() || DEFAULT_SETTINGS.githubOwner,
+    githubOwner: DEFAULT_SETTINGS.githubOwner,
     language: settings.language || DEFAULT_SETTINGS.language,
   }
 }
@@ -57,7 +57,7 @@ export function useSettings() {
   }
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
-    const next = { ...settings, ...partial }
+    const next = normalizeSettings({ ...settings, ...partial })
     await saveSettings(next)
     setSettings(next)
   }
