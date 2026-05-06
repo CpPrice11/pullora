@@ -1,7 +1,8 @@
 .download-panel {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
+  background: var(--color-mica);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
   padding: var(--spacing-lg);
   margin-top: var(--spacing-lg);
 }
@@ -21,23 +22,24 @@
 }
 
 .download-item {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
   padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  box-shadow: var(--shadow-control);
 }
 
 .download-item--completed {
   border-color: var(--color-success);
-  background: #f0fff4;
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-elevated));
 }
 
 .download-item--failed {
   border-color: var(--color-error);
-  background: #fff0f0;
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-bg-elevated));
 }
 
 .download-header {
@@ -62,27 +64,29 @@
 }
 
 .cancel-btn {
-  background: none;
-  border: none;
+  background: var(--color-control);
+  border: 1px solid transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
   line-height: 1;
 }
 
 .cancel-btn:hover {
-  background: var(--color-border);
+  background: var(--color-control-hover);
+  border-color: var(--color-border-subtle);
   color: var(--color-error);
   box-shadow: none;
 }
 
 .progress-bar-wrap {
   height: 6px;
-  background: var(--color-border);
+  background: var(--color-control);
   border-radius: 3px;
   overflow: hidden;
+  border: 1px solid var(--color-border-subtle);
 }
 
 .progress-bar-fill {

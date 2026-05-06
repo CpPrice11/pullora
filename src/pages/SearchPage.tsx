@@ -175,11 +175,18 @@ function SearchPage() {
           </div>
 
           {state.error && (
-            <div className="error-banner">Увага: {state.error}</div>
+            <div className="error-banner">
+              <span>Увага: {state.error}</span>
+              <button type="button" onClick={() => loadRepositories(1)}>
+                Спробувати ще
+              </button>
+            </div>
           )}
 
           {launchError && (
-            <div className="error-banner">Увага: {launchError}</div>
+            <div className="error-banner">
+              <span>Увага: {launchError}</span>
+            </div>
           )}
 
           <p className="results-count">
