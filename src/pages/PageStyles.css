@@ -23,6 +23,7 @@
 }
 
 .page-subtitle {
+  display: none;
   margin: var(--spacing-xs) 0 0 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -200,11 +201,12 @@
   align-items: center;
   gap: var(--spacing-sm);
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: 0;
   font-weight: 600;
 }
 
 .sort-control select {
+  font-size: var(--font-size-base);
   width: auto;
   min-width: 220px;
   padding: 0 14px;
@@ -438,6 +440,17 @@
 
 .form-actions button {
   flex: 1;
+}
+
+.saved-indicator {
+  animation: fluent-scale-in var(--motion-normal);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: 4px 10px;
 }
 
 .secondary-btn {
