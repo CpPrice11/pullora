@@ -1,7 +1,5 @@
 .layout {
-  background:
-    radial-gradient(circle at 20% 0%, var(--color-accent-wash), transparent 34%),
-    linear-gradient(135deg, var(--color-bg), var(--color-bg-elevated));
+  background: linear-gradient(135deg, var(--color-bg), var(--color-bg-secondary));
   color: var(--color-text);
   display: flex;
   flex-direction: column;
@@ -13,7 +11,8 @@
   -webkit-app-region: drag;
   background: var(--color-mica);
   border-bottom: 1px solid var(--color-border-subtle);
-  min-height: 76px;
+  backdrop-filter: blur(18px);
+  min-height: 78px;
   padding: 14px 28px;
   animation: fluent-fade-up var(--motion-normal);
 }
@@ -64,7 +63,7 @@
 
 .header-title {
   color: var(--color-text);
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 650;
   line-height: 1.2;
   margin: 0;
@@ -151,7 +150,7 @@
 .layout-container {
   display: grid;
   flex: 1;
-  grid-template-columns: 268px minmax(0, 1fr);
+  grid-template-columns: 256px minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
 }
@@ -181,7 +180,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: 34px 1fr;
-  min-height: 56px;
+  min-height: 46px;
   padding: 8px 10px;
   text-align: left;
   transition: var(--transition);
@@ -190,12 +189,12 @@
 .nav-item:hover {
   background: var(--color-control-hover);
   box-shadow: none;
-  transform: translateX(2px);
+  transform: translateX(1px);
 }
 
 .nav-item.active {
   background: var(--color-nav-active);
-  border-color: var(--color-border);
+  border-color: var(--color-border-subtle);
   box-shadow: var(--shadow-control);
   color: var(--color-text);
   transform: translateX(0);
@@ -231,7 +230,7 @@
 }
 
 .nav-icon {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -263,7 +262,7 @@
   flex-direction: column;
   min-width: 0;
   overflow: auto;
-  padding: 32px 36px;
+  padding: 32px 50px;
 }
 
 @media (max-width: 900px) {

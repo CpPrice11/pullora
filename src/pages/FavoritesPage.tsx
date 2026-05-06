@@ -32,17 +32,22 @@ function FavoritesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Обрані застосунки</h2>
+        <h2>Обране</h2>
         <button onClick={loadFavorites} className="refresh-btn">Оновити</button>
       </div>
 
       <div className="apps-list">
-        {loading && <p>Завантажуємо обране...</p>}
+        {loading && (
+          <div className="library-skeleton" aria-label="Завантажуємо обране">
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+          </div>
+        )}
 
         {!loading && favorites.length === 0 && (
           <div className="empty-state">
-            <p>Поки що немає обраних застосунків</p>
-            <p>Додай репозиторій у Бібліотеці, щоб він з'явився тут</p>
+            <h3>Обраних застосунків немає</h3>
+            <p>Додай проєкт у бібліотеці, щоб він зʼявився тут.</p>
           </div>
         )}
 
@@ -57,8 +62,9 @@ function FavoritesPage() {
                 className="fav-remove-btn"
                 onClick={() => handleRemove(fav)}
                 title="Прибрати з обраного"
+                aria-label="Прибрати з обраного"
               >
-                Зняти
+                ★
               </button>
             </div>
 
