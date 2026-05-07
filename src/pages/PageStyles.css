@@ -7,6 +7,23 @@
   width: 100%;
 }
 
+.library-page {
+  gap: 14px;
+}
+
+.library-page .page-header {
+  min-height: 44px;
+}
+
+.library-page .page-header h2 {
+  font-size: 28px;
+}
+
+.library-page .refresh-btn {
+  min-height: 34px;
+  padding: 0 16px;
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -157,10 +174,10 @@
   background: var(--color-control);
   border-radius: 10px;
   box-shadow: var(--shadow-control);
-  font-size: 15px;
-  min-height: 46px;
+  font-size: 14px;
+  min-height: 40px;
   min-width: min(300px, 100%);
-  padding: 0 18px;
+  padding: 0 16px;
 }
 
 .search-form button {
@@ -176,23 +193,32 @@
   flex-wrap: wrap;
 }
 
+.library-page .library-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+}
+
 .segmented-control {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 10px;
+  border-radius: 9px;
   box-shadow: var(--shadow-control);
-  padding: 4px;
+  padding: 3px;
+}
+
+.library-page .segmented-control {
+  width: fit-content;
 }
 
 .segmented-control button {
   background: transparent;
   border: none;
   color: var(--color-text-secondary);
-  min-height: 34px;
-  padding: 0 16px;
+  min-height: 30px;
+  padding: 0 14px;
   font-size: 13px;
   box-shadow: none;
   transition: var(--transition);
@@ -216,10 +242,16 @@
 }
 
 .sort-control select {
-  font-size: var(--font-size-base);
+  font-size: 13px;
   width: auto;
+  min-height: 36px;
   min-width: 220px;
-  padding: 0 14px;
+  padding: 0 12px;
+}
+
+.library-page .sort-control,
+.library-page .sort-control select {
+  width: 100%;
 }
 
 /* Results and Apps List */
@@ -228,6 +260,10 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+}
+
+.library-page .search-results {
+  gap: 10px;
 }
 
 .empty-state {
