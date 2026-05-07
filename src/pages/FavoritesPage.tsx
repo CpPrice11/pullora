@@ -2,9 +2,11 @@ import { useEffect, useState, useCallback } from 'react'
 import type { FavoriteApp } from '../types'
 import { getFavorites, removeFromFavorites } from '../services/favorites'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
+import { useI18n } from '../i18n'
 import './PageStyles.css'
 
 function FavoritesPage() {
+  const { t } = useI18n()
   const [favorites, setFavorites] = useState<FavoriteApp[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedFav, setSelectedFav] = useState<FavoriteApp | null>(null)
@@ -32,13 +34,13 @@ function FavoritesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Обране</h2>
-        <button onClick={loadFavorites} className="refresh-btn">Оновити</button>
+        <h2>{t('favorites.title')}</h2>
+        <button onClick={loadFavorites} className="refresh-btn">{t('favorites.refresh')}</button>
       </div>
 
       <div className="apps-list">
         {loading && (
-          <div className="library-skeleton" aria-label="Завантажуємо обране">
+          <div className="library-skeleton" aria-label={t('favorites.loading')}>
             <div className="skeleton-card" />
             <div className="skeleton-card" />
           </div>
@@ -46,8 +48,8 @@ function FavoritesPage() {
 
         {!loading && favorites.length === 0 && (
           <div className="empty-state">
-            <h3>Обраних застосунків немає</h3>
-            <p>Додай проєкт у бібліотеці, щоб він зʼявився тут.</p>
+            <h3>{t('favorites.emptyTitle')}</h3>
+            <p>{t('favorites.emptyText')}</p>
           </div>
         )}
 
@@ -61,8 +63,8 @@ function FavoritesPage() {
               <button
                 className="fav-remove-btn"
                 onClick={() => handleRemove(fav)}
-                title="Прибрати з обраного"
-                aria-label="Прибрати з обраного"
+                title={t('repo.removeFavorite')}
+                aria-label={t('repo.removeFavorite')}
               >
                 ★
               </button>
@@ -74,7 +76,7 @@ function FavoritesPage() {
 
             <div className="app-actions">
               <button onClick={() => setSelectedFav(fav)}>
-                Встановити / оновити
+                {t('favorites.installUpdate')}
               </button>
             </div>
           </div>

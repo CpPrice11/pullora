@@ -12,9 +12,11 @@ import {
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import { useDownload } from '../hooks/useDownload'
+import { useI18n } from '../i18n'
 import './PageStyles.css'
 
 function InstalledPage() {
+  const { t } = useI18n()
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,11 +30,11 @@ function InstalledPage() {
       const data = await getInstalledApps()
       setApps(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося завантажити встановлені застосунки')
+      setError(err instanceof Error ? err.message : t('installed.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     loadApps()
@@ -44,7 +46,7 @@ function InstalledPage() {
   }
 
   const handleUninstall = async (owner: string, repo: string, tag: string) => {
-    if (!confirm(`Видалити ${repo} ${tag}?`)) return
+    if (!confirm(t('installed.uninstallConfirm', { repo, tag }))) return
     await uninstallVersion(owner, repo, tag)
     loadApps()
   }
@@ -60,7 +62,7 @@ function InstalledPage() {
       }
       await launchApp(app.owner, app.repo)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
+      setError(err instanceof Error ? err.message : t('installed.launchError'))
       setRepairTarget(app)
     }
   }
@@ -69,21 +71,23 @@ function InstalledPage() {
     setError(null)
     try {
       const removed = await cleanupIncompleteInstalls()
-      alert(removed > 0 ? `Очищено незавершених папок: ${removed}` : 'Незавершених встановлень не знайдено')
+      alert(removed > 0
+        ? t('installed.cleanupDone', { count: removed })
+        : t('installed.cleanupEmpty'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося очистити незавершені встановлення')
+      setError(err instanceof Error ? err.message : t('installed.cleanupError'))
     }
   }
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Встановлені</h2>
+        <h2>{t('installed.title')}</h2>
         <div className="page-actions">
           <button type="button" className="secondary-btn" onClick={handleCleanup}>
-            Очистити незавершені
+            {t('installed.cleanup')}
           </button>
-          <button onClick={loadApps} className="refresh-btn">Оновити</button>
+          <button onClick={loadApps} className="refresh-btn">{t('installed.refresh')}</button>
         </div>
       </div>
 
@@ -92,7 +96,7 @@ function InstalledPage() {
           <span>{error}</span>
           {repairTarget && (
             <button type="button" onClick={() => setRepairTarget(repairTarget)}>
-              Відновити
+              {t('installed.repair')}
             </button>
           )}
         </div>
@@ -102,7 +106,7 @@ function InstalledPage() {
 
       <div className="apps-list">
         {loading && (
-          <div className="library-skeleton" aria-label="Завантажуємо встановлені">
+          <div className="library-skeleton" aria-label={t('installed.loading')}>
             <div className="skeleton-card" />
             <div className="skeleton-card" />
           </div>
@@ -110,8 +114,8 @@ function InstalledPage() {
 
         {!loading && apps.length === 0 && (
           <div className="empty-state">
-            <h3>Встановлених застосунків немає</h3>
-            <p>Встанови проєкт із бібліотеки, і він зʼявиться тут.</p>
+            <h3>{t('installed.emptyTitle')}</h3>
+            <p>{t('installed.emptyText')}</p>
           </div>
         )}
 
@@ -130,24 +134,24 @@ function InstalledPage() {
 
               <div className="app-actions">
                 <button onClick={() => handleLaunch(app)}>
-                  Запустити
+                  {t('installed.launch')}
                 </button>
                 <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
-                  Відновити
+                  {t('installed.repair')}
                 </button>
                 <button
                   className="secondary-btn"
                   onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) =>
-                    setError(err instanceof Error ? err.message : 'Не вдалося відкрити папку'),
+                    setError(err instanceof Error ? err.message : t('installed.openFolderError')),
                   )}
                 >
-                  Папка
+                  {t('installed.folder')}
                 </button>
                 <button
                   onClick={() => setExpandedApp(isExpanded ? null : key)}
                   className="secondary-btn"
                 >
-                  {isExpanded ? 'Сховати' : `Версії (${app.versions.length})`}
+                  {isExpanded ? t('installed.hide') : t('installed.versions', { count: app.versions.length })}
                 </button>
               </div>
 
@@ -168,17 +172,17 @@ function InstalledPage() {
                             className="small-btn"
                             onClick={() => handleSwitch(app.owner, app.repo, version.tag)}
                           >
-                            Активувати
+                            {t('installed.activate')}
                           </button>
                         )}
                         {version.tag === app.activeVersion && (
-                          <span className="active-label">Активна</span>
+                          <span className="active-label">{t('installed.active')}</span>
                         )}
                         <button
                           className="small-btn danger"
                           onClick={() => handleUninstall(app.owner, app.repo, version.tag)}
                         >
-                          Видалити
+                          {t('installed.delete')}
                         </button>
                       </div>
                     </div>

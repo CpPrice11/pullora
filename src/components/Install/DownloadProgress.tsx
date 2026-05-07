@@ -1,4 +1,5 @@
 import type { DownloadProgress as DL } from '../../types'
+import { useI18n } from '../../i18n'
 import './Install.css'
 
 interface DownloadProgressProps {
@@ -12,22 +13,24 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-function statusLabel(status: DL['status']) {
+function statusLabel(status: DL['status'], t: (key: string) => string) {
   switch (status) {
-    case 'pending':     return 'Очікує...'
-    case 'downloading': return 'Завантаження'
-    case 'extracting':  return 'Розпакування'
-    case 'completed':   return 'Готово'
-    case 'failed':      return 'Помилка'
+    case 'pending':     return t('download.pending')
+    case 'downloading': return t('download.downloading')
+    case 'extracting':  return t('download.extracting')
+    case 'completed':   return t('download.completed')
+    case 'failed':      return t('download.failed')
   }
 }
 
 function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
+  const { t } = useI18n()
+
   if (downloads.length === 0) return null
 
   return (
     <div className="download-panel">
-      <h3 className="download-panel-title">Завантаження</h3>
+      <h3 className="download-panel-title">{t('download.title')}</h3>
       <div className="download-list">
         {downloads.map((download) => (
           <div
@@ -38,14 +41,14 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
               <span className="download-name" title={download.fileName}>
                 {download.fileName}
               </span>
-              <span className="download-status">{statusLabel(download.status)}</span>
+              <span className="download-status">{statusLabel(download.status, t)}</span>
               {(download.status === 'downloading' || download.status === 'pending') && (
                 <button
                   className="cancel-btn"
                   onClick={() => onCancel(download.id)}
-                  title="Скасувати завантаження"
+                  title={t('download.cancelTitle')}
                 >
-                  Скасувати
+                  {t('download.cancel')}
                 </button>
               )}
             </div>
@@ -64,10 +67,10 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
                 </span>
               )}
               {download.status === 'completed' && (
-                <span className="done-text">Успішно встановлено</span>
+                <span className="done-text">{t('download.done')}</span>
               )}
               {download.status === 'failed' && (
-                <span className="error-text">{download.error ?? 'Невідома помилка'}</span>
+                <span className="error-text">{download.error ?? t('download.unknownError')}</span>
               )}
               <span className="download-pct">{Math.round(download.progress)}%</span>
             </div>

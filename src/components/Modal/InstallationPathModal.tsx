@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { pickDirectory } from '../../services/dialog'
+import { useI18n } from '../../i18n'
 import './Modal.css'
 
 interface InstallationPathModalProps {
@@ -7,6 +8,7 @@ interface InstallationPathModalProps {
 }
 
 function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
+  const { t } = useI18n()
   const [selectedPath, setSelectedPath] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -19,7 +21,7 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedPath.trim()) {
-      setError('Обери папку для встановлення')
+      setError(t('firstRun.pathRequired'))
       return
     }
     setLoading(true)
@@ -27,7 +29,7 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
     try {
       await onPathSelected(selectedPath)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не вдалося задати папку встановлення')
+      setError(err instanceof Error ? err.message : t('firstRun.pathError'))
       setLoading(false)
     }
   }
@@ -36,28 +38,27 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>Вітаємо в Air Launcher</h2>
+          <h2>{t('firstRun.title')}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <p className="modal-description">
-            Обери, куди встановлювати завантажені застосунки.
-            Папка буде створена автоматично, якщо її ще немає.
+            {t('firstRun.description')}
           </p>
 
           <div className="form-group">
-            <label htmlFor="installPath">Папка встановлення</label>
+            <label htmlFor="installPath">{t('settings.installPath')}</label>
             <div className="path-input-group">
               <input
                 id="installPath"
                 type="text"
                 value={selectedPath}
                 onChange={(e) => setSelectedPath(e.target.value)}
-                placeholder="Натисни Обрати або введи шлях..."
+                placeholder={t('firstRun.pathPlaceholder')}
                 disabled={loading}
               />
               <button type="button" onClick={handleBrowse} disabled={loading}>
-                Обрати...
+                {t('settings.choose')}
               </button>
             </div>
           </div>
@@ -66,13 +67,13 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
 
           <div className="modal-actions">
             <button type="submit" disabled={loading || !selectedPath.trim()}>
-              {loading ? 'Налаштовуємо...' : 'Продовжити'}
+              {loading ? t('firstRun.configuring') : t('firstRun.continue')}
             </button>
           </div>
         </form>
 
         <p className="modal-footer-text">
-          Цю папку можна змінити пізніше в налаштуваннях.
+          {t('firstRun.footer')}
         </p>
       </div>
     </div>

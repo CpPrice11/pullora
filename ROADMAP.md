@@ -12,6 +12,19 @@ The project should not be rewritten to another language unless the product goals
 - Keep the UI fast, beautiful, and focused on a library/launcher experience.
 - Avoid GitHub OAuth or private repository access for the first version.
 
+## Release Asset Policy
+
+Every public Air Launcher release should keep the manual asset list small and predictable:
+
+- Keep one portable EXE named like `Air.Launcher_<version>_portable_x64.exe`.
+- Keep one setup installer named like `Air.Launcher_<version>_x64-setup.exe`.
+- Do not upload MSI when setup EXE is present.
+- Do not upload a portable ZIP unless it contains more than the single portable EXE.
+- Self-update must choose only portable EXE or portable ZIP assets and must ignore setup, installer, and MSI assets.
+- GitHub-generated source archives are expected and do not count as launcher install assets.
+
+This keeps safe update behavior deterministic and makes the download choice obvious for users.
+
 ## Release 0.2.0: Fluent Design
 
 Goal: ship a focused design/UX release with Figma as the source of truth before code changes.

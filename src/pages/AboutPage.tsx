@@ -7,7 +7,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.4'
+const CURRENT_VERSION = 'v0.2.5'
 
 function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const candidates = assets.filter((asset) => {
@@ -109,6 +109,10 @@ function AboutPage() {
                     release.tag_name === CURRENT_VERSION ? 'active' : ''
                   }`}
                 >
+                  {(() => {
+                    const portableAsset = pickPortableLauncherAsset(release.assets)
+
+                    return (
                   <div>
                     <span>{release.tag_name}</span>
                     <span>
@@ -116,7 +120,12 @@ function AboutPage() {
                         ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
                         : t('about.noDate')}
                     </span>
+                    {portableAsset && (
+                      <span>{t('about.portableAsset', { name: portableAsset.name })}</span>
+                    )}
                   </div>
+                    )
+                  })()}
                   <button
                     type="button"
                     className="secondary-btn"

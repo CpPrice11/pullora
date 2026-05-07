@@ -4,6 +4,7 @@ import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
 import type { GitHubRelease, GitHubAsset } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
+import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -54,6 +55,7 @@ function ReleaseSelector({
   onClose,
   onInstalled,
 }: ReleaseSelectorProps) {
+  const { language, t } = useI18n()
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
   const { downloads, download, cancel } = useDownload()
   const { settings } = useSettings()
@@ -112,7 +114,7 @@ function ReleaseSelector({
         selectedRelease.tag_name,
       )
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Завантаження не вдалося')
+      setDownloadError(err instanceof Error ? err.message : t('release.downloadFailed'))
     } finally {
       setDownloading(false)
     }
@@ -127,24 +129,24 @@ function ReleaseSelector({
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
           <button className="close-btn" onClick={onClose}>
-            Закрити
+            {t('release.close')}
           </button>
         </div>
 
         <div className="release-body">
-          {loading && <p className="loading-text">Завантажуємо релізи...</p>}
+          {loading && <p className="loading-text">{t('release.loading')}</p>}
           {error && <div className="error-message">{error}</div>}
 
           {!loading && visibleReleases.length === 0 && (
             <p className="no-releases">
-              Релізів для вибраного каналу не знайдено.
+              {t('release.noReleases')}
             </p>
           )}
 
           {visibleReleases.length > 0 && (
             <>
               <div className="form-group">
-                <label htmlFor="release-select">Версія</label>
+                <label htmlFor="release-select">{t('release.version')}</label>
                 <select
                   id="release-select"
                   value={selectedRelease?.id ?? ''}
@@ -158,7 +160,7 @@ function ReleaseSelector({
                       {release.tag_name}
                       {release.prerelease ? ' (prerelease)' : ''}
                       {release.published_at
-                        ? ` - ${new Date(release.published_at).toLocaleDateString('uk-UA')}`
+                        ? ` - ${new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')}`
                         : ''}
                     </option>
                   ))}
@@ -167,7 +169,7 @@ function ReleaseSelector({
 
               {selectedRelease && selectedRelease.assets.length > 0 && (
                 <div className="form-group">
-                  <label htmlFor="asset-select">Файл</label>
+                  <label htmlFor="asset-select">{t('release.file')}</label>
                   <select
                     id="asset-select"
                     value={selectedAsset?.id ?? ''}
@@ -189,7 +191,7 @@ function ReleaseSelector({
 
               {selectedRelease && selectedRelease.assets.length === 0 && (
                 <p className="no-assets">
-                  У цьому релізі немає готових файлів.
+                  {t('release.noAssets')}
                 </p>
               )}
 
@@ -203,7 +205,9 @@ function ReleaseSelector({
                   disabled={!selectedAsset || downloading}
                   className="download-btn"
                 >
-                  {downloading ? 'Починаємо...' : `Завантажити ${selectedAsset?.name ?? ''}`}
+                  {downloading
+                    ? t('release.starting')
+                    : t('release.download', { name: selectedAsset?.name ?? '' })}
                 </button>
                 <a
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}

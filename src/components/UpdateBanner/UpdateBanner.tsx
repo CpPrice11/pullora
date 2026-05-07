@@ -1,4 +1,5 @@
 import type { UpdateAvailable } from '../../types'
+import { useI18n } from '../../i18n'
 import './UpdateBanner.css'
 
 interface UpdateBannerProps {
@@ -8,6 +9,8 @@ interface UpdateBannerProps {
 }
 
 function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
+  const { t } = useI18n()
+
   if (updates.length === 0) return null
 
   return (
@@ -16,8 +19,8 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
         <span className="update-icon">↻</span>
         <strong>
           {updates.length === 1
-            ? `Доступне оновлення для ${updates[0].appName}`
-            : `Доступно оновлень: ${updates.length}`}
+            ? t('updates.one', { name: updates[0].appName })
+            : t('updates.many', { count: updates.length })}
         </strong>
       </div>
 
@@ -30,14 +33,14 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
             </span>
             <div className="update-actions">
               <button className="update-install-btn" onClick={() => onInstall(update)}>
-                Встановити
+                {t('updates.install')}
               </button>
               <button
                 className="update-dismiss-btn"
                 onClick={() => onDismiss(update.owner, update.repo)}
-                title="Сховати"
+                title={t('updates.hide')}
               >
-                Закрити
+                {t('updates.close')}
               </button>
             </div>
           </div>
