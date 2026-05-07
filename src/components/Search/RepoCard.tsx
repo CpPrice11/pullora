@@ -67,46 +67,42 @@ function RepoCard({
 
   return (
     <article className="repo-card" onClick={onSelect}>
-      <div className="repo-card-main">
-        <div className="repo-card-identity">
-          <img
-            src={repo.owner.avatar_url}
-            alt={repo.owner.login}
-            className="owner-avatar"
-          />
-          <div className="repo-title-block">
-            <div className="repo-name-row">
-              <h3 className="repo-name">{repo.name}</h3>
-              <span className={`repo-status ${hasUpdate ? 'update' : isInstalled ? 'installed' : ''}`}>
-                {statusLabel}
-              </span>
-            </div>
-            <span className="repo-owner">{repo.owner.login}</span>
-          </div>
+      <img
+        src={repo.owner.avatar_url}
+        alt={repo.owner.login}
+        className="owner-avatar"
+      />
+
+      <div className="repo-info">
+        <div className="repo-title-line">
+          <h3 className="repo-name">{repo.name}</h3>
+          <span className={`repo-status ${hasUpdate ? 'update' : isInstalled ? 'installed' : ''}`}>
+            {statusLabel}
+          </span>
         </div>
 
-        <div className="repo-card-content">
-          {repo.description && (
-            <p className="repo-description">{repo.description}</p>
-          )}
+        <div className="repo-owner">{repo.owner.login}</div>
 
-          <div className="repo-meta">
-            <span>{repo.stargazers_count.toLocaleString()} зірок</span>
-            {repo.language && (
-              <span className="repo-lang">{repo.language}</span>
-            )}
-            {installedApp && (
-              <span className="repo-installed-version">
-                Активна {installedApp.activeVersion}
-              </span>
-            )}
-            {hasUpdate && latestVersion && (
-              <span className="repo-update-version">
-                Нова {latestVersion}
-              </span>
-            )}
-            <span>Оновлено {updatedDate}</span>
-          </div>
+        {repo.description && (
+          <p className="repo-description">{repo.description}</p>
+        )}
+
+        <div className="repo-meta">
+          <span>{repo.stargazers_count.toLocaleString()} зірок</span>
+          {repo.language && (
+            <span className="repo-lang">{repo.language}</span>
+          )}
+          {installedApp && (
+            <span className="repo-installed-version">
+              Активна {installedApp.activeVersion}
+            </span>
+          )}
+          {hasUpdate && latestVersion && (
+            <span className="repo-update-version">
+              Нова {latestVersion}
+            </span>
+          )}
+          <span>Оновлено {updatedDate}</span>
         </div>
       </div>
 
