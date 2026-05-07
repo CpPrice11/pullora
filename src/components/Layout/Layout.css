@@ -222,16 +222,27 @@
   border-radius: 8px;
   color: var(--color-text-secondary);
   display: flex;
-  font-size: 0;
   height: 32px;
   justify-content: center;
   width: 32px;
   transition: var(--transition);
 }
 
-.nav-icon {
-  font-size: 16px;
-  font-weight: 700;
+.nav-icon-svg {
+  display: block;
+  height: 17px;
+  width: 17px;
+}
+
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+  color: var(--color-text);
+}
+
+.nav-item.active .nav-icon {
+  background: var(--color-primary-light);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border-subtle));
+  color: var(--color-primary);
 }
 
 .nav-text {
