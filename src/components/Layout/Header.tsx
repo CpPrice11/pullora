@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n'
+
 interface HeaderProps {
   updatesCount?: number
   checking?: boolean
@@ -5,6 +7,8 @@ interface HeaderProps {
 }
 
 function Header({ updatesCount = 0, checking = false, onCheckUpdates }: HeaderProps) {
+  const { t } = useI18n()
+
   return (
     <header className="header">
       <div className="header-content">
@@ -17,15 +21,15 @@ function Header({ updatesCount = 0, checking = false, onCheckUpdates }: HeaderPr
         <div className="header-actions">
           <button
             className={`icon-button ${checking ? 'spinning' : ''}`}
-            title={checking ? 'Перевіряємо оновлення...' : 'Перевірити оновлення'}
+            title={checking ? t('header.checking') : t('header.checkUpdates')}
             onClick={onCheckUpdates}
             disabled={checking}
-            aria-label="Перевірити оновлення"
+            aria-label={t('header.checkUpdates')}
           >
             <span className="fluent-icon">Sync</span>
           </button>
           {updatesCount > 0 && (
-            <span className="update-badge" title={`Доступно оновлень: ${updatesCount}`}>
+            <span className="update-badge" title={t('header.availableUpdates', { count: updatesCount })}>
               {updatesCount}
             </span>
           )}

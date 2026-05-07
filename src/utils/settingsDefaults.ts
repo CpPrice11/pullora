@@ -26,6 +26,6 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     githubOwner: DEFAULT_SETTINGS.githubOwner,
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
-    language: settings?.language || DEFAULT_SETTINGS.language,
+    language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,
   }
 }

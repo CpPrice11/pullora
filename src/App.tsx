@@ -12,6 +12,7 @@ import ReleaseSelector from './components/Search/ReleaseSelector'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
+import { LanguageProvider } from './i18n'
 import type { UpdateAvailable } from './types'
 
 type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
@@ -86,36 +87,38 @@ function App() {
   }
 
   return (
-    <Layout
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      updatesCount={updates.length}
-      checking={checking}
-      onCheckUpdates={check}
-    >
-      {updates.length > 0 && (
-        <UpdateBanner
-          updates={updates}
-          onDismiss={dismiss}
-          onInstall={handleInstallUpdate}
-        />
-      )}
+    <LanguageProvider initialLanguage={settings.language}>
+      <Layout
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        updatesCount={updates.length}
+        checking={checking}
+        onCheckUpdates={check}
+      >
+        {updates.length > 0 && (
+          <UpdateBanner
+            updates={updates}
+            onDismiss={dismiss}
+            onInstall={handleInstallUpdate}
+          />
+        )}
 
-      {renderContent()}
+        {renderContent()}
 
-      {showPathModal && (
-        <InstallationPathModal onPathSelected={handlePathSelected} />
-      )}
+        {showPathModal && (
+          <InstallationPathModal onPathSelected={handlePathSelected} />
+        )}
 
-      {updateTarget && (
-        <ReleaseSelector
-          owner={updateTarget.owner}
-          repo={updateTarget.repo}
-          displayName={updateTarget.appName}
-          onClose={() => setUpdateTarget(null)}
-        />
-      )}
-    </Layout>
+        {updateTarget && (
+          <ReleaseSelector
+            owner={updateTarget.owner}
+            repo={updateTarget.repo}
+            displayName={updateTarget.appName}
+            onClose={() => setUpdateTarget(null)}
+          />
+        )}
+      </Layout>
+    </LanguageProvider>
   )
 }
 

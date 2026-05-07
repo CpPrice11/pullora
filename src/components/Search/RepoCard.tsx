@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../types'
 import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../services/favorites'
+import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -18,6 +19,7 @@ function RepoCard({
   onSelect,
   onLaunch,
 }: RepoCardProps) {
+  const { language, t } = useI18n()
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const isInstalled = Boolean(installedApp)
@@ -61,9 +63,9 @@ function RepoCard({
     onLaunch?.()
   }
 
-  const updatedDate = new Date(repo.updated_at).toLocaleDateString('uk-UA')
-  const statusLabel = hasUpdate ? 'Оновлення' : isInstalled ? 'Встановлено' : 'Готово'
-  const primaryLabel = hasUpdate ? 'Оновити' : isInstalled ? 'Версії' : 'Встановити'
+  const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+  const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.ready')
+  const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.versions') : t('repo.install')
 
   return (
     <article className="repo-card" onClick={onSelect}>
@@ -88,21 +90,21 @@ function RepoCard({
         )}
 
         <div className="repo-meta">
-          <span>{repo.stargazers_count.toLocaleString()} зірок</span>
+          <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
           {repo.language && (
             <span className="repo-lang">{repo.language}</span>
           )}
           {installedApp && (
             <span className="repo-installed-version">
-              Активна {installedApp.activeVersion}
+              {t('repo.active', { version: installedApp.activeVersion })}
             </span>
           )}
           {hasUpdate && latestVersion && (
             <span className="repo-update-version">
-              Нова {latestVersion}
+              {t('repo.new', { version: latestVersion })}
             </span>
           )}
-          <span>Оновлено {updatedDate}</span>
+          <span>{t('repo.updated', { date: updatedDate })}</span>
         </div>
       </div>
 
@@ -111,14 +113,14 @@ function RepoCard({
           className={`fav-btn ${isFav ? 'active' : ''}`}
           onClick={toggleFavorite}
           disabled={favLoading}
-          title={isFav ? 'Прибрати з обраного' : 'Додати в обране'}
-          aria-label={isFav ? 'Прибрати з обраного' : 'Додати в обране'}
+          title={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
+          aria-label={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
         >
           {isFav ? '★' : '☆'}
         </button>
         {isInstalled && (
           <button className="launch-btn" onClick={handleLaunch}>
-            Запустити
+            {t('repo.launch')}
           </button>
         )}
         <button className="install-btn" onClick={onSelect}>

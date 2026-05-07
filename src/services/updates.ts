@@ -12,6 +12,7 @@ export async function openDir(path: string): Promise<void> {
 export async function installLauncherRelease(
   version: string,
   assetUrl: string,
+  assetName: string,
 ): Promise<void> {
-  return callTauri('install_launcher_release', { version, assetUrl })
+  return callTauri('install_launcher_release', { version, assetUrl, assetName })
 }

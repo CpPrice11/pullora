@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n'
+
 type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
 type NavIconName = 'library' | 'installed' | 'favorites' | 'settings' | 'about'
 
@@ -9,15 +11,15 @@ interface SidebarProps {
 interface NavItem {
   id: Tab
   icon: NavIconName
-  label: string
+  labelKey: string
 }
 
 const navItems: NavItem[] = [
-  { id: 'search', icon: 'library', label: 'Бібліотека' },
-  { id: 'installed', icon: 'installed', label: 'Встановлені' },
-  { id: 'favorites', icon: 'favorites', label: 'Обране' },
-  { id: 'settings', icon: 'settings', label: 'Налаштування' },
-  { id: 'about', icon: 'about', label: 'Про застосунок' },
+  { id: 'search', icon: 'library', labelKey: 'nav.library' },
+  { id: 'installed', icon: 'installed', labelKey: 'nav.installed' },
+  { id: 'favorites', icon: 'favorites', labelKey: 'nav.favorites' },
+  { id: 'settings', icon: 'settings', labelKey: 'nav.settings' },
+  { id: 'about', icon: 'about', labelKey: 'nav.about' },
 ]
 
 function NavIcon({ name }: { name: NavIconName }) {
@@ -72,24 +74,30 @@ function NavIcon({ name }: { name: NavIconName }) {
 }
 
 function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+  const { t } = useI18n()
+
   return (
     <aside className="sidebar">
-      <nav className="sidebar-nav" aria-label="Основна навігація">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => onTabChange(item.id)}
-            title={item.label}
-          >
-            <span className="nav-icon" aria-hidden="true">
-              <NavIcon name={item.icon} />
-            </span>
-            <span className="nav-text">
-              <span className="nav-label">{item.label}</span>
-            </span>
-          </button>
-        ))}
+      <nav className="sidebar-nav" aria-label="Navigation">
+        {navItems.map((item) => {
+          const label = t(item.labelKey)
+
+          return (
+            <button
+              key={item.id}
+              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+              onClick={() => onTabChange(item.id)}
+              title={label}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                <NavIcon name={item.icon} />
+              </span>
+              <span className="nav-text">
+                <span className="nav-label">{label}</span>
+              </span>
+            </button>
+          )
+        })}
       </nav>
     </aside>
   )

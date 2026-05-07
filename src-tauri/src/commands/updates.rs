@@ -38,6 +38,7 @@ pub async fn install_launcher_release(
     app: AppHandle,
     version: String,
     asset_url: String,
+    asset_name: String,
 ) -> Result<(), String> {
     let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let current_pid = std::process::id();
@@ -45,9 +46,11 @@ pub async fn install_launcher_release(
     let update_dir = config_dir.join("launcher-updates").join(&version);
     std::fs::create_dir_all(&update_dir).map_err(|e| e.to_string())?;
 
+    let downloaded_asset = update_dir.join(sanitize_asset_name(&asset_name));
     let downloaded_exe = update_dir.join("Air Launcher.exe");
     let script_path = update_dir.join("apply-launcher-update.ps1");
-    download_launcher_asset(&asset_url, &downloaded_exe).await?;
+    download_launcher_asset(&asset_url, &downloaded_asset).await?;
+    prepare_portable_launcher_asset(&downloaded_asset, &downloaded_exe, &update_dir)?;
     write_launcher_update_script(&script_path, &downloaded_exe, &current_exe, current_pid)?;
 
     std::process::Command::new("powershell")
@@ -61,6 +64,99 @@ pub async fn install_launcher_release(
 
     app.exit(0);
     Ok(())
+}
+
+fn sanitize_asset_name(asset_name: &str) -> String {
+    let clean = asset_name
+        .chars()
+        .map(|ch| match ch {
+            '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            _ => ch,
+        })
+        .collect::<String>();
+
+    if clean.trim().is_empty() {
+        "launcher-asset.exe".to_string()
+    } else {
+        clean
+    }
+}
+
+fn prepare_portable_launcher_asset(
+    downloaded_asset: &std::path::Path,
+    destination_exe: &std::path::Path,
+    update_dir: &std::path::Path,
+) -> Result<(), String> {
+    let asset_name = downloaded_asset
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default()
+        .to_lowercase();
+
+    if is_installer_asset(&asset_name) {
+        return Err("Setup/installer assets are not supported for launcher self-update. Use portable EXE or ZIP.".to_string());
+    }
+
+    if asset_name.ends_with(".exe") {
+        std::fs::copy(downloaded_asset, destination_exe).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    if asset_name.ends_with(".zip") {
+        let extract_dir = update_dir.join("portable");
+        if extract_dir.exists() {
+            std::fs::remove_dir_all(&extract_dir).map_err(|e| e.to_string())?;
+        }
+        std::fs::create_dir_all(&extract_dir).map_err(|e| e.to_string())?;
+
+        let file = std::fs::File::open(downloaded_asset).map_err(|e| e.to_string())?;
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+        archive.extract(&extract_dir).map_err(|e| e.to_string())?;
+
+        let portable_exe = find_portable_launcher_exe(&extract_dir)
+            .ok_or("Portable ZIP does not contain a launcher EXE")?;
+        std::fs::copy(portable_exe, destination_exe).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    Err("Unsupported launcher asset. Use portable EXE or ZIP.".to_string())
+}
+
+fn is_installer_asset(name: &str) -> bool {
+    name.contains("setup") || name.contains("installer") || name.ends_with(".msi")
+}
+
+fn find_portable_launcher_exe(dir: &std::path::Path) -> Option<std::path::PathBuf> {
+    let mut fallback = None;
+    let entries = std::fs::read_dir(dir).ok()?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if let Some(found) = find_portable_launcher_exe(&path) {
+                return Some(found);
+            }
+            continue;
+        }
+
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_lowercase();
+
+        if !name.ends_with(".exe") || is_installer_asset(&name) {
+            continue;
+        }
+
+        if name.contains("air") && name.contains("launcher") {
+            return Some(path);
+        }
+
+        fallback.get_or_insert(path);
+    }
+
+    fallback
 }
 
 async fn download_launcher_asset(url: &str, destination: &std::path::Path) -> Result<(), String> {

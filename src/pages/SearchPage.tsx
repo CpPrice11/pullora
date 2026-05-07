@@ -6,19 +6,14 @@ import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import { launchApp } from '../services/installed'
 import type { GitHubSearchResult } from '../types'
+import { useI18n } from '../i18n'
 import './PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 
-const filterLabels: Record<LibraryFilter, string> = {
-  all: 'Усі',
-  installed: 'Встановлені',
-  updates: 'Оновлення',
-  available: 'Доступні',
-}
-
 function SearchPage() {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
@@ -103,7 +98,7 @@ function SearchPage() {
     try {
       await launchApp(repo.owner.login, repo.name)
     } catch (err) {
-      setLaunchError(err instanceof Error ? err.message : 'Не вдалося запустити застосунок')
+      setLaunchError(err instanceof Error ? err.message : t('library.launchError'))
     }
   }
 
@@ -112,7 +107,7 @@ function SearchPage() {
   return (
     <div className="page library-page">
       <div className="page-header">
-        <h2>Бібліотека</h2>
+        <h2>{t('library.title')}</h2>
         {owner && (
           <button
             type="button"
@@ -120,15 +115,15 @@ function SearchPage() {
             onClick={() => loadRepositories(1)}
             disabled={state.loading}
           >
-            {state.loading ? 'Оновлюємо...' : 'Оновити'}
+            {state.loading ? t('library.refreshing') : t('library.refresh')}
           </button>
         )}
       </div>
 
       {!owner && !settingsLoading && (
         <div className="empty-state">
-          <h3>Власника GitHub не вказано</h3>
-          <p>Вкажи власника у налаштуваннях, щоб завантажити публічні репозиторії з релізами.</p>
+          <h3>{t('library.noOwnerTitle')}</h3>
+          <p>{t('library.noOwnerText')}</p>
         </div>
       )}
 
@@ -137,7 +132,7 @@ function SearchPage() {
           <div className="search-form">
             <input
               type="text"
-              placeholder="Фільтр бібліотеки..."
+              placeholder={t('library.searchPlaceholder')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="search-input"
@@ -145,7 +140,7 @@ function SearchPage() {
           </div>
 
           <div className="library-controls">
-            <div className="segmented-control" aria-label="Фільтр бібліотеки">
+            <div className="segmented-control" aria-label={t('library.filterLabel')}>
               {(['all', 'installed', 'updates', 'available'] as LibraryFilter[]).map((item) => (
                 <button
                   key={item}
@@ -153,19 +148,19 @@ function SearchPage() {
                   className={filter === item ? 'active' : ''}
                   onClick={() => setFilter(item)}
                 >
-                  {filterLabels[item]}
+                  {t(`library.${item === 'all' ? 'all' : item}`)}
                 </button>
               ))}
             </div>
 
-            <label className="sort-control" aria-label="Сортування">
+            <label className="sort-control" aria-label={t('library.sortLabel')}>
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as LibrarySort)}
               >
-                <option value="updated">Нещодавно оновлені</option>
-                <option value="status">Статус</option>
-                <option value="name">Назва</option>
+                <option value="updated">{t('library.recentlyUpdated')}</option>
+                <option value="status">{t('library.status')}</option>
+                <option value="name">{t('library.name')}</option>
               </select>
             </label>
           </div>
@@ -174,7 +169,7 @@ function SearchPage() {
             <div className="error-banner">
               <span>{state.error}</span>
               <button type="button" onClick={() => loadRepositories(1)}>
-                Спробувати ще
+                {t('library.tryAgain')}
               </button>
             </div>
           )}
@@ -186,14 +181,16 @@ function SearchPage() {
           )}
 
           <p className="results-count">
-            {visibleRepositories.length.toLocaleString()} із{' '}
-            {state.repositories.length.toLocaleString()} репозиторіїв з релізами
-            {checkingUpdates ? ' · перевіряємо встановлені версії...' : ''}
+            {t('library.count', {
+              visible: visibleRepositories.length.toLocaleString(),
+              total: state.repositories.length.toLocaleString(),
+            })}
+            {checkingUpdates ? t('library.checkingInstalled') : ''}
           </p>
 
           <div className="search-results">
             {showLoadingState && (
-              <div className="library-skeleton" aria-label="Завантажуємо бібліотеку">
+              <div className="library-skeleton" aria-label={t('library.loading')}>
                 <div className="skeleton-card" />
                 <div className="skeleton-card" />
                 <div className="skeleton-card" />
@@ -204,13 +201,13 @@ function SearchPage() {
               <div className="empty-state">
                 <h3>
                   {state.repositories.length === 0
-                    ? 'Релізів не знайдено'
-                    : 'Немає збігів для цього фільтра'}
+                    ? t('library.emptyTitle')
+                    : t('library.noMatchesTitle')}
                 </h3>
                 <p>
                   {state.repositories.length === 0
-                    ? 'У твоїх публічних репозиторіях поки немає GitHub Releases, які можна показати в лаунчері.'
-                    : 'Зміни фільтр або пошуковий запит, щоб побачити інші проєкти.'}
+                    ? t('library.emptyText')
+                    : t('library.noMatchesText')}
                 </p>
               </div>
             )}
@@ -229,7 +226,7 @@ function SearchPage() {
 
           {state.hasMore && !state.loading && (
             <button type="button" onClick={loadMore} className="load-more-btn">
-              Завантажити ще
+              {t('library.loadMore')}
             </button>
           )}
         </>

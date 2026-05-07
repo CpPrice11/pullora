@@ -6,9 +6,11 @@ import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
+import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import './PageStyles.css'
 
 function SettingsPage() {
+  const { t } = useI18n()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -52,7 +54,7 @@ function SettingsPage() {
       if (previousSettings) {
         setSettings(previousSettings)
       }
-      setError(err instanceof Error ? err.message : 'Не вдалося зберегти налаштування')
+      setError(err instanceof Error ? err.message : t('settings.saveError'))
       return null
     } finally {
       setSaving(false)
@@ -78,7 +80,7 @@ function SettingsPage() {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
       notifyThemePreference(previousSettings.theme)
-      setError(err instanceof Error ? err.message : 'Не вдалося зберегти тему')
+      setError(err instanceof Error ? err.message : t('settings.themeError'))
     } finally {
       setSaving(false)
     }
@@ -103,7 +105,7 @@ function SettingsPage() {
   }
 
   const handleResetSettings = async () => {
-    if (!window.confirm('Скинути всі налаштування до стандартних?')) return
+    if (!window.confirm(t('settings.resetConfirm'))) return
 
     const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
     const savedSettings = await persistSettings(resetSettings, settings)
@@ -115,14 +117,22 @@ function SettingsPage() {
 
   const handleClearCache = async () => {
     await clearGithubCache().catch(() => {})
-    alert('Кеш очищено')
+    alert(t('settings.cacheCleared'))
+  }
+
+  const handleLanguageChange = async (language: AppLanguage) => {
+    if (!settings) return
+    const savedSettings = await persistSettings({ ...settings, language }, settings)
+    if (savedSettings) {
+      notifyLanguage(language)
+    }
   }
 
   if (loading || !settings) {
     return (
       <div className="page">
         <div className="empty-state">
-          <p>Завантажуємо налаштування...</p>
+          <p>{t('settings.loading')}</p>
         </div>
       </div>
     )
@@ -131,16 +141,16 @@ function SettingsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Налаштування</h2>
-        {saving && <span className="saved-indicator">Зберігаємо</span>}
-        {!saving && saved && <span className="saved-indicator">Збережено</span>}
+        <h2>{t('settings.title')}</h2>
+        {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
+        {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
       </div>
 
       <div className="settings-form">
         <section className="settings-section">
-          <h3>Встановлення</h3>
+          <h3>{t('settings.installation')}</h3>
           <div className="form-group">
-            <label htmlFor="installPath">Папка встановлення</label>
+            <label htmlFor="installPath">{t('settings.installPath')}</label>
             <div className="path-input-row">
               <input
                 id="installPath"
@@ -151,19 +161,19 @@ function SettingsPage() {
                   setSettings({ ...settings, installationPath: event.target.value })
                 }
                 onKeyDown={handleInstallationPathKeyDown}
-                placeholder="Обери папку..."
+                placeholder={t('settings.installPathPlaceholder')}
               />
               <button type="button" onClick={handleBrowse}>
-                Обрати...
+                {t('settings.choose')}
               </button>
               {settings.installationPath && (
                 <button
                   type="button"
                   className="secondary-btn"
                   onClick={() => openDir(settings.installationPath).catch(() => {})}
-                  title="Відкрити у файловому менеджері"
+                  title={t('settings.open')}
                 >
-                  Відкрити
+                  {t('settings.open')}
                 </button>
               )}
             </div>
@@ -171,7 +181,7 @@ function SettingsPage() {
         </section>
 
         <section className="settings-section">
-          <h3>Оновлення</h3>
+          <h3>{t('settings.updates')}</h3>
           <div className="form-group">
             <label className="checkbox-label">
               <input
@@ -181,12 +191,12 @@ function SettingsPage() {
                   persistSettings({ ...settings, autoUpdateCheck: event.target.checked }, settings)
                 }
               />
-              Автоматично перевіряти оновлення
+              {t('settings.autoCheck')}
             </label>
           </div>
 
           <div className="form-group compact-control">
-            <label htmlFor="checkInterval">Інтервал перевірки</label>
+            <label htmlFor="checkInterval">{t('settings.interval')}</label>
             <input
               id="checkInterval"
               type="number"
@@ -211,12 +221,12 @@ function SettingsPage() {
                   persistSettings({ ...settings, includePrereleases: event.target.checked }, settings)
                 }
               />
-              Показувати prerelease
+              {t('settings.prerelease')}
             </label>
           </div>
 
           <div className="form-group compact-control">
-            <label htmlFor="assetStrategy">Файли релізів</label>
+            <label htmlFor="assetStrategy">{t('settings.assets')}</label>
             <select
               id="assetStrategy"
               value={settings.assetStrategy}
@@ -227,25 +237,37 @@ function SettingsPage() {
                 }, settings)
               }
             >
-              <option value="portableFirst">Portable ZIP спочатку</option>
-              <option value="installerFirst">EXE/MSI спочатку</option>
-              <option value="manual">Вручну</option>
+              <option value="portableFirst">{t('settings.portableFirst')}</option>
+              <option value="installerFirst">{t('settings.installerFirst')}</option>
+              <option value="manual">{t('settings.manual')}</option>
             </select>
           </div>
         </section>
 
         <section className="settings-section">
-          <h3>Вигляд</h3>
+          <h3>{t('settings.appearance')}</h3>
           <div className="form-group compact-control">
-            <label htmlFor="theme">Тема</label>
+            <label htmlFor="theme">{t('settings.theme')}</label>
             <select
               id="theme"
               value={settings.theme}
               onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
             >
-              <option value="light">Світла</option>
-              <option value="dark">Темна</option>
-              <option value="auto">Авто</option>
+              <option value="light">{t('settings.light')}</option>
+              <option value="dark">{t('settings.dark')}</option>
+              <option value="auto">{t('settings.auto')}</option>
+            </select>
+          </div>
+
+          <div className="form-group compact-control">
+            <label htmlFor="language">{t('settings.language')}</label>
+            <select
+              id="language"
+              value={settings.language}
+              onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
+            >
+              <option value="uk">{t('settings.ukrainian')}</option>
+              <option value="en">{t('settings.english')}</option>
             </select>
           </div>
         </section>
@@ -253,12 +275,12 @@ function SettingsPage() {
         {error && <div className="error-banner">{error}</div>}
 
         <section className="danger-zone">
-          <h3>Службові дії</h3>
+          <h3>{t('settings.service')}</h3>
           <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
-            Скинути налаштування
+            {t('settings.reset')}
           </button>
           <button className="danger-btn" onClick={handleClearCache}>
-            Очистити API-кеш
+            {t('settings.clearCache')}
           </button>
         </section>
       </div>
