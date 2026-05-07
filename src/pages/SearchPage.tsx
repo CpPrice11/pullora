@@ -110,7 +110,7 @@ function SearchPage() {
   const showLoadingState = owner && state.loading && state.repositories.length === 0
 
   return (
-    <div className="page">
+    <div className="page library-page">
       <div className="page-header">
         <h2>Бібліотека</h2>
         {owner && (

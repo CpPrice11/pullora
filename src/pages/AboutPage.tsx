@@ -6,7 +6,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.2'
+const CURRENT_VERSION = 'v0.2.3'
 
 function AboutPage() {
   const [releases, setReleases] = useState<GitHubRelease[]>([])
