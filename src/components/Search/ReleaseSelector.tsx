@@ -17,10 +17,34 @@ interface ReleaseSelectorProps {
   onInstalled?: () => void
 }
 
+type AssetKind = 'portable' | 'installer' | 'archive' | 'unknown'
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function getAssetKind(asset: GitHubAsset): AssetKind {
+  const name = asset.name.toLowerCase()
+  const isInstaller = name.includes('setup') ||
+    name.includes('installer') ||
+    name.endsWith('.msi')
+
+  if (isInstaller) return 'installer'
+  if (name.includes('portable') || name.endsWith('.appimage')) return 'portable'
+  if (name.endsWith('.zip') || name.endsWith('.tar.gz') || name.endsWith('.tar.xz')) return 'archive'
+  if (name.endsWith('.exe')) return 'portable'
+  return 'unknown'
+}
+
+function assetKindKey(kind: AssetKind) {
+  switch (kind) {
+    case 'portable':  return 'release.assetTypePortable'
+    case 'installer': return 'release.assetTypeInstaller'
+    case 'archive':   return 'release.assetTypeArchive'
+    case 'unknown':   return 'release.assetTypeUnknown'
+  }
 }
 
 function pickBestAsset(
@@ -71,6 +95,30 @@ function ReleaseSelector({
     ),
     [releases, settings.includePrereleases],
   )
+
+  const recommendedAsset = useMemo(
+    () => selectedRelease
+      ? pickBestAsset(selectedRelease.assets, settings.assetStrategy)
+      : null,
+    [selectedRelease, settings.assetStrategy],
+  )
+
+  const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
+
+  const strategyDescription = (() => {
+    if (settings.assetStrategy === 'installerFirst') return t('release.strategyInstallerFirst')
+    if (settings.assetStrategy === 'manual') return t('release.strategyManual')
+    return t('release.strategyPortableFirst')
+  })()
+
+  const downloadLabel = (() => {
+    if (!selectedAssetKind) return t('release.downloadFile')
+    if (selectedAssetKind === 'installer') return t('release.runInstaller')
+    if (selectedAssetKind === 'portable' || selectedAssetKind === 'archive') {
+      return t('release.installPortable')
+    }
+    return t('release.downloadFile')
+  })()
 
   useEffect(() => {
     fetchReleases()
@@ -170,6 +218,7 @@ function ReleaseSelector({
               {selectedRelease && selectedRelease.assets.length > 0 && (
                 <div className="form-group">
                   <label htmlFor="asset-select">{t('release.file')}</label>
+                  <p className="release-strategy-note">{strategyDescription}</p>
                   <select
                     id="asset-select"
                     value={selectedAsset?.id ?? ''}
@@ -182,10 +231,28 @@ function ReleaseSelector({
                   >
                     {selectedRelease.assets.map((asset) => (
                       <option key={asset.id} value={asset.id}>
-                        {asset.name} ({formatBytes(asset.size)})
+                        {asset.name} ({t(assetKindKey(getAssetKind(asset)))}, {formatBytes(asset.size)})
+                        {recommendedAsset?.id === asset.id ? ` - ${t('release.recommended')}` : ''}
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {selectedAsset && (
+                <div className={`asset-summary asset-summary--${selectedAssetKind}`}>
+                  <div>
+                    <span className="asset-kind">
+                      {selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnknown')}
+                    </span>
+                    {recommendedAsset?.id === selectedAsset.id && (
+                      <span className="asset-recommended">{t('release.recommended')}</span>
+                    )}
+                  </div>
+                  <span>{selectedAsset.name}</span>
+                  {selectedAssetKind === 'installer' && (
+                    <p>{t('release.installerWarning')}</p>
+                  )}
                 </div>
               )}
 
@@ -207,7 +274,9 @@ function ReleaseSelector({
                 >
                   {downloading
                     ? t('release.starting')
-                    : t('release.download', { name: selectedAsset?.name ?? '' })}
+                    : selectedAsset
+                      ? downloadLabel
+                      : t('release.download', { name: '' })}
                 </button>
                 <a
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}

@@ -7,7 +7,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.6'
+const CURRENT_VERSION = 'v0.2.7'
 
 function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const candidates = assets.filter((asset) => {
