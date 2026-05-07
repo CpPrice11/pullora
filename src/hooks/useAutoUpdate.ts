@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { UpdateAvailable } from '../types'
 import { checkForUpdates } from '../services/updates'
+import { clearGithubCache } from '../services/github'
 
 export function useAutoUpdate(intervalHours: number, enabled: boolean) {
   const [updates, setUpdates] = useState<UpdateAvailable[]>([])
@@ -10,6 +11,7 @@ export function useAutoUpdate(intervalHours: number, enabled: boolean) {
   const check = useCallback(async () => {
     setChecking(true)
     try {
+      await clearGithubCache()
       const found = await checkForUpdates()
       setUpdates(found)
       setLastChecked(new Date())

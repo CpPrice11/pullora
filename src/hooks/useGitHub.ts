@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { GitHubSearchResult, GitHubRelease } from '../types'
 import {
+  clearGithubCache,
   searchRepositories,
   listOwnerRepositories,
   getReleases,
@@ -83,7 +84,7 @@ export function useOwnerRepositories(owner: string | undefined) {
   })
 
   const loadRepositories = useCallback(
-    async (page = 1) => {
+    async (page = 1, forceRefresh = false) => {
       const normalizedOwner = owner?.trim()
 
       if (!normalizedOwner) {
@@ -99,6 +100,9 @@ export function useOwnerRepositories(owner: string | undefined) {
 
       setState((prev) => ({ ...prev, loading: true, error: null }))
       try {
+        if (forceRefresh) {
+          await clearGithubCache()
+        }
         const data = await listOwnerRepositories(normalizedOwner, page, true)
         setState((prev) => ({
           repositories:
@@ -124,12 +128,16 @@ export function useOwnerRepositories(owner: string | undefined) {
     [owner],
   )
 
+  const refreshRepositories = useCallback(() => {
+    loadRepositories(1, true)
+  }, [loadRepositories])
+
   const loadMore = useCallback(() => {
     if (!state.hasMore || state.loading) return
     loadRepositories(state.page + 1)
   }, [state.hasMore, state.loading, state.page, loadRepositories])
 
-  return { state, loadRepositories, loadMore }
+  return { state, loadRepositories, refreshRepositories, loadMore }
 }
 
 export function useReleases(owner: string, repo: string) {

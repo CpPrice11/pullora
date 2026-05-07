@@ -21,7 +21,7 @@ function SearchPage() {
   const [launchError, setLaunchError] = useState<string | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
   const owner = settings.githubOwner?.trim()
-  const { state, loadRepositories, loadMore } = useOwnerRepositories(owner)
+  const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
   const {
     checkingUpdates,
     getInstalledApp,
@@ -112,7 +112,7 @@ function SearchPage() {
           <button
             type="button"
             className="refresh-btn"
-            onClick={() => loadRepositories(1)}
+            onClick={refreshRepositories}
             disabled={state.loading}
           >
             {state.loading ? t('library.refreshing') : t('library.refresh')}
@@ -168,7 +168,7 @@ function SearchPage() {
           {state.error && (
             <div className="error-banner">
               <span>{state.error}</span>
-              <button type="button" onClick={() => loadRepositories(1)}>
+              <button type="button" onClick={refreshRepositories}>
                 {t('library.tryAgain')}
               </button>
             </div>
