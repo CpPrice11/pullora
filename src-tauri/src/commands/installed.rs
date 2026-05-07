@@ -9,7 +9,9 @@ use crate::AppState;
 #[serde(rename_all = "camelCase")]
 pub struct InstalledAppHealth {
     pub ok: bool,
+    pub status: String,
     pub message: String,
+    pub executable_path: Option<String>,
 }
 
 fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
@@ -137,15 +139,28 @@ pub async fn validate_installed_app(
         .ok_or("Активну версію не знайдено")?;
 
     let expected_exe = version_dir.join(&version.executable);
-    if expected_exe.exists() || find_exe_in_dir(&version_dir).is_some() {
+    if expected_exe.exists() {
         return Ok(InstalledAppHealth {
             ok: true,
+            status: "ready".to_string(),
+            executable_path: Some(expected_exe.display().to_string()),
             message: "Готово до запуску".to_string(),
+        });
+    }
+
+    if let Some(found_exe) = find_exe_in_dir(&version_dir) {
+        return Ok(InstalledAppHealth {
+            ok: true,
+            status: "ready".to_string(),
+            executable_path: Some(found_exe.display().to_string()),
+            message: "Ready to launch".to_string(),
         });
     }
 
     Ok(InstalledAppHealth {
         ok: false,
+        status: "missingExecutable".to_string(),
+        executable_path: None,
         message: format!(
             "Файл запуску для {} {} не знайдено. Віднови або перевстанови версію.",
             repo, version.tag
