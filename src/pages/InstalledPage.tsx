@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { InstalledApp } from '../types'
+import type { InstalledApp, InstalledAppHealth } from '../types'
 import {
   cleanupIncompleteInstalls,
   getInstalledApps,
@@ -15,6 +15,12 @@ import { useDownload } from '../hooks/useDownload'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
 
+type HealthMap = Record<string, InstalledAppHealth>
+
+function appKey(app: InstalledApp) {
+  return `${app.owner}/${app.repo}`
+}
+
 function InstalledPage() {
   const { t } = useI18n()
   const [apps, setApps] = useState<InstalledApp[]>([])
@@ -22,19 +28,49 @@ function InstalledPage() {
   const [error, setError] = useState<string | null>(null)
   const [expandedApp, setExpandedApp] = useState<string | null>(null)
   const [repairTarget, setRepairTarget] = useState<InstalledApp | null>(null)
+  const [healthByApp, setHealthByApp] = useState<HealthMap>({})
+  const [checkingHealth, setCheckingHealth] = useState(false)
   const { downloads, cancel } = useDownload()
+
+  const refreshHealth = useCallback(async (items: InstalledApp[]) => {
+    if (items.length === 0) {
+      setHealthByApp({})
+      return
+    }
+
+    setCheckingHealth(true)
+    try {
+      const results = await Promise.all(items.map(async (app) => {
+        try {
+          const health = await validateInstalledApp(app.owner, app.repo)
+          return [appKey(app), health] as const
+        } catch (err) {
+          return [appKey(app), {
+            ok: false,
+            status: 'needsRepair',
+            message: err instanceof Error ? err.message : t('installed.healthRepair'),
+            executablePath: null,
+          } satisfies InstalledAppHealth] as const
+        }
+      }))
+      setHealthByApp(Object.fromEntries(results))
+    } finally {
+      setCheckingHealth(false)
+    }
+  }, [t])
 
   const loadApps = useCallback(async () => {
     setError(null)
     try {
       const data = await getInstalledApps()
       setApps(data)
+      await refreshHealth(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('installed.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [refreshHealth, t])
 
   useEffect(() => {
     loadApps()
@@ -42,19 +78,23 @@ function InstalledPage() {
 
   const handleSwitch = async (owner: string, repo: string, tag: string) => {
     await switchVersion(owner, repo, tag)
-    loadApps()
+    await loadApps()
   }
 
   const handleUninstall = async (owner: string, repo: string, tag: string) => {
     if (!confirm(t('installed.uninstallConfirm', { repo, tag }))) return
     await uninstallVersion(owner, repo, tag)
-    loadApps()
+    await loadApps()
   }
 
   const handleLaunch = async (app: InstalledApp) => {
     setError(null)
     try {
       const health = await validateInstalledApp(app.owner, app.repo)
+      setHealthByApp((current) => ({
+        ...current,
+        [appKey(app)]: health,
+      }))
       if (!health.ok) {
         setError(health.message)
         setRepairTarget(app)
@@ -74,6 +114,7 @@ function InstalledPage() {
       alert(removed > 0
         ? t('installed.cleanupDone', { count: removed })
         : t('installed.cleanupEmpty'))
+      await loadApps()
     } catch (err) {
       setError(err instanceof Error ? err.message : t('installed.cleanupError'))
     }
@@ -84,6 +125,7 @@ function InstalledPage() {
       <div className="page-header">
         <h2>{t('installed.title')}</h2>
         <div className="page-actions">
+          {checkingHealth && <span className="saved-indicator">{t('installed.checkingHealth')}</span>}
           <button type="button" className="secondary-btn" onClick={handleCleanup}>
             {t('installed.cleanup')}
           </button>
@@ -120,25 +162,40 @@ function InstalledPage() {
         )}
 
         {apps.map((app) => {
-          const key = `${app.owner}/${app.repo}`
+          const key = appKey(app)
           const isExpanded = expandedApp === key
+          const health = healthByApp[key]
+          const needsRepair = health ? !health.ok : false
           return (
-            <div key={key} className="app-card">
+            <div key={key} className={`app-card ${needsRepair ? 'app-card--needs-repair' : ''}`}>
               <div className="app-header">
                 <div>
                   <h3>{app.name}</h3>
                   <p className="app-repo">{app.owner}/{app.repo}</p>
                 </div>
-                <span className="version-badge">{app.activeVersion}</span>
+                <div className="app-card-badges">
+                  <span className="version-badge">{app.activeVersion}</span>
+                  {health && (
+                    <span className={`health-badge ${needsRepair ? 'repair' : 'ready'}`}>
+                      {needsRepair ? t('installed.healthRepair') : t('installed.healthReady')}
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {needsRepair && health?.message && (
+                <p className="app-health-message">{health.message}</p>
+              )}
 
               <div className="app-actions">
                 <button onClick={() => handleLaunch(app)}>
                   {t('installed.launch')}
                 </button>
-                <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
-                  {t('installed.repair')}
-                </button>
+                {needsRepair && (
+                  <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
+                    {t('installed.repair')}
+                  </button>
+                )}
                 <button
                   className="secondary-btn"
                   onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) =>
@@ -202,6 +259,7 @@ function InstalledPage() {
           onClose={() => setRepairTarget(null)}
           onInstalled={() => {
             setRepairTarget(null)
+            setError(null)
             loadApps()
           }}
         />

@@ -77,7 +77,9 @@ export interface InstalledApp {
 
 export interface InstalledAppHealth {
   ok: boolean
+  status: 'ready' | 'missingExecutable' | 'needsRepair'
   message: string
+  executablePath?: string | null
 }
 
 // Favorites

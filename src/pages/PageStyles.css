@@ -375,6 +375,46 @@
   white-space: nowrap;
 }
 
+.app-card--needs-repair {
+  border-color: color-mix(in srgb, var(--color-error) 42%, var(--color-border-subtle));
+}
+
+.app-card-badges {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.health-badge {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  white-space: nowrap;
+}
+
+.health-badge.ready {
+  border-color: color-mix(in srgb, var(--color-success) 70%, var(--color-border));
+  color: var(--color-success);
+}
+
+.health-badge.repair {
+  border-color: color-mix(in srgb, var(--color-error) 70%, var(--color-border));
+  color: var(--color-error);
+}
+
+.app-health-message {
+  border-left: 3px solid var(--color-error);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+  padding-left: var(--spacing-md);
+}
+
 .favorite-btn {
   background: none;
   border: none;
