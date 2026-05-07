@@ -241,6 +241,7 @@ function SettingsPage() {
               <option value="installerFirst">{t('settings.installerFirst')}</option>
               <option value="manual">{t('settings.manual')}</option>
             </select>
+            <p className="help-text">{t('settings.assetStrategyHelp')}</p>
           </div>
         </section>
 
