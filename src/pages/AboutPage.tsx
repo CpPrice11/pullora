@@ -7,7 +7,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.5'
+const CURRENT_VERSION = 'v0.2.6'
 
 function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const candidates = assets.filter((asset) => {
@@ -38,15 +38,34 @@ function AboutPage() {
   const { language, t } = useI18n()
   const [releases, setReleases] = useState<GitHubRelease[]>([])
   const [loadingReleases, setLoadingReleases] = useState(true)
+  const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
   const [installingVersion, setInstallingVersion] = useState<string | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadLauncherReleases = () => {
+    setLoadingReleases(true)
+    setReleaseLoadError(null)
     getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
-      .then(setReleases)
-      .catch(() => setReleases([]))
+      .then((items) => {
+        setReleases(items)
+        setInstallError(null)
+      })
+      .catch((err) => {
+        setReleases([])
+        setReleaseLoadError(err instanceof Error ? err.message : t('about.noReleases'))
+      })
       .finally(() => setLoadingReleases(false))
+  }
+
+  useEffect(() => {
+    loadLauncherReleases()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const getReleaseStatus = (tagName: string) => {
+    if (tagName === CURRENT_VERSION) return t('about.currentStatus')
+    return tagName > CURRENT_VERSION ? t('about.newerStatus') : t('about.olderStatus')
+  }
 
   const handleActivateRelease = async (release: GitHubRelease) => {
     const asset = pickPortableLauncherAsset(release.assets)
@@ -55,6 +74,12 @@ function AboutPage() {
       setInstallError(t('about.noPortableAsset'))
       return
     }
+
+    const confirmation = release.tag_name > CURRENT_VERSION
+      ? t('about.updateConfirm', { version: release.tag_name })
+      : t('about.rollbackConfirm', { version: release.tag_name })
+
+    if (!window.confirm(confirmation)) return
 
     setInstallError(null)
     setInstallingVersion(release.tag_name)
@@ -96,55 +121,80 @@ function AboutPage() {
         <section className="about-panel about-panel-wide">
           <h3>{t('about.launcherVersions')}</h3>
           {installError && <div className="error-banner">{installError}</div>}
+          {releaseLoadError && (
+            <div className="error-banner">
+              <span>{releaseLoadError}</span>
+              <button type="button" onClick={loadLauncherReleases}>
+                {t('about.retry')}
+              </button>
+            </div>
+          )}
           {loadingReleases && <p>{t('about.loadingReleases')}</p>}
-          {!loadingReleases && releases.length === 0 && (
-            <p>{t('about.noReleases')}</p>
+          {!loadingReleases && releases.length === 0 && !releaseLoadError && (
+            <div className="empty-state">
+              <h3>{t('about.noReleases')}</h3>
+              <button type="button" className="secondary-btn" onClick={loadLauncherReleases}>
+                {t('about.retry')}
+              </button>
+            </div>
           )}
           {!loadingReleases && releases.length > 0 && (
             <div className="about-release-list">
-              {releases.map((release) => (
-                <div
-                  key={release.id}
-                  className={`about-release-link ${
-                    release.tag_name === CURRENT_VERSION ? 'active' : ''
-                  }`}
-                >
-                  {(() => {
-                    const portableAsset = pickPortableLauncherAsset(release.assets)
+              {releases.map((release) => {
+                const portableAsset = pickPortableLauncherAsset(release.assets)
+                const isCurrent = release.tag_name === CURRENT_VERSION
+                const canActivate = Boolean(portableAsset) && !isCurrent
 
-                    return (
-                  <div>
-                    <span>{release.tag_name}</span>
-                    <span>
-                      {release.published_at
-                        ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
-                        : t('about.noDate')}
-                    </span>
-                    {portableAsset && (
-                      <span>{t('about.portableAsset', { name: portableAsset.name })}</span>
-                    )}
-                  </div>
-                    )
-                  })()}
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    disabled={
-                      release.tag_name === CURRENT_VERSION ||
-                      installingVersion !== null
-                    }
-                    onClick={() => handleActivateRelease(release)}
+                return (
+                  <div
+                    key={release.id}
+                    className={`about-release-link ${
+                      isCurrent ? 'active' : ''
+                    }`}
                   >
-                    {release.tag_name === CURRENT_VERSION
-                      ? t('about.active')
-                      : installingVersion === release.tag_name
-                        ? t('about.activating')
-                        : release.tag_name > CURRENT_VERSION
-                          ? t('about.update')
-                          : t('about.rollback')}
-                  </button>
-                </div>
-              ))}
+                    <div className="about-release-main">
+                      <div className="about-release-title">
+                        <span>{release.tag_name}</span>
+                        <span className={`about-release-status ${isCurrent ? 'current' : ''}`}>
+                          {getReleaseStatus(release.tag_name)}
+                        </span>
+                      </div>
+                      <span>
+                        {release.published_at
+                          ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+                          : t('about.noDate')}
+                      </span>
+                      {portableAsset ? (
+                        <span>{t('about.portableAsset', { name: portableAsset.name })}</span>
+                      ) : (
+                        <span className="about-release-warning">{t('about.noPortableHint')}</span>
+                      )}
+                      <span className={portableAsset ? 'about-release-ready' : 'about-release-warning'}>
+                        {portableAsset ? t('about.portableReady') : t('about.portableMissing')}
+                      </span>
+                    </div>
+                    <div className="about-release-actions">
+                      {!isCurrent && portableAsset && (
+                        <span className="about-release-note">{t('about.restartNotice')}</span>
+                      )}
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        disabled={!canActivate || installingVersion !== null}
+                        onClick={() => handleActivateRelease(release)}
+                      >
+                        {isCurrent
+                          ? t('about.active')
+                          : installingVersion === release.tag_name
+                            ? t('about.activating')
+                            : release.tag_name > CURRENT_VERSION
+                              ? t('about.update')
+                              : t('about.rollback')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </section>

@@ -617,7 +617,7 @@
 }
 
 .about-release-link {
-  align-items: center;
+  align-items: flex-start;
   border: 1px solid var(--color-border-subtle);
   background: var(--color-bg-elevated);
   border-radius: 10px;
@@ -647,12 +647,57 @@
   gap: var(--spacing-xs);
 }
 
-.about-release-link span:first-child {
+.about-release-main {
+  min-width: 0;
+}
+
+.about-release-title {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 8px !important;
+}
+
+.about-release-title span:first-child {
   font-weight: 700;
 }
 
-.about-release-link span:last-child {
+.about-release-link span {
   color: var(--color-text-secondary);
+}
+
+.about-release-status {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 9px;
+}
+
+.about-release-status.current,
+.about-release-ready {
+  color: var(--color-primary) !important;
+}
+
+.about-release-warning {
+  color: var(--color-error) !important;
+}
+
+.about-release-actions {
+  align-items: flex-end;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0;
+  gap: 8px !important;
+  max-width: 260px;
+}
+
+.about-release-note {
+  font-size: 12px;
+  text-align: right;
 }
 
 @media (max-width: 768px) {
