@@ -343,11 +343,11 @@
   border: 1px solid var(--color-border-subtle);
   border-radius: 12px;
   box-shadow: var(--shadow-control);
-  padding: 18px;
+  padding: 16px;
   transition: var(--transition);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 12px;
 }
 
 .result-card:hover,
@@ -372,15 +372,27 @@
 }
 
 .app-header {
+  align-items: flex-start;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   gap: var(--spacing-md);
+  justify-content: space-between;
+}
+
+.app-title-block {
+  min-width: 0;
+}
+
+.app-title-block h3 {
+  overflow-wrap: anywhere;
 }
 
 .app-repo {
-  font-family: monospace;
   color: var(--color-primary);
+  font-family: monospace;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-description {
@@ -400,6 +412,20 @@
 
 .app-card--needs-repair {
   border-color: color-mix(in srgb, var(--color-error) 42%, var(--color-border-subtle));
+}
+
+.app-card-meta {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 8px 14px;
+}
+
+.app-card-meta span:first-child {
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 .app-card-badges {
@@ -454,9 +480,11 @@
 }
 
 .app-actions {
+  align-items: center;
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .app-actions button {

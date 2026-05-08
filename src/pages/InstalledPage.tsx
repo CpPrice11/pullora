@@ -166,21 +166,26 @@ function InstalledPage() {
           const isExpanded = expandedApp === key
           const health = healthByApp[key]
           const needsRepair = health ? !health.ok : false
+          const statusText = needsRepair ? t('installed.healthRepair') : t('installed.healthReady')
           return (
             <div key={key} className={`app-card ${needsRepair ? 'app-card--needs-repair' : ''}`}>
               <div className="app-header">
-                <div>
+                <div className="app-title-block">
                   <h3>{app.name}</h3>
                   <p className="app-repo">{app.owner}/{app.repo}</p>
                 </div>
                 <div className="app-card-badges">
-                  <span className="version-badge">{app.activeVersion}</span>
                   {health && (
                     <span className={`health-badge ${needsRepair ? 'repair' : 'ready'}`}>
-                      {needsRepair ? t('installed.healthRepair') : t('installed.healthReady')}
+                      {statusText}
                     </span>
                   )}
                 </div>
+              </div>
+
+              <div className="app-card-meta">
+                <span>{t('repo.active', { version: app.activeVersion })}</span>
+                <span>{t('installed.versions', { count: app.versions.length })}</span>
               </div>
 
               {needsRepair && health?.message && (
@@ -188,14 +193,14 @@ function InstalledPage() {
               )}
 
               <div className="app-actions">
-                <button onClick={() => handleLaunch(app)}>
-                  {t('installed.launch')}
-                </button>
                 {needsRepair && (
                   <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
                     {t('installed.repair')}
                   </button>
                 )}
+                <button className={needsRepair ? 'secondary-btn' : ''} onClick={() => handleLaunch(app)}>
+                  {t('installed.launch')}
+                </button>
                 <button
                   className="secondary-btn"
                   onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) =>

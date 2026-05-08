@@ -1,5 +1,5 @@
 .repo-card {
-  align-items: start;
+  align-items: stretch;
   animation: fluent-fade-up var(--motion-normal);
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -7,9 +7,9 @@
   box-shadow: var(--shadow-control);
   cursor: pointer;
   display: grid;
-  gap: 14px;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
-  min-height: 108px;
+  gap: 14px 16px;
+  grid-template-columns: 48px minmax(0, 1fr) minmax(260px, auto);
+  min-height: 116px;
   padding: 16px;
   position: relative;
   transition: var(--transition), outline-color var(--motion-fast);
@@ -28,11 +28,11 @@
 .owner-avatar {
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 11px;
+  border-radius: 10px;
   flex-shrink: 0;
-  height: 52px;
+  height: 48px;
   object-fit: cover;
-  width: 52px;
+  width: 48px;
 }
 
 .repo-info {
@@ -71,6 +71,11 @@
   white-space: nowrap;
 }
 
+.repo-status.available {
+  background: var(--color-control);
+  color: var(--color-text-secondary);
+}
+
 .repo-status.installed {
   background: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-elevated));
   border-color: color-mix(in srgb, var(--color-success) 70%, var(--color-border));
@@ -101,7 +106,7 @@
   margin: 8px 0 0;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
 }
 
 .repo-meta {
@@ -134,17 +139,19 @@
 }
 
 .repo-card-actions {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
   flex-shrink: 0;
   gap: 8px;
   justify-content: flex-end;
-  padding-top: 14px;
+  padding-top: 2px;
+  flex-wrap: wrap;
 }
 
 .fav-btn,
 .launch-btn,
-.install-btn {
+.install-btn,
+.versions-btn {
   min-height: 36px;
 }
 
@@ -172,7 +179,7 @@
 .install-btn {
   background: var(--color-primary);
   color: white;
-  min-width: 96px;
+  min-width: 108px;
   padding: 0 16px;
 }
 
@@ -189,7 +196,13 @@
   padding: 0 16px;
 }
 
-.launch-btn:hover {
+.versions-btn {
+  min-width: 88px;
+  padding: 0 14px;
+}
+
+.launch-btn:hover,
+.versions-btn:hover {
   background: var(--color-control-hover);
   box-shadow: var(--shadow-control-hover);
   transform: translateY(-1px);

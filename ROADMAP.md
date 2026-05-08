@@ -85,6 +85,8 @@ Goal: make Air Launcher feel like a stable Windows 11 desktop launcher, not a de
 - Statuses must be unambiguous: available, installed, update available, repair needed, downloading.
 - Verify long names and version tags at `1000x700` and wide desktop sizes.
 
+Status: implemented in `0.3.0`.
+
 ### 0.4.0: Release Selector UX
 
 - Redesign release selection around version status and asset clarity.
