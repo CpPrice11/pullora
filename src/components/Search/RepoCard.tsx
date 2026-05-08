@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../types'
-import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../services/favorites'
+import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../services/favorites'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 
@@ -63,12 +63,19 @@ function RepoCard({
     onLaunch?.()
   }
 
+  const handleSelect = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    onSelect()
+  }
+
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
-  const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.ready')
-  const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.versions') : t('repo.install')
+  const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
+  const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.available')
+  const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
+  const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleSelect
 
   return (
-    <article className="repo-card" onClick={onSelect}>
+    <article className={`repo-card repo-card--${statusClass}`} onClick={onSelect}>
       <img
         src={repo.owner.avatar_url}
         alt={repo.owner.login}
@@ -78,12 +85,9 @@ function RepoCard({
       <div className="repo-info">
         <div className="repo-title-line">
           <h3 className="repo-name">{repo.name}</h3>
-          <span className={`repo-status ${hasUpdate ? 'update' : isInstalled ? 'installed' : ''}`}>
-            {statusLabel}
-          </span>
         </div>
 
-        <div className="repo-owner">{repo.owner.login}</div>
+        <div className="repo-owner">{repo.owner.login}/{repo.name}</div>
 
         {repo.description && (
           <p className="repo-description">{repo.description}</p>
@@ -109,7 +113,11 @@ function RepoCard({
       </div>
 
       <div className="repo-card-actions">
+        <span className={`repo-status ${statusClass}`}>
+          {statusLabel}
+        </span>
         <button
+          type="button"
           className={`fav-btn ${isFav ? 'active' : ''}`}
           onClick={toggleFavorite}
           disabled={favLoading}
@@ -118,12 +126,17 @@ function RepoCard({
         >
           {isFav ? '★' : '☆'}
         </button>
-        {isInstalled && (
-          <button className="launch-btn" onClick={handleLaunch}>
+        {isInstalled && hasUpdate && (
+          <button type="button" className="launch-btn" onClick={handleLaunch}>
             {t('repo.launch')}
           </button>
         )}
-        <button className="install-btn" onClick={onSelect}>
+        {isInstalled && (
+          <button type="button" className="secondary-btn versions-btn" onClick={handleSelect}>
+            {t('repo.versions')}
+          </button>
+        )}
+        <button type="button" className="install-btn" onClick={primaryAction}>
           {primaryLabel}
         </button>
       </div>
