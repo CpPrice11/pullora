@@ -24,7 +24,7 @@ function App() {
   const [showPathModal, setShowPathModal] = useState(false)
 
   // Start auto-update after settings are loaded
-  const { updates, checking, check, dismiss } = useAutoUpdate(
+  const { updates, dismiss } = useAutoUpdate(
     settings.checkIntervalHours,
     settings.autoUpdateCheck,
   )
@@ -91,9 +91,6 @@ function App() {
       <Layout
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        updatesCount={updates.length}
-        checking={checking}
-        onCheckUpdates={check}
       >
         {updates.length > 0 && (
           <UpdateBanner

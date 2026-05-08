@@ -129,7 +129,7 @@ export function useOwnerRepositories(owner: string | undefined) {
   )
 
   const refreshRepositories = useCallback(() => {
-    loadRepositories(1, true)
+    return loadRepositories(1, true)
   }, [loadRepositories])
 
   const loadMore = useCallback(() => {
