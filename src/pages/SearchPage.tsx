@@ -29,6 +29,13 @@ function SearchPage() {
     refreshInstalledApps,
   } = useLibraryStatus(state.repositories)
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      refreshRepositories(),
+      refreshInstalledApps(),
+    ])
+  }
+
   useEffect(() => {
     if (!settingsLoading) {
       loadRepositories(1)
@@ -112,10 +119,10 @@ function SearchPage() {
           <button
             type="button"
             className="refresh-btn"
-            onClick={refreshRepositories}
-            disabled={state.loading}
+            onClick={handleRefresh}
+            disabled={state.loading || checkingUpdates}
           >
-            {state.loading ? t('library.refreshing') : t('library.refresh')}
+            {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
           </button>
         )}
       </div>
@@ -168,7 +175,7 @@ function SearchPage() {
           {state.error && (
             <div className="error-banner">
               <span>{state.error}</span>
-              <button type="button" onClick={refreshRepositories}>
+              <button type="button" onClick={handleRefresh}>
                 {t('library.tryAgain')}
               </button>
             </div>

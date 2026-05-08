@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getReleases } from '../services/github'
+import { clearGithubCache, getReleases } from '../services/github'
 import { installLauncherRelease } from '../services/updates'
 import type { GitHubAsset, GitHubRelease } from '../types'
 import { useI18n } from '../i18n'
@@ -7,7 +7,20 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.9'
+const CURRENT_VERSION = 'v0.2.10'
+
+function compareVersionTags(left: string, right: string) {
+  const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+  const rightParts = right.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+  const length = Math.max(leftParts.length, rightParts.length)
+
+  for (let index = 0; index < length; index += 1) {
+    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0)
+    if (diff !== 0) return diff
+  }
+
+  return 0
+}
 
 function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const candidates = assets.filter((asset) => {
@@ -42,19 +55,20 @@ function AboutPage() {
   const [installingVersion, setInstallingVersion] = useState<string | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
 
-  const loadLauncherReleases = () => {
+  const loadLauncherReleases = async () => {
     setLoadingReleases(true)
     setReleaseLoadError(null)
-    getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
-      .then((items) => {
-        setReleases(items)
-        setInstallError(null)
-      })
-      .catch((err) => {
-        setReleases([])
-        setReleaseLoadError(err instanceof Error ? err.message : t('about.noReleases'))
-      })
-      .finally(() => setLoadingReleases(false))
+    try {
+      await clearGithubCache()
+      const items = await getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
+      setReleases(items)
+      setInstallError(null)
+    } catch (err) {
+      setReleases([])
+      setReleaseLoadError(err instanceof Error ? err.message : t('about.noReleases'))
+    } finally {
+      setLoadingReleases(false)
+    }
   }
 
   useEffect(() => {
@@ -64,7 +78,9 @@ function AboutPage() {
 
   const getReleaseStatus = (tagName: string) => {
     if (tagName === CURRENT_VERSION) return t('about.currentStatus')
-    return tagName > CURRENT_VERSION ? t('about.newerStatus') : t('about.olderStatus')
+    return compareVersionTags(tagName, CURRENT_VERSION) > 0
+      ? t('about.newerStatus')
+      : t('about.olderStatus')
   }
 
   const handleActivateRelease = async (release: GitHubRelease) => {
@@ -75,7 +91,7 @@ function AboutPage() {
       return
     }
 
-    const confirmation = release.tag_name > CURRENT_VERSION
+    const confirmation = compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
       ? t('about.updateConfirm', { version: release.tag_name })
       : t('about.rollbackConfirm', { version: release.tag_name })
 
@@ -119,7 +135,17 @@ function AboutPage() {
         </section>
 
         <section className="about-panel about-panel-wide">
-          <h3>{t('about.launcherVersions')}</h3>
+          <div className="section-heading-row">
+            <h3>{t('about.launcherVersions')}</h3>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={loadLauncherReleases}
+              disabled={loadingReleases || installingVersion !== null}
+            >
+              {loadingReleases ? t('library.refreshing') : t('library.refresh')}
+            </button>
+          </div>
           {installError && <div className="error-banner">{installError}</div>}
           {releaseLoadError && (
             <div className="error-banner">
@@ -187,7 +213,7 @@ function AboutPage() {
                           ? t('about.active')
                           : installingVersion === release.tag_name
                             ? t('about.activating')
-                            : release.tag_name > CURRENT_VERSION
+                            : compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
                               ? t('about.update')
                               : t('about.rollback')}
                       </button>
