@@ -37,8 +37,10 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     try {
       const apps = await getInstalledApps()
       setState((prev) => ({ ...prev, installedApps: apps }))
+      return apps
     } catch {
       setState((prev) => ({ ...prev, installedApps: [] }))
+      return []
     }
   }, [])
 
@@ -46,58 +48,55 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     refreshInstalledApps()
   }, [refreshInstalledApps])
 
-  useEffect(() => {
-    let cancelled = false
+  const refreshLatestVersions = useCallback(async (
+    apps: InstalledApp[] = state.installedApps,
+    repoItems: GitHubSearchResult[] = repositories,
+  ) => {
+    const installedVisibleApps = apps.filter((app) =>
+      repoItems.some((repo) => isSameRepo(app, repo)),
+    )
 
-    async function refreshLatestVersions() {
-      const installedVisibleApps = state.installedApps.filter((app) =>
-        repositories.some((repo) => isSameRepo(app, repo)),
-      )
-
-      if (installedVisibleApps.length === 0) {
-        setState((prev) => ({
-          ...prev,
-          latestVersions: new Map(),
-          checkingUpdates: false,
-        }))
-        return
-      }
-
-      setState((prev) => ({ ...prev, checkingUpdates: true }))
-
-      const entries = await Promise.all(
-        installedVisibleApps.map(async (app) => {
-          try {
-            const releases = await getReleases(app.owner, app.repo)
-            const latest = releases.find(
-              (release) => !release.draft && !release.prerelease,
-            )
-            return latest ? [repoKey(app.owner, app.repo), latest.tag_name] as const : null
-          } catch {
-            return null
-          }
-        }),
-      )
-
-      if (cancelled) return
-
-      const validEntries = entries.filter(
-        (entry): entry is readonly [string, string] => entry !== null,
-      )
-
+    if (installedVisibleApps.length === 0) {
       setState((prev) => ({
         ...prev,
-        latestVersions: new Map(validEntries),
+        latestVersions: new Map(),
         checkingUpdates: false,
       }))
+      return new Map<string, string>()
     }
 
-    refreshLatestVersions()
+    setState((prev) => ({ ...prev, checkingUpdates: true }))
 
-    return () => {
-      cancelled = true
-    }
+    const entries = await Promise.all(
+      installedVisibleApps.map(async (app) => {
+        try {
+          const releases = await getReleases(app.owner, app.repo)
+          const latest = releases.find(
+            (release) => !release.draft && !release.prerelease,
+          )
+          return latest ? [repoKey(app.owner, app.repo), latest.tag_name] as const : null
+        } catch {
+          return null
+        }
+      }),
+    )
+
+    const validEntries = entries.filter(
+      (entry): entry is readonly [string, string] => entry !== null,
+    )
+
+    const latestVersions = new Map(validEntries)
+    setState((prev) => ({
+      ...prev,
+      latestVersions,
+      checkingUpdates: false,
+    }))
+    return latestVersions
   }, [repositories, state.installedApps])
+
+  useEffect(() => {
+    refreshLatestVersions()
+  }, [refreshLatestVersions])
 
   const getInstalledApp = useCallback(
     (repo: GitHubSearchResult) => installedByRepo.get(repoKey(repo.owner.login, repo.name)),
@@ -116,5 +115,6 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     getInstalledApp,
     getLatestVersion,
     refreshInstalledApps,
+    refreshLatestVersions,
   }
 }

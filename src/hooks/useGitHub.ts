@@ -84,7 +84,7 @@ export function useOwnerRepositories(owner: string | undefined) {
   })
 
   const loadRepositories = useCallback(
-    async (page = 1, forceRefresh = false) => {
+    async (page = 1, forceRefresh = false): Promise<GitHubSearchResult[] | null> => {
       const normalizedOwner = owner?.trim()
 
       if (!normalizedOwner) {
@@ -95,7 +95,7 @@ export function useOwnerRepositories(owner: string | undefined) {
           page: 1,
           hasMore: false,
         })
-        return
+        return []
       }
 
       setState((prev) => ({ ...prev, loading: true, error: null }))
@@ -114,6 +114,7 @@ export function useOwnerRepositories(owner: string | undefined) {
           page: data.page,
           hasMore: data.has_more,
         }))
+        return data.items
       } catch (err) {
         setState((prev) => ({
           ...prev,
@@ -123,6 +124,7 @@ export function useOwnerRepositories(owner: string | undefined) {
               ? err.message
               : 'Failed to load repositories',
         }))
+        return null
       }
     },
     [owner],

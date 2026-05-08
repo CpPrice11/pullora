@@ -67,6 +67,71 @@ Release checklist:
 - Code checks: `npx tsc --noEmit`, production frontend build outside Git, `cargo check` with external `cargo-target`, Tauri EXE build, EXE smoke-test.
 - Visual QA: light theme, dark theme, auto theme, `1000x700` minimum desktop window, wide desktop viewport, no overlapping text in buttons/cards/sidebar.
 
+## UI/UX Roadmap To 1.0.0
+
+Goal: make Air Launcher feel like a stable Windows 11 desktop launcher, not a development utility. The path to `1.0.0` is UI-led but keeps the current Tauri + Rust + React stack and the public-repository-only product model.
+
+### 0.2.11: Live Refresh Polish
+
+- `Бібліотека -> Оновити` refreshes GitHub repositories, installed app statuses, latest versions, and update badges as one predictable manual action.
+- `About -> Версії лаунчера -> Оновити` always clears GitHub cache and reloads launcher releases.
+- Refresh actions show clear states: `Оновлюємо...`, `Оновлено о ...`, and `Помилка оновлення`.
+- After install/update/rollback, affected lists should update without requiring a tab restart.
+
+### 0.3.0: App Cards Redesign
+
+- Redesign Library and Installed cards into one compact Windows app-list pattern.
+- Each card shows name, owner/repo, active/latest version, status, and one primary action.
+- Statuses must be unambiguous: available, installed, update available, repair needed, downloading.
+- Verify long names and version tags at `1000x700` and wide desktop sizes.
+
+### 0.4.0: Release Selector UX
+
+- Redesign release selection around version status and asset clarity.
+- Show assets as human-readable types: portable, setup, archive, unsupported.
+- Explain which asset will be installed before download starts.
+- Show download, extract/install, success, retry, and cancel states consistently.
+
+### 0.5.0: Settings Cleanup
+
+- Reorganize Settings into folders, GitHub, updates, appearance, language, and reset.
+- Keep autosave visible with saving/saved/error states and no save button.
+- Add an install-folder validation action with OK, inaccessible, and no-write-permission states.
+- Theme and language changes apply immediately.
+
+### 0.6.0: About / Self Update Final UX
+
+- Keep About focused on current launcher version and launcher release actions.
+- Show current, newer, older, and portable-unavailable states clearly.
+- Replace browser confirm with a proper confirmation modal before self-update or rollback.
+- Failed self-update should show recovery guidance.
+
+### 0.7.0: Empty / Error / Loading States
+
+- Unify empty states for Library, Installed, Favorites, and About releases.
+- Unify error banners around short reason, one primary action, and optional details.
+- Use skeleton cards for Library/Installed and reserve spinners for short inline actions.
+
+### 0.8.0: Navigation And Motion
+
+- Finish Fluent navigation with compact sidebar, active indicator, hover/press states, and visible keyboard focus.
+- Add microanimations for page transitions, cards, modals, banners, and theme changes.
+- Respect `prefers-reduced-motion`.
+
+### 0.9.0: Visual QA And Accessibility Pass
+
+- Ensure all buttons have accessible labels and keyboard focus is visible.
+- Verify contrast in light, dark, and auto themes.
+- QA Ukrainian and English text, long repo names, long version tags, `1000x700`, and wide desktop.
+- Remove duplicated controls, dead CSS, unnecessary helper text, and noisy badges.
+
+### 1.0.0: Stable UI Release
+
+- Freeze the UI contracts: one Library refresh, About owns launcher versions, install/update/repair/rollback use consistent language and states.
+- Update README screenshots and user instructions.
+- Add a short UI acceptance checklist to this roadmap.
+- Ship only the portable EXE and one setup EXE release asset.
+
 ## Progress Log
 
 Completed:

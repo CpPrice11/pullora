@@ -13,12 +13,14 @@ type LibraryFilter = 'all' | 'installed' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 
 function SearchPage() {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
+  const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
   const owner = settings.githubOwner?.trim()
   const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
@@ -27,14 +29,30 @@ function SearchPage() {
     getInstalledApp,
     getLatestVersion,
     refreshInstalledApps,
+    refreshLatestVersions,
   } = useLibraryStatus(state.repositories)
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refreshRepositories(),
-      refreshInstalledApps(),
-    ])
+    setRefreshState('idle')
+    const freshRepositories = await refreshRepositories()
+    const freshInstalledApps = await refreshInstalledApps()
+
+    if (!freshRepositories) {
+      setRefreshState('error')
+      return
+    }
+
+    await refreshLatestVersions(freshInstalledApps, freshRepositories)
+    setLastRefreshedAt(new Date())
+    setRefreshState('success')
   }
+
+  const formattedRefreshTime = lastRefreshedAt
+    ? lastRefreshedAt.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    : null
 
   useEffect(() => {
     if (!settingsLoading) {
@@ -116,14 +134,24 @@ function SearchPage() {
       <div className="page-header">
         <h2>{t('library.title')}</h2>
         {owner && (
-          <button
-            type="button"
-            className="refresh-btn"
-            onClick={handleRefresh}
-            disabled={state.loading || checkingUpdates}
-          >
-            {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
-          </button>
+          <div className="page-actions">
+            {refreshState === 'success' && formattedRefreshTime && (
+              <span className="refresh-status success">
+                {t('refresh.updatedAt', { time: formattedRefreshTime })}
+              </span>
+            )}
+            {refreshState === 'error' && (
+              <span className="refresh-status error">{t('refresh.error')}</span>
+            )}
+            <button
+              type="button"
+              className="refresh-btn"
+              onClick={handleRefresh}
+              disabled={state.loading || checkingUpdates}
+            >
+              {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
+            </button>
+          </div>
         )}
       </div>
 

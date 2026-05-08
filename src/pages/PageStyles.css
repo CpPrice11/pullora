@@ -73,6 +73,29 @@
   box-shadow: var(--shadow-control-hover);
 }
 
+.refresh-status {
+  animation: fluent-scale-in var(--motion-normal);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.refresh-status.success {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.refresh-status.error {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 70%, var(--color-border));
+  color: var(--color-error);
+}
+
 /* Version management */
 .version-list {
   border-top: 1px solid var(--color-border);

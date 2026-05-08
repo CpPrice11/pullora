@@ -7,7 +7,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.2.10'
+const CURRENT_VERSION = 'v0.2.11'
 
 function compareVersionTags(left: string, right: string) {
   const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
@@ -54,8 +54,11 @@ function AboutPage() {
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
   const [installingVersion, setInstallingVersion] = useState<string | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
+  const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
 
   const loadLauncherReleases = async () => {
+    setRefreshState('idle')
     setLoadingReleases(true)
     setReleaseLoadError(null)
     try {
@@ -63,9 +66,12 @@ function AboutPage() {
       const items = await getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
       setReleases(items)
       setInstallError(null)
+      setLastRefreshedAt(new Date())
+      setRefreshState('success')
     } catch (err) {
       setReleases([])
       setReleaseLoadError(err instanceof Error ? err.message : t('about.noReleases'))
+      setRefreshState('error')
     } finally {
       setLoadingReleases(false)
     }
@@ -82,6 +88,13 @@ function AboutPage() {
       ? t('about.newerStatus')
       : t('about.olderStatus')
   }
+
+  const formattedRefreshTime = lastRefreshedAt
+    ? lastRefreshedAt.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    : null
 
   const handleActivateRelease = async (release: GitHubRelease) => {
     const asset = pickPortableLauncherAsset(release.assets)
@@ -137,14 +150,24 @@ function AboutPage() {
         <section className="about-panel about-panel-wide">
           <div className="section-heading-row">
             <h3>{t('about.launcherVersions')}</h3>
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={loadLauncherReleases}
-              disabled={loadingReleases || installingVersion !== null}
-            >
-              {loadingReleases ? t('library.refreshing') : t('library.refresh')}
-            </button>
+            <div className="page-actions">
+              {refreshState === 'success' && formattedRefreshTime && (
+                <span className="refresh-status success">
+                  {t('refresh.updatedAt', { time: formattedRefreshTime })}
+                </span>
+              )}
+              {refreshState === 'error' && (
+                <span className="refresh-status error">{t('refresh.error')}</span>
+              )}
+              <button
+                type="button"
+                className="refresh-btn"
+                onClick={loadLauncherReleases}
+                disabled={loadingReleases || installingVersion !== null}
+              >
+                {loadingReleases ? t('library.refreshing') : t('library.refresh')}
+              </button>
+            </div>
           </div>
           {installError && <div className="error-banner">{installError}</div>}
           {releaseLoadError && (
