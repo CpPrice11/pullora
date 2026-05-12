@@ -94,6 +94,8 @@ Status: implemented in `0.3.0`.
 - Explain which asset will be installed before download starts.
 - Show download, extract/install, success, retry, and cancel states consistently.
 
+Status: implemented in `0.4.0`.
+
 ### 0.5.0: Settings Cleanup
 
 - Reorganize Settings into folders, GitHub, updates, appearance, language, and reset.

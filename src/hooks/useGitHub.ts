@@ -147,11 +147,14 @@ export function useReleases(owner: string, repo: string) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchReleases = useCallback(async () => {
+  const fetchReleases = useCallback(async (forceRefresh = false) => {
     if (!owner || !repo) return
     setLoading(true)
     setError(null)
     try {
+      if (forceRefresh) {
+        await clearGithubCache()
+      }
       const data = await getReleases(owner, repo)
       setReleases(data)
     } catch (err) {

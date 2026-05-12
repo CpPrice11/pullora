@@ -111,6 +111,7 @@ function App() {
             owner={updateTarget.owner}
             repo={updateTarget.repo}
             displayName={updateTarget.appName}
+            currentVersion={updateTarget.currentVersion}
             onClose={() => setUpdateTarget(null)}
           />
         )}

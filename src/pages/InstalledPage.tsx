@@ -261,6 +261,7 @@ function InstalledPage() {
           owner={repairTarget.owner}
           repo={repairTarget.repo}
           displayName={repairTarget.name}
+          currentVersion={repairTarget.activeVersion}
           onClose={() => setRepairTarget(null)}
           onInstalled={() => {
             setRepairTarget(null)

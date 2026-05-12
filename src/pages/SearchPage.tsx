@@ -273,6 +273,7 @@ function SearchPage() {
           repo={selectedRepo.name}
           displayName={selectedRepo.name}
           description={selectedRepo.description ?? undefined}
+          currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
           onClose={() => setSelectedRepo(null)}
           onInstalled={refreshInstalledApps}
         />
