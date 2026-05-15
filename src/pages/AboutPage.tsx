@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clearGithubCache, getReleases } from '../services/github'
 import { installLauncherRelease } from '../services/updates'
+import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease } from '../types'
 import { useI18n } from '../i18n'
 import '../components/Modal/Modal.css'
@@ -8,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.6.0'
+const CURRENT_VERSION = 'v0.7.0'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -200,21 +201,27 @@ function AboutPage() {
             </div>
           )}
           {releaseLoadError && (
-            <div className="error-banner">
-              <span>{releaseLoadError}</span>
-              <button type="button" onClick={loadLauncherReleases}>
-                {t('about.retry')}
-              </button>
-            </div>
+            <StatePanel
+              kind="error"
+              title={t('state.launcherVersionsErrorTitle')}
+              message={t('state.launcherVersionsErrorText')}
+              details={releaseLoadError}
+              detailsLabel={t('state.details')}
+              actionLabel={t('about.retry')}
+              onAction={loadLauncherReleases}
+            />
           )}
-          {loadingReleases && <p>{t('about.loadingReleases')}</p>}
+          {loadingReleases && (
+            <StatePanel kind="loading" title={t('about.loadingReleases')} skeletonCount={3} />
+          )}
           {!loadingReleases && releases.length === 0 && !releaseLoadError && (
-            <div className="empty-state">
-              <h3>{t('about.noReleases')}</h3>
-              <button type="button" className="secondary-btn" onClick={loadLauncherReleases}>
-                {t('about.retry')}
-              </button>
-            </div>
+            <StatePanel
+              kind="empty"
+              title={t('about.noReleases')}
+              message={t('state.launcherVersionsEmptyText')}
+              actionLabel={t('about.retry')}
+              onAction={loadLauncherReleases}
+            />
           )}
           {!loadingReleases && releases.length > 0 && (
             <div className="about-release-list">

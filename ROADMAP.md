@@ -120,6 +120,8 @@ Status: implemented in `0.6.0`.
 - Unify error banners around short reason, one primary action, and optional details.
 - Use skeleton cards for Library/Installed and reserve spinners for short inline actions.
 
+Status: implemented in `0.7.0`.
+
 ### 0.8.0: Navigation And Motion
 
 - Finish Fluent navigation with compact sidebar, active indicator, hover/press states, and visible keyboard focus.

@@ -422,6 +422,19 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
 }
 
 Object.assign(dictionaries.uk, {
+  'state.details': '\u0414\u0435\u0442\u0430\u043b\u0456',
+  'state.githubErrorTitle': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u043e\u043d\u043e\u0432\u0438\u0442\u0438 GitHub-\u0434\u0430\u043d\u0456',
+  'state.githubErrorText': '\u041f\u0435\u0440\u0435\u0432\u0456\u0440 \u0437\u2019\u0454\u0434\u043d\u0430\u043d\u043d\u044f \u0430\u0431\u043e \u043f\u043e\u0432\u0442\u043e\u0440\u0438 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f.',
+  'state.launchErrorTitle': '\u0417\u0430\u043f\u0443\u0441\u043a \u043d\u0435 \u0432\u0434\u0430\u0432\u0441\u044f',
+  'state.installedErrorTitle': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u043e\u043d\u043e\u0432\u0438\u0442\u0438 \u0432\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u0456',
+  'state.repairNeededTitle': '\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u0435 \u0432\u0456\u0434\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f',
+  'state.settingsErrorTitle': '\u041d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u043d\u0435 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043e',
+  'state.releaseErrorTitle': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0438\u0442\u0438 \u0440\u0435\u043b\u0456\u0437\u0438',
+  'state.releaseErrorText': '\u041c\u043e\u0436\u043b\u0438\u0432\u043e, GitHub \u0449\u0435 \u043e\u043d\u043e\u0432\u043b\u044e\u0454 \u0440\u0435\u043b\u0456\u0437 \u0430\u0431\u043e \u0437\u0430\u043f\u0438\u0442 \u0437\u0430\u0431\u043b\u043e\u043a\u043e\u0432\u0430\u043d\u043e.',
+  'state.releaseEmptyText': '\u0414\u043b\u044f \u043e\u0431\u0440\u0430\u043d\u043e\u0433\u043e \u043a\u0430\u043d\u0430\u043b\u0443 \u043d\u0435\u043c\u0430\u0454 \u0433\u043e\u0442\u043e\u0432\u0438\u0445 \u0440\u0435\u043b\u0456\u0437\u0456\u0432.',
+  'state.launcherVersionsErrorTitle': '\u0412\u0435\u0440\u0441\u0456\u0457 \u043b\u0430\u0443\u043d\u0447\u0435\u0440\u0430 \u043d\u0435 \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e',
+  'state.launcherVersionsErrorText': '\u041e\u043d\u043e\u0432\u0438 \u0441\u043f\u0438\u0441\u043e\u043a, \u0449\u043e\u0431 \u043f\u0435\u0440\u0435\u0447\u0438\u0442\u0430\u0442\u0438 GitHub Releases \u0431\u0435\u0437 \u043a\u0435\u0448\u0443.',
+  'state.launcherVersionsEmptyText': '\u041d\u0430 GitHub \u043f\u043e\u043a\u0438 \u043d\u0435\u043c\u0430\u0454 \u0440\u0435\u043b\u0456\u0437\u0456\u0432 \u043b\u0430\u0443\u043d\u0447\u0435\u0440\u0430 \u0434\u043b\u044f \u043f\u043e\u043a\u0430\u0437\u0443.',
   'about.newerStatus': '\u041d\u043e\u0432\u0456\u0448\u0430',
   'about.olderStatus': '\u0421\u0442\u0430\u0440\u0456\u0448\u0430',
   'about.portableUnavailableStatus': 'Portable \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0438\u0439',
@@ -441,6 +454,19 @@ Object.assign(dictionaries.uk, {
 })
 
 Object.assign(dictionaries.en, {
+  'state.details': 'Details',
+  'state.githubErrorTitle': 'GitHub data could not be refreshed',
+  'state.githubErrorText': 'Check the connection or try refreshing again.',
+  'state.launchErrorTitle': 'Launch failed',
+  'state.installedErrorTitle': 'Installed apps could not be refreshed',
+  'state.repairNeededTitle': 'Repair needed',
+  'state.settingsErrorTitle': 'Settings were not saved',
+  'state.releaseErrorTitle': 'Releases could not be loaded',
+  'state.releaseErrorText': 'GitHub may still be updating the release, or the request was blocked.',
+  'state.releaseEmptyText': 'There are no ready releases for the selected channel.',
+  'state.launcherVersionsErrorTitle': 'Launcher versions were not loaded',
+  'state.launcherVersionsErrorText': 'Refresh the list to read GitHub Releases without cache.',
+  'state.launcherVersionsEmptyText': 'There are no launcher releases on GitHub to show yet.',
   'about.newerStatus': 'Newer',
   'about.olderStatus': 'Older',
   'about.portableUnavailableStatus': 'Portable unavailable',

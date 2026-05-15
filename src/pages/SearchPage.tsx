@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings'
 import { useLibraryStatus } from '../hooks/useLibraryStatus'
 import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
+import StatePanel from '../components/State/StatePanel'
 import { launchApp } from '../services/installed'
 import type { GitHubSearchResult } from '../types'
 import { useI18n } from '../i18n'
@@ -156,10 +157,11 @@ function SearchPage() {
       </div>
 
       {!owner && !settingsLoading && (
-        <div className="empty-state">
-          <h3>{t('library.noOwnerTitle')}</h3>
-          <p>{t('library.noOwnerText')}</p>
-        </div>
+        <StatePanel
+          kind="empty"
+          title={t('library.noOwnerTitle')}
+          message={t('library.noOwnerText')}
+        />
       )}
 
       {owner && (
@@ -201,18 +203,23 @@ function SearchPage() {
           </div>
 
           {state.error && (
-            <div className="error-banner">
-              <span>{state.error}</span>
-              <button type="button" onClick={handleRefresh}>
-                {t('library.tryAgain')}
-              </button>
-            </div>
+            <StatePanel
+              kind="error"
+              title={t('state.githubErrorTitle')}
+              message={t('state.githubErrorText')}
+              details={state.error}
+              detailsLabel={t('state.details')}
+              actionLabel={t('library.tryAgain')}
+              onAction={handleRefresh}
+            />
           )}
 
           {launchError && (
-            <div className="error-banner">
-              <span>{launchError}</span>
-            </div>
+            <StatePanel
+              kind="error"
+              title={t('state.launchErrorTitle')}
+              message={launchError}
+            />
           )}
 
           <p className="results-count">
@@ -225,26 +232,21 @@ function SearchPage() {
 
           <div className="search-results">
             {showLoadingState && (
-              <div className="library-skeleton" aria-label={t('library.loading')}>
-                <div className="skeleton-card" />
-                <div className="skeleton-card" />
-                <div className="skeleton-card" />
-              </div>
+              <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />
             )}
 
             {visibleRepositories.length === 0 && !state.loading && (
-              <div className="empty-state">
-                <h3>
-                  {state.repositories.length === 0
-                    ? t('library.emptyTitle')
-                    : t('library.noMatchesTitle')}
-                </h3>
-                <p>
-                  {state.repositories.length === 0
-                    ? t('library.emptyText')
-                    : t('library.noMatchesText')}
-                </p>
-              </div>
+              <StatePanel
+                kind="empty"
+                title={state.repositories.length === 0
+                  ? t('library.emptyTitle')
+                  : t('library.noMatchesTitle')}
+                message={state.repositories.length === 0
+                  ? t('library.emptyText')
+                  : t('library.noMatchesText')}
+                actionLabel={state.repositories.length === 0 ? t('library.refresh') : undefined}
+                onAction={state.repositories.length === 0 ? handleRefresh : undefined}
+              />
             )}
 
             {visibleRepositories.map((repo) => (

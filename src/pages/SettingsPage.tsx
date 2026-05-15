@@ -4,6 +4,7 @@ import { getSettings, updateSettings, validateInstallationPath } from '../servic
 import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
+import StatePanel from '../components/State/StatePanel'
 import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
@@ -157,9 +158,7 @@ function SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="page">
-        <div className="empty-state">
-          <p>{t('settings.loading')}</p>
-        </div>
+        <StatePanel kind="loading" title={t('settings.loading')} skeletonCount={2} />
       </div>
     )
   }
@@ -331,7 +330,13 @@ function SettingsPage() {
           </div>
         </section>
 
-        {error && <div className="error-banner">{error}</div>}
+        {error && (
+          <StatePanel
+            kind="error"
+            title={t('state.settingsErrorTitle')}
+            message={error}
+          />
+        )}
 
         <section className="danger-zone">
           <h3>{t('settings.resetSection')}</h3>
