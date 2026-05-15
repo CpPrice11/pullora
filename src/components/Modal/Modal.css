@@ -1,4 +1,5 @@
 .modal-overlay {
+  animation: fluent-overlay-in var(--motion-fast);
   position: fixed;
   top: 0;
   left: 0;
@@ -21,18 +22,7 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  animation: fluent-dialog-in var(--motion-normal);
 }
 
 .modal-header {

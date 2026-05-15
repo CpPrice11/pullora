@@ -128,6 +128,8 @@ Status: implemented in `0.7.0`.
 - Add microanimations for page transitions, cards, modals, banners, and theme changes.
 - Respect `prefers-reduced-motion`.
 
+Status: implemented in `0.8.0`.
+
 ### 0.9.0: Visual QA And Accessibility Pass
 
 - Ensure all buttons have accessible labels and keyboard focus is visible.
