@@ -112,6 +112,8 @@ Status: implemented in `0.5.0`.
 - Replace browser confirm with a proper confirmation modal before self-update or rollback.
 - Failed self-update should show recovery guidance.
 
+Status: implemented in `0.6.0`.
+
 ### 0.7.0: Empty / Error / Loading States
 
 - Unify empty states for Library, Installed, Favorites, and About releases.

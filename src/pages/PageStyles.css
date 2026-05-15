@@ -806,6 +806,20 @@
   color: var(--color-primary) !important;
 }
 
+.about-release-status.newer {
+  border-color: color-mix(in srgb, var(--color-success) 60%, var(--color-border));
+  color: var(--color-success) !important;
+}
+
+.about-release-status.older {
+  color: var(--color-text-secondary) !important;
+}
+
+.about-release-status.missing {
+  border-color: color-mix(in srgb, var(--color-error) 60%, var(--color-border));
+  color: var(--color-error) !important;
+}
+
 .about-release-warning {
   color: var(--color-error) !important;
 }
@@ -822,6 +836,74 @@
 .about-release-note {
   font-size: 12px;
   text-align: right;
+}
+
+.about-recovery-banner {
+  align-items: flex-start;
+}
+
+.about-recovery-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.about-recovery-banner span {
+  color: var(--color-text-secondary);
+}
+
+.confirm-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 560px;
+  padding: 24px;
+}
+
+.confirm-modal h3 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.confirm-facts {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.confirm-facts div {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.confirm-facts div:last-child {
+  border-bottom: 0;
+}
+
+.confirm-facts span,
+.confirm-list {
+  color: var(--color-text-secondary);
+}
+
+.confirm-facts strong {
+  color: var(--color-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.confirm-list {
+  line-height: 1.55;
+  margin: 0;
+  padding-left: 22px;
 }
 
 @media (max-width: 768px) {

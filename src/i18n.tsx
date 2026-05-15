@@ -421,6 +421,44 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
   },
 }
 
+Object.assign(dictionaries.uk, {
+  'about.newerStatus': '\u041d\u043e\u0432\u0456\u0448\u0430',
+  'about.olderStatus': '\u0421\u0442\u0430\u0440\u0456\u0448\u0430',
+  'about.portableUnavailableStatus': 'Portable \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0438\u0439',
+  'about.retryRefresh': '\u041e\u043d\u043e\u0432\u0438\u0442\u0438 \u0449\u0435 \u0440\u0430\u0437',
+  'about.recoveryHint': '\u041f\u0435\u0440\u0435\u0432\u0456\u0440 portable-\u0444\u0430\u0439\u043b \u0440\u0435\u043b\u0456\u0437\u0443, \u043e\u043d\u043e\u0432\u0438 \u0441\u043f\u0438\u0441\u043e\u043a \u0432\u0435\u0440\u0441\u0456\u0439 \u0456 \u0441\u043f\u0440\u043e\u0431\u0443\u0439 \u0449\u0435 \u0440\u0430\u0437. \u042f\u043a\u0449\u043e \u043b\u0430\u0443\u043d\u0447\u0435\u0440 \u043d\u0435 \u043f\u0435\u0440\u0435\u0437\u0430\u043f\u0443\u0441\u0442\u0438\u0432\u0441\u044f, \u0437\u0430\u043f\u0443\u0441\u0442\u0438 \u043f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 EXE \u0432\u0440\u0443\u0447\u043d\u0443.',
+  'about.updateConfirmTitle': '\u041e\u043d\u043e\u0432\u0438\u0442\u0438 \u0434\u043e {version}',
+  'about.rollbackConfirmTitle': '\u0412\u0456\u0434\u043a\u043e\u0442\u0438\u0442\u0438\u0441\u044f \u0434\u043e {version}',
+  'about.confirmCurrent': '\u041f\u043e\u0442\u043e\u0447\u043d\u0430',
+  'about.confirmTarget': '\u0426\u0456\u043b\u044c\u043e\u0432\u0430',
+  'about.confirmAsset': '\u0424\u0430\u0439\u043b',
+  'about.confirmReplace': '\u041f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 EXE \u0431\u0443\u0434\u0435 \u0437\u0430\u043c\u0456\u043d\u0435\u043d\u043e \u0432\u0438\u0431\u0440\u0430\u043d\u043e\u044e portable-\u0432\u0435\u0440\u0441\u0456\u0454\u044e.',
+  'about.confirmClose': '\u041b\u0430\u0443\u043d\u0447\u0435\u0440 \u0437\u0430\u043a\u0440\u0438\u0454\u0442\u044c\u0441\u044f \u0456 \u043f\u0435\u0440\u0435\u0437\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c\u0441\u044f \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e.',
+  'about.confirmBackup': '\u041f\u0435\u0440\u0435\u0434 \u0437\u0430\u043c\u0456\u043d\u043e\u044e \u0431\u0443\u0434\u0435 \u0441\u0442\u0432\u043e\u0440\u0435\u043d\u043e backup \u043f\u043e\u0442\u043e\u0447\u043d\u043e\u0433\u043e EXE.',
+  'about.cancel': '\u0421\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438',
+  'about.confirmUpdate': '\u041e\u043d\u043e\u0432\u0438\u0442\u0438',
+  'about.confirmRollback': '\u0412\u0456\u0434\u043a\u043e\u0442\u0438\u0442\u0438\u0441\u044f',
+})
+
+Object.assign(dictionaries.en, {
+  'about.newerStatus': 'Newer',
+  'about.olderStatus': 'Older',
+  'about.portableUnavailableStatus': 'Portable unavailable',
+  'about.retryRefresh': 'Refresh again',
+  'about.recoveryHint': 'Check the release portable file, refresh the version list, and try again. If the launcher did not restart, run the current EXE manually.',
+  'about.updateConfirmTitle': 'Update to {version}',
+  'about.rollbackConfirmTitle': 'Rollback to {version}',
+  'about.confirmCurrent': 'Current',
+  'about.confirmTarget': 'Target',
+  'about.confirmAsset': 'File',
+  'about.confirmReplace': 'The current EXE will be replaced with the selected portable version.',
+  'about.confirmClose': 'The launcher will close and restart automatically.',
+  'about.confirmBackup': 'A backup of the current EXE will be created before replacement.',
+  'about.cancel': 'Cancel',
+  'about.confirmUpdate': 'Update',
+  'about.confirmRollback': 'Rollback',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

@@ -3,11 +3,18 @@ import { clearGithubCache, getReleases } from '../services/github'
 import { installLauncherRelease } from '../services/updates'
 import type { GitHubAsset, GitHubRelease } from '../types'
 import { useI18n } from '../i18n'
+import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.5.0'
+const CURRENT_VERSION = 'v0.6.0'
+
+type PendingLauncherAction = {
+  release: GitHubRelease
+  asset: GitHubAsset
+  action: 'update' | 'rollback'
+}
 
 function compareVersionTags(left: string, right: string) {
   const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
@@ -56,6 +63,7 @@ function AboutPage() {
   const [installError, setInstallError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
 
   const loadLauncherReleases = async () => {
     setRefreshState('idle')
@@ -82,7 +90,8 @@ function AboutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const getReleaseStatus = (tagName: string) => {
+  const getReleaseStatus = (tagName: string, hasPortableAsset: boolean) => {
+    if (!hasPortableAsset) return t('about.portableUnavailableStatus')
     if (tagName === CURRENT_VERSION) return t('about.currentStatus')
     return compareVersionTags(tagName, CURRENT_VERSION) > 0
       ? t('about.newerStatus')
@@ -96,7 +105,7 @@ function AboutPage() {
     })
     : null
 
-  const handleActivateRelease = async (release: GitHubRelease) => {
+  const requestActivateRelease = (release: GitHubRelease) => {
     const asset = pickPortableLauncherAsset(release.assets)
 
     if (!asset) {
@@ -104,21 +113,31 @@ function AboutPage() {
       return
     }
 
-    const confirmation = compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
-      ? t('about.updateConfirm', { version: release.tag_name })
-      : t('about.rollbackConfirm', { version: release.tag_name })
+    setInstallError(null)
+    setPendingAction({
+      release,
+      asset,
+      action: compareVersionTags(release.tag_name, CURRENT_VERSION) > 0 ? 'update' : 'rollback',
+    })
+  }
 
-    if (!window.confirm(confirmation)) return
+  const confirmActivateRelease = async () => {
+    if (!pendingAction) return
 
     setInstallError(null)
-    setInstallingVersion(release.tag_name)
+    setInstallingVersion(pendingAction.release.tag_name)
     try {
-      await installLauncherRelease(release.tag_name, asset.browser_download_url, asset.name)
+      await installLauncherRelease(
+        pendingAction.release.tag_name,
+        pendingAction.asset.browser_download_url,
+        pendingAction.asset.name,
+      )
     } catch (err) {
       setInstallError(
         err instanceof Error ? err.message : t('about.activateError'),
       )
       setInstallingVersion(null)
+      setPendingAction(null)
     }
   }
 
@@ -169,7 +188,17 @@ function AboutPage() {
               </button>
             </div>
           </div>
-          {installError && <div className="error-banner">{installError}</div>}
+          {installError && (
+            <div className="error-banner about-recovery-banner">
+              <div>
+                <strong>{installError}</strong>
+                <span>{t('about.recoveryHint')}</span>
+              </div>
+              <button type="button" onClick={loadLauncherReleases}>
+                {t('about.retryRefresh')}
+              </button>
+            </div>
+          )}
           {releaseLoadError && (
             <div className="error-banner">
               <span>{releaseLoadError}</span>
@@ -193,6 +222,13 @@ function AboutPage() {
                 const portableAsset = pickPortableLauncherAsset(release.assets)
                 const isCurrent = release.tag_name === CURRENT_VERSION
                 const canActivate = Boolean(portableAsset) && !isCurrent
+                const statusClass = !portableAsset
+                  ? 'missing'
+                  : isCurrent
+                    ? 'current'
+                    : compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
+                      ? 'newer'
+                      : 'older'
 
                 return (
                   <div
@@ -204,8 +240,8 @@ function AboutPage() {
                     <div className="about-release-main">
                       <div className="about-release-title">
                         <span>{release.tag_name}</span>
-                        <span className={`about-release-status ${isCurrent ? 'current' : ''}`}>
-                          {getReleaseStatus(release.tag_name)}
+                        <span className={`about-release-status ${statusClass}`}>
+                          {getReleaseStatus(release.tag_name, Boolean(portableAsset))}
                         </span>
                       </div>
                       <span>
@@ -223,14 +259,11 @@ function AboutPage() {
                       </span>
                     </div>
                     <div className="about-release-actions">
-                      {!isCurrent && portableAsset && (
-                        <span className="about-release-note">{t('about.restartNotice')}</span>
-                      )}
                       <button
                         type="button"
                         className="secondary-btn"
                         disabled={!canActivate || installingVersion !== null}
-                        onClick={() => handleActivateRelease(release)}
+                        onClick={() => requestActivateRelease(release)}
                       >
                         {isCurrent
                           ? t('about.active')
@@ -248,6 +281,71 @@ function AboutPage() {
           )}
         </section>
       </div>
+
+      {pendingAction && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => {
+            if (!installingVersion) setPendingAction(null)
+          }}
+        >
+          <div
+            className="modal-content confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="launcher-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="launcher-confirm-title">
+              {pendingAction.action === 'update'
+                ? t('about.updateConfirmTitle', { version: pendingAction.release.tag_name })
+                : t('about.rollbackConfirmTitle', { version: pendingAction.release.tag_name })}
+            </h3>
+            <div className="confirm-facts">
+              <div>
+                <span>{t('about.confirmCurrent')}</span>
+                <strong>{CURRENT_VERSION}</strong>
+              </div>
+              <div>
+                <span>{t('about.confirmTarget')}</span>
+                <strong>{pendingAction.release.tag_name}</strong>
+              </div>
+              <div>
+                <span>{t('about.confirmAsset')}</span>
+                <strong>{pendingAction.asset.name}</strong>
+              </div>
+            </div>
+            <ul className="confirm-list">
+              <li>{t('about.confirmReplace')}</li>
+              <li>{t('about.confirmClose')}</li>
+              <li>{t('about.confirmBackup')}</li>
+            </ul>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                disabled={installingVersion !== null}
+                onClick={() => setPendingAction(null)}
+              >
+                {t('about.cancel')}
+              </button>
+              <button
+                type="button"
+                className="primary-btn"
+                disabled={installingVersion !== null}
+                onClick={confirmActivateRelease}
+              >
+                {installingVersion
+                  ? t('about.activating')
+                  : pendingAction.action === 'update'
+                    ? t('about.confirmUpdate')
+                    : t('about.confirmRollback')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
