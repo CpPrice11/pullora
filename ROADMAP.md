@@ -103,6 +103,8 @@ Status: implemented in `0.4.0`.
 - Add an install-folder validation action with OK, inaccessible, and no-write-permission states.
 - Theme and language changes apply immediately.
 
+Status: implemented in `0.5.0`.
+
 ### 0.6.0: About / Self Update Final UX
 
 - Keep About focused on current launcher version and launcher release actions.

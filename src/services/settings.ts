@@ -1,5 +1,5 @@
 import { callTauri } from './tauri'
-import type { AppSettings } from '../types'
+import type { AppSettings, InstallPathValidation } from '../types'
 
 export async function getSettings(): Promise<AppSettings> {
   return callTauri<AppSettings>('get_settings')
@@ -15,4 +15,8 @@ export async function setInstallationPath(path: string): Promise<void> {
 
 export async function checkIsFirstLaunch(): Promise<boolean> {
   return callTauri<boolean>('is_first_launch')
+}
+
+export async function validateInstallationPath(path: string): Promise<InstallPathValidation> {
+  return callTauri<InstallPathValidation>('validate_installation_path', { path })
 }

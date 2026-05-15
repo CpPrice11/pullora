@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AppSettings } from '../types'
-import { getSettings, updateSettings } from '../services/settings'
+import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
@@ -16,6 +16,7 @@ function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
 
   useEffect(() => {
     getSettings()
@@ -96,6 +97,7 @@ function SettingsPage() {
   const handleInstallationPathBlur = async () => {
     if (!settings) return
     await persistSettings(settings, settings)
+    setPathValidation('idle')
   }
 
   const handleInstallationPathKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -118,6 +120,30 @@ function SettingsPage() {
   const handleClearCache = async () => {
     await clearGithubCache().catch(() => {})
     alert(t('settings.cacheCleared'))
+  }
+
+  const handleValidatePath = async () => {
+    if (!settings) return
+    setError(null)
+    try {
+      const result = await validateInstallationPath(settings.installationPath)
+      setPathValidation(result.status)
+    } catch (err) {
+      setPathValidation('inaccessible')
+      setError(err instanceof Error ? err.message : t('settings.pathCheckError'))
+    }
+  }
+
+  const handleGithubOwnerBlur = async () => {
+    if (!settings) return
+    await persistSettings(settings, settings)
+    await clearGithubCache().catch(() => {})
+  }
+
+  const handleGithubOwnerKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.currentTarget.blur()
+    }
   }
 
   const handleLanguageChange = async (language: AppLanguage) => {
@@ -148,7 +174,7 @@ function SettingsPage() {
 
       <div className="settings-form">
         <section className="settings-section">
-          <h3>{t('settings.installation')}</h3>
+          <h3>{t('settings.folders')}</h3>
           <div className="form-group">
             <label htmlFor="installPath">{t('settings.installPath')}</label>
             <div className="path-input-row">
@@ -166,6 +192,9 @@ function SettingsPage() {
               <button type="button" onClick={handleBrowse}>
                 {t('settings.choose')}
               </button>
+              <button type="button" className="secondary-btn" onClick={handleValidatePath}>
+                {t('settings.checkFolder')}
+              </button>
               {settings.installationPath && (
                 <button
                   type="button"
@@ -177,6 +206,32 @@ function SettingsPage() {
                 </button>
               )}
             </div>
+            {pathValidation !== 'idle' && (
+              <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
+                {pathValidation === 'ok' && t('settings.pathOk')}
+                {pathValidation === 'missing' && t('settings.pathMissing')}
+                {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
+                {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
+              </span>
+            )}
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <h3>{t('settings.github')}</h3>
+          <div className="form-group compact-control">
+            <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
+            <input
+              id="githubOwner"
+              type="text"
+              value={settings.githubOwner ?? ''}
+              onBlur={handleGithubOwnerBlur}
+              onChange={(event) =>
+                setSettings({ ...settings, githubOwner: event.target.value })
+              }
+              onKeyDown={handleGithubOwnerKeyDown}
+              placeholder={t('settings.githubOwnerPlaceholder')}
+            />
           </div>
         </section>
 
@@ -259,7 +314,10 @@ function SettingsPage() {
               <option value="auto">{t('settings.auto')}</option>
             </select>
           </div>
+        </section>
 
+        <section className="settings-section">
+          <h3>{t('settings.languageSection')}</h3>
           <div className="form-group compact-control">
             <label htmlFor="language">{t('settings.language')}</label>
             <select
@@ -276,7 +334,7 @@ function SettingsPage() {
         {error && <div className="error-banner">{error}</div>}
 
         <section className="danger-zone">
-          <h3>{t('settings.service')}</h3>
+          <h3>{t('settings.resetSection')}</h3>
           <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
             {t('settings.reset')}
           </button>
