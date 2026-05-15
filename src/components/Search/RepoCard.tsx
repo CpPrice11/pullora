@@ -75,7 +75,19 @@ function RepoCard({
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleSelect
 
   return (
-    <article className={`repo-card repo-card--${statusClass}`} onClick={onSelect}>
+    <article
+      className={`repo-card repo-card--${statusClass}`}
+      onClick={onSelect}
+      tabIndex={0}
+      role="button"
+      aria-label={`${repo.name}, ${statusLabel}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
+    >
       <img
         src={repo.owner.avatar_url}
         alt={repo.owner.login}
@@ -124,7 +136,7 @@ function RepoCard({
           title={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
           aria-label={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
         >
-          {isFav ? '★' : '☆'}
+          {isFav ? '\u2605' : '\u2606'}
         </button>
         {isInstalled && hasUpdate && (
           <button type="button" className="launch-btn" onClick={handleLaunch}>

@@ -25,6 +25,11 @@
   outline: 3px solid var(--color-primary-light);
 }
 
+.repo-card:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
 .owner-avatar {
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
@@ -146,6 +151,7 @@
   justify-content: flex-end;
   padding-top: 2px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .fav-btn,
@@ -403,6 +409,12 @@
 .release-version-main strong,
 .release-asset-main strong {
   overflow-wrap: anywhere;
+}
+
+.release-version-card:focus-visible,
+.release-asset-card:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 
 .release-version-main span,

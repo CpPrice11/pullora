@@ -45,13 +45,14 @@
   font-weight: 600;
   flex: 1;
   min-width: 120px;
+  overflow-wrap: anywhere;
 }
 
 .update-versions {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   font-family: monospace;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .update-actions {

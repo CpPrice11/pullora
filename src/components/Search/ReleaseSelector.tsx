@@ -201,13 +201,24 @@ function ReleaseSelector({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content release-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content release-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="release-selector-title"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <div>
-            <h2>{displayName}</h2>
+            <h2 id="release-selector-title">{displayName}</h2>
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
-          <button type="button" className="close-btn" onClick={onClose}>
+          <button
+            type="button"
+            className="close-btn"
+            onClick={onClose}
+            aria-label={t('release.close')}
+          >
             {t('release.close')}
           </button>
         </div>
@@ -251,6 +262,7 @@ function ReleaseSelector({
                         type="button"
                         className={`release-version-card ${isSelected ? 'active' : ''}`}
                         onClick={() => handleReleaseChange(release)}
+                        aria-pressed={isSelected}
                       >
                         <span className="release-version-main">
                           <strong>{release.tag_name}</strong>
@@ -282,6 +294,7 @@ function ReleaseSelector({
                           className={`release-asset-card release-asset-card--${kind} ${isSelected ? 'active' : ''}`}
                           onClick={() => setSelectedAsset(asset)}
                           disabled={!isSupported}
+                          aria-pressed={isSelected}
                         >
                           <span className="release-asset-main">
                             <strong>{asset.name}</strong>

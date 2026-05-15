@@ -137,6 +137,8 @@ Status: implemented in `0.8.0`.
 - QA Ukrainian and English text, long repo names, long version tags, `1000x700`, and wide desktop.
 - Remove duplicated controls, dead CSS, unnecessary helper text, and noisy badges.
 
+Status: implemented in `0.9.0`.
+
 ### 1.0.0: Stable UI Release
 
 - Freeze the UI contracts: one Library refresh, About owns launcher versions, install/update/repair/rollback use consistent language and states.

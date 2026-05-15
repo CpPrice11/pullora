@@ -36,7 +36,9 @@ function FavoritesPage() {
     <div className="page">
       <div className="page-header">
         <h2>{t('favorites.title')}</h2>
-        <button onClick={loadFavorites} className="refresh-btn">{t('favorites.refresh')}</button>
+        <button type="button" onClick={loadFavorites} className="refresh-btn">
+          {t('favorites.refresh')}
+        </button>
       </div>
 
       <div className="apps-list">
@@ -55,17 +57,18 @@ function FavoritesPage() {
         {favorites.map((fav) => (
           <div key={`${fav.owner}/${fav.repo}`} className="app-card">
             <div className="app-header">
-              <div>
+              <div className="app-title-block">
                 <h3>{fav.displayName}</h3>
                 <p className="app-repo">{fav.owner}/{fav.repo}</p>
               </div>
               <button
+                type="button"
                 className="fav-remove-btn"
                 onClick={() => handleRemove(fav)}
                 title={t('repo.removeFavorite')}
                 aria-label={t('repo.removeFavorite')}
               >
-                ★
+                {'\u2605'}
               </button>
             </div>
 
@@ -74,7 +77,7 @@ function FavoritesPage() {
             )}
 
             <div className="app-actions">
-              <button onClick={() => setSelectedFav(fav)}>
+              <button type="button" onClick={() => setSelectedFav(fav)}>
                 {t('favorites.installUpdate')}
               </button>
             </div>

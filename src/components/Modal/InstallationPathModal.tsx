@@ -36,9 +36,14 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div
+        className="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="first-run-title"
+      >
         <div className="modal-header">
-          <h2>{t('firstRun.title')}</h2>
+          <h2 id="first-run-title">{t('firstRun.title')}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
