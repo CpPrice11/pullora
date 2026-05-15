@@ -11,6 +11,7 @@ import {
 } from '../services/installed'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
+import StatePanel from '../components/State/StatePanel'
 import { useDownload } from '../hooks/useDownload'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
@@ -134,31 +135,28 @@ function InstalledPage() {
       </div>
 
       {error && (
-        <div className="error-banner">
-          <span>{error}</span>
-          {repairTarget && (
-            <button type="button" onClick={() => setRepairTarget(repairTarget)}>
-              {t('installed.repair')}
-            </button>
-          )}
-        </div>
+        <StatePanel
+          kind="error"
+          title={repairTarget ? t('state.repairNeededTitle') : t('state.installedErrorTitle')}
+          message={error}
+          actionLabel={repairTarget ? t('installed.repair') : t('installed.refresh')}
+          onAction={repairTarget ? () => setRepairTarget(repairTarget) : loadApps}
+        />
       )}
 
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
 
       <div className="apps-list">
         {loading && (
-          <div className="library-skeleton" aria-label={t('installed.loading')}>
-            <div className="skeleton-card" />
-            <div className="skeleton-card" />
-          </div>
+          <StatePanel kind="loading" title={t('installed.loading')} skeletonCount={2} />
         )}
 
         {!loading && apps.length === 0 && (
-          <div className="empty-state">
-            <h3>{t('installed.emptyTitle')}</h3>
-            <p>{t('installed.emptyText')}</p>
-          </div>
+          <StatePanel
+            kind="empty"
+            title={t('installed.emptyTitle')}
+            message={t('installed.emptyText')}
+          />
         )}
 
         {apps.map((app) => {

@@ -4,6 +4,7 @@ import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
 import type { GitHubRelease, GitHubAsset } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
+import StatePanel from '../State/StatePanel'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
@@ -212,16 +213,28 @@ function ReleaseSelector({
         </div>
 
         <div className="release-body">
-          {loading && <p className="loading-text">{t('release.loading')}</p>}
-          {error && <div className="error-message">{error}</div>}
-
-          {!loading && visibleReleases.length === 0 && (
-            <p className="no-releases">
-              {t('release.noReleases')}
-            </p>
+          {loading && <StatePanel kind="loading" title={t('release.loading')} skeletonCount={3} />}
+          {!loading && error && (
+            <StatePanel
+              kind="error"
+              title={t('state.releaseErrorTitle')}
+              message={t('state.releaseErrorText')}
+              details={error}
+              detailsLabel={t('state.details')}
+              actionLabel={t('about.retry')}
+              onAction={() => fetchReleases(true)}
+            />
           )}
 
-          {visibleReleases.length > 0 && (
+          {!loading && !error && visibleReleases.length === 0 && (
+            <StatePanel
+              kind="empty"
+              title={t('release.noReleases')}
+              message={t('state.releaseEmptyText')}
+            />
+          )}
+
+          {!loading && !error && visibleReleases.length > 0 && (
             <>
               <div className="release-picker">
                 <span className="release-section-label">{t('release.version')}</span>

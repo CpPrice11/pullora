@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import type { FavoriteApp } from '../types'
 import { getFavorites, removeFromFavorites } from '../services/favorites'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
+import StatePanel from '../components/State/StatePanel'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
 
@@ -40,17 +41,15 @@ function FavoritesPage() {
 
       <div className="apps-list">
         {loading && (
-          <div className="library-skeleton" aria-label={t('favorites.loading')}>
-            <div className="skeleton-card" />
-            <div className="skeleton-card" />
-          </div>
+          <StatePanel kind="loading" title={t('favorites.loading')} skeletonCount={2} />
         )}
 
         {!loading && favorites.length === 0 && (
-          <div className="empty-state">
-            <h3>{t('favorites.emptyTitle')}</h3>
-            <p>{t('favorites.emptyText')}</p>
-          </div>
+          <StatePanel
+            kind="empty"
+            title={t('favorites.emptyTitle')}
+            message={t('favorites.emptyText')}
+          />
         )}
 
         {favorites.map((fav) => (
