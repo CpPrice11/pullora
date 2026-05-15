@@ -59,6 +59,12 @@ export interface AppSettings {
   language: string
 }
 
+export interface InstallPathValidation {
+  ok: boolean
+  status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'
+  message: string
+}
+
 // Installed app types
 export interface VersionInfo {
   tag: string

@@ -52,6 +52,7 @@ pub fn run() {
             commands::settings::update_settings,
             commands::settings::set_installation_path,
             commands::settings::is_first_launch,
+            commands::settings::validate_installation_path,
             commands::favorites::get_favorites,
             commands::favorites::add_to_favorites,
             commands::favorites::remove_from_favorites,
