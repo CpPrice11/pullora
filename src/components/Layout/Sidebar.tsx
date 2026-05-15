@@ -88,6 +88,8 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
               onClick={() => onTabChange(item.id)}
               title={label}
+              aria-current={activeTab === item.id ? 'page' : undefined}
+              aria-label={label}
             >
               <span className="nav-icon" aria-hidden="true">
                 <NavIcon name={item.icon} />

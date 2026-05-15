@@ -9,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v0.7.0'
+const CURRENT_VERSION = 'v0.8.0'
 
 type PendingLauncherAction = {
   release: GitHubRelease

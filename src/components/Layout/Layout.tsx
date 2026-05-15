@@ -21,7 +21,7 @@ function Layout({
       <Header />
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
-        <main className="layout-content">
+        <main className="layout-content" key={activeTab}>
           {children}
         </main>
       </div>

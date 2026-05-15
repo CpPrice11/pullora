@@ -42,6 +42,7 @@
   --motion-fast: 120ms cubic-bezier(0.33, 0, 0.67, 1);
   --motion-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
   --motion-slow: 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-page: 260ms cubic-bezier(0.16, 1, 0.3, 1);
   --shadow-control: 0 1px 1px rgba(0, 0, 0, 0.05);
   --shadow-control-hover: 0 2px 6px rgba(0, 0, 0, 0.08);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -271,6 +272,33 @@ p {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes fluent-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fluent-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fluent-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
