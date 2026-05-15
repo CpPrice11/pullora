@@ -146,6 +146,20 @@ Status: implemented in `0.9.0`.
 - Add a short UI acceptance checklist to this roadmap.
 - Ship only the portable EXE and one setup EXE release asset.
 
+Status: implemented in `1.0.0`.
+
+UI acceptance checklist:
+
+- Library has one manual refresh action; updates remain a Library filter, not a separate sidebar page.
+- About owns launcher versions, portable self-update, rollback, refresh, and recovery guidance.
+- Install, update, repair, rollback, and launch errors use consistent Ukrainian/English state language.
+- Settings autosave without a save button and never reset values when switching pages.
+- Light, dark, and auto themes apply immediately.
+- Ukrainian and English UI fit at `1000x700` and wide desktop sizes.
+- Long repository names and long version tags wrap or truncate without overlapping controls.
+- Keyboard focus is visible on primary actions, navigation, release rows, and cards.
+- Release assets remain limited to portable EXE plus one setup EXE.
+
 ## Progress Log
 
 Completed:
