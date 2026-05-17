@@ -71,6 +71,7 @@ pub fn run() {
             commands::download::start_download,
             commands::download::get_downloads,
             commands::download::cancel_download,
+            commands::updates::get_launcher_version,
             commands::updates::check_for_updates,
             commands::updates::open_dir,
             commands::updates::install_launcher_release,

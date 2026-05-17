@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { clearGithubCache, getReleases } from '../services/github'
-import { installLauncherRelease } from '../services/updates'
+import { getLauncherVersion, installLauncherRelease } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease } from '../types'
 import { useI18n } from '../i18n'
@@ -9,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v1.1.2'
+const FALLBACK_CURRENT_VERSION = 'v1.1.5'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -57,6 +57,7 @@ function pickPortableLauncherAsset(assets: GitHubAsset[]) {
 
 function AboutPage() {
   const { language, t } = useI18n()
+  const [currentVersion, setCurrentVersion] = useState(FALLBACK_CURRENT_VERSION)
   const [releases, setReleases] = useState<GitHubRelease[]>([])
   const [loadingReleases, setLoadingReleases] = useState(true)
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
@@ -87,6 +88,12 @@ function AboutPage() {
   }
 
   useEffect(() => {
+    getLauncherVersion()
+      .then(setCurrentVersion)
+      .catch(() => setCurrentVersion(FALLBACK_CURRENT_VERSION))
+  }, [])
+
+  useEffect(() => {
     loadLauncherReleases()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -104,8 +111,8 @@ function AboutPage() {
 
   const getReleaseStatus = (tagName: string, hasPortableAsset: boolean) => {
     if (!hasPortableAsset) return t('about.portableUnavailableStatus')
-    if (tagName === CURRENT_VERSION) return t('about.currentStatus')
-    return compareVersionTags(tagName, CURRENT_VERSION) > 0
+    if (tagName === currentVersion) return t('about.currentStatus')
+    return compareVersionTags(tagName, currentVersion) > 0
       ? t('about.newerStatus')
       : t('about.olderStatus')
   }
@@ -118,7 +125,7 @@ function AboutPage() {
     : null
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
   const latestIsNewer = latestRelease
-    ? compareVersionTags(latestRelease.tag_name, CURRENT_VERSION) > 0
+    ? compareVersionTags(latestRelease.tag_name, currentVersion) > 0
     : false
 
   const requestActivateRelease = (release: GitHubRelease) => {
@@ -133,7 +140,7 @@ function AboutPage() {
     setPendingAction({
       release,
       asset,
-      action: compareVersionTags(release.tag_name, CURRENT_VERSION) > 0 ? 'update' : 'rollback',
+      action: compareVersionTags(release.tag_name, currentVersion) > 0 ? 'update' : 'rollback',
     })
   }
 
@@ -171,7 +178,7 @@ function AboutPage() {
           <h3>Air Launcher</h3>
           <p>{t('about.updateCenter')}</p>
           <div className="about-hero-meta">
-            <span>{t('about.currentVersion')}: {CURRENT_VERSION.replace(/^v/, '')}</span>
+            <span>{t('about.currentVersion')}: {currentVersion.replace(/^v/, '')}</span>
             {latestRelease && (
               <span>
                 {t('about.latestVersion')}: {latestRelease.tag_name.replace(/^v/, '')}
@@ -202,7 +209,7 @@ function AboutPage() {
             </div>
             <div>
               <dt>{t('about.currentVersion')}</dt>
-              <dd>{CURRENT_VERSION.replace(/^v/, '')}</dd>
+              <dd>{currentVersion.replace(/^v/, '')}</dd>
             </div>
             <div>
               <dt>{t('about.stack')}</dt>
@@ -271,13 +278,13 @@ function AboutPage() {
             <div className="about-release-list">
               {releases.map((release) => {
                 const portableAsset = pickPortableLauncherAsset(release.assets)
-                const isCurrent = release.tag_name === CURRENT_VERSION
+                const isCurrent = release.tag_name === currentVersion
                 const canActivate = Boolean(portableAsset) && !isCurrent
                 const statusClass = !portableAsset
                   ? 'missing'
                   : isCurrent
                     ? 'current'
-                    : compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
+                    : compareVersionTags(release.tag_name, currentVersion) > 0
                       ? 'newer'
                       : 'older'
 
@@ -324,7 +331,7 @@ function AboutPage() {
                           ? t('about.active')
                           : installingVersion === release.tag_name
                             ? t('about.activating')
-                            : compareVersionTags(release.tag_name, CURRENT_VERSION) > 0
+                            : compareVersionTags(release.tag_name, currentVersion) > 0
                               ? t('about.update')
                               : t('about.rollback')}
                       </button>
@@ -376,7 +383,7 @@ function AboutPage() {
             <div className="confirm-facts">
               <div>
                 <span>{t('about.confirmCurrent')}</span>
-                <strong>{CURRENT_VERSION}</strong>
+                <strong>{currentVersion}</strong>
               </div>
               <div>
                 <span>{t('about.confirmTarget')}</span>

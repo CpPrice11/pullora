@@ -5,6 +5,10 @@ export async function checkForUpdates(): Promise<UpdateAvailable[]> {
   return callTauri<UpdateAvailable[]>('check_for_updates')
 }
 
+export async function getLauncherVersion(): Promise<string> {
+  return callTauri<string>('get_launcher_version')
+}
+
 export async function openDir(path: string): Promise<void> {
   return callTauri('open_dir', { path })
 }

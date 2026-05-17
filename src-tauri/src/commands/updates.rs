@@ -5,6 +5,11 @@ use crate::version::checker::{check_all_updates, UpdateAvailable};
 use crate::AppState;
 
 #[tauri::command]
+pub async fn get_launcher_version() -> Result<String, String> {
+    Ok(format!("v{}", env!("CARGO_PKG_VERSION")))
+}
+
+#[tauri::command]
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateAvailable>, String> {
     let client = state.github_client.lock().await;
     check_all_updates(&client).await
