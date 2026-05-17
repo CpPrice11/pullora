@@ -808,9 +808,9 @@
   border-color: rgba(255, 255, 255, 0.12);
   border-radius: 20px;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.26);
-  grid-template-columns: 76px minmax(0, 1fr);
-  min-height: 150px;
-  padding: 14px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  min-height: 190px;
+  padding: 16px;
   overflow: hidden;
 }
 
@@ -861,9 +861,9 @@
 
 .cinematic-shell .owner-avatar {
   border-color: rgba(255, 255, 255, 0.16);
-  border-radius: 16px;
-  height: 76px;
-  width: 76px;
+  border-radius: 15px;
+  height: 64px;
+  width: 64px;
 }
 
 .cinematic-shell .repo-info {
@@ -877,7 +877,7 @@
 
 .cinematic-shell .repo-name {
   color: #ffffff;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 820;
   white-space: normal;
 }
@@ -899,6 +899,7 @@
 .cinematic-shell .repo-description {
   color: rgba(255, 255, 255, 0.76);
   font-size: 13px;
+  min-height: 38px;
   margin-top: 8px;
 }
 
@@ -942,6 +943,7 @@
   align-items: center;
   grid-column: 1 / -1;
   justify-content: flex-end;
+  margin-top: auto;
   padding-top: 0;
 }
 
@@ -962,10 +964,17 @@
 }
 
 .cinematic-shell .install-btn {
-  background: #5bd7ff;
+  background: linear-gradient(180deg, #5bd7ff, #36c6ff);
+  border-color: rgba(91, 215, 255, 0.68);
   border-radius: 12px;
-  color: #071017;
+  color: #061018 !important;
   font-weight: 820;
+  min-width: 120px;
+}
+
+.cinematic-shell .install-btn:hover {
+  background: linear-gradient(180deg, #87e8ff, #5bd7ff);
+  color: #061018 !important;
 }
 
 .cinematic-shell .launch-btn,
@@ -991,12 +1000,12 @@
 
 @media (max-width: 760px) {
   .cinematic-shell .repo-card {
-    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-columns: 56px minmax(0, 1fr);
   }
 
   .cinematic-shell .owner-avatar {
-    height: 58px;
-    width: 58px;
+    height: 56px;
+    width: 56px;
   }
 
   .cinematic-shell .repo-card-actions {
