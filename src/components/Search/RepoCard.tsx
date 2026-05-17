@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { GitHubSearchResult, InstalledApp } from '../../types'
+import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../services/favorites'
+import { toProjectArtUrl } from '../../services/projectArt'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 
@@ -8,6 +9,10 @@ interface RepoCardProps {
   repo: GitHubSearchResult
   installedApp?: InstalledApp
   latestVersion?: string
+  art?: ProjectArt
+  isSelected?: boolean
+  onPreview?: () => void
+  onPickArt?: (kind: 'cover' | 'background') => void
   onSelect: () => void
   onLaunch?: () => void
 }
@@ -16,6 +21,10 @@ function RepoCard({
   repo,
   installedApp,
   latestVersion,
+  art,
+  isSelected = false,
+  onPreview,
+  onPickArt,
   onSelect,
   onLaunch,
 }: RepoCardProps) {
@@ -68,35 +77,51 @@ function RepoCard({
     onSelect()
   }
 
+  const handlePickArt = (event: React.MouseEvent, kind: 'cover' | 'background') => {
+    event.stopPropagation()
+    onPickArt?.(kind)
+  }
+
+  const handlePreview = () => {
+    onPreview?.()
+  }
+
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
   const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.available')
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleSelect
 
+  const coverUrl = toProjectArtUrl(art?.coverPath)
+
   return (
     <article
-      className={`repo-card repo-card--${statusClass}`}
-      onClick={onSelect}
+      className={`repo-card repo-card--${statusClass} ${isSelected ? 'selected' : ''}`}
+      onClick={handlePreview}
       tabIndex={0}
       role="button"
       aria-label={`${repo.name}, ${statusLabel}`}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
-          onSelect()
+          handlePreview()
         }
       }}
     >
-      <img
-        src={repo.owner.avatar_url}
-        alt={repo.owner.login}
-        className="owner-avatar"
-      />
+      <div className="repo-card-media">
+        <img
+          src={coverUrl ?? repo.owner.avatar_url}
+          alt=""
+          className="owner-avatar"
+        />
+      </div>
 
       <div className="repo-info">
         <div className="repo-title-line">
-          <h3 className="repo-name">{repo.name}</h3>
+          <h3 className="repo-name" title={repo.name}>{repo.name}</h3>
+          <span className={`repo-status ${statusClass}`}>
+            {statusLabel}
+          </span>
         </div>
 
         <div className="repo-owner">{repo.owner.login}/{repo.name}</div>
@@ -125,9 +150,6 @@ function RepoCard({
       </div>
 
       <div className="repo-card-actions">
-        <span className={`repo-status ${statusClass}`}>
-          {statusLabel}
-        </span>
         <button
           type="button"
           className={`fav-btn ${isFav ? 'active' : ''}`}
@@ -139,16 +161,49 @@ function RepoCard({
           {isFav ? '\u2605' : '\u2606'}
         </button>
         {isInstalled && hasUpdate && (
-          <button type="button" className="launch-btn" onClick={handleLaunch}>
+          <button
+            type="button"
+            className="launch-btn"
+            onClick={handleLaunch}
+            aria-label={`${t('repo.launch')}: ${repo.name}`}
+          >
             {t('repo.launch')}
           </button>
         )}
         {isInstalled && (
-          <button type="button" className="secondary-btn versions-btn" onClick={handleSelect}>
+          <button
+            type="button"
+            className="secondary-btn versions-btn"
+            onClick={handleSelect}
+            aria-label={`${t('repo.versions')}: ${repo.name}`}
+          >
             {t('repo.versions')}
           </button>
         )}
-        <button type="button" className="install-btn" onClick={primaryAction}>
+        {isSelected && onPickArt && (
+          <>
+            <button
+              type="button"
+              className="secondary-btn art-mini-btn"
+              onClick={(event) => handlePickArt(event, 'background')}
+            >
+              {t('art.background')}
+            </button>
+            <button
+              type="button"
+              className="secondary-btn art-mini-btn"
+              onClick={(event) => handlePickArt(event, 'cover')}
+            >
+              {t('art.cover')}
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="install-btn"
+          onClick={primaryAction}
+          aria-label={`${primaryLabel}: ${repo.name}`}
+        >
           {primaryLabel}
         </button>
       </div>

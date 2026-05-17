@@ -145,6 +145,7 @@ button {
   background-color: var(--color-primary);
   color: white;
   font-weight: 600;
+  min-width: 0;
 }
 
 button:hover {
@@ -182,6 +183,7 @@ select {
   color: var(--color-text);
   min-height: 36px;
   transition: var(--transition);
+  min-width: 0;
 }
 
 input:focus,

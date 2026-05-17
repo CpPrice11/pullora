@@ -15,6 +15,9 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
 
   return (
     <div className="update-banner" role="status" aria-live="polite">
+      <div className="update-banner-mark" aria-hidden="true">
+        <span>{updates.length}</span>
+      </div>
       <div className="update-banner-header">
         <span className="update-icon" aria-hidden="true">{'\u21bb'}</span>
         <strong>

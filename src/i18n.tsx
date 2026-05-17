@@ -451,6 +451,18 @@ Object.assign(dictionaries.uk, {
   'about.cancel': '\u0421\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438',
   'about.confirmUpdate': '\u041e\u043d\u043e\u0432\u0438\u0442\u0438',
   'about.confirmRollback': '\u0412\u0456\u0434\u043a\u043e\u0442\u0438\u0442\u0438\u0441\u044f',
+  'art.actions': '\u041a\u0435\u0440\u0443\u0432\u0430\u043d\u043d\u044f \u0432\u0456\u0437\u0443\u0430\u043b\u043e\u043c',
+  'art.background': '\u0424\u043e\u043d',
+  'art.cover': '\u041e\u0431\u043a\u043b\u0430\u0434\u0438\u043d\u043a\u0430',
+  'art.clear': '\u0421\u043a\u0438\u043d\u0443\u0442\u0438 \u0430\u0440\u0442',
+  'art.saveError': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0430\u0440\u0442 \u043f\u0440\u043e\u0454\u043a\u0442\u0443',
+  'art.clearError': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0441\u043a\u0438\u043d\u0443\u0442\u0438 \u0430\u0440\u0442 \u043f\u0440\u043e\u0454\u043a\u0442\u0443',
+  'release.repository': '{owner}/{repo}',
+  'release.currentInstalled': '\u0412\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043e {version}',
+  'release.selectedVersion': '\u041e\u0431\u0440\u0430\u043d\u0430 \u0432\u0435\u0440\u0441\u0456\u044f',
+  'release.filesCount': '\u0424\u0430\u0439\u043b\u0456\u0432: {count}',
+  'about.updateCenter': '\u0426\u0435\u043d\u0442\u0440 \u0432\u0435\u0440\u0441\u0456\u0439 \u0456 \u0431\u0435\u0437\u043f\u0435\u0447\u043d\u0438\u0445 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u044c \u043b\u0430\u0443\u043d\u0447\u0435\u0440\u0430',
+  'about.latestVersion': '\u041e\u0441\u0442\u0430\u043d\u043d\u044f \u0432\u0435\u0440\u0441\u0456\u044f',
 })
 
 Object.assign(dictionaries.en, {
@@ -483,6 +495,18 @@ Object.assign(dictionaries.en, {
   'about.cancel': 'Cancel',
   'about.confirmUpdate': 'Update',
   'about.confirmRollback': 'Rollback',
+  'art.actions': 'Visual management',
+  'art.background': 'Background',
+  'art.cover': 'Cover',
+  'art.clear': 'Reset art',
+  'art.saveError': 'Failed to save project art',
+  'art.clearError': 'Failed to reset project art',
+  'release.repository': '{owner}/{repo}',
+  'release.currentInstalled': 'Installed {version}',
+  'release.selectedVersion': 'Selected version',
+  'release.filesCount': 'Files: {count}',
+  'about.updateCenter': 'Launcher version and safe update center',
+  'about.latestVersion': 'Latest version',
 })
 
 interface LanguageContextValue {

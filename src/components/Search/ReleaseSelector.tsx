@@ -156,6 +156,17 @@ function ReleaseSelector({
   }, [fetchReleases])
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !downloading) {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [downloading, onClose])
+
+  useEffect(() => {
     if (visibleReleases.length > 0 && !selectedRelease) {
       const first = visibleReleases[0]
       setSelectedRelease(first)
@@ -199,6 +210,13 @@ function ReleaseSelector({
     }
   }
 
+  const selectedReleaseDate = selectedRelease?.published_at
+    ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+    : t('about.noDate')
+  const selectedReleaseStatus = selectedRelease
+    ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
+    : null
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -211,6 +229,12 @@ function ReleaseSelector({
         <div className="modal-header">
           <div>
             <h2 id="release-selector-title">{displayName}</h2>
+            <div className="release-modal-meta">
+              <span>{t('release.repository', { owner, repo })}</span>
+              {currentVersion && (
+                <span>{t('release.currentInstalled', { version: currentVersion })}</span>
+              )}
+            </div>
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
           <button
@@ -219,7 +243,7 @@ function ReleaseSelector({
             onClick={onClose}
             aria-label={t('release.close')}
           >
-            {t('release.close')}
+            {'\u00d7'}
           </button>
         </div>
 
@@ -276,6 +300,24 @@ function ReleaseSelector({
                   })}
                 </div>
               </div>
+
+              {selectedRelease && (
+                <div className="release-selection-summary">
+                  <span className="release-summary-kicker">{t('release.selectedVersion')}</span>
+                  <div className="release-summary-main">
+                    <strong>{selectedRelease.tag_name}</strong>
+                    {selectedReleaseStatus && (
+                      <span className={`release-status-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
+                        {selectedReleaseStatus}
+                      </span>
+                    )}
+                  </div>
+                  <p>{selectedReleaseDate}</p>
+                  <span className="release-summary-assets">
+                    {t('release.filesCount', { count: selectedRelease.assets.length })}
+                  </span>
+                </div>
+              )}
 
               {selectedRelease && selectedRelease.assets.length > 0 && (
                 <div className="release-picker">
@@ -350,7 +392,7 @@ function ReleaseSelector({
                 <button
                   onClick={handleDownload}
                   disabled={!selectedAsset || !selectedAssetSupported || downloading}
-                  className="download-btn"
+                  className="download-btn release-action-primary"
                 >
                   {downloading
                     ? t('release.starting')
@@ -362,7 +404,7 @@ function ReleaseSelector({
                   href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="view-release-link"
+                  className="view-release-link release-github-link"
                 >
                   GitHub
                 </a>

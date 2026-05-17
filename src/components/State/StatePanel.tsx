@@ -40,6 +40,9 @@ function StatePanel({
 
   return (
     <div className={`state-panel state-panel--${kind}`} role={kind === 'error' ? 'alert' : 'status'}>
+      <div className="state-panel-mark" aria-hidden="true">
+        <span>{kind === 'error' ? '!' : ''}</span>
+      </div>
       <div className="state-panel-content">
         {title && <h3>{title}</h3>}
         {message && <p>{message}</p>}

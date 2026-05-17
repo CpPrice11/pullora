@@ -9,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const CURRENT_VERSION = 'v1.0.0'
+const CURRENT_VERSION = 'v1.1.0'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -91,6 +91,17 @@ function AboutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && pendingAction && !installingVersion) {
+        setPendingAction(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [installingVersion, pendingAction])
+
   const getReleaseStatus = (tagName: string, hasPortableAsset: boolean) => {
     if (!hasPortableAsset) return t('about.portableUnavailableStatus')
     if (tagName === CURRENT_VERSION) return t('about.currentStatus')
@@ -105,6 +116,10 @@ function AboutPage() {
       minute: '2-digit',
     })
     : null
+  const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
+  const latestIsNewer = latestRelease
+    ? compareVersionTags(latestRelease.tag_name, CURRENT_VERSION) > 0
+    : false
 
   const requestActivateRelease = (release: GitHubRelease) => {
     const asset = pickPortableLauncherAsset(release.assets)
@@ -147,6 +162,35 @@ function AboutPage() {
       <div className="page-header">
         <h2>{t('about.title')}</h2>
       </div>
+
+      <section className="about-hero">
+        <div className="about-hero-mark" aria-hidden="true">
+          <span />
+        </div>
+        <div className="about-hero-main">
+          <h3>Air Launcher</h3>
+          <p>{t('about.updateCenter')}</p>
+          <div className="about-hero-meta">
+            <span>{t('about.currentVersion')}: {CURRENT_VERSION.replace(/^v/, '')}</span>
+            {latestRelease && (
+              <span>
+                {t('about.latestVersion')}: {latestRelease.tag_name.replace(/^v/, '')}
+              </span>
+            )}
+            <span className={latestIsNewer ? 'about-hero-state newer' : 'about-hero-state current'}>
+              {latestIsNewer ? t('about.newerStatus') : t('about.currentStatus')}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="hero-primary-btn about-hero-refresh"
+          onClick={loadLauncherReleases}
+          disabled={loadingReleases || installingVersion !== null}
+        >
+          {loadingReleases ? t('library.refreshing') : t('library.refresh')}
+        </button>
+      </section>
 
       <div className="about-grid">
         <section className="about-panel">
@@ -240,10 +284,14 @@ function AboutPage() {
                 return (
                   <div
                     key={release.id}
-                    className={`about-release-link ${
+                    className={`about-release-link about-release-link--${statusClass} ${
                       isCurrent ? 'active' : ''
                     }`}
+                    aria-label={`${release.tag_name}, ${getReleaseStatus(release.tag_name, Boolean(portableAsset))}`}
                   >
+                    <div className="about-release-orb" aria-hidden="true">
+                      <span>{release.tag_name.replace(/^v/i, '').split('.')[0] ?? 'v'}</span>
+                    </div>
                     <div className="about-release-main">
                       <div className="about-release-title">
                         <span>{release.tag_name}</span>
@@ -251,13 +299,13 @@ function AboutPage() {
                           {getReleaseStatus(release.tag_name, Boolean(portableAsset))}
                         </span>
                       </div>
-                      <span>
+                      <span className="about-release-date">
                         {release.published_at
                           ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
                           : t('about.noDate')}
                       </span>
                       {portableAsset ? (
-                        <span>{t('about.portableAsset', { name: portableAsset.name })}</span>
+                        <span className="about-release-asset">{t('about.portableAsset', { name: portableAsset.name })}</span>
                       ) : (
                         <span className="about-release-warning">{t('about.noPortableHint')}</span>
                       )}
@@ -304,11 +352,27 @@ function AboutPage() {
             aria-labelledby="launcher-confirm-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="launcher-confirm-title">
-              {pendingAction.action === 'update'
-                ? t('about.updateConfirmTitle', { version: pendingAction.release.tag_name })
-                : t('about.rollbackConfirmTitle', { version: pendingAction.release.tag_name })}
-            </h3>
+            <div className="confirm-modal-header">
+              <div>
+                <span className="confirm-modal-kicker">
+                  {pendingAction.action === 'update' ? t('about.update') : t('about.rollback')}
+                </span>
+                <h3 id="launcher-confirm-title">
+                  {pendingAction.action === 'update'
+                    ? t('about.updateConfirmTitle', { version: pendingAction.release.tag_name })
+                    : t('about.rollbackConfirmTitle', { version: pendingAction.release.tag_name })}
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="close-btn confirm-close-btn"
+                disabled={installingVersion !== null}
+                onClick={() => setPendingAction(null)}
+                aria-label={t('about.cancel')}
+              >
+                {'\u00d7'}
+              </button>
+            </div>
             <div className="confirm-facts">
               <div>
                 <span>{t('about.confirmCurrent')}</span>
@@ -339,7 +403,7 @@ function AboutPage() {
               </button>
               <button
                 type="button"
-                className="primary-btn"
+                className="primary-btn confirm-primary-btn"
                 disabled={installingVersion !== null}
                 onClick={confirmActivateRelease}
               >

@@ -9,6 +9,25 @@
   flex-direction: column;
   gap: var(--spacing-md);
   animation: fluent-fade-up var(--motion-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.update-banner-mark {
+  align-items: center;
+  background: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, var(--color-border-subtle));
+  border-radius: 16px;
+  display: none;
+  height: 54px;
+  justify-content: center;
+  width: 54px;
+}
+
+.update-banner-mark span {
+  color: var(--color-primary);
+  font-size: 22px;
+  font-weight: 860;
 }
 
 .update-banner-header {
@@ -89,4 +108,139 @@
   background: var(--color-control-hover);
   box-shadow: none;
   color: var(--color-text);
+}
+
+.cinematic-shell .update-banner {
+  align-items: start;
+  background:
+    linear-gradient(115deg, rgba(91, 215, 255, 0.16), rgba(255, 255, 255, 0.055)),
+    rgba(18, 20, 24, 0.78);
+  border-color: rgba(91, 215, 255, 0.34);
+  border-left: 0;
+  border-radius: 20px;
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: 54px minmax(0, 1fr);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+  padding: 16px;
+}
+
+.cinematic-shell .update-banner::before {
+  background: linear-gradient(90deg, rgba(91, 215, 255, 0.76), transparent);
+  border-radius: 999px;
+  content: '';
+  height: 2px;
+  left: 18px;
+  position: absolute;
+  right: 18px;
+  top: 0;
+}
+
+.cinematic-shell .update-banner-mark {
+  background:
+    radial-gradient(circle at 70% 20%, rgba(91, 215, 255, 0.34), transparent 38%),
+    rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  display: flex;
+  grid-row: 1 / span 2;
+}
+
+.cinematic-shell .update-banner-mark span {
+  color: #ffffff;
+}
+
+.cinematic-shell .update-banner-header {
+  align-self: center;
+  color: #ffffff;
+  min-width: 0;
+}
+
+.cinematic-shell .update-banner-header strong {
+  overflow-wrap: anywhere;
+}
+
+.cinematic-shell .update-row {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+    rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.cinematic-shell .update-list {
+  grid-column: 2;
+  width: 100%;
+}
+
+.cinematic-shell .update-install-btn {
+  background: linear-gradient(180deg, #ffffff, #d9dde2);
+  border: 2px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999px;
+  color: #111111;
+  font-weight: 820;
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.cinematic-shell .update-install-btn:hover {
+  background: linear-gradient(180deg, #ffffff, #eef1f5);
+  color: #000000;
+  transform: translateY(-1px);
+}
+
+.cinematic-shell .update-dismiss-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme='light'] .cinematic-shell .update-banner {
+  background:
+    linear-gradient(115deg, rgba(232, 244, 255, 0.94), rgba(255, 255, 255, 0.68)),
+    rgba(255, 255, 255, 0.74);
+  border-color: rgba(0, 120, 212, 0.26);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.14);
+}
+
+:root[data-theme='light'] .cinematic-shell .update-banner-header,
+:root[data-theme='light'] .cinematic-shell .update-banner-mark span {
+  color: #111827;
+}
+
+:root[data-theme='light'] .cinematic-shell .update-banner-mark {
+  background:
+    radial-gradient(circle at 70% 20%, rgba(0, 120, 212, 0.18), transparent 38%),
+    rgba(255, 255, 255, 0.74);
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
+:root[data-theme='light'] .cinematic-shell .update-row,
+:root[data-theme='light'] .cinematic-shell .update-dismiss-btn {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(17, 24, 39, 0.12);
+  color: #111827;
+}
+
+@media (max-width: 680px) {
+  .cinematic-shell .update-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .cinematic-shell .update-banner-mark,
+  .cinematic-shell .update-list {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .cinematic-shell .update-row,
+  .cinematic-shell .update-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cinematic-shell .update-install-btn,
+  .cinematic-shell .update-dismiss-btn {
+    width: 100%;
+  }
 }
