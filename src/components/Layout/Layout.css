@@ -301,6 +301,7 @@
 }
 
 .layout-content {
+  align-items: center;
   animation: fluent-page-enter var(--motion-page);
   display: flex;
   flex-direction: column;

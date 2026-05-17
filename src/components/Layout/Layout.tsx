@@ -12,6 +12,10 @@ interface LayoutProps {
   backgroundImage?: string | null
 }
 
+function toCssUrl(value: string) {
+  return `url(${JSON.stringify(value)})`
+}
+
 function Layout({
   children,
   activeTab,
@@ -21,7 +25,7 @@ function Layout({
   return (
     <div
       className="layout cinematic-shell"
-      style={backgroundImage ? { '--project-background': `url("${backgroundImage}")` } as React.CSSProperties : undefined}
+      style={backgroundImage ? { '--project-background': toCssUrl(backgroundImage) } as React.CSSProperties : undefined}
     >
       <div className="cinematic-backdrop" aria-hidden="true" />
       <Header />

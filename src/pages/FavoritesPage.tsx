@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { FavoriteApp, ProjectArt } from '../types'
 import { getFavorites, removeFromFavorites } from '../services/favorites'
+import { getInstalledApps, launchApp } from '../services/installed'
 import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
@@ -26,6 +27,8 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
   const [featuredKey, setFeaturedKey] = useState<string | null>(null)
   const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
   const [artError, setArtError] = useState<string | null>(null)
+  const [installedKeys, setInstalledKeys] = useState<Set<string>>(new Set())
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -48,6 +51,14 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
         items.map((item) => [projectArtKey(item.owner, item.repo), item]),
       )))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    getInstalledApps()
+      .then((items) => setInstalledKeys(new Set(
+        items.map((app) => projectArtKey(app.owner, app.repo)),
+      )))
+      .catch(() => setInstalledKeys(new Set()))
   }, [])
 
   useEffect(() => {
@@ -75,6 +86,23 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
   const handleRemove = async (fav: FavoriteApp) => {
     await removeFromFavorites(fav.owner, fav.repo)
     loadFavorites()
+  }
+
+  const isInstalledFavorite = (fav: FavoriteApp) => installedKeys.has(projectArtKey(fav.owner, fav.repo))
+
+  const handlePrimaryAction = async (fav: FavoriteApp) => {
+    setActionError(null)
+    if (!isInstalledFavorite(fav)) {
+      setSelectedFav(fav)
+      return
+    }
+
+    try {
+      await launchApp(fav.owner, fav.repo)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t('installed.launchError'))
+      setSelectedFav(fav)
+    }
   }
 
   const saveArtForFavorite = async (fav: FavoriteApp, kind: 'cover' | 'background') => {
@@ -155,6 +183,14 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
           />
         )}
 
+        {actionError && (
+          <StatePanel
+            kind="error"
+            title={t('state.launchErrorTitle')}
+            message={actionError}
+          />
+        )}
+
         {!loading && favorites.length === 0 && (
           <StatePanel
             kind="empty"
@@ -183,8 +219,8 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
               )}
             </div>
             <div className="library-hero-actions">
-              <button type="button" className="hero-primary-btn" onClick={() => setSelectedFav(featuredFavorite)}>
-                {t('favorites.installUpdate')}
+              <button type="button" className="hero-primary-btn" onClick={() => handlePrimaryAction(featuredFavorite)}>
+                {isInstalledFavorite(featuredFavorite) ? t('installed.launch') : t('favorites.installUpdate')}
               </button>
               <button type="button" className="secondary-btn" onClick={() => handleRemove(featuredFavorite)}>
                 {t('repo.removeFavorite')}
@@ -264,10 +300,10 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation()
-                    setSelectedFav(fav)
+                    handlePrimaryAction(fav)
                   }}
                 >
-                  {t('favorites.installUpdate')}
+                  {isInstalledFavorite(fav) ? t('installed.launch') : t('favorites.installUpdate')}
                 </button>
                 {featuredKey === key && (
                   <>

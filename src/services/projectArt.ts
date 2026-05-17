@@ -49,8 +49,8 @@ export function projectArtKey(owner: string, repo: string) {
 export function toProjectArtUrl(path?: string | null): string | null {
   if (!path) return null
   try {
-    return convertFileSrc(path)
+    return convertFileSrc(path).replace(/\\/g, '/')
   } catch {
-    return path
+    return path.replace(/\\/g, '/')
   }
 }
