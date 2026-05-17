@@ -22,6 +22,7 @@ function App() {
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [showPathModal, setShowPathModal] = useState(false)
+  const [shellBackground, setShellBackground] = useState<string | null>(null)
 
   // Start auto-update after settings are loaded
   const { updates, dismiss } = useAutoUpdate(
@@ -77,9 +78,9 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'search':    return <SearchPage />
-      case 'installed': return <InstalledPage />
-      case 'favorites': return <FavoritesPage />
+      case 'search':    return <SearchPage onBackgroundChange={setShellBackground} />
+      case 'installed': return <InstalledPage onBackgroundChange={setShellBackground} />
+      case 'favorites': return <FavoritesPage onBackgroundChange={setShellBackground} />
       case 'settings':  return <SettingsPage />
       case 'about':     return <AboutPage />
       default:          return <SearchPage />
@@ -91,6 +92,7 @@ function App() {
       <Layout
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        backgroundImage={shellBackground}
       >
         {updates.length > 0 && (
           <UpdateBanner

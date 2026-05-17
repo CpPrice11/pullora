@@ -13,6 +13,14 @@
   z-index: 1000;
 }
 
+.cinematic-shell .modal-overlay,
+.modal-overlay {
+  background:
+    radial-gradient(circle at 72% 12%, rgba(91, 215, 255, 0.12), transparent 24%),
+    rgba(3, 5, 8, 0.66);
+  backdrop-filter: blur(10px) brightness(0.68);
+}
+
 .modal-content {
   background-color: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -23,6 +31,51 @@
   max-height: 90vh;
   overflow-y: auto;
   animation: fluent-dialog-in var(--motion-normal);
+}
+
+.cinematic-shell .modal-content,
+.modal-content {
+  background:
+    linear-gradient(145deg, rgba(33, 36, 43, 0.96), rgba(22, 24, 30, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.52);
+  color: #ffffff;
+}
+
+:root[data-theme='light'] .cinematic-shell .modal-overlay,
+:root[data-theme='light'] .modal-overlay {
+  background:
+    radial-gradient(circle at 72% 12%, rgba(0, 120, 212, 0.12), transparent 24%),
+    rgba(238, 242, 246, 0.66);
+}
+
+:root[data-theme='light'] .cinematic-shell .modal-content,
+:root[data-theme='light'] .modal-content {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 242, 246, 0.96));
+  border-color: rgba(17, 24, 39, 0.14);
+  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.24);
+  color: #111827;
+}
+
+.cinematic-shell .modal-header,
+.modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.cinematic-shell .modal-description,
+.cinematic-shell .modal-footer-text,
+.modal-description,
+.modal-footer-text {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+:root[data-theme='light'] .cinematic-shell .modal-description,
+:root[data-theme='light'] .cinematic-shell .modal-footer-text,
+:root[data-theme='light'] .modal-description,
+:root[data-theme='light'] .modal-footer-text {
+  color: rgba(17, 24, 39, 0.68);
 }
 
 .modal-header {

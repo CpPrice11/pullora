@@ -37,16 +37,23 @@ function DownloadProgressPanel({ downloads, onCancel }: DownloadProgressProps) {
             key={download.id}
             className={`download-item download-item--${download.status}`}
           >
+            <div className="download-stage-mark" aria-hidden="true">
+              <span>{Math.round(download.progress)}</span>
+            </div>
             <div className="download-header">
-              <span className="download-name" title={download.fileName}>
-                {download.fileName}
-              </span>
-              <span className="download-status">{statusLabel(download.status, t)}</span>
+              <div className="download-title-block">
+                <span className="download-status">{statusLabel(download.status, t)}</span>
+                <span className="download-name" title={download.fileName}>
+                  {download.fileName}
+                </span>
+              </div>
               {(download.status === 'downloading' || download.status === 'pending') && (
                 <button
+                  type="button"
                   className="cancel-btn"
                   onClick={() => onCancel(download.id)}
                   title={t('download.cancelTitle')}
+                  aria-label={t('download.cancelTitle')}
                 >
                   {t('download.cancel')}
                 </button>

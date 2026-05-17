@@ -9,11 +9,20 @@ import {
   uninstallVersion,
   validateInstalledApp,
 } from '../services/installed'
+import { pickImageFile } from '../services/dialog'
+import {
+  clearProjectArt,
+  listProjectArt,
+  projectArtKey,
+  setProjectArt as saveProjectArt,
+  toProjectArtUrl,
+} from '../services/projectArt'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import StatePanel from '../components/State/StatePanel'
 import { useDownload } from '../hooks/useDownload'
 import { useI18n } from '../i18n'
+import type { ProjectArt } from '../types'
 import './PageStyles.css'
 
 type HealthMap = Record<string, InstalledAppHealth>
@@ -22,7 +31,11 @@ function appKey(app: InstalledApp) {
   return `${app.owner}/${app.repo}`
 }
 
-function InstalledPage() {
+interface InstalledPageProps {
+  onBackgroundChange?: (url: string | null) => void
+}
+
+function InstalledPage({ onBackgroundChange }: InstalledPageProps) {
   const { t } = useI18n()
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,6 +43,9 @@ function InstalledPage() {
   const [expandedApp, setExpandedApp] = useState<string | null>(null)
   const [repairTarget, setRepairTarget] = useState<InstalledApp | null>(null)
   const [healthByApp, setHealthByApp] = useState<HealthMap>({})
+  const [selectedAppKey, setSelectedAppKey] = useState<string | null>(null)
+  const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
+  const [artError, setArtError] = useState<string | null>(null)
   const [checkingHealth, setCheckingHealth] = useState(false)
   const { downloads, cancel } = useDownload()
 
@@ -77,6 +93,36 @@ function InstalledPage() {
     loadApps()
   }, [loadApps])
 
+  useEffect(() => {
+    listProjectArt()
+      .then((items) => setProjectArt(Object.fromEntries(
+        items.map((item) => [projectArtKey(item.owner, item.repo), item]),
+      )))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (apps.length === 0) {
+      setSelectedAppKey(null)
+      onBackgroundChange?.(null)
+      return
+    }
+
+    if (!selectedAppKey || !apps.some((app) => appKey(app) === selectedAppKey)) {
+      setSelectedAppKey(appKey(apps[0]))
+    }
+  }, [apps, onBackgroundChange, selectedAppKey])
+
+  useEffect(() => {
+    const selected = apps.find((app) => appKey(app) === selectedAppKey)
+    if (!selected) return
+    const art = projectArt[projectArtKey(selected.owner, selected.repo)]
+    onBackgroundChange?.(
+      toProjectArtUrl(art?.backgroundPath) ??
+      toProjectArtUrl(art?.coverPath),
+    )
+  }, [apps, onBackgroundChange, projectArt, selectedAppKey])
+
   const handleSwitch = async (owner: string, repo: string, tag: string) => {
     await switchVersion(owner, repo, tag)
     await loadApps()
@@ -121,6 +167,62 @@ function InstalledPage() {
     }
   }
 
+  const saveArtForApp = async (app: InstalledApp, kind: 'cover' | 'background') => {
+    setArtError(null)
+    const imagePath = await pickImageFile()
+    if (!imagePath) return
+
+    try {
+      const updatedArt = await saveProjectArt(app.owner, app.repo, kind, imagePath)
+      setProjectArt((current) => ({
+        ...current,
+        [projectArtKey(app.owner, app.repo)]: updatedArt,
+      }))
+    } catch {
+      setArtError(t('art.saveError'))
+    }
+  }
+
+  const handlePickArt = async (
+    event: React.MouseEvent,
+    app: InstalledApp,
+    kind: 'cover' | 'background',
+  ) => {
+    event.stopPropagation()
+    await saveArtForApp(app, kind)
+  }
+
+  const clearArtForApp = async (app: InstalledApp) => {
+    setArtError(null)
+
+    try {
+      const updatedArt = await clearProjectArt(app.owner, app.repo, 'all')
+      setProjectArt((current) => ({
+        ...current,
+        [projectArtKey(app.owner, app.repo)]: updatedArt,
+      }))
+    } catch {
+      setArtError(t('art.clearError'))
+    }
+  }
+
+  const handleClearArt = async (event: React.MouseEvent, app: InstalledApp) => {
+    event.stopPropagation()
+    await clearArtForApp(app)
+  }
+
+  const handleCardKeyDown = (event: React.KeyboardEvent, key: string) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    setSelectedAppKey(key)
+  }
+
+  const selectedApp = apps.find((app) => appKey(app) === selectedAppKey) ?? apps[0]
+  const selectedHealth = selectedApp ? healthByApp[appKey(selectedApp)] : undefined
+  const selectedNeedsRepair = selectedHealth ? !selectedHealth.ok : false
+  const selectedArt = selectedApp ? projectArt[projectArtKey(selectedApp.owner, selectedApp.repo)] : undefined
+  const selectedCoverUrl = toProjectArtUrl(selectedArt?.coverPath)
+
   return (
     <div className="page">
       <div className="page-header">
@@ -144,7 +246,85 @@ function InstalledPage() {
         />
       )}
 
+      {artError && (
+        <StatePanel
+          kind="error"
+          title={t('state.settingsErrorTitle')}
+          message={artError}
+        />
+      )}
+
       <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
+
+      {selectedApp && !loading && (
+        <section className="library-hero installed-hero">
+          <div className="library-hero-cover">
+            {selectedCoverUrl ? (
+              <img src={selectedCoverUrl} alt="" />
+            ) : (
+              <span>{selectedApp.name.slice(0, 1).toUpperCase()}</span>
+            )}
+          </div>
+          <div className="library-hero-main">
+            <div className="repo-status-row">
+              <span className={`repo-status ${selectedNeedsRepair ? 'update' : 'installed'}`}>
+                {selectedNeedsRepair ? t('installed.healthRepair') : t('installed.healthReady')}
+              </span>
+            </div>
+            <h2 title={selectedApp.name}>{selectedApp.name}</h2>
+            <p className="library-hero-repo">{selectedApp.owner}/{selectedApp.repo}</p>
+            <div className="library-hero-meta">
+              <span>{t('repo.active', { version: selectedApp.activeVersion })}</span>
+              <span>{t('installed.versions', { count: selectedApp.versions.length })}</span>
+            </div>
+            {selectedNeedsRepair && selectedHealth?.message && (
+              <p className="library-hero-error">{selectedHealth.message}</p>
+            )}
+          </div>
+          <div className="library-hero-actions">
+            {selectedNeedsRepair ? (
+              <button type="button" className="hero-primary-btn" onClick={() => setRepairTarget(selectedApp)}>
+                {t('installed.repair')}
+              </button>
+            ) : (
+              <button type="button" className="hero-primary-btn" onClick={() => handleLaunch(selectedApp)}>
+                {t('installed.launch')}
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => openInstalledAppDir(selectedApp.owner, selectedApp.repo).catch((err) =>
+                setError(err instanceof Error ? err.message : t('installed.openFolderError')),
+              )}
+            >
+              {t('installed.folder')}
+            </button>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => setExpandedApp(expandedApp === appKey(selectedApp) ? null : appKey(selectedApp))}
+            >
+              {expandedApp === appKey(selectedApp)
+                ? t('installed.hide')
+                : t('installed.versions', { count: selectedApp.versions.length })}
+            </button>
+            <div className="hero-art-actions">
+              <button type="button" className="secondary-btn" onClick={() => saveArtForApp(selectedApp, 'background')}>
+                {t('art.background')}
+              </button>
+              <button type="button" className="secondary-btn" onClick={() => saveArtForApp(selectedApp, 'cover')}>
+                {t('art.cover')}
+              </button>
+              {(selectedArt?.backgroundPath || selectedArt?.coverPath) && (
+                <button type="button" className="secondary-btn" onClick={() => clearArtForApp(selectedApp)}>
+                  {t('art.clear')}
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="apps-list">
         {loading && (
@@ -165,11 +345,25 @@ function InstalledPage() {
           const health = healthByApp[key]
           const needsRepair = health ? !health.ok : false
           const statusText = needsRepair ? t('installed.healthRepair') : t('installed.healthReady')
+          const art = projectArt[projectArtKey(app.owner, app.repo)]
+          const coverUrl = toProjectArtUrl(art?.coverPath)
+
           return (
-            <div key={key} className={`app-card ${needsRepair ? 'app-card--needs-repair' : ''}`}>
+            <div
+              key={key}
+              className={`app-card cinematic-app-card ${needsRepair ? 'app-card--needs-repair' : ''} ${selectedAppKey === key ? 'selected' : ''}`}
+              onClick={() => setSelectedAppKey(key)}
+              onKeyDown={(event) => handleCardKeyDown(event, key)}
+              role="button"
+              tabIndex={0}
+              aria-label={`${app.name}, ${statusText}`}
+            >
               <div className="app-header">
+                <div className="app-cover" aria-hidden="true">
+                  {coverUrl ? <img src={coverUrl} alt="" /> : <span>{app.name.slice(0, 1).toUpperCase()}</span>}
+                </div>
                 <div className="app-title-block">
-                  <h3>{app.name}</h3>
+                  <h3 title={app.name}>{app.name}</h3>
                   <p className="app-repo">{app.owner}/{app.repo}</p>
                 </div>
                 <div className="app-card-badges">
@@ -192,27 +386,76 @@ function InstalledPage() {
 
               <div className="app-actions">
                 {needsRepair && (
-                  <button className="secondary-btn" onClick={() => setRepairTarget(app)}>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setRepairTarget(app)
+                    }}
+                  >
                     {t('installed.repair')}
                   </button>
                 )}
-                <button className={needsRepair ? 'secondary-btn' : ''} onClick={() => handleLaunch(app)}>
+                <button
+                  type="button"
+                  className={needsRepair ? 'secondary-btn' : ''}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleLaunch(app)
+                  }}
+                >
                   {t('installed.launch')}
                 </button>
                 <button
+                  type="button"
                   className="secondary-btn"
-                  onClick={() => openInstalledAppDir(app.owner, app.repo).catch((err) =>
-                    setError(err instanceof Error ? err.message : t('installed.openFolderError')),
-                  )}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    openInstalledAppDir(app.owner, app.repo).catch((err) =>
+                      setError(err instanceof Error ? err.message : t('installed.openFolderError')),
+                    )
+                  }}
                 >
                   {t('installed.folder')}
                 </button>
                 <button
-                  onClick={() => setExpandedApp(isExpanded ? null : key)}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setExpandedApp(isExpanded ? null : key)
+                  }}
                   className="secondary-btn"
                 >
                   {isExpanded ? t('installed.hide') : t('installed.versions', { count: app.versions.length })}
                 </button>
+                {selectedAppKey === key && (
+                  <>
+                    <button
+                      type="button"
+                      className="secondary-btn art-mini-btn"
+                      onClick={(event) => handlePickArt(event, app, 'background')}
+                    >
+                      {t('art.background')}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-btn art-mini-btn"
+                      onClick={(event) => handlePickArt(event, app, 'cover')}
+                    >
+                      {t('art.cover')}
+                    </button>
+                    {(art?.backgroundPath || art?.coverPath) && (
+                      <button
+                        type="button"
+                        className="secondary-btn art-mini-btn"
+                        onClick={(event) => handleClearArt(event, app)}
+                      >
+                        {t('art.clear')}
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
 
               {isExpanded && (
@@ -229,8 +472,12 @@ function InstalledPage() {
                       <div className="version-actions">
                         {version.tag !== app.activeVersion && (
                           <button
+                            type="button"
                             className="small-btn"
-                            onClick={() => handleSwitch(app.owner, app.repo, version.tag)}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleSwitch(app.owner, app.repo, version.tag)
+                            }}
                           >
                             {t('installed.activate')}
                           </button>
@@ -239,8 +486,12 @@ function InstalledPage() {
                           <span className="active-label">{t('installed.active')}</span>
                         )}
                         <button
+                          type="button"
                           className="small-btn danger"
-                          onClick={() => handleUninstall(app.owner, app.repo, version.tag)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleUninstall(app.owner, app.repo, version.tag)
+                          }}
                         >
                           {t('installed.delete')}
                         </button>

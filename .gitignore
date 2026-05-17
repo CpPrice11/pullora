@@ -45,6 +45,8 @@ yarn-error.log*
 # Cache
 .cargo/
 .eslintcache
+.codex-build/
+.codex-tools/
 
 # Temporary
 *.tmp

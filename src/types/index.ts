@@ -97,6 +97,14 @@ export interface FavoriteApp {
   lastChecked?: string
 }
 
+export interface ProjectArt {
+  owner: string
+  repo: string
+  coverPath?: string | null
+  backgroundPath?: string | null
+  updatedAt: string
+}
+
 // Update check
 export interface UpdateAvailable {
   owner: string

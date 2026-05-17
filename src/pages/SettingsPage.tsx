@@ -12,6 +12,7 @@ import './PageStyles.css'
 
 function SettingsPage() {
   const { t } = useI18n()
+  const [activeSection, setActiveSection] = useState('folders')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -163,16 +164,50 @@ function SettingsPage() {
     )
   }
 
+  const sections = [
+    { id: 'folders', label: t('settings.folders') },
+    { id: 'github', label: t('settings.github') },
+    { id: 'updates', label: t('settings.updates') },
+    { id: 'appearance', label: t('settings.appearance') },
+    { id: 'language', label: t('settings.languageSection') },
+    { id: 'reset', label: t('settings.resetSection') },
+  ]
+
+  const handleSectionSelect = (sectionId: string) => {
+    setActiveSection(sectionId)
+    document.getElementById(`settings-${sectionId}`)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
+
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className="page settings-page">
+      <div className="page-header settings-page-header">
         <h2>{t('settings.title')}</h2>
-        {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
-        {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
+        <div className="settings-autosave-status" aria-live="polite">
+          {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
+          {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
+          {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
+        </div>
       </div>
 
       <div className="settings-form">
-        <section className="settings-section">
+        <nav className="settings-nav" aria-label={t('settings.title')}>
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              className={activeSection === section.id ? 'active' : ''}
+              onClick={() => handleSectionSelect(section.id)}
+            >
+              {section.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="settings-content">
+        <section id="settings-folders" className="settings-section">
           <h3>{t('settings.folders')}</h3>
           <div className="form-group">
             <label htmlFor="installPath">{t('settings.installPath')}</label>
@@ -216,7 +251,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="settings-section">
+        <section id="settings-github" className="settings-section">
           <h3>{t('settings.github')}</h3>
           <div className="form-group compact-control">
             <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
@@ -234,7 +269,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="settings-section">
+        <section id="settings-updates" className="settings-section">
           <h3>{t('settings.updates')}</h3>
           <div className="form-group">
             <label className="checkbox-label">
@@ -299,7 +334,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="settings-section">
+        <section id="settings-appearance" className="settings-section">
           <h3>{t('settings.appearance')}</h3>
           <div className="form-group compact-control">
             <label htmlFor="theme">{t('settings.theme')}</label>
@@ -315,7 +350,7 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="settings-section">
+        <section id="settings-language" className="settings-section">
           <h3>{t('settings.languageSection')}</h3>
           <div className="form-group compact-control">
             <label htmlFor="language">{t('settings.language')}</label>
@@ -338,7 +373,7 @@ function SettingsPage() {
           />
         )}
 
-        <section className="danger-zone">
+        <section id="settings-reset" className="danger-zone">
           <h3>{t('settings.resetSection')}</h3>
           <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
             {t('settings.reset')}
@@ -347,6 +382,7 @@ function SettingsPage() {
             {t('settings.clearCache')}
           </button>
         </section>
+        </div>
       </div>
     </div>
   )

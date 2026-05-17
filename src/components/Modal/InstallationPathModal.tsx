@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { pickDirectory } from '../../services/dialog'
 import { useI18n } from '../../i18n'
 import './Modal.css'
@@ -12,6 +12,17 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   const [selectedPath, setSelectedPath] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleBrowse = async () => {
     const dir = await pickDirectory()

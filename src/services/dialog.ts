@@ -18,3 +18,20 @@ export async function pickDirectory(): Promise<string | null> {
   if (!result) return null
   return typeof result === 'string' ? result : null
 }
+
+export async function pickImageFile(): Promise<string | null> {
+  const api = await getDialogApi()
+  if (!api) return null
+  const result = await api.open({
+    directory: false,
+    multiple: false,
+    filters: [
+      {
+        name: 'Images',
+        extensions: ['png', 'jpg', 'jpeg', 'webp'],
+      },
+    ],
+  })
+  if (!result) return null
+  return typeof result === 'string' ? result : null
+}
