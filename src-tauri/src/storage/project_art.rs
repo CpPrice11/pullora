@@ -1,3 +1,4 @@
+use base64::Engine;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -11,6 +12,10 @@ pub struct ProjectArt {
     pub repo: String,
     pub cover_path: Option<String>,
     pub background_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_data_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub background_data_url: Option<String>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -99,6 +104,8 @@ fn find_project_mut<'a>(
         repo: repo.to_string(),
         cover_path: None,
         background_path: None,
+        cover_data_url: None,
+        background_data_url: None,
         updated_at: Utc::now(),
     });
 
@@ -108,9 +115,39 @@ fn find_project_mut<'a>(
         .expect("project was just inserted")
 }
 
+fn image_mime(path: &Path) -> Option<&'static str> {
+    match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "webp" => Some("image/webp"),
+        _ => None,
+    }
+}
+
+fn path_to_data_url(path: &str) -> Option<String> {
+    let path = PathBuf::from(path);
+    let mime = image_mime(&path)?;
+    let bytes = std::fs::read(path).ok()?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+    Some(format!("data:{};base64,{}", mime, encoded))
+}
+
+fn hydrate_project_art(mut project: ProjectArt) -> ProjectArt {
+    project.cover_data_url = project.cover_path.as_deref().and_then(path_to_data_url);
+    project.background_data_url = project
+        .background_path
+        .as_deref()
+        .and_then(path_to_data_url);
+    project
+}
+
 pub fn list_project_art(config_dir: &PathBuf) -> Result<Vec<ProjectArt>, StorageError> {
     let store = load_store(config_dir)?;
-    Ok(store.projects)
+    Ok(store
+        .projects
+        .into_iter()
+        .map(hydrate_project_art)
+        .collect())
 }
 
 pub fn get_project_art(
@@ -123,7 +160,8 @@ pub fn get_project_art(
     Ok(store
         .projects
         .into_iter()
-        .find(|project| project_key(&project.owner, &project.repo) == key))
+        .find(|project| project_key(&project.owner, &project.repo) == key)
+        .map(hydrate_project_art))
 }
 
 pub fn set_project_art_asset(
@@ -180,7 +218,7 @@ pub fn set_project_art_asset(
     }
 
     save_store(config_dir, &store)?;
-    Ok(updated.0)
+    Ok(hydrate_project_art(updated.0))
 }
 
 pub fn clear_project_art_asset(
@@ -227,5 +265,5 @@ pub fn clear_project_art_asset(
     }
 
     save_store(config_dir, &store)?;
-    Ok(updated)
+    Ok(hydrate_project_art(updated))
 }

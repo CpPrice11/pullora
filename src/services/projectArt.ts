@@ -54,3 +54,11 @@ export function toProjectArtUrl(path?: string | null): string | null {
     return path.replace(/\\/g, '/')
   }
 }
+
+export function projectArtCoverUrl(art?: ProjectArt | null): string | null {
+  return art?.coverDataUrl ?? toProjectArtUrl(art?.coverPath)
+}
+
+export function projectArtBackgroundUrl(art?: ProjectArt | null): string | null {
+  return art?.backgroundDataUrl ?? projectArtCoverUrl(art)
+}

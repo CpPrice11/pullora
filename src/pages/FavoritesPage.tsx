@@ -6,9 +6,10 @@ import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
   listProjectArt,
+  projectArtBackgroundUrl,
+  projectArtCoverUrl,
   projectArtKey,
   setProjectArt as saveProjectArt,
-  toProjectArtUrl,
 } from '../services/projectArt'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import StatePanel from '../components/State/StatePanel'
@@ -77,10 +78,7 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
     const favorite = favorites.find((fav) => `${fav.owner}/${fav.repo}` === featuredKey)
     if (!favorite) return
     const art = projectArt[projectArtKey(favorite.owner, favorite.repo)]
-    onBackgroundChange?.(
-      toProjectArtUrl(art?.backgroundPath) ??
-      toProjectArtUrl(art?.coverPath),
-    )
+    onBackgroundChange?.(projectArtBackgroundUrl(art))
   }, [favorites, featuredKey, onBackgroundChange, projectArt])
 
   const handleRemove = async (fav: FavoriteApp) => {
@@ -159,7 +157,7 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
   const featuredArt = featuredFavorite
     ? projectArt[projectArtKey(featuredFavorite.owner, featuredFavorite.repo)]
     : undefined
-  const featuredCoverUrl = toProjectArtUrl(featuredArt?.coverPath)
+  const featuredCoverUrl = projectArtCoverUrl(featuredArt)
 
   return (
     <div className="page">
@@ -257,7 +255,7 @@ function FavoritesPage({ onBackgroundChange }: FavoritesPageProps) {
         {favorites.map((fav) => {
           const key = `${fav.owner}/${fav.repo}`
           const art = projectArt[projectArtKey(fav.owner, fav.repo)]
-          const coverUrl = toProjectArtUrl(art?.coverPath)
+          const coverUrl = projectArtCoverUrl(art)
 
           return (
             <div

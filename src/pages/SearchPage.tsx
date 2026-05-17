@@ -10,9 +10,10 @@ import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
   listProjectArt,
+  projectArtBackgroundUrl,
+  projectArtCoverUrl,
   projectArtKey,
   setProjectArt,
-  toProjectArtUrl,
 } from '../services/projectArt'
 import type { GitHubSearchResult, ProjectArt } from '../types'
 import { useI18n } from '../i18n'
@@ -162,11 +163,10 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
   const featuredArt = featuredRepo
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
-  const featuredBackground = toProjectArtUrl(featuredArt?.backgroundPath) ??
-    toProjectArtUrl(featuredArt?.coverPath) ??
+  const featuredBackground = projectArtBackgroundUrl(featuredArt) ??
     featuredRepo?.owner.avatar_url ??
     null
-  const featuredCover = toProjectArtUrl(featuredArt?.coverPath)
+  const featuredCover = projectArtCoverUrl(featuredArt)
 
   useEffect(() => {
     onBackgroundChange?.(featuredBackground)
