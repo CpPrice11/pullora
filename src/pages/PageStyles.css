@@ -1320,6 +1320,12 @@
   opacity: 1;
 }
 
+.library-hero-actions .secondary-btn.active-soft {
+  border-color: rgba(91, 215, 255, 0.42);
+  color: #8fe8ff;
+  opacity: 1;
+}
+
 .cinematic-shell .search-form {
   margin-top: 0;
 }
@@ -2124,7 +2130,7 @@
 
   .cinematic-shell .segmented-control {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

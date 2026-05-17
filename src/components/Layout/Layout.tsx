@@ -3,7 +3,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import './Layout.css'
 
-type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'settings' | 'about'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -25,8 +25,12 @@ function Layout({
   return (
     <div
       className="layout cinematic-shell"
-      style={backgroundImage ? { '--project-background': toCssUrl(backgroundImage) } as React.CSSProperties : undefined}
     >
+      <div
+        className={`cinematic-background ${backgroundImage ? 'is-visible' : ''}`}
+        style={backgroundImage ? { backgroundImage: toCssUrl(backgroundImage) } : undefined}
+        aria-hidden="true"
+      />
       <div className="cinematic-backdrop" aria-hidden="true" />
       <Header />
       <div className="layout-container">

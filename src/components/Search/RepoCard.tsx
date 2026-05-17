@@ -10,8 +10,10 @@ interface RepoCardProps {
   installedApp?: InstalledApp
   latestVersion?: string
   art?: ProjectArt
+  isFavorite?: boolean
   isSelected?: boolean
   onPreview?: () => void
+  onFavoriteChange?: (isFavorite: boolean) => void
   onPickArt?: (kind: 'cover' | 'background') => void
   onSelect: () => void
   onLaunch?: () => void
@@ -22,8 +24,10 @@ function RepoCard({
   installedApp,
   latestVersion,
   art,
+  isFavorite,
   isSelected = false,
   onPreview,
+  onFavoriteChange,
   onPickArt,
   onSelect,
   onLaunch,
@@ -39,10 +43,15 @@ function RepoCard({
   )
 
   useEffect(() => {
+    if (typeof isFavorite === 'boolean') {
+      setIsFav(isFavorite)
+      return
+    }
+
     checkIsFavorite(repo.owner.login, repo.name)
       .then(setIsFav)
       .catch(() => {})
-  }, [repo.owner.login, repo.name])
+  }, [isFavorite, repo.owner.login, repo.name])
 
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation()
@@ -51,6 +60,7 @@ function RepoCard({
       if (isFav) {
         await removeFromFavorites(repo.owner.login, repo.name)
         setIsFav(false)
+        onFavoriteChange?.(false)
       } else {
         await addToFavorites(
           repo.owner.login,
@@ -59,6 +69,7 @@ function RepoCard({
           repo.description ?? undefined,
         )
         setIsFav(true)
+        onFavoriteChange?.(true)
       }
     } catch {
       // Browser preview fallback.

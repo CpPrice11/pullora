@@ -6,6 +6,7 @@ import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import StatePanel from '../components/State/StatePanel'
 import { launchApp, openInstalledAppDir } from '../services/installed'
+import { addToFavorites, getFavorites, removeFromFavorites } from '../services/favorites'
 import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
@@ -19,7 +20,7 @@ import type { GitHubSearchResult, ProjectArt } from '../types'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
 
-type LibraryFilter = 'all' | 'installed' | 'updates' | 'available'
+type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 
 interface SearchPageProps {
@@ -34,6 +35,8 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
+  const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
+  const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [artError, setArtError] = useState<string | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
@@ -87,12 +90,22 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
       .catch(() => {})
   }, [])
 
+  const loadFavorites = async () => {
+    const favorites = await getFavorites()
+    setFavoriteKeys(new Set(favorites.map((item) => projectArtKey(item.owner, item.repo))))
+  }
+
+  useEffect(() => {
+    loadFavorites().catch(() => {})
+  }, [])
+
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     const filtered = state.repositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
+      const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
       const hasUpdate = Boolean(
         installedApp &&
         latestVersion &&
@@ -100,6 +113,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
       )
 
       if (filter === 'installed' && !installedApp) return false
+      if (filter === 'favorites' && !isFavorite) return false
       if (filter === 'updates' && !hasUpdate) return false
       if (filter === 'available' && installedApp) return false
 
@@ -143,7 +157,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [filter, getInstalledApp, getLatestVersion, query, sort, state.repositories])
+  }, [favoriteKeys, filter, getInstalledApp, getLatestVersion, query, sort, state.repositories])
 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
@@ -223,6 +237,46 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
     }
   }
 
+  const handleFavoriteChange = (repo: GitHubSearchResult, nextValue: boolean) => {
+    const key = projectArtKey(repo.owner.login, repo.name)
+    setFavoriteKeys((current) => {
+      const next = new Set(current)
+      if (nextValue) {
+        next.add(key)
+      } else {
+        next.delete(key)
+      }
+      return next
+    })
+  }
+
+  const handleToggleFeaturedFavorite = async () => {
+    if (!featuredRepo) return
+
+    const key = projectArtKey(featuredRepo.owner.login, featuredRepo.name)
+    const isFavorite = favoriteKeys.has(key)
+    setFavoriteBusy(true)
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(featuredRepo.owner.login, featuredRepo.name)
+        handleFavoriteChange(featuredRepo, false)
+      } else {
+        await addToFavorites(
+          featuredRepo.owner.login,
+          featuredRepo.name,
+          featuredRepo.name,
+          featuredRepo.description ?? undefined,
+        )
+        handleFavoriteChange(featuredRepo, true)
+      }
+    } catch {
+      setArtError(t('art.saveError'))
+    } finally {
+      setFavoriteBusy(false)
+    }
+  }
+
   const renderHero = () => {
     if (!featuredRepo) return null
 
@@ -234,6 +288,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
       latestVersion !== installedApp.activeVersion,
     )
     const isInstalled = Boolean(installedApp)
+    const isFavorite = favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))
     const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
     const statusLabel = hasUpdate
       ? t('repo.update')
@@ -299,6 +354,14 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
               {t('installed.folder')}
             </button>
           )}
+          <button
+            type="button"
+            className={`secondary-btn ${isFavorite ? 'active-soft' : ''}`}
+            onClick={handleToggleFeaturedFavorite}
+            disabled={favoriteBusy}
+          >
+            {isFavorite ? t('repo.removeFavoriteShort') : t('repo.addFavoriteShort')}
+          </button>
           <div className="hero-art-actions" aria-label={t('art.actions')}>
             <button type="button" className="secondary-btn" onClick={() => handlePickArt('background')}>
               {t('art.background')}
@@ -369,7 +432,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
 
           <div className="library-controls">
             <div className="segmented-control" aria-label={t('library.filterLabel')}>
-              {(['all', 'installed', 'updates', 'available'] as LibraryFilter[]).map((item) => (
+              {(['all', 'installed', 'favorites', 'updates', 'available'] as LibraryFilter[]).map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -447,8 +510,10 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
                 installedApp={getInstalledApp(repo)}
                 latestVersion={getLatestVersion(repo)}
                 art={projectArt[projectArtKey(repo.owner.login, repo.name)]}
+                isFavorite={favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))}
                 isSelected={featuredRepo?.id === repo.id}
                 onPreview={() => setFeaturedRepo(repo)}
+                onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                 onPickArt={(kind) => handlePickArt(kind, repo)}
                 onSelect={() => setSelectedRepo(repo)}
                 onLaunch={() => handleLaunch(repo)}

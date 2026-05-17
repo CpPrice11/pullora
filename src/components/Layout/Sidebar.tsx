@@ -1,6 +1,6 @@
 import { useI18n } from '../../i18n'
 
-type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'settings' | 'about'
 type NavIconName = 'library' | 'installed' | 'favorites' | 'settings' | 'about'
 
 interface SidebarProps {
@@ -16,8 +16,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'search', icon: 'library', labelKey: 'nav.library' },
-  { id: 'installed', icon: 'installed', labelKey: 'nav.installed' },
-  { id: 'favorites', icon: 'favorites', labelKey: 'nav.favorites' },
   { id: 'settings', icon: 'settings', labelKey: 'nav.settings' },
   { id: 'about', icon: 'about', labelKey: 'nav.about' },
 ]

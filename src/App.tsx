@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import Layout from './components/Layout/Layout'
 import SearchPage from './pages/SearchPage'
-import InstalledPage from './pages/InstalledPage'
-import FavoritesPage from './pages/FavoritesPage'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
@@ -15,7 +13,7 @@ import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from '
 import { LanguageProvider } from './i18n'
 import type { UpdateAvailable } from './types'
 
-type Tab = 'search' | 'installed' | 'favorites' | 'settings' | 'about'
+type Tab = 'search' | 'settings' | 'about'
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('search')
@@ -79,8 +77,6 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return <SearchPage onBackgroundChange={setShellBackground} />
-      case 'installed': return <InstalledPage onBackgroundChange={setShellBackground} />
-      case 'favorites': return <FavoritesPage onBackgroundChange={setShellBackground} />
       case 'settings':  return <SettingsPage />
       case 'about':     return <AboutPage />
       default:          return <SearchPage />
