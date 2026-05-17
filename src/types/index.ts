@@ -102,6 +102,8 @@ export interface ProjectArt {
   repo: string
   coverPath?: string | null
   backgroundPath?: string | null
+  coverDataUrl?: string | null
+  backgroundDataUrl?: string | null
   updatedAt: string
 }
 

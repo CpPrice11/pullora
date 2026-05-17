@@ -13,9 +13,10 @@ import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
   listProjectArt,
+  projectArtBackgroundUrl,
+  projectArtCoverUrl,
   projectArtKey,
   setProjectArt as saveProjectArt,
-  toProjectArtUrl,
 } from '../services/projectArt'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
@@ -117,10 +118,7 @@ function InstalledPage({ onBackgroundChange }: InstalledPageProps) {
     const selected = apps.find((app) => appKey(app) === selectedAppKey)
     if (!selected) return
     const art = projectArt[projectArtKey(selected.owner, selected.repo)]
-    onBackgroundChange?.(
-      toProjectArtUrl(art?.backgroundPath) ??
-      toProjectArtUrl(art?.coverPath),
-    )
+    onBackgroundChange?.(projectArtBackgroundUrl(art))
   }, [apps, onBackgroundChange, projectArt, selectedAppKey])
 
   const handleSwitch = async (owner: string, repo: string, tag: string) => {
@@ -221,7 +219,7 @@ function InstalledPage({ onBackgroundChange }: InstalledPageProps) {
   const selectedHealth = selectedApp ? healthByApp[appKey(selectedApp)] : undefined
   const selectedNeedsRepair = selectedHealth ? !selectedHealth.ok : false
   const selectedArt = selectedApp ? projectArt[projectArtKey(selectedApp.owner, selectedApp.repo)] : undefined
-  const selectedCoverUrl = toProjectArtUrl(selectedArt?.coverPath)
+  const selectedCoverUrl = projectArtCoverUrl(selectedArt)
 
   return (
     <div className="page">
@@ -346,7 +344,7 @@ function InstalledPage({ onBackgroundChange }: InstalledPageProps) {
           const needsRepair = health ? !health.ok : false
           const statusText = needsRepair ? t('installed.healthRepair') : t('installed.healthReady')
           const art = projectArt[projectArtKey(app.owner, app.repo)]
-          const coverUrl = toProjectArtUrl(art?.coverPath)
+          const coverUrl = projectArtCoverUrl(art)
 
           return (
             <div

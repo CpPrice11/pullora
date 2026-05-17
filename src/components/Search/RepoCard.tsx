@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../services/favorites'
-import { toProjectArtUrl } from '../../services/projectArt'
+import { projectArtCoverUrl } from '../../services/projectArt'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 
@@ -92,7 +92,7 @@ function RepoCard({
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleSelect
 
-  const coverUrl = toProjectArtUrl(art?.coverPath)
+  const coverUrl = projectArtCoverUrl(art)
 
   return (
     <article
