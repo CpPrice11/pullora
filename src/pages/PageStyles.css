@@ -227,7 +227,8 @@
 
 .library-page .library-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+  min-width: 0;
 }
 
 .segmented-control {
@@ -242,7 +243,8 @@
 }
 
 .library-page .segmented-control {
-  width: fit-content;
+  width: max-content;
+  max-width: 100%;
 }
 
 .segmented-control button {
@@ -1041,7 +1043,8 @@
 /* Cinematic launcher composition */
 .cinematic-shell .page {
   gap: 18px;
-  max-width: 1180px;
+  max-width: min(1180px, 100%);
+  min-width: 0;
 }
 
 .cinematic-shell .page-header {
@@ -1087,20 +1090,21 @@
 }
 
 .library-hero {
-  align-items: end;
+  align-items: center;
   animation: fluent-fade-up var(--motion-page);
   display: grid;
-  gap: 24px;
-  grid-template-columns: 132px minmax(0, 1fr) minmax(220px, auto);
-  min-height: 290px;
-  padding: 26px;
+  gap: 22px;
+  grid-template-columns: 116px minmax(0, 1fr) minmax(190px, 250px);
+  min-height: 240px;
+  overflow: hidden;
+  padding: 24px;
   position: relative;
   min-width: 0;
 }
 
 .library-hero::before {
   background:
-    linear-gradient(100deg, rgba(17, 19, 24, 0.92), rgba(17, 19, 24, 0.62) 58%, rgba(17, 19, 24, 0.18)),
+    linear-gradient(100deg, rgba(17, 19, 24, 0.94), rgba(17, 19, 24, 0.72) 58%, rgba(17, 19, 24, 0.42)),
     radial-gradient(circle at 10% 0%, rgba(91, 215, 255, 0.18), transparent 30%);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 26px;
@@ -1123,11 +1127,11 @@
   align-self: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 24px;
+  border-radius: 22px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-  height: 132px;
+  height: 116px;
   overflow: hidden;
-  width: 132px;
+  width: 116px;
 }
 
 .library-hero-cover img {
@@ -1166,7 +1170,7 @@
 
 .library-hero h2 {
   color: #ffffff;
-  font-size: clamp(32px, 4.6vw, 64px);
+  font-size: clamp(34px, 4.2vw, 56px);
   font-weight: 860;
   letter-spacing: 0;
   line-height: 0.98;
@@ -1205,7 +1209,7 @@
   font-size: 16px;
   line-height: 1.55;
   margin-top: 18px;
-  max-width: 700px;
+  max-width: 640px;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -1236,7 +1240,9 @@
   flex-direction: column;
   gap: 10px;
   justify-self: end;
-  min-width: 210px;
+  max-width: 250px;
+  min-width: 0;
+  width: 100%;
 }
 
 .library-hero-actions button,
@@ -1250,7 +1256,7 @@
   border: 2px solid rgba(255, 255, 255, 0.58);
   border-radius: 999px;
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
-  color: #121212;
+  color: #111111 !important;
   font-size: 22px;
   font-weight: 820;
   min-height: 58px;
@@ -1260,12 +1266,12 @@
 
 :root[data-theme='light'] .hero-primary-btn {
   background: linear-gradient(180deg, #111827, #303844);
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .hero-primary-btn:hover {
   background: linear-gradient(180deg, #ffffff, #eef1f5);
-  color: #000000;
+  color: #000000 !important;
   transform: translateY(-2px);
 }
 
@@ -1309,8 +1315,15 @@
 
 .cinematic-shell .library-controls {
   align-items: center;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
+    rgba(18, 20, 24, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
   grid-template-columns: minmax(0, auto) minmax(180px, 330px);
   margin-top: 4px;
+  padding: 8px;
+  width: 100%;
 }
 
 .cinematic-shell .segmented-control {
@@ -1359,6 +1372,7 @@
 .cinematic-shell .search-results,
 .cinematic-shell .apps-list {
   gap: 12px;
+  min-width: 0;
 }
 
 .cinematic-shell .app-card,
@@ -1986,11 +2000,11 @@
 
 @media (min-width: 1280px) {
   .cinematic-shell .page {
-    max-width: 1260px;
+    max-width: min(1260px, 100%);
   }
 
   .cinematic-shell .search-results {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(320px, 1fr));
   }
 }
 
@@ -2012,6 +2026,45 @@
 
   .hero-art-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1360px) {
+  .library-hero {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+
+  .library-hero-cover {
+    height: 104px;
+    width: 104px;
+  }
+
+  .library-hero-actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(180px, 1.1fr) repeat(2, minmax(130px, 0.7fr));
+    justify-self: stretch;
+    max-width: none;
+  }
+
+  .library-hero-actions .hero-art-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .cinematic-shell .library-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .library-page .segmented-control {
+    width: 100%;
+  }
+
+  .cinematic-shell .segmented-control {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
