@@ -141,13 +141,14 @@
 
 .brand-mark {
   align-items: center;
-  background: linear-gradient(135deg, #008df0, #54d5ff);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(10, 16, 22, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
   box-shadow: 0 16px 38px rgba(0, 141, 240, 0.28);
   display: flex;
   height: 46px;
   justify-content: center;
+  overflow: hidden;
   width: 46px;
   transition: transform var(--motion-normal), box-shadow var(--motion-normal);
 }
@@ -157,23 +158,11 @@
   transform: translateY(-1px) scale(1.02);
 }
 
-.brand-mark span {
-  border: 2px solid rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
-  height: 18px;
-  position: relative;
-  width: 18px;
-}
-
-.brand-mark span::after {
-  background: #ffffff;
-  border-radius: 999px;
-  content: '';
-  height: 6px;
-  position: absolute;
-  right: -7px;
-  top: -6px;
-  width: 6px;
+.brand-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .header-title {
