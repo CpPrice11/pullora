@@ -1101,10 +1101,11 @@
   gap: 22px;
   grid-template-columns: 108px minmax(0, 1fr) minmax(188px, 242px);
   min-height: 198px;
-  overflow: hidden;
+  overflow: visible;
   padding: 22px 24px;
   position: relative;
   min-width: 0;
+  z-index: 4;
 }
 
 .library-hero::before {
@@ -1116,6 +1117,7 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
   content: '';
   inset: 0;
+  pointer-events: none;
   position: absolute;
   z-index: -1;
 }
@@ -1247,7 +1249,9 @@
   justify-self: end;
   max-width: 250px;
   min-width: 0;
+  position: relative;
   width: 100%;
+  z-index: 6;
 }
 
 .library-hero-actions button,
@@ -2310,10 +2314,16 @@
 
 .hero-actions-menu {
   justify-self: stretch;
+  position: relative;
+  z-index: 8;
 }
 
 .hero-actions-menu .project-actions-trigger {
   width: 100%;
+}
+
+.hero-actions-menu .project-actions-popover {
+  z-index: 90;
 }
 
 .about-release-portable-badge {
