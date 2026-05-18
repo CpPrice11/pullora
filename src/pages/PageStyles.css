@@ -2240,14 +2240,6 @@
   position: relative;
 }
 
-.project-actions-menu summary {
-  list-style: none;
-}
-
-.project-actions-menu summary::-webkit-details-marker {
-  display: none;
-}
-
 .project-actions-trigger {
   align-items: center;
   background: var(--color-control);

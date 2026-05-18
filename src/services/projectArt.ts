@@ -58,11 +58,11 @@ export function toProjectArtUrl(path?: string | null): string | null {
 }
 
 export function projectArtCoverUrl(art?: ProjectArt | null): string | null {
-  return toProjectArtUrl(art?.coverPath) ?? art?.coverDataUrl ?? null
+  return art?.coverDataUrl ?? toProjectArtUrl(art?.coverPath) ?? null
 }
 
 export function projectArtBackgroundUrl(art?: ProjectArt | null): string | null {
-  return toProjectArtUrl(art?.backgroundPath) ?? art?.backgroundDataUrl ?? projectArtCoverUrl(art)
+  return art?.backgroundDataUrl ?? toProjectArtUrl(art?.backgroundPath) ?? projectArtCoverUrl(art)
 }
 
 export function isLauncherArt(art: ProjectArt) {

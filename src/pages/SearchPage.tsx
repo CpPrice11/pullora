@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOwnerRepositories } from '../hooks/useGitHub'
 import { useSettings } from '../hooks/useSettings'
 import { useLibraryStatus } from '../hooks/useLibraryStatus'
@@ -42,11 +42,13 @@ function SearchPage({
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favoriteBusy, setFavoriteBusy] = useState(false)
+  const [heroActionsOpen, setHeroActionsOpen] = useState(false)
   const [artError, setArtError] = useState<string | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
+  const heroActionsRef = useRef<HTMLDivElement | null>(null)
   const owner = settings.githubOwner?.trim()
   const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
   const {
@@ -103,6 +105,30 @@ function SearchPage({
   useEffect(() => {
     loadFavorites().catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!heroActionsOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!heroActionsRef.current?.contains(event.target as Node)) {
+        setHeroActionsOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHeroActionsOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [heroActionsOpen])
 
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -178,6 +204,10 @@ function SearchPage({
     }
   }, [featuredRepo, visibleRepositories])
 
+  useEffect(() => {
+    setHeroActionsOpen(false)
+  }, [featuredRepo?.id])
+
   const featuredArt = featuredRepo
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
@@ -195,6 +225,7 @@ function SearchPage({
   const handlePickArt = async (kind: 'cover', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
+    setHeroActionsOpen(false)
     setArtError(null)
     const imagePath = await pickImageFile()
     if (!imagePath) return
@@ -218,6 +249,7 @@ function SearchPage({
   const handleClearArt = async (targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
+    setHeroActionsOpen(false)
     setArtError(null)
     try {
       const updatedArt = await clearProjectArt(
@@ -361,29 +393,52 @@ function SearchPage({
               {t('installed.folder')}
             </button>
           )}
-          <details className="project-actions-menu hero-actions-menu">
-            <summary className="project-actions-trigger" aria-label={t('projectActions.open')}>
+          <div
+            className={`project-actions-menu hero-actions-menu ${heroActionsOpen ? 'open' : ''}`}
+            ref={heroActionsRef}
+          >
+            <button
+              type="button"
+              className="project-actions-trigger"
+              aria-expanded={heroActionsOpen}
+              aria-label={t('projectActions.open')}
+              onClick={() => setHeroActionsOpen((current) => !current)}
+            >
               ...
-            </summary>
-            <div className="project-actions-popover" aria-label={t('art.actions')}>
-              <button type="button" onClick={() => onChangeLauncherBackground?.()}>
-                {t('art.changeLauncherBackground')}
-              </button>
-              <button type="button" onClick={() => handlePickArt('cover')}>
-                {t('art.changeCover')}
-              </button>
-              {featuredArt?.coverPath && (
-                <button type="button" onClick={() => handleClearArt()}>
-                  {t('art.resetCover')}
+            </button>
+            {heroActionsOpen && (
+              <div className="project-actions-popover" aria-label={t('art.actions')}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeroActionsOpen(false)
+                    onChangeLauncherBackground?.()
+                  }}
+                >
+                  {t('art.changeLauncherBackground')}
                 </button>
-              )}
-              {hasLauncherBackground && (
-                <button type="button" onClick={() => onClearLauncherBackground?.()}>
-                  {t('art.resetLauncherBackground')}
+                <button type="button" onClick={() => handlePickArt('cover')}>
+                  {t('art.changeCover')}
                 </button>
-              )}
-            </div>
-          </details>
+                {featuredArt?.coverPath && (
+                  <button type="button" onClick={() => handleClearArt()}>
+                    {t('art.resetCover')}
+                  </button>
+                )}
+                {hasLauncherBackground && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeroActionsOpen(false)
+                      onClearLauncherBackground?.()
+                    }}
+                  >
+                    {t('art.resetLauncherBackground')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </section>
     )

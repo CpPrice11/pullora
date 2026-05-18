@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../services/favorites'
 import { projectArtCoverUrl } from '../../services/projectArt'
@@ -37,6 +37,8 @@ function RepoCard({
   const { language, t } = useI18n()
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement | null>(null)
   const isInstalled = Boolean(installedApp)
   const hasUpdate = Boolean(
     installedApp &&
@@ -54,6 +56,30 @@ function RepoCard({
       .then(setIsFav)
       .catch(() => {})
   }, [isFavorite, repo.owner.login, repo.name])
+
+  useEffect(() => {
+    if (!actionsOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionsOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [actionsOpen])
 
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation()
@@ -92,12 +118,19 @@ function RepoCard({
 
   const handlePickArt = (event: React.MouseEvent) => {
     event.stopPropagation()
+    setActionsOpen(false)
     onPickArt?.()
   }
 
   const handleClearArt = (event: React.MouseEvent) => {
     event.stopPropagation()
+    setActionsOpen(false)
     onClearArt?.()
+  }
+
+  const handleActionsToggle = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen((current) => !current)
   }
 
   const handlePreview = () => {
@@ -199,24 +232,36 @@ function RepoCard({
           </button>
         )}
         {onPickArt && (
-          <details className="project-actions-menu repo-actions-menu" onClick={(event) => event.stopPropagation()}>
-            <summary className="project-actions-trigger" aria-label={t('projectActions.open')}>
+          <div
+            className={`project-actions-menu repo-actions-menu ${actionsOpen ? 'open' : ''}`}
+            ref={actionsRef}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="project-actions-trigger"
+              aria-expanded={actionsOpen}
+              aria-label={t('projectActions.open')}
+              onClick={handleActionsToggle}
+            >
               ...
-            </summary>
-            <div className="project-actions-popover" aria-label={t('art.actions')}>
-              <button
-                type="button"
-                onClick={handlePickArt}
-              >
-                {t('art.changeCover')}
-              </button>
-              {art?.coverPath && onClearArt && (
-                <button type="button" onClick={handleClearArt}>
-                  {t('art.resetCover')}
+            </button>
+            {actionsOpen && (
+              <div className="project-actions-popover" aria-label={t('art.actions')}>
+                <button
+                  type="button"
+                  onClick={handlePickArt}
+                >
+                  {t('art.changeCover')}
                 </button>
-              )}
-            </div>
-          </details>
+                {art?.coverPath && onClearArt && (
+                  <button type="button" onClick={handleClearArt}>
+                    {t('art.resetCover')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
         <button
           type="button"
