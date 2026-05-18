@@ -324,6 +324,16 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
           <div className="repo-status-row">
             <span className={`repo-status ${statusClass}`}>{statusLabel}</span>
             {featuredRepo.language && <span className="repo-lang">{featuredRepo.language}</span>}
+            <button
+              type="button"
+              className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={handleToggleFeaturedFavorite}
+              disabled={favoriteBusy}
+              title={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
+              aria-label={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
+            >
+              {isFavorite ? '\u2605' : '\u2606'}
+            </button>
           </div>
           <h2>{featuredRepo.name}</h2>
           <p className="library-hero-repo">{featuredRepo.owner.login}/{featuredRepo.name}</p>
@@ -354,27 +364,22 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
               {t('installed.folder')}
             </button>
           )}
-          <button
-            type="button"
-            className={`secondary-btn ${isFavorite ? 'active-soft' : ''}`}
-            onClick={handleToggleFeaturedFavorite}
-            disabled={favoriteBusy}
-          >
-            {isFavorite ? t('repo.removeFavoriteShort') : t('repo.addFavoriteShort')}
-          </button>
-          <div className="hero-art-actions" aria-label={t('art.actions')}>
-            <button type="button" className="secondary-btn" onClick={() => handlePickArt('background')}>
-              {t('art.background')}
-            </button>
-            <button type="button" className="secondary-btn" onClick={() => handlePickArt('cover')}>
-              {t('art.cover')}
-            </button>
-            {(featuredArt?.backgroundPath || featuredArt?.coverPath) && (
-              <button type="button" className="secondary-btn" onClick={handleClearArt}>
-                {t('art.clear')}
+          <details className="hero-art-menu">
+            <summary className="secondary-btn">{t('art.menu')}</summary>
+            <div className="hero-art-menu-popover" aria-label={t('art.actions')}>
+              <button type="button" className="secondary-btn" onClick={() => handlePickArt('background')}>
+                {t('art.background')}
               </button>
-            )}
-          </div>
+              <button type="button" className="secondary-btn" onClick={() => handlePickArt('cover')}>
+                {t('art.cover')}
+              </button>
+              {(featuredArt?.backgroundPath || featuredArt?.coverPath) && (
+                <button type="button" className="secondary-btn" onClick={handleClearArt}>
+                  {t('art.clear')}
+                </button>
+              )}
+            </div>
+          </details>
         </div>
       </section>
     )

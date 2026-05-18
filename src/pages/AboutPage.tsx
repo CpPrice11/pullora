@@ -9,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v1.1.5'
+const FALLBACK_CURRENT_VERSION = 'v1.1.6'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -165,7 +165,7 @@ function AboutPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page about-page">
       <div className="page-header">
         <h2>{t('about.title')}</h2>
       </div>
@@ -200,24 +200,6 @@ function AboutPage() {
       </section>
 
       <div className="about-grid">
-        <section className="about-panel">
-          <h3>{t('about.version')}</h3>
-          <dl className="about-facts">
-            <div>
-              <dt>{t('about.app')}</dt>
-              <dd>Air Launcher</dd>
-            </div>
-            <div>
-              <dt>{t('about.currentVersion')}</dt>
-              <dd>{currentVersion.replace(/^v/, '')}</dd>
-            </div>
-            <div>
-              <dt>{t('about.stack')}</dt>
-              <dd>Tauri, Rust, React, TypeScript</dd>
-            </div>
-          </dl>
-        </section>
-
         <section className="about-panel about-panel-wide">
           <div className="section-heading-row">
             <h3>{t('about.launcherVersions')}</h3>
