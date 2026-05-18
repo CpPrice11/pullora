@@ -175,10 +175,197 @@ function SettingsPage() {
 
   const handleSectionSelect = (sectionId: string) => {
     setActiveSection(sectionId)
-    document.getElementById(`settings-${sectionId}`)?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    })
+  }
+
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'folders':
+        return (
+          <section id="settings-folders" className="settings-section">
+            <h3>{t('settings.folders')}</h3>
+            <div className="form-group">
+              <label htmlFor="installPath">{t('settings.installPath')}</label>
+              <div className="path-input-row">
+                <input
+                  id="installPath"
+                  type="text"
+                  value={settings.installationPath}
+                  onBlur={handleInstallationPathBlur}
+                  onChange={(event) =>
+                    setSettings({ ...settings, installationPath: event.target.value })
+                  }
+                  onKeyDown={handleInstallationPathKeyDown}
+                  placeholder={t('settings.installPathPlaceholder')}
+                />
+                <button type="button" onClick={handleBrowse}>
+                  {t('settings.choose')}
+                </button>
+                <button type="button" className="secondary-btn" onClick={handleValidatePath}>
+                  {t('settings.checkFolder')}
+                </button>
+                {settings.installationPath && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => openDir(settings.installationPath).catch(() => {})}
+                    title={t('settings.open')}
+                  >
+                    {t('settings.open')}
+                  </button>
+                )}
+              </div>
+              {pathValidation !== 'idle' && (
+                <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
+                  {pathValidation === 'ok' && t('settings.pathOk')}
+                  {pathValidation === 'missing' && t('settings.pathMissing')}
+                  {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
+                  {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
+                </span>
+              )}
+            </div>
+          </section>
+        )
+
+      case 'github':
+        return (
+          <section id="settings-github" className="settings-section">
+            <h3>{t('settings.github')}</h3>
+            <div className="form-group compact-control">
+              <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
+              <input
+                id="githubOwner"
+                type="text"
+                value={settings.githubOwner ?? ''}
+                onBlur={handleGithubOwnerBlur}
+                onChange={(event) =>
+                  setSettings({ ...settings, githubOwner: event.target.value })
+                }
+                onKeyDown={handleGithubOwnerKeyDown}
+                placeholder={t('settings.githubOwnerPlaceholder')}
+              />
+            </div>
+          </section>
+        )
+
+      case 'updates':
+        return (
+          <section id="settings-updates" className="settings-section">
+            <h3>{t('settings.updates')}</h3>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={settings.autoUpdateCheck}
+                  onChange={(event) =>
+                    persistSettings({ ...settings, autoUpdateCheck: event.target.checked }, settings)
+                  }
+                />
+                {t('settings.autoCheck')}
+              </label>
+            </div>
+
+            <div className="form-group compact-control">
+              <label htmlFor="checkInterval">{t('settings.interval')}</label>
+              <input
+                id="checkInterval"
+                type="number"
+                min={1}
+                max={168}
+                value={settings.checkIntervalHours}
+                onChange={(event) => {
+                  const value = Number(event.target.value)
+                  const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
+                  persistSettings({ ...settings, checkIntervalHours }, settings)
+                }}
+                disabled={!settings.autoUpdateCheck}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.includePrereleases)}
+                  onChange={(event) =>
+                    persistSettings({ ...settings, includePrereleases: event.target.checked }, settings)
+                  }
+                />
+                {t('settings.prerelease')}
+              </label>
+            </div>
+
+            <div className="form-group compact-control">
+              <label htmlFor="assetStrategy">{t('settings.assets')}</label>
+              <select
+                id="assetStrategy"
+                value={settings.assetStrategy}
+                onChange={(event) =>
+                  persistSettings({
+                    ...settings,
+                    assetStrategy: event.target.value as AppSettings['assetStrategy'],
+                  }, settings)
+                }
+              >
+                <option value="portableFirst">{t('settings.portableFirst')}</option>
+                <option value="installerFirst">{t('settings.installerFirst')}</option>
+                <option value="manual">{t('settings.manual')}</option>
+              </select>
+              <p className="help-text">{t('settings.assetStrategyHelp')}</p>
+            </div>
+          </section>
+        )
+
+      case 'appearance':
+        return (
+          <section id="settings-appearance" className="settings-section">
+            <h3>{t('settings.appearance')}</h3>
+            <div className="form-group compact-control">
+              <label htmlFor="theme">{t('settings.theme')}</label>
+              <select
+                id="theme"
+                value={settings.theme}
+                onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
+              >
+                <option value="light">{t('settings.light')}</option>
+                <option value="dark">{t('settings.dark')}</option>
+                <option value="auto">{t('settings.auto')}</option>
+              </select>
+            </div>
+          </section>
+        )
+
+      case 'language':
+        return (
+          <section id="settings-language" className="settings-section">
+            <h3>{t('settings.languageSection')}</h3>
+            <div className="form-group compact-control">
+              <label htmlFor="language">{t('settings.language')}</label>
+              <select
+                id="language"
+                value={settings.language}
+                onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
+              >
+                <option value="uk">{t('settings.ukrainian')}</option>
+                <option value="en">{t('settings.english')}</option>
+              </select>
+            </div>
+          </section>
+        )
+
+      case 'reset':
+      default:
+        return (
+          <section id="settings-reset" className="danger-zone">
+            <h3>{t('settings.resetSection')}</h3>
+            <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
+              {t('settings.reset')}
+            </button>
+            <button className="danger-btn" onClick={handleClearCache}>
+              {t('settings.clearCache')}
+            </button>
+          </section>
+        )
+    }
   }
 
   return (
@@ -206,182 +393,15 @@ function SettingsPage() {
           ))}
         </nav>
 
-        <div className="settings-content">
-        <section id="settings-folders" className="settings-section">
-          <h3>{t('settings.folders')}</h3>
-          <div className="form-group">
-            <label htmlFor="installPath">{t('settings.installPath')}</label>
-            <div className="path-input-row">
-              <input
-                id="installPath"
-                type="text"
-                value={settings.installationPath}
-                onBlur={handleInstallationPathBlur}
-                onChange={(event) =>
-                  setSettings({ ...settings, installationPath: event.target.value })
-                }
-                onKeyDown={handleInstallationPathKeyDown}
-                placeholder={t('settings.installPathPlaceholder')}
-              />
-              <button type="button" onClick={handleBrowse}>
-                {t('settings.choose')}
-              </button>
-              <button type="button" className="secondary-btn" onClick={handleValidatePath}>
-                {t('settings.checkFolder')}
-              </button>
-              {settings.installationPath && (
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => openDir(settings.installationPath).catch(() => {})}
-                  title={t('settings.open')}
-                >
-                  {t('settings.open')}
-                </button>
-              )}
-            </div>
-            {pathValidation !== 'idle' && (
-              <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
-                {pathValidation === 'ok' && t('settings.pathOk')}
-                {pathValidation === 'missing' && t('settings.pathMissing')}
-                {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
-                {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
-              </span>
-            )}
-          </div>
-        </section>
-
-        <section id="settings-github" className="settings-section">
-          <h3>{t('settings.github')}</h3>
-          <div className="form-group compact-control">
-            <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
-            <input
-              id="githubOwner"
-              type="text"
-              value={settings.githubOwner ?? ''}
-              onBlur={handleGithubOwnerBlur}
-              onChange={(event) =>
-                setSettings({ ...settings, githubOwner: event.target.value })
-              }
-              onKeyDown={handleGithubOwnerKeyDown}
-              placeholder={t('settings.githubOwnerPlaceholder')}
+        <div className="settings-content" key={activeSection}>
+          {error && (
+            <StatePanel
+              kind="error"
+              title={t('state.settingsErrorTitle')}
+              message={error}
             />
-          </div>
-        </section>
-
-        <section id="settings-updates" className="settings-section">
-          <h3>{t('settings.updates')}</h3>
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={settings.autoUpdateCheck}
-                onChange={(event) =>
-                  persistSettings({ ...settings, autoUpdateCheck: event.target.checked }, settings)
-                }
-              />
-              {t('settings.autoCheck')}
-            </label>
-          </div>
-
-          <div className="form-group compact-control">
-            <label htmlFor="checkInterval">{t('settings.interval')}</label>
-            <input
-              id="checkInterval"
-              type="number"
-              min={1}
-              max={168}
-              value={settings.checkIntervalHours}
-              onChange={(event) => {
-                const value = Number(event.target.value)
-                const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
-                persistSettings({ ...settings, checkIntervalHours }, settings)
-              }}
-              disabled={!settings.autoUpdateCheck}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={Boolean(settings.includePrereleases)}
-                onChange={(event) =>
-                  persistSettings({ ...settings, includePrereleases: event.target.checked }, settings)
-                }
-              />
-              {t('settings.prerelease')}
-            </label>
-          </div>
-
-          <div className="form-group compact-control">
-            <label htmlFor="assetStrategy">{t('settings.assets')}</label>
-            <select
-              id="assetStrategy"
-              value={settings.assetStrategy}
-              onChange={(event) =>
-                persistSettings({
-                  ...settings,
-                  assetStrategy: event.target.value as AppSettings['assetStrategy'],
-                }, settings)
-              }
-            >
-              <option value="portableFirst">{t('settings.portableFirst')}</option>
-              <option value="installerFirst">{t('settings.installerFirst')}</option>
-              <option value="manual">{t('settings.manual')}</option>
-            </select>
-            <p className="help-text">{t('settings.assetStrategyHelp')}</p>
-          </div>
-        </section>
-
-        <section id="settings-appearance" className="settings-section">
-          <h3>{t('settings.appearance')}</h3>
-          <div className="form-group compact-control">
-            <label htmlFor="theme">{t('settings.theme')}</label>
-            <select
-              id="theme"
-              value={settings.theme}
-              onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
-            >
-              <option value="light">{t('settings.light')}</option>
-              <option value="dark">{t('settings.dark')}</option>
-              <option value="auto">{t('settings.auto')}</option>
-            </select>
-          </div>
-        </section>
-
-        <section id="settings-language" className="settings-section">
-          <h3>{t('settings.languageSection')}</h3>
-          <div className="form-group compact-control">
-            <label htmlFor="language">{t('settings.language')}</label>
-            <select
-              id="language"
-              value={settings.language}
-              onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
-            >
-              <option value="uk">{t('settings.ukrainian')}</option>
-              <option value="en">{t('settings.english')}</option>
-            </select>
-          </div>
-        </section>
-
-        {error && (
-          <StatePanel
-            kind="error"
-            title={t('state.settingsErrorTitle')}
-            message={error}
-          />
-        )}
-
-        <section id="settings-reset" className="danger-zone">
-          <h3>{t('settings.resetSection')}</h3>
-          <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
-            {t('settings.reset')}
-          </button>
-          <button className="danger-btn" onClick={handleClearCache}>
-            {t('settings.clearCache')}
-          </button>
-        </section>
+          )}
+          {renderActiveSection()}
         </div>
       </div>
     </div>

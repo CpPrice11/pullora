@@ -24,7 +24,7 @@ function Layout({
 }: LayoutProps) {
   return (
     <div
-      className="layout cinematic-shell"
+      className={`layout cinematic-shell ${backgroundImage ? 'has-custom-background' : ''}`}
     >
       <div
         className={`cinematic-background ${backgroundImage ? 'is-visible' : ''}`}

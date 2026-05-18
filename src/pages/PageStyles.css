@@ -1524,8 +1524,7 @@
   grid-template-columns: 230px minmax(0, 1fr);
   gap: 0;
   max-width: 1120px;
-  height: clamp(460px, calc(100vh - 220px), 760px);
-  min-height: 0;
+  min-height: clamp(430px, calc(100vh - 260px), 620px);
   overflow: hidden;
   padding: 0;
   width: 100%;
@@ -1605,26 +1604,18 @@
 }
 
 .settings-content {
+  animation: fluent-fade-up var(--motion-normal);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   max-height: none;
   min-height: 0;
-  overflow: auto;
-  padding-bottom: 34px;
-  scroll-behavior: smooth;
-  scrollbar-color: rgba(91, 215, 255, 0.24) transparent;
-  scrollbar-width: thin;
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 .settings-content > :last-child {
-  margin-bottom: 24px;
-}
-
-.settings-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.settings-content::-webkit-scrollbar-thumb {
-  background: rgba(91, 215, 255, 0.22);
-  border-radius: 999px;
+  margin-bottom: 0;
 }
 
 :root[data-theme='light'] .cinematic-shell .settings-form {
@@ -1655,10 +1646,11 @@
 .cinematic-shell .danger-zone {
   background: transparent;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 0;
   border-radius: 0;
   box-shadow: none;
-  padding: 24px 34px;
+  min-height: 100%;
+  padding: 30px 36px;
 }
 
 .cinematic-shell .settings-section h3,

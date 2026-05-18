@@ -69,7 +69,7 @@
 }
 
 .cinematic-background.is-visible {
-  opacity: 0.58;
+  opacity: 0.82;
 }
 
 .cinematic-backdrop {
@@ -82,10 +82,23 @@
   z-index: 1;
 }
 
+.cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 68% 18%, rgba(91, 215, 255, 0.08), transparent 32%),
+    linear-gradient(90deg, rgba(8, 10, 14, 0.88) 0%, rgba(8, 10, 14, 0.68) 42%, rgba(8, 10, 14, 0.36) 100%),
+    linear-gradient(0deg, rgba(8, 10, 14, 0.92) 0%, rgba(8, 10, 14, 0.34) 52%, rgba(8, 10, 14, 0.68) 100%);
+}
+
 :root[data-theme='light'] .cinematic-backdrop {
   background:
     linear-gradient(90deg, rgba(238, 242, 246, 0.94) 0%, rgba(238, 242, 246, 0.76) 42%, rgba(238, 242, 246, 0.36) 100%),
     linear-gradient(0deg, rgba(238, 242, 246, 0.94) 0%, rgba(238, 242, 246, 0.36) 52%, rgba(238, 242, 246, 0.78) 100%);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    linear-gradient(90deg, rgba(238, 242, 246, 0.86) 0%, rgba(238, 242, 246, 0.58) 42%, rgba(238, 242, 246, 0.26) 100%),
+    linear-gradient(0deg, rgba(238, 242, 246, 0.9) 0%, rgba(238, 242, 246, 0.22) 52%, rgba(238, 242, 246, 0.58) 100%);
 }
 
 .header {
