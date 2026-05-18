@@ -3,6 +3,8 @@ import type { ProjectArt } from '../types'
 import { callTauri } from './tauri'
 
 export type ProjectArtKind = 'cover' | 'background' | 'all'
+const LAUNCHER_ART_OWNER = '__air_launcher__'
+const LAUNCHER_ART_REPO = 'global'
 
 export async function listProjectArt(): Promise<ProjectArt[]> {
   try {
@@ -61,4 +63,20 @@ export function projectArtCoverUrl(art?: ProjectArt | null): string | null {
 
 export function projectArtBackgroundUrl(art?: ProjectArt | null): string | null {
   return toProjectArtUrl(art?.backgroundPath) ?? art?.backgroundDataUrl ?? projectArtCoverUrl(art)
+}
+
+export function isLauncherArt(art: ProjectArt) {
+  return projectArtKey(art.owner, art.repo) === projectArtKey(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
+}
+
+export async function getLauncherBackgroundArt(): Promise<ProjectArt | null> {
+  return getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
+}
+
+export async function setLauncherBackgroundArt(sourcePath: string): Promise<ProjectArt> {
+  return setProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background', sourcePath)
+}
+
+export async function clearLauncherBackgroundArt(): Promise<ProjectArt> {
+  return clearProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background')
 }

@@ -14,7 +14,7 @@ interface RepoCardProps {
   isSelected?: boolean
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
-  onPickArt?: (kind: 'cover' | 'background') => void
+  onPickArt?: () => void
   onClearArt?: () => void
   onSelect: () => void
   onLaunch?: () => void
@@ -90,9 +90,9 @@ function RepoCard({
     onSelect()
   }
 
-  const handlePickArt = (event: React.MouseEvent, kind: 'cover' | 'background') => {
+  const handlePickArt = (event: React.MouseEvent) => {
     event.stopPropagation()
-    onPickArt?.(kind)
+    onPickArt?.()
   }
 
   const handleClearArt = (event: React.MouseEvent) => {
@@ -206,19 +206,13 @@ function RepoCard({
             <div className="project-actions-popover" aria-label={t('art.actions')}>
               <button
                 type="button"
-                onClick={(event) => handlePickArt(event, 'background')}
-              >
-                {t('art.changeBackground')}
-              </button>
-              <button
-                type="button"
-                onClick={(event) => handlePickArt(event, 'cover')}
+                onClick={handlePickArt}
               >
                 {t('art.changeCover')}
               </button>
-              {(art?.backgroundPath || art?.coverPath) && onClearArt && (
+              {art?.coverPath && onClearArt && (
                 <button type="button" onClick={handleClearArt}>
-                  {t('art.reset')}
+                  {t('art.resetCover')}
                 </button>
               )}
             </div>

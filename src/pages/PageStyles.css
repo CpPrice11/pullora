@@ -2212,6 +2212,16 @@
   grid-template-columns: repeat(2, minmax(220px, 1fr));
 }
 
+.launcher-background-control {
+  grid-column: 1 / -1;
+}
+
+.settings-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .settings-modal .compact-control input,
 .settings-modal .compact-control select {
   max-width: 320px;
@@ -2399,6 +2409,105 @@
   .settings-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Unified cinematic button language */
+.cinematic-shell .refresh-btn,
+.cinematic-shell .secondary-btn,
+.cinematic-shell .small-btn,
+.cinematic-shell .launch-btn,
+.cinematic-shell .versions-btn,
+.cinematic-shell .fav-btn,
+.cinematic-shell .hero-favorite-btn,
+.cinematic-shell .project-actions-trigger,
+.cinematic-shell .load-more-btn,
+.cinematic-shell .danger-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.075)),
+    rgba(26, 29, 35, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.22);
+  color: #ffffff;
+  font-weight: 780;
+}
+
+.cinematic-shell .refresh-btn:hover,
+.cinematic-shell .secondary-btn:hover,
+.cinematic-shell .small-btn:hover,
+.cinematic-shell .launch-btn:hover,
+.cinematic-shell .versions-btn:hover,
+.cinematic-shell .fav-btn:hover,
+.cinematic-shell .hero-favorite-btn:hover,
+.cinematic-shell .project-actions-trigger:hover,
+.cinematic-shell .load-more-btn:hover,
+.cinematic-shell .danger-btn:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.1)),
+    rgba(34, 38, 45, 0.86);
+  border-color: rgba(91, 215, 255, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.cinematic-shell .hero-primary-btn,
+.cinematic-shell .install-btn,
+.cinematic-shell .confirm-primary-btn,
+.cinematic-shell .release-action-primary {
+  background:
+    linear-gradient(180deg, rgba(91, 215, 255, 0.98), rgba(42, 190, 246, 0.94)),
+    rgba(91, 215, 255, 0.94) !important;
+  border: 1px solid rgba(155, 236, 255, 0.72) !important;
+  border-radius: 14px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 18px 38px rgba(0, 0, 0, 0.28) !important;
+  color: #041019 !important;
+  font-weight: 840;
+}
+
+.cinematic-shell .hero-primary-btn:hover,
+.cinematic-shell .install-btn:hover,
+.cinematic-shell .confirm-primary-btn:hover,
+.cinematic-shell .release-action-primary:hover {
+  background:
+    linear-gradient(180deg, rgba(134, 234, 255, 1), rgba(91, 215, 255, 0.98)),
+    rgba(91, 215, 255, 0.98) !important;
+  color: #041019 !important;
+}
+
+.cinematic-shell .danger-btn {
+  border-color: rgba(255, 138, 160, 0.46);
+  color: #ffb7c5;
+}
+
+:root[data-theme='light'] .cinematic-shell .refresh-btn,
+:root[data-theme='light'] .cinematic-shell .secondary-btn,
+:root[data-theme='light'] .cinematic-shell .small-btn,
+:root[data-theme='light'] .cinematic-shell .launch-btn,
+:root[data-theme='light'] .cinematic-shell .versions-btn,
+:root[data-theme='light'] .cinematic-shell .fav-btn,
+:root[data-theme='light'] .cinematic-shell .hero-favorite-btn,
+:root[data-theme='light'] .cinematic-shell .project-actions-trigger,
+:root[data-theme='light'] .cinematic-shell .load-more-btn,
+:root[data-theme='light'] .cinematic-shell .danger-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 248, 251, 0.82)),
+    rgba(255, 255, 255, 0.86);
+  border-color: rgba(17, 24, 39, 0.14);
+  color: #111827;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme='light'] .cinematic-shell .hero-primary-btn,
+:root[data-theme='light'] .cinematic-shell .install-btn,
+:root[data-theme='light'] .cinematic-shell .confirm-primary-btn,
+:root[data-theme='light'] .cinematic-shell .release-action-primary {
+  background: linear-gradient(180deg, #111827, #303844) !important;
+  border-color: rgba(17, 24, 39, 0.28) !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 760px) {
