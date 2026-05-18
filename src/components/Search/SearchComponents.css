@@ -811,7 +811,7 @@
   grid-template-columns: 64px minmax(0, 1fr);
   min-height: 190px;
   padding: 16px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 :root[data-theme='light'] .cinematic-shell .repo-card {

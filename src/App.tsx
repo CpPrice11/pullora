@@ -12,6 +12,13 @@ import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import { LanguageProvider } from './i18n'
 import type { UpdateAvailable } from './types'
+import { pickImageFile } from './services/dialog'
+import {
+  clearLauncherBackgroundArt,
+  getLauncherBackgroundArt,
+  projectArtBackgroundUrl,
+  setLauncherBackgroundArt,
+} from './services/projectArt'
 
 type ContentTab = 'search' | 'about'
 type NavigationTab = ContentTab | 'settings'
@@ -22,7 +29,8 @@ function App() {
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [showPathModal, setShowPathModal] = useState(false)
-  const [shellBackground, setShellBackground] = useState<string | null>(null)
+  const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
+  const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
 
   // Start auto-update after settings are loaded
   const { updates, dismiss } = useAutoUpdate(
@@ -66,6 +74,19 @@ function App() {
     setShowPathModal(isFirstLaunch)
   }, [isFirstLaunch])
 
+  useEffect(() => {
+    getLauncherBackgroundArt()
+      .then((art) => {
+        const url = projectArtBackgroundUrl(art)
+        setLauncherBackground(url)
+        setHasLauncherBackground(Boolean(url))
+      })
+      .catch(() => {
+        setLauncherBackground(null)
+        setHasLauncherBackground(false)
+      })
+  }, [])
+
   const handlePathSelected = async (path: string) => {
     await setInstallationPath(path)
     setShowPathModal(false)
@@ -74,6 +95,22 @@ function App() {
   const handleInstallUpdate = (update: UpdateAvailable) => {
     dismiss(update.owner, update.repo)
     setUpdateTarget(update)
+  }
+
+  const handleChangeLauncherBackground = async () => {
+    const imagePath = await pickImageFile()
+    if (!imagePath) return
+
+    const art = await setLauncherBackgroundArt(imagePath)
+    const url = projectArtBackgroundUrl(art)
+    setLauncherBackground(url)
+    setHasLauncherBackground(Boolean(url))
+  }
+
+  const handleClearLauncherBackground = async () => {
+    await clearLauncherBackgroundArt()
+    setLauncherBackground(null)
+    setHasLauncherBackground(false)
   }
 
   const handleTabChange = (tab: NavigationTab) => {
@@ -88,7 +125,13 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'search':    return <SearchPage onBackgroundChange={setShellBackground} />
+      case 'search':    return (
+        <SearchPage
+          hasLauncherBackground={hasLauncherBackground}
+          onChangeLauncherBackground={handleChangeLauncherBackground}
+          onClearLauncherBackground={handleClearLauncherBackground}
+        />
+      )
       case 'about':     return <AboutPage />
       default:          return <SearchPage />
     }
@@ -100,7 +143,7 @@ function App() {
         activeTab={settingsOpen ? 'settings' : activeTab}
         contentKey={activeTab}
         onTabChange={handleTabChange}
-        backgroundImage={shellBackground}
+        backgroundImage={launcherBackground}
         settingsOpen={settingsOpen}
       >
         {updates.length > 0 && (
@@ -114,7 +157,12 @@ function App() {
         {renderContent()}
 
         {settingsOpen && (
-          <SettingsPage onClose={() => setSettingsOpen(false)} />
+          <SettingsPage
+            hasLauncherBackground={hasLauncherBackground}
+            onChangeLauncherBackground={handleChangeLauncherBackground}
+            onClearLauncherBackground={handleClearLauncherBackground}
+            onClose={() => setSettingsOpen(false)}
+          />
         )}
 
         {showPathModal && (

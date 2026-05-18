@@ -11,7 +11,6 @@ import { pickImageFile } from '../services/dialog'
 import {
   clearProjectArt,
   listProjectArt,
-  projectArtBackgroundUrl,
   projectArtCoverUrl,
   projectArtKey,
   setProjectArt,
@@ -24,10 +23,16 @@ type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 
 interface SearchPageProps {
-  onBackgroundChange?: (url: string | null) => void
+  hasLauncherBackground?: boolean
+  onChangeLauncherBackground?: () => Promise<void> | void
+  onClearLauncherBackground?: () => Promise<void> | void
 }
 
-function SearchPage({ onBackgroundChange }: SearchPageProps) {
+function SearchPage({
+  hasLauncherBackground = false,
+  onChangeLauncherBackground,
+  onClearLauncherBackground,
+}: SearchPageProps) {
   const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
@@ -162,7 +167,6 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
   useEffect(() => {
     if (visibleRepositories.length === 0) {
       setFeaturedRepo(null)
-      onBackgroundChange?.(null)
       return
     }
 
@@ -172,19 +176,12 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
     ) {
       setFeaturedRepo(visibleRepositories[0])
     }
-  }, [featuredRepo, onBackgroundChange, visibleRepositories])
+  }, [featuredRepo, visibleRepositories])
 
   const featuredArt = featuredRepo
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
-  const featuredBackground = projectArtBackgroundUrl(featuredArt) ??
-    featuredRepo?.owner.avatar_url ??
-    null
   const featuredCover = projectArtCoverUrl(featuredArt)
-
-  useEffect(() => {
-    onBackgroundChange?.(featuredBackground)
-  }, [featuredBackground, onBackgroundChange])
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
     setLaunchError(null)
@@ -195,7 +192,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
     }
   }
 
-  const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
+  const handlePickArt = async (kind: 'cover', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
     setArtError(null)
@@ -226,7 +223,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
       const updatedArt = await clearProjectArt(
         targetRepo.owner.login,
         targetRepo.name,
-        'all',
+        'cover',
       )
       setProjectArtState((current) => ({
         ...current,
@@ -369,15 +366,20 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
               ...
             </summary>
             <div className="project-actions-popover" aria-label={t('art.actions')}>
-              <button type="button" onClick={() => handlePickArt('background')}>
-                {t('art.changeBackground')}
+              <button type="button" onClick={() => onChangeLauncherBackground?.()}>
+                {t('art.changeLauncherBackground')}
               </button>
               <button type="button" onClick={() => handlePickArt('cover')}>
                 {t('art.changeCover')}
               </button>
-              {(featuredArt?.backgroundPath || featuredArt?.coverPath) && (
+              {featuredArt?.coverPath && (
                 <button type="button" onClick={() => handleClearArt()}>
-                  {t('art.reset')}
+                  {t('art.resetCover')}
+                </button>
+              )}
+              {hasLauncherBackground && (
+                <button type="button" onClick={() => onClearLauncherBackground?.()}>
+                  {t('art.resetLauncherBackground')}
                 </button>
               )}
             </div>
@@ -521,7 +523,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
                 isSelected={featuredRepo?.id === repo.id}
                 onPreview={() => setFeaturedRepo(repo)}
                 onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                onPickArt={(kind) => handlePickArt(kind, repo)}
+                onPickArt={() => handlePickArt('cover', repo)}
                 onClearArt={() => handleClearArt(repo)}
                 onSelect={() => setSelectedRepo(repo)}
                 onLaunch={() => handleLaunch(repo)}

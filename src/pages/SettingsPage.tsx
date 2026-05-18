@@ -11,10 +11,18 @@ import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import './PageStyles.css'
 
 interface SettingsPageProps {
+  hasLauncherBackground: boolean
+  onChangeLauncherBackground: () => Promise<void> | void
+  onClearLauncherBackground: () => Promise<void> | void
   onClose: () => void
 }
 
-function SettingsPage({ onClose }: SettingsPageProps) {
+function SettingsPage({
+  hasLauncherBackground,
+  onChangeLauncherBackground,
+  onClearLauncherBackground,
+  onClose,
+}: SettingsPageProps) {
   const { t } = useI18n()
   const [activeSection, setActiveSection] = useState('general')
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -251,6 +259,20 @@ function SettingsPage({ onClose }: SettingsPageProps) {
                   <option value="uk">{t('settings.ukrainian')}</option>
                   <option value="en">{t('settings.english')}</option>
                 </select>
+              </div>
+
+              <div className="form-group launcher-background-control">
+                <label>{t('settings.launcherBackground')}</label>
+                <div className="settings-inline-actions">
+                  <button type="button" className="secondary-btn" onClick={onChangeLauncherBackground}>
+                    {t('art.changeLauncherBackground')}
+                  </button>
+                  {hasLauncherBackground && (
+                    <button type="button" className="secondary-btn" onClick={onClearLauncherBackground}>
+                      {t('art.resetLauncherBackground')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </section>
