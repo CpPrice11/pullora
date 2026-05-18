@@ -8,8 +8,10 @@ type Tab = 'search' | 'settings' | 'about'
 interface LayoutProps {
   children: React.ReactNode
   activeTab: Tab
+  contentKey?: string
   onTabChange: (tab: Tab) => void
   backgroundImage?: string | null
+  settingsOpen?: boolean
 }
 
 function toCssUrl(value: string) {
@@ -19,12 +21,14 @@ function toCssUrl(value: string) {
 function Layout({
   children,
   activeTab,
+  contentKey,
   onTabChange,
   backgroundImage,
+  settingsOpen = false,
 }: LayoutProps) {
   return (
     <div
-      className={`layout cinematic-shell ${backgroundImage ? 'has-custom-background' : ''}`}
+      className={`layout cinematic-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
     >
       <div
         className={`cinematic-background ${backgroundImage ? 'is-visible' : ''}`}
@@ -35,7 +39,7 @@ function Layout({
       <Header />
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
-        <main className="layout-content" key={activeTab}>
+        <main className="layout-content" key={contentKey ?? activeTab}>
           {children}
         </main>
       </div>

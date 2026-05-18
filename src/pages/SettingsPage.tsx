@@ -10,9 +10,13 @@ import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import './PageStyles.css'
 
-function SettingsPage() {
+interface SettingsPageProps {
+  onClose: () => void
+}
+
+function SettingsPage({ onClose }: SettingsPageProps) {
   const { t } = useI18n()
-  const [activeSection, setActiveSection] = useState('folders')
+  const [activeSection, setActiveSection] = useState('general')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -33,6 +37,17 @@ function SettingsPage() {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   const showSavedState = () => {
     setSaved(true)
@@ -158,19 +173,33 @@ function SettingsPage() {
 
   if (loading || !settings) {
     return (
-      <div className="page">
-        <StatePanel kind="loading" title={t('settings.loading')} skeletonCount={2} />
+      <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
+        <section
+          className="settings-modal settings-modal-loading"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('settings.title')}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="close-btn settings-modal-close"
+            onClick={onClose}
+            aria-label={t('settings.close')}
+          >
+            {'\u00d7'}
+          </button>
+          <StatePanel kind="loading" title={t('settings.loading')} skeletonCount={2} />
+        </section>
       </div>
     )
   }
 
   const sections = [
-    { id: 'folders', label: t('settings.folders') },
-    { id: 'github', label: t('settings.github') },
+    { id: 'general', label: t('settings.general') },
+    { id: 'installation', label: t('settings.installation') },
     { id: 'updates', label: t('settings.updates') },
-    { id: 'appearance', label: t('settings.appearance') },
-    { id: 'language', label: t('settings.languageSection') },
-    { id: 'reset', label: t('settings.resetSection') },
+    { id: 'maintenance', label: t('settings.maintenance') },
   ]
 
   const handleSectionSelect = (sectionId: string) => {
@@ -179,10 +208,59 @@ function SettingsPage() {
 
   const renderActiveSection = () => {
     switch (activeSection) {
+      case 'general':
+        return (
+          <section id="settings-general" className="settings-section">
+            <h3>{t('settings.general')}</h3>
+            <div className="settings-grid">
+              <div className="form-group compact-control">
+                <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
+                <input
+                  id="githubOwner"
+                  type="text"
+                  value={settings.githubOwner ?? ''}
+                  onBlur={handleGithubOwnerBlur}
+                  onChange={(event) =>
+                    setSettings({ ...settings, githubOwner: event.target.value })
+                  }
+                  onKeyDown={handleGithubOwnerKeyDown}
+                  placeholder={t('settings.githubOwnerPlaceholder')}
+                />
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="theme">{t('settings.theme')}</label>
+                <select
+                  id="theme"
+                  value={settings.theme}
+                  onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
+                >
+                  <option value="light">{t('settings.light')}</option>
+                  <option value="dark">{t('settings.dark')}</option>
+                  <option value="auto">{t('settings.auto')}</option>
+                </select>
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="language">{t('settings.language')}</label>
+                <select
+                  id="language"
+                  value={settings.language}
+                  onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
+                >
+                  <option value="uk">{t('settings.ukrainian')}</option>
+                  <option value="en">{t('settings.english')}</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'installation':
       case 'folders':
         return (
           <section id="settings-folders" className="settings-section">
-            <h3>{t('settings.folders')}</h3>
+            <h3>{t('settings.installation')}</h3>
             <div className="form-group">
               <label htmlFor="installPath">{t('settings.installPath')}</label>
               <div className="path-input-row">
@@ -223,6 +301,19 @@ function SettingsPage() {
                 </span>
               )}
             </div>
+          </section>
+        )
+
+      case 'maintenance':
+        return (
+          <section id="settings-maintenance" className="danger-zone">
+            <h3>{t('settings.maintenance')}</h3>
+            <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
+              {t('settings.reset')}
+            </button>
+            <button className="danger-btn" onClick={handleClearCache}>
+              {t('settings.clearCache')}
+            </button>
           </section>
         )
 
@@ -369,41 +460,62 @@ function SettingsPage() {
   }
 
   return (
-    <div className="page settings-page">
-      <div className="page-header settings-page-header">
-        <h2>{t('settings.title')}</h2>
-        <div className="settings-autosave-status" aria-live="polite">
-          {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
-          {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
-          {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
-        </div>
-      </div>
-
-      <div className="settings-form">
-        <nav className="settings-nav" aria-label={t('settings.title')}>
-          {sections.map((section) => (
+    <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
+      <section
+        className="settings-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="settings-modal-header">
+          <div>
+            <span className="settings-modal-kicker">Air Launcher</span>
+            <h2 id="settings-title">{t('settings.title')}</h2>
+          </div>
+          <div className="settings-modal-header-actions">
+            <div className="settings-autosave-status" aria-live="polite">
+              {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
+              {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
+              {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
+            </div>
             <button
-              key={section.id}
               type="button"
-              className={activeSection === section.id ? 'active' : ''}
-              onClick={() => handleSectionSelect(section.id)}
+              className="close-btn settings-modal-close"
+              onClick={onClose}
+              aria-label={t('settings.close')}
             >
-              {section.label}
+              {'\u00d7'}
             </button>
-          ))}
-        </nav>
-
-        <div className="settings-content" key={activeSection}>
-          {error && (
-            <StatePanel
-              kind="error"
-              title={t('state.settingsErrorTitle')}
-              message={error}
-            />
-          )}
-          {renderActiveSection()}
+          </div>
         </div>
-      </div>
+
+        <div className="settings-form">
+          <nav className="settings-nav" aria-label={t('settings.title')}>
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                className={activeSection === section.id ? 'active' : ''}
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="settings-content" key={activeSection}>
+            {error && (
+              <StatePanel
+                kind="error"
+                title={t('state.settingsErrorTitle')}
+                message={error}
+              />
+            )}
+            {renderActiveSection()}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

@@ -15,6 +15,7 @@ interface RepoCardProps {
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
   onPickArt?: (kind: 'cover' | 'background') => void
+  onClearArt?: () => void
   onSelect: () => void
   onLaunch?: () => void
 }
@@ -29,6 +30,7 @@ function RepoCard({
   onPreview,
   onFavoriteChange,
   onPickArt,
+  onClearArt,
   onSelect,
   onLaunch,
 }: RepoCardProps) {
@@ -91,6 +93,11 @@ function RepoCard({
   const handlePickArt = (event: React.MouseEvent, kind: 'cover' | 'background') => {
     event.stopPropagation()
     onPickArt?.(kind)
+  }
+
+  const handleClearArt = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    onClearArt?.()
   }
 
   const handlePreview = () => {
@@ -191,23 +198,31 @@ function RepoCard({
             {t('repo.versions')}
           </button>
         )}
-        {isSelected && onPickArt && (
-          <>
-            <button
-              type="button"
-              className="secondary-btn art-mini-btn"
-              onClick={(event) => handlePickArt(event, 'background')}
-            >
-              {t('art.background')}
-            </button>
-            <button
-              type="button"
-              className="secondary-btn art-mini-btn"
-              onClick={(event) => handlePickArt(event, 'cover')}
-            >
-              {t('art.cover')}
-            </button>
-          </>
+        {onPickArt && (
+          <details className="project-actions-menu repo-actions-menu" onClick={(event) => event.stopPropagation()}>
+            <summary className="project-actions-trigger" aria-label={t('projectActions.open')}>
+              ...
+            </summary>
+            <div className="project-actions-popover" aria-label={t('art.actions')}>
+              <button
+                type="button"
+                onClick={(event) => handlePickArt(event, 'background')}
+              >
+                {t('art.changeBackground')}
+              </button>
+              <button
+                type="button"
+                onClick={(event) => handlePickArt(event, 'cover')}
+              >
+                {t('art.changeCover')}
+              </button>
+              {(art?.backgroundPath || art?.coverPath) && onClearArt && (
+                <button type="button" onClick={handleClearArt}>
+                  {t('art.reset')}
+                </button>
+              )}
+            </div>
+          </details>
         )}
         <button
           type="button"

@@ -9,7 +9,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v1.1.7'
+const FALLBACK_CURRENT_VERSION = 'v1.1.8'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -189,14 +189,6 @@ function AboutPage() {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          className="hero-primary-btn about-hero-refresh"
-          onClick={loadLauncherReleases}
-          disabled={loadingReleases || installingVersion !== null}
-        >
-          {loadingReleases ? t('library.refreshing') : t('library.refresh')}
-        </button>
       </section>
 
       <div className="about-grid">
@@ -284,6 +276,11 @@ function AboutPage() {
                     <div className="about-release-main">
                       <div className="about-release-title">
                         <span>{release.tag_name}</span>
+                        {portableAsset && (
+                          <span className="about-release-portable-badge">
+                            {t('about.portableShort')}
+                          </span>
+                        )}
                         <span className={`about-release-status ${statusClass}`}>
                           {getReleaseStatus(release.tag_name, Boolean(portableAsset))}
                         </span>
@@ -298,9 +295,11 @@ function AboutPage() {
                       ) : (
                         <span className="about-release-warning">{t('about.noPortableHint')}</span>
                       )}
-                      <span className={portableAsset ? 'about-release-ready' : 'about-release-warning'}>
-                        {portableAsset ? t('about.portableReady') : t('about.portableMissing')}
-                      </span>
+                      {!portableAsset && (
+                        <span className="about-release-warning">
+                          {t('about.portableMissing')}
+                        </span>
+                      )}
                     </div>
                     <div className="about-release-actions">
                       <button

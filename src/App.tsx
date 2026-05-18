@@ -13,10 +13,12 @@ import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from '
 import { LanguageProvider } from './i18n'
 import type { UpdateAvailable } from './types'
 
-type Tab = 'search' | 'settings' | 'about'
+type ContentTab = 'search' | 'about'
+type NavigationTab = ContentTab | 'settings'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('search')
+  const [activeTab, setActiveTab] = useState<ContentTab>('search')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [showPathModal, setShowPathModal] = useState(false)
@@ -74,10 +76,19 @@ function App() {
     setUpdateTarget(update)
   }
 
+  const handleTabChange = (tab: NavigationTab) => {
+    if (tab === 'settings') {
+      setSettingsOpen(true)
+      return
+    }
+
+    setSettingsOpen(false)
+    setActiveTab(tab)
+  }
+
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return <SearchPage onBackgroundChange={setShellBackground} />
-      case 'settings':  return <SettingsPage />
       case 'about':     return <AboutPage />
       default:          return <SearchPage />
     }
@@ -86,9 +97,11 @@ function App() {
   return (
     <LanguageProvider initialLanguage={settings.language}>
       <Layout
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        activeTab={settingsOpen ? 'settings' : activeTab}
+        contentKey={activeTab}
+        onTabChange={handleTabChange}
         backgroundImage={shellBackground}
+        settingsOpen={settingsOpen}
       >
         {updates.length > 0 && (
           <UpdateBanner
@@ -99,6 +112,10 @@ function App() {
         )}
 
         {renderContent()}
+
+        {settingsOpen && (
+          <SettingsPage onClose={() => setSettingsOpen(false)} />
+        )}
 
         {showPathModal && (
           <InstallationPathModal onPathSelected={handlePathSelected} />

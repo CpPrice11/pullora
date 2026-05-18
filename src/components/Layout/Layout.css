@@ -59,17 +59,17 @@
 .cinematic-background {
   background-position: center;
   background-size: cover;
-  filter: blur(18px) saturate(1.18);
-  inset: -28px;
+  filter: blur(10px) saturate(1.18);
+  inset: -18px;
   opacity: 0;
   position: absolute;
-  transform: scale(1.04);
+  transform: scale(1.02);
   transition: opacity var(--motion-slow), transform var(--motion-slow);
   z-index: 0;
 }
 
 .cinematic-background.is-visible {
-  opacity: 0.82;
+  opacity: 0.96;
 }
 
 .cinematic-backdrop {
@@ -85,8 +85,20 @@
 .cinematic-shell.has-custom-background .cinematic-backdrop {
   background:
     radial-gradient(circle at 68% 18%, rgba(91, 215, 255, 0.08), transparent 32%),
-    linear-gradient(90deg, rgba(8, 10, 14, 0.88) 0%, rgba(8, 10, 14, 0.68) 42%, rgba(8, 10, 14, 0.36) 100%),
-    linear-gradient(0deg, rgba(8, 10, 14, 0.92) 0%, rgba(8, 10, 14, 0.34) 52%, rgba(8, 10, 14, 0.68) 100%);
+    linear-gradient(90deg, rgba(8, 10, 14, 0.78) 0%, rgba(8, 10, 14, 0.56) 42%, rgba(8, 10, 14, 0.26) 100%),
+    linear-gradient(0deg, rgba(8, 10, 14, 0.84) 0%, rgba(8, 10, 14, 0.24) 52%, rgba(8, 10, 14, 0.58) 100%);
+}
+
+.cinematic-shell.settings-open .cinematic-background {
+  filter: blur(18px) saturate(0.95);
+  opacity: 0.52;
+}
+
+.cinematic-shell.settings-open .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 68% 18%, rgba(91, 215, 255, 0.08), transparent 32%),
+    linear-gradient(90deg, rgba(8, 10, 14, 0.93) 0%, rgba(8, 10, 14, 0.86) 45%, rgba(8, 10, 14, 0.74) 100%),
+    linear-gradient(0deg, rgba(8, 10, 14, 0.95) 0%, rgba(8, 10, 14, 0.66) 52%, rgba(8, 10, 14, 0.84) 100%);
 }
 
 :root[data-theme='light'] .cinematic-backdrop {

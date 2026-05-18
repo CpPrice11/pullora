@@ -218,19 +218,19 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
     }
   }
 
-  const handleClearArt = async () => {
-    if (!featuredRepo) return
+  const handleClearArt = async (targetRepo = featuredRepo) => {
+    if (!targetRepo) return
 
     setArtError(null)
     try {
       const updatedArt = await clearProjectArt(
-        featuredRepo.owner.login,
-        featuredRepo.name,
+        targetRepo.owner.login,
+        targetRepo.name,
         'all',
       )
       setProjectArtState((current) => ({
         ...current,
-        [projectArtKey(featuredRepo.owner.login, featuredRepo.name)]: updatedArt,
+        [projectArtKey(targetRepo.owner.login, targetRepo.name)]: updatedArt,
       }))
     } catch {
       setArtError(t('art.clearError'))
@@ -364,18 +364,20 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
               {t('installed.folder')}
             </button>
           )}
-          <details className="hero-art-menu">
-            <summary className="secondary-btn">{t('art.menu')}</summary>
-            <div className="hero-art-menu-popover" aria-label={t('art.actions')}>
-              <button type="button" className="secondary-btn" onClick={() => handlePickArt('background')}>
-                {t('art.background')}
+          <details className="project-actions-menu hero-actions-menu">
+            <summary className="project-actions-trigger" aria-label={t('projectActions.open')}>
+              ...
+            </summary>
+            <div className="project-actions-popover" aria-label={t('art.actions')}>
+              <button type="button" onClick={() => handlePickArt('background')}>
+                {t('art.changeBackground')}
               </button>
-              <button type="button" className="secondary-btn" onClick={() => handlePickArt('cover')}>
-                {t('art.cover')}
+              <button type="button" onClick={() => handlePickArt('cover')}>
+                {t('art.changeCover')}
               </button>
               {(featuredArt?.backgroundPath || featuredArt?.coverPath) && (
-                <button type="button" className="secondary-btn" onClick={handleClearArt}>
-                  {t('art.clear')}
+                <button type="button" onClick={() => handleClearArt()}>
+                  {t('art.reset')}
                 </button>
               )}
             </div>
@@ -520,6 +522,7 @@ function SearchPage({ onBackgroundChange }: SearchPageProps) {
                 onPreview={() => setFeaturedRepo(repo)}
                 onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                 onPickArt={(kind) => handlePickArt(kind, repo)}
+                onClearArt={() => handleClearArt(repo)}
                 onSelect={() => setSelectedRepo(repo)}
                 onLaunch={() => handleLaunch(repo)}
               />
