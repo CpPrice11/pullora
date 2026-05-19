@@ -61,8 +61,13 @@ export function projectArtCoverUrl(art?: ProjectArt | null): string | null {
   return art?.coverDataUrl ?? toProjectArtUrl(art?.coverPath) ?? null
 }
 
-export function projectArtBackgroundUrl(art?: ProjectArt | null): string | null {
-  return art?.backgroundDataUrl ?? toProjectArtUrl(art?.backgroundPath) ?? projectArtCoverUrl(art)
+export function projectArtBackgroundUrl(
+  art?: ProjectArt | null,
+  options: { fallbackToCover?: boolean } = {},
+): string | null {
+  const backgroundUrl = art?.backgroundDataUrl ?? toProjectArtUrl(art?.backgroundPath) ?? null
+  if (backgroundUrl) return backgroundUrl
+  return options.fallbackToCover === false ? null : projectArtCoverUrl(art)
 }
 
 export function isLauncherArt(art: ProjectArt) {

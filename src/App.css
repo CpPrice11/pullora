@@ -114,6 +114,7 @@
 
 html,
 body {
+  overscroll-behavior: none;
   width: 100%;
   height: 100%;
 }
@@ -124,6 +125,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   line-height: 1.5;
+  overflow: hidden;
   transition: background-color var(--motion-slow), color var(--motion-slow);
 }
 
@@ -132,6 +134,7 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: none;
 }
 
 button {

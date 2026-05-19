@@ -388,11 +388,6 @@ function SearchPage({
           <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
             {t('repo.versions')}
           </button>
-          {isInstalled && (
-            <button type="button" className="secondary-btn" onClick={handleOpenFolder}>
-              {t('installed.folder')}
-            </button>
-          )}
           <div
             className={`project-actions-menu hero-actions-menu ${heroActionsOpen ? 'open' : ''}`}
             ref={heroActionsRef}
@@ -408,6 +403,17 @@ function SearchPage({
             </button>
             {heroActionsOpen && (
               <div className="project-actions-popover" aria-label={t('art.actions')}>
+                {isInstalled && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeroActionsOpen(false)
+                      handleOpenFolder()
+                    }}
+                  >
+                    {t('installed.folder')}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
