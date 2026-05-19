@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useReleases } from '../../hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
-import type { GitHubRelease, GitHubAsset } from '../../types'
+import type { DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
 import StatePanel from '../State/StatePanel'
+import { launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
@@ -20,6 +21,10 @@ interface ReleaseSelectorProps {
 }
 
 type AssetKind = 'portable' | 'installer' | 'archive' | 'unsupported'
+type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
+type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
+
+const wizardSteps: WizardStep[] = ['version', 'file', 'confirm', 'progress', 'result']
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
@@ -42,9 +47,9 @@ function getAssetKind(asset: GitHubAsset): AssetKind {
 
 function assetKindKey(kind: AssetKind) {
   switch (kind) {
-    case 'portable':  return 'release.assetTypePortable'
+    case 'portable': return 'release.assetTypePortable'
     case 'installer': return 'release.assetTypeInstaller'
-    case 'archive':   return 'release.assetTypeArchive'
+    case 'archive': return 'release.assetTypeArchive'
     case 'unsupported': return 'release.assetTypeUnsupported'
   }
 }
@@ -70,28 +75,55 @@ function releaseStatusKey(release: GitHubRelease, latestTag: string | null, curr
   return 'release.statusVersion'
 }
 
-function pickBestAsset(
-  assets: GitHubAsset[],
-  strategy: 'portableFirst' | 'installerFirst' | 'manual' = 'portableFirst',
-): GitHubAsset | null {
-  if (strategy === 'manual') return assets[0] ?? null
+function getInstallIntent(tag: string | undefined, currentVersion?: string): InstallIntent {
+  if (!tag || !currentVersion) return 'install'
+  const diff = compareVersionTags(tag, currentVersion)
+  if (diff > 0) return 'update'
+  if (diff < 0) return 'downgrade'
+  return 'reinstall'
+}
 
-  const platform = navigator.platform.toLowerCase()
-  const isWin = platform.includes('win')
-  const winExt = strategy === 'installerFirst'
-    ? ['.exe', '.msi', '.zip']
-    : ['.zip', '.exe', '.msi']
-  const linExt = ['.appimage', '.deb', '.tar.gz', '.tar.xz']
-  const preferred = isWin ? winExt : linExt
+function intentKey(intent: InstallIntent) {
+  switch (intent) {
+    case 'install': return 'release.actionInstall'
+    case 'update': return 'release.actionUpdate'
+    case 'reinstall': return 'release.actionReinstall'
+    case 'downgrade': return 'release.actionDowngrade'
+  }
+}
 
-  for (const ext of preferred) {
-    const match = assets.find((asset) =>
-      asset.name.toLowerCase().endsWith(ext),
-    )
-    if (match) return match
+function isAutoInstallable(kind: AssetKind | null) {
+  return kind === 'portable' || kind === 'archive'
+}
+
+function sortAssetsPortableFirst(assets: GitHubAsset[]) {
+  const rank = (asset: GitHubAsset) => {
+    const kind = getAssetKind(asset)
+    if (kind === 'portable') return 0
+    if (kind === 'archive') return 1
+    if (kind === 'installer') return 2
+    return 3
   }
 
-  return assets[0] ?? null
+  return [...assets].sort((left, right) => {
+    const rankDiff = rank(left) - rank(right)
+    if (rankDiff !== 0) return rankDiff
+    return left.name.localeCompare(right.name)
+  })
+}
+
+function pickRecommendedAsset(assets: GitHubAsset[]): GitHubAsset | null {
+  return sortAssetsPortableFirst(assets).find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
+}
+
+function stepLabel(step: WizardStep, t: (key: string) => string) {
+  switch (step) {
+    case 'version': return t('release.stepVersion')
+    case 'file': return t('release.stepFile')
+    case 'confirm': return t('release.stepConfirm')
+    case 'progress': return t('release.stepProgress')
+    case 'result': return t('release.stepResult')
+  }
 }
 
 function ReleaseSelector({
@@ -109,8 +141,10 @@ function ReleaseSelector({
   const { settings } = useSettings()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
+  const [step, setStep] = useState<WizardStep>('version')
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
 
   const visibleReleases = useMemo(
@@ -120,36 +154,35 @@ function ReleaseSelector({
     [releases, settings.includePrereleases],
   )
 
+  const sortedAssets = useMemo(
+    () => selectedRelease ? sortAssetsPortableFirst(selectedRelease.assets) : [],
+    [selectedRelease],
+  )
+
   const recommendedAsset = useMemo(
-    () => selectedRelease
-      ? pickBestAsset(selectedRelease.assets, settings.assetStrategy)
-      : null,
-    [selectedRelease, settings.assetStrategy],
+    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets) : null,
+    [selectedRelease],
   )
 
   const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
-  const selectedAssetSupported = selectedAssetKind !== 'unsupported'
+  const selectedAssetAutoInstallable = isAutoInstallable(selectedAssetKind)
+  const activeDownload = activeDownloadId
+    ? downloads.find((item) => item.id === activeDownloadId)
+    : null
+  const shownDownloads = activeDownload ? [activeDownload] : downloads
 
   const latestStableTag = useMemo(() => {
     const latest = visibleReleases.find((release) => !release.draft && !release.prerelease)
     return latest?.tag_name ?? visibleReleases[0]?.tag_name ?? null
   }, [visibleReleases])
 
-  const strategyDescription = (() => {
-    if (settings.assetStrategy === 'installerFirst') return t('release.strategyInstallerFirst')
-    if (settings.assetStrategy === 'manual') return t('release.strategyManual')
-    return t('release.strategyPortableFirst')
-  })()
-
-  const downloadLabel = (() => {
-    if (!selectedAssetKind) return t('release.downloadFile')
-    if (selectedAssetKind === 'installer') return t('release.runInstaller')
-    if (selectedAssetKind === 'portable' || selectedAssetKind === 'archive') {
-      return t('release.installPortable')
-    }
-    if (selectedAssetKind === 'unsupported') return t('release.unsupportedAction')
-    return t('release.downloadFile')
-  })()
+  const selectedReleaseDate = selectedRelease?.published_at
+    ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+    : t('about.noDate')
+  const selectedReleaseStatus = selectedRelease
+    ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
+    : null
+  const installIntent = getInstallIntent(selectedRelease?.tag_name, currentVersion)
 
   useEffect(() => {
     fetchReleases(true)
@@ -170,61 +203,79 @@ function ReleaseSelector({
     if (visibleReleases.length > 0 && !selectedRelease) {
       const first = visibleReleases[0]
       setSelectedRelease(first)
-      setSelectedAsset(pickBestAsset(first.assets, settings.assetStrategy))
+      setSelectedAsset(pickRecommendedAsset(first.assets) ?? first.assets[0] ?? null)
     }
-  }, [selectedRelease, settings.assetStrategy, visibleReleases])
+  }, [selectedRelease, visibleReleases])
 
   useEffect(() => {
-    downloads.forEach((downloadItem) => {
-      if (
-        downloadItem.status === 'completed' &&
-        !reportedCompletedDownloads.current.has(downloadItem.id)
-      ) {
-        reportedCompletedDownloads.current.add(downloadItem.id)
-        onInstalled?.()
-      }
-    })
-  }, [downloads, onInstalled])
+    if (!activeDownload) return
+
+    if (
+      activeDownload.status === 'completed' &&
+      !reportedCompletedDownloads.current.has(activeDownload.id)
+    ) {
+      reportedCompletedDownloads.current.add(activeDownload.id)
+      setStep('result')
+      onInstalled?.()
+    }
+
+    if (activeDownload.status === 'failed') {
+      setStep('result')
+    }
+  }, [activeDownload, onInstalled])
 
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
-    setSelectedAsset(pickBestAsset(release.assets, settings.assetStrategy))
+    setSelectedAsset(pickRecommendedAsset(release.assets) ?? release.assets[0] ?? null)
+    setDownloadError(null)
   }
 
   const handleDownload = async () => {
-    if (!selectedAsset || !selectedRelease) return
+    if (!selectedAsset || !selectedRelease || !selectedAssetAutoInstallable) return
     setDownloading(true)
     setDownloadError(null)
+    setStep('progress')
     try {
-      await download(
+      const id = await download(
         selectedAsset.browser_download_url,
         selectedAsset.name,
         owner,
         repo,
         selectedRelease.tag_name,
       )
+      setActiveDownloadId(id)
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : t('release.downloadFailed'))
+      setStep('result')
     } finally {
       setDownloading(false)
     }
   }
 
-  const selectedReleaseDate = selectedRelease?.published_at
-    ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
-    : t('about.noDate')
-  const selectedReleaseStatus = selectedRelease
-    ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
-    : null
+  const handleRetry = () => {
+    void handleDownload()
+  }
+
+  const handleLaunch = (item: DownloadProgress) => {
+    if (!item.owner || !item.repo) return
+    launchApp(item.owner, item.repo).catch(() => {})
+  }
+
+  const handleOpenFolder = (item: DownloadProgress) => {
+    if (!item.owner || !item.repo) return
+    openInstalledAppDir(item.owner, item.repo).catch(() => {})
+  }
+
+  const githubReleaseUrl = `https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name ?? ''}`
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-content release-modal"
+        className="modal-content release-modal release-modal--wizard"
         role="dialog"
         aria-modal="true"
         aria-labelledby="release-selector-title"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
           <div>
@@ -245,6 +296,24 @@ function ReleaseSelector({
           >
             {'\u00d7'}
           </button>
+        </div>
+
+        <div className="release-wizard-steps" aria-label={t('release.wizardSteps')}>
+          {wizardSteps.map((item) => {
+            const currentIndex = wizardSteps.indexOf(step)
+            const itemIndex = wizardSteps.indexOf(item)
+            return (
+              <button
+                key={item}
+                type="button"
+                className={`release-step-pill ${item === step ? 'active' : ''} ${itemIndex < currentIndex ? 'done' : ''}`}
+                onClick={() => itemIndex <= currentIndex && setStep(item)}
+                disabled={itemIndex > currentIndex || downloading}
+              >
+                {stepLabel(item, t)}
+              </button>
+            )
+          })}
         </div>
 
         <div className="release-body">
@@ -270,149 +339,238 @@ function ReleaseSelector({
           )}
 
           {!loading && !error && visibleReleases.length > 0 && (
-            <>
-              <div className="release-picker">
-                <span className="release-section-label">{t('release.version')}</span>
-                <div className="release-version-list">
-                  {visibleReleases.map((release) => {
-                    const isSelected = selectedRelease?.id === release.id
-                    const releaseDate = release.published_at
-                      ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
-                      : t('about.noDate')
+            <div className="release-wizard-panel">
+              {step === 'version' && (
+                <>
+                  <div className="release-picker">
+                    <span className="release-section-label">{t('release.version')}</span>
+                    <div className="release-version-list">
+                      {visibleReleases.map((release) => {
+                        const isSelected = selectedRelease?.id === release.id
+                        const releaseDate = release.published_at
+                          ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+                          : t('about.noDate')
 
-                    return (
-                      <button
-                        key={release.id}
-                        type="button"
-                        className={`release-version-card ${isSelected ? 'active' : ''}`}
-                        onClick={() => handleReleaseChange(release)}
-                        aria-pressed={isSelected}
-                      >
-                        <span className="release-version-main">
-                          <strong>{release.tag_name}</strong>
-                          <span>{releaseDate}</span>
-                        </span>
-                        <span className={`release-status-pill ${release.prerelease ? 'prerelease' : ''}`}>
-                          {t(releaseStatusKey(release, latestStableTag, currentVersion))}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+                        return (
+                          <button
+                            key={release.id}
+                            type="button"
+                            className={`release-version-card ${isSelected ? 'active' : ''}`}
+                            onClick={() => handleReleaseChange(release)}
+                            aria-pressed={isSelected}
+                          >
+                            <span className="release-version-main">
+                              <strong>{release.tag_name}</strong>
+                              <span>{releaseDate}</span>
+                            </span>
+                            <span className={`release-status-pill ${release.prerelease ? 'prerelease' : ''}`}>
+                              {t(releaseStatusKey(release, latestStableTag, currentVersion))}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
 
-              {selectedRelease && (
-                <div className="release-selection-summary">
-                  <span className="release-summary-kicker">{t('release.selectedVersion')}</span>
-                  <div className="release-summary-main">
-                    <strong>{selectedRelease.tag_name}</strong>
-                    {selectedReleaseStatus && (
-                      <span className={`release-status-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
-                        {selectedReleaseStatus}
+                  {selectedRelease && (
+                    <div className="release-selection-summary">
+                      <span className="release-summary-kicker">{t('release.selectedVersion')}</span>
+                      <div className="release-summary-main">
+                        <strong>{selectedRelease.tag_name}</strong>
+                        {selectedReleaseStatus && (
+                          <span className={`release-status-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
+                            {selectedReleaseStatus}
+                          </span>
+                        )}
+                      </div>
+                      <p>{selectedReleaseDate}</p>
+                      <span className="release-summary-assets">
+                        {t('release.filesCount', { count: selectedRelease.assets.length })}
                       </span>
-                    )}
+                    </div>
+                  )}
+
+                  <div className="release-nav-actions">
+                    <button
+                      type="button"
+                      className="download-btn release-action-primary"
+                      onClick={() => setStep('file')}
+                      disabled={!selectedRelease}
+                    >
+                      {t('release.next')}
+                    </button>
                   </div>
-                  <p>{selectedReleaseDate}</p>
-                  <span className="release-summary-assets">
-                    {t('release.filesCount', { count: selectedRelease.assets.length })}
-                  </span>
-                </div>
+                </>
               )}
 
-              {selectedRelease && selectedRelease.assets.length > 0 && (
-                <div className="release-picker">
-                  <span className="release-section-label">{t('release.file')}</span>
-                  <p className="release-strategy-note">{strategyDescription}</p>
-                  <div className="release-asset-list">
-                    {selectedRelease.assets.map((asset) => {
-                      const kind = getAssetKind(asset)
-                      const isSelected = selectedAsset?.id === asset.id
-                      const isSupported = kind !== 'unsupported'
+              {step === 'file' && selectedRelease && (
+                <>
+                  {sortedAssets.length > 0 ? (
+                    <div className="release-picker">
+                      <span className="release-section-label">{t('release.file')}</span>
+                      <p className="release-strategy-note">{t('release.autoInstallOnly')}</p>
+                      <div className="release-asset-list">
+                        {sortedAssets.map((asset) => {
+                          const kind = getAssetKind(asset)
+                          const isSelected = selectedAsset?.id === asset.id
+                          const disabled = kind === 'unsupported'
 
-                      return (
-                        <button
-                          key={asset.id}
-                          type="button"
-                          className={`release-asset-card release-asset-card--${kind} ${isSelected ? 'active' : ''}`}
-                          onClick={() => setSelectedAsset(asset)}
-                          disabled={!isSupported}
-                          aria-pressed={isSelected}
-                        >
-                          <span className="release-asset-main">
-                            <strong>{asset.name}</strong>
-                            <span>{formatBytes(asset.size)}</span>
-                          </span>
-                          <span className="release-asset-badges">
-                            <span className="asset-kind">{t(assetKindKey(kind))}</span>
-                            {recommendedAsset?.id === asset.id && isSupported && (
-                              <span className="asset-recommended">{t('release.recommended')}</span>
-                            )}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+                          return (
+                            <button
+                              key={asset.id}
+                              type="button"
+                              className={`release-asset-card release-asset-card--${kind} ${isSelected ? 'active' : ''}`}
+                              onClick={() => setSelectedAsset(asset)}
+                              disabled={disabled}
+                              aria-pressed={isSelected}
+                            >
+                              <span className="release-asset-main">
+                                <strong>{asset.name}</strong>
+                                <span>{formatBytes(asset.size)}</span>
+                              </span>
+                              <span className="release-asset-badges">
+                                <span className="asset-kind">{t(assetKindKey(kind))}</span>
+                                {recommendedAsset?.id === asset.id && (
+                                  <span className="asset-recommended">{t('release.recommended')}</span>
+                                )}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="no-assets">{t('release.noAssets')}</p>
+                  )}
 
-              {selectedAsset && (
-                <div className={`asset-summary asset-summary--${selectedAssetKind}`}>
-                  <div>
-                    <span className="asset-kind">
-                      {selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}
-                    </span>
-                    {recommendedAsset?.id === selectedAsset.id && (
-                      <span className="asset-recommended">{t('release.recommended')}</span>
-                    )}
-                  </div>
-                  <span>{selectedAsset.name}</span>
+                  {selectedAsset && (
+                    <div className={`asset-summary asset-summary--${selectedAssetKind}`}>
+                      <div>
+                        <span className="asset-kind">
+                          {selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}
+                        </span>
+                        {recommendedAsset?.id === selectedAsset.id && (
+                          <span className="asset-recommended">{t('release.recommended')}</span>
+                        )}
+                      </div>
+                      <span>{selectedAsset.name}</span>
+                      {selectedAssetKind === 'installer' && <p>{t('release.installerBlockedText')}</p>}
+                      {selectedAssetKind === 'unsupported' && <p>{t('release.unsupportedWarning')}</p>}
+                      {selectedAssetAutoInstallable && (
+                        <p>{t('release.installSummary', { version: selectedRelease.tag_name, file: selectedAsset.name })}</p>
+                      )}
+                    </div>
+                  )}
+
                   {selectedAssetKind === 'installer' && (
-                    <p>{t('release.installerWarning')}</p>
+                    <div className="release-blocked-note">
+                      <strong>{t('release.installerBlockedTitle')}</strong>
+                      <p>{t('release.choosePortable')}</p>
+                    </div>
                   )}
-                  {selectedAssetKind === 'unsupported' && (
-                    <p>{t('release.unsupportedWarning')}</p>
-                  )}
-                  {selectedAssetKind !== 'unsupported' && (
-                    <p>{t('release.installSummary', { version: selectedRelease?.tag_name ?? '', file: selectedAsset.name })}</p>
-                  )}
-                </div>
+
+                  <div className="release-nav-actions">
+                    <button type="button" className="release-secondary-btn" onClick={() => setStep('version')}>
+                      {t('release.back')}
+                    </button>
+                    <button
+                      type="button"
+                      className="download-btn release-action-primary"
+                      onClick={() => setStep('confirm')}
+                      disabled={!selectedAssetAutoInstallable}
+                    >
+                      {t('release.next')}
+                    </button>
+                    <a href={githubReleaseUrl} target="_blank" rel="noreferrer" className="view-release-link release-github-link">
+                      GitHub
+                    </a>
+                  </div>
+                </>
               )}
 
-              {selectedRelease && selectedRelease.assets.length === 0 && (
-                <p className="no-assets">
-                  {t('release.noAssets')}
-                </p>
+              {step === 'confirm' && selectedRelease && selectedAsset && (
+                <>
+                  <div className="release-confirm-card">
+                    <span className="release-section-label">{t('release.confirmTitle')}</span>
+                    <div className="release-confirm-grid">
+                      <div>
+                        <span>{t('release.version')}</span>
+                        <strong>{selectedRelease.tag_name}</strong>
+                      </div>
+                      <div>
+                        <span>{t('release.file')}</span>
+                        <strong>{selectedAsset.name}</strong>
+                      </div>
+                      <div>
+                        <span>{t('release.fileType')}</span>
+                        <strong>{selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}</strong>
+                      </div>
+                      <div>
+                        <span>{t('release.size')}</span>
+                        <strong>{formatBytes(selectedAsset.size)}</strong>
+                      </div>
+                      <div>
+                        <span>{t('release.currentVersion')}</span>
+                        <strong>{currentVersion ?? t('release.notInstalled')}</strong>
+                      </div>
+                      <div>
+                        <span>{t('release.installAction')}</span>
+                        <strong>{t(intentKey(installIntent))}</strong>
+                      </div>
+                    </div>
+                    <div className="release-install-path">
+                      <span>{t('release.installPath')}</span>
+                      <strong>{settings.installationPath}</strong>
+                    </div>
+                  </div>
+
+                  {downloadError && <div className="error-message">{downloadError}</div>}
+
+                  <div className="release-nav-actions">
+                    <button type="button" className="release-secondary-btn" onClick={() => setStep('file')} disabled={downloading}>
+                      {t('release.back')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      disabled={!selectedAssetAutoInstallable || downloading}
+                      className="download-btn release-action-primary"
+                    >
+                      {downloading ? t('release.starting') : t('release.confirmInstall')}
+                    </button>
+                  </div>
+                </>
               )}
 
-              {downloadError && (
-                <div className="error-message">{downloadError}</div>
+              {(step === 'progress' || step === 'result') && (
+                <>
+                  {downloadError && (
+                    <div className="download-recovery release-result-card">
+                      <strong>{t('release.failedTitle')}</strong>
+                      <p>{downloadError}</p>
+                      <div className="download-actions">
+                        <button type="button" className="download-action-btn primary" onClick={handleRetry}>
+                          {t('download.retry')}
+                        </button>
+                        <button type="button" className="download-action-btn" onClick={() => setStep('file')}>
+                          {t('download.chooseAnother')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <DownloadProgressPanel
+                    downloads={shownDownloads}
+                    onCancel={cancel}
+                    onLaunch={handleLaunch}
+                    onOpenFolder={handleOpenFolder}
+                    onBackToLibrary={onClose}
+                    onRetry={handleRetry}
+                    onChooseAnother={() => setStep('file')}
+                  />
+                </>
               )}
-
-              <div className="release-actions">
-                <button
-                  onClick={handleDownload}
-                  disabled={!selectedAsset || !selectedAssetSupported || downloading}
-                  className="download-btn release-action-primary"
-                >
-                  {downloading
-                    ? t('release.starting')
-                    : selectedAsset
-                      ? downloadLabel
-                      : t('release.download', { name: '' })}
-                </button>
-                <a
-                  href={`https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="view-release-link release-github-link"
-                >
-                  GitHub
-                </a>
-              </div>
-            </>
+            </div>
           )}
-
-          <DownloadProgressPanel downloads={downloads} onCancel={cancel} />
         </div>
       </div>
     </div>

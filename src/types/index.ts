@@ -118,6 +118,16 @@ export interface UpdateAvailable {
 }
 
 // Download progress
+export type DownloadStage =
+  | 'queued'
+  | 'downloading'
+  | 'verifying'
+  | 'extracting'
+  | 'detectingExecutable'
+  | 'registering'
+  | 'completed'
+  | 'failed'
+
 export interface DownloadProgress {
   id: string
   fileName: string
@@ -125,5 +135,11 @@ export interface DownloadProgress {
   totalSize: number
   downloadedSize: number
   status: 'pending' | 'downloading' | 'extracting' | 'completed' | 'failed'
+  stage: DownloadStage
+  owner?: string
+  repo?: string
+  tag?: string
+  installPath?: string
+  executablePath?: string
   error?: string
 }

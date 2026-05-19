@@ -19,6 +19,12 @@ pub struct DownloadProgress {
     pub total_size: u64,
     pub progress: f64,
     pub status: DownloadStatus,
+    pub stage: DownloadStage,
+    pub owner: Option<String>,
+    pub repo: Option<String>,
+    pub tag: Option<String>,
+    pub install_path: Option<String>,
+    pub executable_path: Option<String>,
     pub error: Option<String>,
 }
 
@@ -28,6 +34,19 @@ pub enum DownloadStatus {
     Pending,
     Downloading,
     Extracting,
+    Completed,
+    Failed,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum DownloadStage {
+    Queued,
+    Downloading,
+    Verifying,
+    Extracting,
+    DetectingExecutable,
+    Registering,
     Completed,
     Failed,
 }
@@ -66,6 +85,12 @@ impl DownloadManager {
             total_size: 0,
             progress: 0.0,
             status: DownloadStatus::Pending,
+            stage: DownloadStage::Queued,
+            owner: Some(owner.clone()),
+            repo: Some(repo.clone()),
+            tag: Some(tag.clone()),
+            install_path: Some(dest_dir.display().to_string()),
+            executable_path: None,
             error: None,
         };
 
@@ -115,6 +140,7 @@ impl DownloadManager {
                     let mut list = active_clone.lock().await;
                     if let Some(p) = list.iter_mut().find(|p| p.id == id_clone) {
                         p.status = DownloadStatus::Failed;
+                        p.stage = DownloadStage::Failed;
                         p.error = Some(e);
                         let _ = app.emit("download-progress", p.clone());
                     }
@@ -178,6 +204,7 @@ async fn download_task(
 
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Downloading;
+        p.stage = DownloadStage::Downloading;
         p.total_size = total_size;
     })
     .await;
@@ -238,7 +265,14 @@ async fn download_task(
     }
 
     emit_progress(&app, &active, &id, |p| {
+        p.stage = DownloadStage::Verifying;
+        p.progress = 100.0;
+    })
+    .await;
+
+    emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Extracting;
+        p.stage = DownloadStage::Extracting;
         p.progress = 100.0;
     })
     .await;
@@ -276,6 +310,12 @@ async fn download_task(
         return Err("Download canceled".to_string());
     }
 
+    emit_progress(&app, &active, &id, |p| {
+        p.stage = DownloadStage::DetectingExecutable;
+        p.progress = 100.0;
+    })
+    .await;
+
     if let Err(error) = replace_version_dir(&partial_dir, &version_dir, &backup_dir) {
         let _ = fs::remove_file(&tmp_path);
         let _ = cleanup_path(&partial_dir);
@@ -295,6 +335,15 @@ async fn download_task(
             .unwrap_or(&fallback_executable)
             .to_string_lossy()
             .to_string();
+        let fallback_executable_path = fallback_executable.display().to_string();
+
+        emit_progress(&app, &active, &id, |p| {
+            p.stage = DownloadStage::Registering;
+            p.executable_path = Some(fallback_executable_path);
+            p.progress = 100.0;
+        })
+        .await;
+
         let install_record_result =
             record_installed_version(&owner, &repo, &tag, relative, downloaded);
 
@@ -310,12 +359,20 @@ async fn download_task(
 
         emit_progress(&app, &active, &id, |p| {
             p.status = DownloadStatus::Completed;
+            p.stage = DownloadStage::Completed;
             p.progress = 100.0;
         })
         .await;
 
         return Ok(());
     }
+
+    emit_progress(&app, &active, &id, |p| {
+        p.stage = DownloadStage::Registering;
+        p.executable_path = Some(executable_path.display().to_string());
+        p.progress = 100.0;
+    })
+    .await;
 
     let install_record_result =
         record_installed_version(&owner, &repo, &tag, executable.clone(), downloaded);
@@ -332,6 +389,7 @@ async fn download_task(
 
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Completed;
+        p.stage = DownloadStage::Completed;
         p.progress = 100.0;
     })
     .await;
