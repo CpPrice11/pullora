@@ -1,40 +1,49 @@
 # Air Launcher
 
-Air Launcher — легкий десктопний лаунчер для застосунків, які публікуються через публічні GitHub репозиторії та GitHub Releases.
+Air Launcher — легкий desktop launcher для Windows 11, який знаходить програми в публічних GitHub repositories, встановлює їх із GitHub Releases, запускає, оновлює й допомагає керувати локальними версіями.
 
-Інтерфейс підтримує українську й англійську мови, працює у Windows 11 Fluent стилі та фокусується на простому сценарії: знайти публічний реліз, встановити, запустити, оновити або відкотити версію.
+Поточний фокус продукту: polished GitHub release launcher. До `2.0.0` проєкт не розширюється в локальний app manager, marketplace або клієнт для private repositories.
 
 ## Можливості
 
-- Показує публічні репозиторії вибраного GitHub owner, у яких є релізи.
+- Показує публічні repositories вибраного GitHub owner, у яких є releases.
 - Не показує сам `air-launcher` у бібліотеці застосунків.
-- Встановлює застосунки з GitHub Releases.
-- Підтримує запуск, оновлення, відновлення і видалення локальних версій.
-- Має обране, встановлені застосунки, фільтр оновлень у бібліотеці.
+- Встановлює portable EXE та архіви з GitHub Releases.
+- Показує setup/MSI assets як другорядні ручні файли з попередженням.
+- Має install wizard: версія, файл, підтвердження, прогрес, результат.
+- Підтримує запуск, оновлення, rollback і видалення локальних версій.
+- Має Library-first cinematic UI з фільтрами Installed, Favorites, Updates і Available.
 - Підтримує portable self-update самого лаунчера з About.
-- Має світлу, темну й auto тему.
+- Підтримує українську й англійську мови; українська є мовою за замовчуванням.
 
-## Який файл скачувати
+## Який файл завантажувати
 
-У релізах Air Launcher вручну додаються тільки два assets:
+У кожному публічному release Air Launcher вручну публікуються тільки два assets:
 
-- `Air.Launcher_<version>_portable_x64.exe` — portable-версія для запуску без інсталятора і для safe/self-update лаунчера.
-- `Air.Launcher_<version>_x64-setup.exe` — один ручний встановлювач для користувачів, яким потрібна інсталяція.
+- `Air.Launcher_<version>_portable_x64.exe` — portable-версія для запуску без інсталятора та для safe/self-update лаунчера.
+- `Air.Launcher_<version>_x64-setup.exe` — один setup installer для ручної інсталяції.
 
-GitHub автоматично додає `Source code (zip)` і `Source code (tar.gz)`. Це нормально, але Air Launcher не використовує їх як install/update assets.
-
-MSI і дублюючий portable ZIP не публікуються, якщо portable EXE і setup EXE достатні.
+Не додавати MSI, portable ZIP або дублікати setup/portable assets, якщо це прямо не потрібно. GitHub автоматично додає `Source code (zip)` і `Source code (tar.gz)`; Air Launcher не використовує їх як install/update assets.
 
 ## Як користуватись
 
-1. Завантаж `Air.Launcher_<version>_portable_x64.exe` або setup EXE з останнього релізу.
+1. Завантаж `Air.Launcher_<version>_portable_x64.exe` або setup EXE з останнього release.
 2. Запусти Air Launcher.
 3. У Settings перевір GitHub owner і папку встановлення.
-4. У Library натисни `Оновити`, щоб перечитати публічні репозиторії та релізи.
-5. Встановлюй або запускай застосунки з карток.
+4. У Library натисни `Оновити`, щоб перечитати публічні repositories та releases.
+5. Встановлюй або запускай застосунки з карток Library.
 6. У About можна оновити або відкотити сам лаунчер через portable asset.
 
 ## Розробка
+
+Стек не переписуємо:
+
+- Tauri 2
+- Rust
+- React
+- TypeScript
+- CSS
+- Vite
 
 Встановити залежності:
 
@@ -48,19 +57,13 @@ npm ci
 npm run dev
 ```
 
-Запустити Tauri застосунок у dev-режимі:
+Запустити Tauri в dev-режимі:
 
 ```bash
 npm run tauri-dev
 ```
 
-Перевірити TypeScript:
-
-```bash
-npx tsc --noEmit
-```
-
-Зібрати frontend:
+Перевірити frontend:
 
 ```bash
 npm run build
@@ -73,28 +76,26 @@ cd src-tauri
 cargo check
 ```
 
-Зібрати desktop-застосунок:
+Зібрати production desktop app:
 
 ```bash
 npm run tauri-build
 ```
 
-## Релізна політика
+## Release Policy
 
-- Версію треба піднімати перед збіркою EXE.
-- Build artifacts зберігаються поза Git-папкою.
-- GitHub release має містити тільки portable EXE і один setup EXE.
-- Portable asset використовується для safe/self-update лаунчера.
-- Setup asset потрібен тільки для ручної інсталяції.
+- Build artifacts не зберігати в Git.
+- Зібрані файли зберігати в `C:\Users\sasha\OneDrive\Документи\Projects\Air Launcher Builds\<version>`.
+- Перед user-facing UI/UX або app behavior release перевірити:
+  - `npm run build`
+  - `cargo check`
+  - `npm run tauri-build`
+  - smoke-test portable EXE
+- GitHub release має містити тільки:
+  - portable EXE
+  - один setup EXE
+- MSI/ZIP assets не додавати без окремого рішення.
 
-## Стек
+## Roadmap
 
-- Tauri 2
-- Rust
-- React
-- TypeScript
-- Vite
-
-## Документація
-
-Детальний roadmap і acceptance checklist збережені в [ROADMAP.md](ROADMAP.md).
+Актуальна дорога до `2.0.0`, QA matrix і release checklist збережені в [ROADMAP.md](ROADMAP.md).
