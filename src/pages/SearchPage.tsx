@@ -21,11 +21,47 @@ import './PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
+type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 
 interface SearchPageProps {
   hasLauncherBackground?: boolean
   onChangeLauncherBackground?: () => Promise<void> | void
   onClearLauncherBackground?: () => Promise<void> | void
+}
+
+function classifyLibraryError(error: string | null): LibraryErrorKind {
+  const normalized = error?.toLowerCase() ?? ''
+  if (normalized.includes('rate limit') || normalized.includes('403')) return 'rateLimit'
+  if (normalized.includes('not found') || normalized.includes('404')) return 'notFound'
+  if (
+    normalized.includes('network') ||
+    normalized.includes('dns') ||
+    normalized.includes('timed out') ||
+    normalized.includes('timeout') ||
+    normalized.includes('connection') ||
+    normalized.includes('offline')
+  ) {
+    return 'offline'
+  }
+  return 'generic'
+}
+
+function libraryErrorTitleKey(kind: LibraryErrorKind) {
+  switch (kind) {
+    case 'rateLimit': return 'library.errorRateLimitTitle'
+    case 'offline': return 'library.errorOfflineTitle'
+    case 'notFound': return 'library.errorOwnerTitle'
+    case 'generic': return 'state.githubErrorTitle'
+  }
+}
+
+function libraryErrorTextKey(kind: LibraryErrorKind) {
+  switch (kind) {
+    case 'rateLimit': return 'library.errorRateLimitText'
+    case 'offline': return 'library.errorOfflineText'
+    case 'notFound': return 'library.errorOwnerText'
+    case 'generic': return 'state.githubErrorText'
+  }
 }
 
 function SearchPage({
@@ -54,6 +90,9 @@ function SearchPage({
   const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
   const {
     checkingUpdates,
+    latestVersionErrorCount,
+    latestVersionsCheckedAt,
+    installedLoadError,
     getInstalledApp,
     getLatestVersion,
     refreshInstalledApps,
@@ -84,15 +123,19 @@ function SearchPage({
         setRecentlyInstalledKey((current) => current === key ? null : current)
       }, 6500)
     }
-    await refreshInstalledApps()
+    const freshInstalledApps = await refreshInstalledApps()
+    await refreshLatestVersions(freshInstalledApps, state.repositories)
   }
 
-  const formattedRefreshTime = lastRefreshedAt
-    ? lastRefreshedAt.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
+  const formatTime = (date: Date | null) => date
+    ? date.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
       hour: '2-digit',
       minute: '2-digit',
     })
     : null
+  const formattedRefreshTime = formatTime(lastRefreshedAt ?? state.lastRefreshAt ?? state.lastLoadedAt)
+  const formattedLatestVersionsTime = formatTime(latestVersionsCheckedAt)
+  const libraryErrorKind = classifyLibraryError(state.error)
 
   useEffect(() => {
     if (!settingsLoading) {
@@ -479,6 +522,13 @@ function SearchPage({
             {refreshState === 'error' && (
               <span className="refresh-status error">{t('refresh.error')}</span>
             )}
+            {refreshState === 'idle' && formattedRefreshTime && (
+              <span className={`refresh-status ${state.isStale ? 'warning' : ''}`}>
+                {state.isStale
+                  ? t('refresh.staleAt', { time: formattedRefreshTime })
+                  : t('refresh.updatedAt', { time: formattedRefreshTime })}
+              </span>
+            )}
             <button
               type="button"
               className="refresh-btn"
@@ -539,15 +589,38 @@ function SearchPage({
             </label>
           </div>
 
-          {state.error && (
+          {state.error && state.isStale && (
+            <div className="library-cache-note" role="status">
+              <strong>{t('library.cachedTitle')}</strong>
+              <span>{t('library.cachedText')}</span>
+              <details>
+                <summary>{t('state.details')}</summary>
+                <pre>{state.error}</pre>
+              </details>
+            </div>
+          )}
+
+          {state.error && !state.isStale && (
             <StatePanel
               kind="error"
-              title={t('state.githubErrorTitle')}
-              message={t('state.githubErrorText')}
+              title={t(libraryErrorTitleKey(libraryErrorKind))}
+              message={t(libraryErrorTextKey(libraryErrorKind))}
               details={state.error}
               detailsLabel={t('state.details')}
               actionLabel={t('library.tryAgain')}
               onAction={handleRefresh}
+            />
+          )}
+
+          {installedLoadError && (
+            <StatePanel
+              kind="error"
+              title={t('state.installedErrorTitle')}
+              message={t('library.installedStatusErrorText')}
+              details={installedLoadError}
+              detailsLabel={t('state.details')}
+              actionLabel={t('library.tryAgain')}
+              onAction={() => refreshInstalledApps()}
             />
           )}
 
@@ -565,6 +638,12 @@ function SearchPage({
               total: state.repositories.length.toLocaleString(),
             })}
             {checkingUpdates ? t('library.checkingInstalled') : ''}
+            {!checkingUpdates && latestVersionsCheckedAt && formattedLatestVersionsTime
+              ? t('library.latestCheckedAt', { time: formattedLatestVersionsTime })
+              : ''}
+            {!checkingUpdates && latestVersionErrorCount > 0
+              ? t('library.latestPartialError', { count: latestVersionErrorCount })
+              : ''}
           </p>
 
           <div className="search-results">

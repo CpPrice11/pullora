@@ -7,6 +7,9 @@ interface LibraryStatusState {
   installedApps: InstalledApp[]
   latestVersions: Map<string, string>
   checkingUpdates: boolean
+  latestVersionErrorCount: number
+  latestVersionsCheckedAt: Date | null
+  installedLoadError: string | null
 }
 
 function repoKey(owner: string, repo: string) {
@@ -25,6 +28,9 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     installedApps: [],
     latestVersions: new Map(),
     checkingUpdates: false,
+    latestVersionErrorCount: 0,
+    latestVersionsCheckedAt: null,
+    installedLoadError: null,
   })
 
   const installedByRepo = useMemo(() => {
@@ -36,10 +42,14 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
   const refreshInstalledApps = useCallback(async () => {
     try {
       const apps = await getInstalledApps()
-      setState((prev) => ({ ...prev, installedApps: apps }))
+      setState((prev) => ({ ...prev, installedApps: apps, installedLoadError: null }))
       return apps
-    } catch {
-      setState((prev) => ({ ...prev, installedApps: [] }))
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        installedApps: [],
+        installedLoadError: err instanceof Error ? err.message : 'Failed to load installed apps',
+      }))
       return []
     }
   }, [])
@@ -61,6 +71,8 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
         ...prev,
         latestVersions: new Map(),
         checkingUpdates: false,
+        latestVersionErrorCount: 0,
+        latestVersionsCheckedAt: new Date(),
       }))
       return new Map<string, string>()
     }
@@ -76,20 +88,23 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
           )
           return latest ? [repoKey(app.owner, app.repo), latest.tag_name] as const : null
         } catch {
-          return null
+          return 'failed' as const
         }
       }),
     )
 
     const validEntries = entries.filter(
-      (entry): entry is readonly [string, string] => entry !== null,
+      (entry): entry is readonly [string, string] => Array.isArray(entry),
     )
+    const failedCount = entries.filter((entry) => entry === 'failed').length
 
     const latestVersions = new Map(validEntries)
     setState((prev) => ({
       ...prev,
       latestVersions,
       checkingUpdates: false,
+      latestVersionErrorCount: failedCount,
+      latestVersionsCheckedAt: new Date(),
     }))
     return latestVersions
   }, [repositories, state.installedApps])
@@ -112,6 +127,9 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     installedApps: state.installedApps,
     latestVersions: state.latestVersions,
     checkingUpdates: state.checkingUpdates,
+    latestVersionErrorCount: state.latestVersionErrorCount,
+    latestVersionsCheckedAt: state.latestVersionsCheckedAt,
+    installedLoadError: state.installedLoadError,
     getInstalledApp,
     getLatestVersion,
     refreshInstalledApps,

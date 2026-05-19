@@ -22,6 +22,10 @@ interface OwnerRepositoriesState {
   error: string | null
   page: number
   hasMore: boolean
+  lastLoadedAt: Date | null
+  lastRefreshAt: Date | null
+  lastErrorAt: Date | null
+  isStale: boolean
 }
 
 export function useGitHubSearch() {
@@ -81,6 +85,10 @@ export function useOwnerRepositories(owner: string | undefined) {
     error: null,
     page: 1,
     hasMore: false,
+    lastLoadedAt: null,
+    lastRefreshAt: null,
+    lastErrorAt: null,
+    isStale: false,
   })
 
   const loadRepositories = useCallback(
@@ -94,6 +102,10 @@ export function useOwnerRepositories(owner: string | undefined) {
           error: null,
           page: 1,
           hasMore: false,
+          lastLoadedAt: null,
+          lastRefreshAt: null,
+          lastErrorAt: null,
+          isStale: false,
         })
         return []
       }
@@ -104,6 +116,7 @@ export function useOwnerRepositories(owner: string | undefined) {
           await clearGithubCache()
         }
         const data = await listOwnerRepositories(normalizedOwner, page, true)
+        const loadedAt = new Date()
         setState((prev) => ({
           repositories:
             page === 1
@@ -113,6 +126,10 @@ export function useOwnerRepositories(owner: string | undefined) {
           error: null,
           page: data.page,
           hasMore: data.has_more,
+          lastLoadedAt: loadedAt,
+          lastRefreshAt: forceRefresh ? loadedAt : prev.lastRefreshAt,
+          lastErrorAt: null,
+          isStale: false,
         }))
         return data.items
       } catch (err) {
@@ -123,6 +140,8 @@ export function useOwnerRepositories(owner: string | undefined) {
             err instanceof Error
               ? err.message
               : 'Failed to load repositories',
+          lastErrorAt: new Date(),
+          isStale: prev.repositories.length > 0,
         }))
         return null
       }
