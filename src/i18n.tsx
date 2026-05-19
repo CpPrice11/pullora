@@ -646,6 +646,9 @@ Object.assign(dictionaries.uk, {
   'library.installedStatusErrorText': 'Не вдалося прочитати локальний список встановлених застосунків.',
   'library.latestCheckedAt': ' · версії перевірено о {time}',
   'library.latestPartialError': ' · не перевірено: {count}',
+  'download.cleanup': 'Очистити залишки',
+  'download.cleanupDone': 'Очищено тимчасових елементів: {count}',
+  'download.cleanupError': 'Не вдалося очистити тимчасові файли встановлення',
 })
 
 Object.assign(dictionaries.en, {
@@ -661,6 +664,9 @@ Object.assign(dictionaries.en, {
   'library.installedStatusErrorText': 'The local installed apps list could not be read.',
   'library.latestCheckedAt': ' · versions checked at {time}',
   'library.latestPartialError': ' · not checked: {count}',
+  'download.cleanup': 'Clean leftovers',
+  'download.cleanupDone': 'Cleaned temporary items: {count}',
+  'download.cleanupError': 'Failed to clean temporary install files',
 })
 
 interface LanguageContextValue {

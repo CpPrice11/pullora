@@ -11,6 +11,10 @@ pub struct VersionInfo {
     pub installed_at: DateTime<Utc>,
     pub executable: String,
     pub size_bytes: u64,
+    #[serde(default)]
+    pub asset_name: Option<String>,
+    #[serde(default)]
+    pub install_kind: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -32,7 +36,7 @@ struct InstalledStore {
 impl Default for InstalledStore {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: 2,
             apps: vec![],
         }
     }
@@ -44,7 +48,10 @@ fn load_store(config_dir: &PathBuf) -> Result<InstalledStore, StorageError> {
         return Ok(InstalledStore::default());
     }
     let content = std::fs::read_to_string(&path)?;
-    let store: InstalledStore = serde_json::from_str(&content)?;
+    let mut store: InstalledStore = serde_json::from_str(&content)?;
+    if store.version < 2 {
+        store.version = 2;
+    }
     Ok(store)
 }
 
@@ -68,6 +75,7 @@ pub fn add_version(
     version: VersionInfo,
 ) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
+    store.version = 2;
     let key = format!("{}/{}", owner, repo);
     let tag = version.tag.clone();
 
@@ -99,6 +107,7 @@ pub fn set_active_version(
     tag: &str,
 ) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
+    store.version = 2;
     let key = format!("{}/{}", owner, repo);
 
     if let Some(app) = store
@@ -123,6 +132,7 @@ pub fn remove_version(
     tag: &str,
 ) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
+    store.version = 2;
     let key = format!("{}/{}", owner, repo);
 
     if let Some(app) = store

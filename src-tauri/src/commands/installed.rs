@@ -201,6 +201,20 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     }
 
     let mut removed = 0;
+    let download_dir = root.join(".air-launcher-downloads");
+    if download_dir.exists() {
+        for entry in std::fs::read_dir(&download_dir).map_err(|e| e.to_string())?.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+                removed += 1;
+            } else if path.is_dir() {
+                std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+                removed += 1;
+            }
+        }
+    }
+
     let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
     for app_entry in entries.flatten() {
         let app_path = app_entry.path();

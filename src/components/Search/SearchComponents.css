@@ -923,6 +923,16 @@
   padding: 16px;
 }
 
+.release-cleanup-note {
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-control));
+  border: 1px solid color-mix(in srgb, var(--color-success) 46%, var(--color-border-subtle));
+  border-radius: 14px;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 760;
+  padding: 11px 13px;
+}
+
 .release-blocked-note {
   border-color: color-mix(in srgb, var(--color-warning, #f4a261) 48%, var(--color-border-subtle));
 }
