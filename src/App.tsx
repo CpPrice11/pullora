@@ -77,7 +77,7 @@ function App() {
   useEffect(() => {
     getLauncherBackgroundArt()
       .then((art) => {
-        const url = projectArtBackgroundUrl(art)
+        const url = projectArtBackgroundUrl(art, { fallbackToCover: false })
         setLauncherBackground(url)
         setHasLauncherBackground(Boolean(url))
       })
@@ -102,7 +102,7 @@ function App() {
     if (!imagePath) return
 
     const art = await setLauncherBackgroundArt(imagePath)
-    const url = projectArtBackgroundUrl(art)
+    const url = projectArtBackgroundUrl(art, { fallbackToCover: false })
     setLauncherBackground(url)
     setHasLauncherBackground(Boolean(url))
   }
