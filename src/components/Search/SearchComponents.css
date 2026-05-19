@@ -835,6 +835,215 @@
   transition: opacity var(--motion-normal);
 }
 
+.release-modal--wizard {
+  max-width: 940px;
+  width: min(94vw, 940px);
+}
+
+.cinematic-shell .release-modal--wizard {
+  max-width: 940px;
+  width: min(94vw, 940px);
+}
+
+.release-wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 0 0;
+}
+
+.cinematic-shell .release-wizard-steps {
+  padding-top: 16px;
+}
+
+.release-step-pill {
+  background: var(--color-control);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.release-step-pill.active {
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-control));
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.release-step-pill.done {
+  border-color: color-mix(in srgb, var(--color-success) 58%, var(--color-border-subtle));
+  color: var(--color-success);
+}
+
+.release-step-pill:disabled {
+  cursor: default;
+  opacity: 0.56;
+}
+
+.cinematic-shell .release-modal--wizard .release-body {
+  display: block;
+  max-height: min(650px, calc(100vh - 205px));
+  overflow: auto;
+  padding: 18px 0 0;
+}
+
+.release-wizard-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.release-modal--wizard .release-picker {
+  min-width: 0;
+}
+
+.release-modal--wizard .release-version-list {
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.release-modal--wizard .release-asset-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.release-blocked-note,
+.release-confirm-card,
+.release-result-card {
+  animation: fluent-fade-up var(--motion-normal);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(91, 215, 255, 0.13), transparent 34%),
+    rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+  padding: 16px;
+}
+
+.release-blocked-note {
+  border-color: color-mix(in srgb, var(--color-warning, #f4a261) 48%, var(--color-border-subtle));
+}
+
+.release-blocked-note strong,
+.release-confirm-card strong {
+  color: var(--color-text);
+}
+
+.release-blocked-note p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.release-confirm-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.release-confirm-grid > div,
+.release-install-path {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+}
+
+.release-confirm-grid span,
+.release-install-path span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.release-confirm-grid strong,
+.release-install-path strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.release-install-path {
+  margin-top: 10px;
+}
+
+.release-nav-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.release-secondary-btn,
+.download-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-weight: 780;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.release-secondary-btn:hover,
+.download-action-btn:hover {
+  border-color: rgba(91, 215, 255, 0.46);
+  color: var(--color-text);
+  transform: translateY(-1px);
+}
+
+.download-action-btn.primary {
+  background: linear-gradient(180deg, #5bd7ff, #36c6ff);
+  border-color: rgba(91, 215, 255, 0.68);
+  color: #061018;
+}
+
+.release-modal--wizard .release-action-primary {
+  flex: 0 1 220px;
+}
+
+:root[data-theme='light'] .release-blocked-note,
+:root[data-theme='light'] .release-confirm-card,
+:root[data-theme='light'] .release-result-card {
+  background: rgba(255, 255, 255, 0.76);
+  border-color: rgba(17, 24, 39, 0.12);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme='light'] .release-confirm-grid > div,
+:root[data-theme='light'] .release-install-path,
+:root[data-theme='light'] .release-secondary-btn,
+:root[data-theme='light'] .download-action-btn {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(17, 24, 39, 0.12);
+}
+
+@media (max-width: 820px) {
+  .release-modal--wizard .release-asset-list,
+  .release-confirm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .release-nav-actions {
+    justify-content: stretch;
+  }
+
+  .release-nav-actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 .cinematic-shell .repo-card:hover,
 .cinematic-shell .repo-card.selected {
   background:

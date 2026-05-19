@@ -39,6 +39,7 @@ function SearchPage({
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
+  const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favoriteBusy, setFavoriteBusy] = useState(false)
@@ -72,6 +73,18 @@ function SearchPage({
     await refreshLatestVersions(freshInstalledApps, freshRepositories)
     setLastRefreshedAt(new Date())
     setRefreshState('success')
+  }
+
+  const handleInstalledFromRelease = async () => {
+    if (selectedRepo) {
+      const key = projectArtKey(selectedRepo.owner.login, selectedRepo.name)
+      setRecentlyInstalledKey(key)
+      setFeaturedRepo(selectedRepo)
+      window.setTimeout(() => {
+        setRecentlyInstalledKey((current) => current === key ? null : current)
+      }, 6500)
+    }
+    await refreshInstalledApps()
   }
 
   const formattedRefreshTime = lastRefreshedAt
@@ -573,23 +586,27 @@ function SearchPage({
               />
             )}
 
-            {visibleRepositories.map((repo) => (
-              <RepoCard
-                key={repo.id}
-                repo={repo}
-                installedApp={getInstalledApp(repo)}
-                latestVersion={getLatestVersion(repo)}
-                art={projectArt[projectArtKey(repo.owner.login, repo.name)]}
-                isFavorite={favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))}
-                isSelected={featuredRepo?.id === repo.id}
-                onPreview={() => setFeaturedRepo(repo)}
-                onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                onPickArt={() => handlePickArt('cover', repo)}
-                onClearArt={() => handleClearArt(repo)}
-                onSelect={() => setSelectedRepo(repo)}
-                onLaunch={() => handleLaunch(repo)}
-              />
-            ))}
+            {visibleRepositories.map((repo) => {
+              const key = projectArtKey(repo.owner.login, repo.name)
+
+              return (
+                <RepoCard
+                  key={repo.id}
+                  repo={repo}
+                  installedApp={getInstalledApp(repo)}
+                  latestVersion={getLatestVersion(repo)}
+                  art={projectArt[key]}
+                  isFavorite={favoriteKeys.has(key)}
+                  isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+                  onPreview={() => setFeaturedRepo(repo)}
+                  onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+                  onPickArt={() => handlePickArt('cover', repo)}
+                  onClearArt={() => handleClearArt(repo)}
+                  onSelect={() => setSelectedRepo(repo)}
+                  onLaunch={() => handleLaunch(repo)}
+                />
+              )
+            })}
           </div>
 
           {state.hasMore && !state.loading && (
@@ -608,7 +625,7 @@ function SearchPage({
           description={selectedRepo.description ?? undefined}
           currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
           onClose={() => setSelectedRepo(null)}
-          onInstalled={refreshInstalledApps}
+          onInstalled={handleInstalledFromRelease}
         />
       )}
     </div>
