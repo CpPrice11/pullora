@@ -633,6 +633,36 @@ Object.assign(dictionaries.en, {
   'download.recoveryText': 'Check the release file or choose another asset. Temporary files will not be registered as an installed version.',
 })
 
+Object.assign(dictionaries.uk, {
+  'refresh.staleAt': 'Дані з {time}',
+  'library.cachedTitle': 'Показуємо останні доступні дані',
+  'library.cachedText': 'GitHub зараз не відповів, тому бібліотека лишилась на попередньому успішному стані.',
+  'library.errorRateLimitTitle': 'GitHub тимчасово обмежив запити',
+  'library.errorRateLimitText': 'Зачекай кілька хвилин або додай GitHub token у Settings, якщо запити часто впираються в ліміт.',
+  'library.errorOfflineTitle': 'Не вдалося підключитися до GitHub',
+  'library.errorOfflineText': 'Перевір інтернет-з’єднання й повтори оновлення бібліотеки.',
+  'library.errorOwnerTitle': 'GitHub owner не знайдено',
+  'library.errorOwnerText': 'Перевір owner у Settings. Air Launcher показує тільки публічні repositories цього owner.',
+  'library.installedStatusErrorText': 'Не вдалося прочитати локальний список встановлених застосунків.',
+  'library.latestCheckedAt': ' · версії перевірено о {time}',
+  'library.latestPartialError': ' · не перевірено: {count}',
+})
+
+Object.assign(dictionaries.en, {
+  'refresh.staleAt': 'Data from {time}',
+  'library.cachedTitle': 'Showing the last available data',
+  'library.cachedText': 'GitHub did not respond, so the library kept the previous successful state.',
+  'library.errorRateLimitTitle': 'GitHub temporarily limited requests',
+  'library.errorRateLimitText': 'Wait a few minutes or add a GitHub token in Settings if requests often hit the limit.',
+  'library.errorOfflineTitle': 'Could not connect to GitHub',
+  'library.errorOfflineText': 'Check the internet connection and refresh the library again.',
+  'library.errorOwnerTitle': 'GitHub owner was not found',
+  'library.errorOwnerText': 'Check the owner in Settings. Air Launcher shows only public repositories for that owner.',
+  'library.installedStatusErrorText': 'The local installed apps list could not be read.',
+  'library.latestCheckedAt': ' · versions checked at {time}',
+  'library.latestPartialError': ' · not checked: {count}',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

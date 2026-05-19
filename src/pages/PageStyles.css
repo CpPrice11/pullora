@@ -100,6 +100,51 @@
   color: var(--color-error);
 }
 
+.refresh-status.warning {
+  background: color-mix(in srgb, var(--color-warning, #f4a261) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning, #f4a261) 70%, var(--color-border));
+  color: var(--color-warning, #f4a261);
+}
+
+.library-cache-note {
+  align-items: flex-start;
+  animation: fluent-fade-up var(--motion-normal);
+  background: color-mix(in srgb, var(--color-warning, #f4a261) 10%, var(--color-mica));
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f4a261) 42%, var(--color-border-subtle));
+  border-radius: 14px;
+  color: var(--color-text);
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.library-cache-note strong {
+  font-size: 14px;
+}
+
+.library-cache-note span,
+.library-cache-note summary {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.library-cache-note summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.library-cache-note pre {
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  color: var(--color-text);
+  margin: 8px 0 0;
+  max-height: 130px;
+  overflow: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
 /* Version management */
 .version-list {
   border-top: 1px solid var(--color-border);
@@ -1488,6 +1533,20 @@
 .cinematic-shell .results-count {
   color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
+}
+
+.cinematic-shell .library-cache-note {
+  background:
+    linear-gradient(115deg, rgba(244, 162, 97, 0.13), rgba(255, 255, 255, 0.045)),
+    rgba(22, 20, 18, 0.74);
+  border-color: rgba(244, 162, 97, 0.28);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-cache-note {
+  background: rgba(255, 250, 240, 0.78);
+  border-color: rgba(180, 83, 9, 0.22);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
 }
 
 .cinematic-shell .search-results,
