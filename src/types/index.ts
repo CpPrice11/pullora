@@ -71,6 +71,8 @@ export interface VersionInfo {
   installedAt: string
   executable: string
   sizeBytes: number
+  assetName?: string | null
+  installKind?: string | null
 }
 
 export interface InstalledApp {

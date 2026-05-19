@@ -10,6 +10,7 @@ interface DownloadProgressProps {
   onBackToLibrary?: () => void
   onRetry?: (download: DL) => void
   onChooseAnother?: () => void
+  onCleanup?: () => void
 }
 
 const installStages: DownloadStage[] = [
@@ -64,6 +65,7 @@ function DownloadProgressPanel({
   onBackToLibrary,
   onRetry,
   onChooseAnother,
+  onCleanup,
 }: DownloadProgressProps) {
   const { t } = useI18n()
 
@@ -186,6 +188,11 @@ function DownloadProgressPanel({
                     {onOpenFolder && (
                       <button type="button" className="download-action-btn" onClick={() => onOpenFolder(download)}>
                         {t('download.openFolder')}
+                      </button>
+                    )}
+                    {onCleanup && (
+                      <button type="button" className="download-action-btn" onClick={onCleanup}>
+                        {t('download.cleanup')}
                       </button>
                     )}
                   </div>

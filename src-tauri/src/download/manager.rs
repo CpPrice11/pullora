@@ -75,6 +75,7 @@ impl DownloadManager {
         repo: String,
         tag: String,
     ) -> Result<String, String> {
+        let install_kind = install_kind_for_asset(&file_name)?;
         let active = self.active.clone();
         let cancelled = self.cancelled.clone();
 
@@ -119,6 +120,7 @@ impl DownloadManager {
                 owner.clone(),
                 repo.clone(),
                 tag.clone(),
+                install_kind,
                 active_clone.clone(),
                 cancelled_clone.clone(),
             )
@@ -183,6 +185,7 @@ async fn download_task(
     owner: String,
     repo: String,
     tag: String,
+    install_kind: String,
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
 ) -> Result<(), String> {
@@ -316,14 +319,29 @@ async fn download_task(
     })
     .await;
 
+    let resolved_executable = if executable.trim().is_empty() || !partial_dir.join(&executable).exists() {
+        let fallback_executable = find_executable_in_dir(&partial_dir).ok_or_else(|| {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&partial_dir);
+            "Архів не містить EXE/AppImage для запуску. Обери інший файл релізу або перевір структуру архіву.".to_string()
+        })?;
+        fallback_executable
+            .strip_prefix(&partial_dir)
+            .unwrap_or(&fallback_executable)
+            .to_string_lossy()
+            .to_string()
+    } else {
+        executable.clone()
+    };
+
     if let Err(error) = replace_version_dir(&partial_dir, &version_dir, &backup_dir) {
         let _ = fs::remove_file(&tmp_path);
         let _ = cleanup_path(&partial_dir);
         return Err(error);
     }
 
-    let executable_path = version_dir.join(&executable);
-    if executable.trim().is_empty() || !executable_path.exists() {
+    let executable_path = version_dir.join(&resolved_executable);
+    if false {
         let fallback_executable = find_executable_in_dir(&version_dir).ok_or_else(|| {
             let _ = fs::remove_file(&tmp_path);
             let _ = cleanup_path(&version_dir);
@@ -344,8 +362,15 @@ async fn download_task(
         })
         .await;
 
-        let install_record_result =
-            record_installed_version(&owner, &repo, &tag, relative, downloaded);
+        let install_record_result = record_installed_version(
+            &owner,
+            &repo,
+            &tag,
+            relative,
+            downloaded,
+            file_name.clone(),
+            install_kind.clone(),
+        );
 
         if let Err(error) = install_record_result {
             let _ = fs::remove_file(&tmp_path);
@@ -374,8 +399,15 @@ async fn download_task(
     })
     .await;
 
-    let install_record_result =
-        record_installed_version(&owner, &repo, &tag, executable.clone(), downloaded);
+    let install_record_result = record_installed_version(
+        &owner,
+        &repo,
+        &tag,
+        resolved_executable,
+        downloaded,
+        file_name,
+        install_kind,
+    );
 
     if let Err(error) = install_record_result {
         let _ = fs::remove_file(&tmp_path);
@@ -403,6 +435,8 @@ fn record_installed_version(
     tag: &str,
     executable: String,
     downloaded: u64,
+    asset_name: String,
+    install_kind: String,
 ) -> Result<(), String> {
     let config_dir = crate::storage::get_config_dir();
     let version_info = crate::storage::installed::VersionInfo {
@@ -410,9 +444,38 @@ fn record_installed_version(
         installed_at: chrono::Utc::now(),
         executable,
         size_bytes: downloaded,
+        asset_name: Some(asset_name),
+        install_kind: Some(install_kind),
     };
     crate::storage::installed::add_version(&config_dir, owner, repo, version_info)
         .map_err(|e| e.to_string())
+}
+
+fn install_kind_for_asset(file_name: &str) -> Result<String, String> {
+    let name = file_name.to_lowercase();
+    let is_installer =
+        name.contains("setup") || name.contains("installer") || name.ends_with(".msi");
+    if is_installer {
+        return Err(
+            "Setup/MSI assets не встановлюються як portable-версії. Обери portable EXE або архів."
+                .to_string(),
+        );
+    }
+
+    if name.ends_with(".zip")
+        || name.ends_with(".tar.gz")
+        || name.ends_with(".tgz")
+        || name.ends_with(".tar.xz")
+        || name.ends_with(".tar.bz2")
+    {
+        return Ok("archive".to_string());
+    }
+
+    if name.ends_with(".exe") || name.ends_with(".appimage") {
+        return Ok("portable".to_string());
+    }
+
+    Err("Цей asset не підтримується для автоматичного встановлення.".to_string())
 }
 
 async fn emit_progress<F>(

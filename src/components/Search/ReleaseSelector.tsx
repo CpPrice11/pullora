@@ -5,7 +5,7 @@ import { useSettings } from '../../hooks/useSettings'
 import type { DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
 import StatePanel from '../State/StatePanel'
-import { launchApp, openInstalledAppDir } from '../../services/installed'
+import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
@@ -144,6 +144,7 @@ function ReleaseSelector({
   const [step, setStep] = useState<WizardStep>('version')
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null)
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
 
@@ -264,6 +265,15 @@ function ReleaseSelector({
   const handleOpenFolder = (item: DownloadProgress) => {
     if (!item.owner || !item.repo) return
     openInstalledAppDir(item.owner, item.repo).catch(() => {})
+  }
+
+  const handleCleanup = async () => {
+    try {
+      const count = await cleanupIncompleteInstalls()
+      setCleanupMessage(t('download.cleanupDone', { count }))
+    } catch (err) {
+      setCleanupMessage(err instanceof Error ? err.message : t('download.cleanupError'))
+    }
   }
 
   const githubReleaseUrl = `https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name ?? ''}`
@@ -558,6 +568,7 @@ function ReleaseSelector({
                       </div>
                     </div>
                   )}
+                  {cleanupMessage && <div className="release-cleanup-note">{cleanupMessage}</div>}
                   <DownloadProgressPanel
                     downloads={shownDownloads}
                     onCancel={cancel}
@@ -566,6 +577,7 @@ function ReleaseSelector({
                     onBackToLibrary={onClose}
                     onRetry={handleRetry}
                     onChooseAnother={() => setStep('file')}
+                    onCleanup={handleCleanup}
                   />
                 </>
               )}
