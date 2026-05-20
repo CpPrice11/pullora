@@ -100,7 +100,10 @@ try {
       "contents: write",
       "windows-latest",
       "node-version: 20",
-      "node-version: '20'"
+      "node-version: '20'",
+      "actions/checkout@v4",
+      "actions/checkout@v5",
+      "actions/setup-node@v4"
     )
 
     foreach ($pattern in $blockedWorkflowPatterns) {
@@ -112,11 +115,17 @@ try {
     if ($releaseWorkflow -notmatch "Assert no MSI or ZIP release assets are produced") {
       Fail "release.yml must assert that MSI/ZIP assets are not produced"
     }
-    if ($releaseWorkflow -notmatch "runs-on:\s*windows-2025" -or $windowsWorkflow -notmatch "runs-on:\s*windows-2025") {
-      Fail "release workflows must pin Windows CI to windows-2025"
+    if ($releaseWorkflow -match "(?m)^\s*runs-on:\s*windows-2025\s*$" -or $windowsWorkflow -match "(?m)^\s*runs-on:\s*windows-2025\s*$") {
+      Fail "release workflows must use windows-2025-vs2026 instead of windows-2025"
     }
-    if ($releaseWorkflow -notmatch "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true" -or $windowsWorkflow -notmatch "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true") {
-      Fail "release workflows must opt JS actions into Node 24"
+    if ($releaseWorkflow -notmatch "runs-on:\s*windows-2025-vs2026" -or $windowsWorkflow -notmatch "runs-on:\s*windows-2025-vs2026") {
+      Fail "release workflows must pin Windows CI to windows-2025-vs2026"
+    }
+    if ($releaseWorkflow -notmatch "actions/checkout@v6" -or $windowsWorkflow -notmatch "actions/checkout@v6") {
+      Fail "release workflows must use actions/checkout@v6"
+    }
+    if ($releaseWorkflow -notmatch "actions/setup-node@v6" -or $windowsWorkflow -notmatch "actions/setup-node@v6") {
+      Fail "release workflows must use actions/setup-node@v6"
     }
     if ($releaseWorkflow -notmatch "node-version:\s*'24'" -or $windowsWorkflow -notmatch "node-version:\s*24") {
       Fail "release workflows must install Node.js 24"
