@@ -189,6 +189,19 @@ select {
   min-width: 0;
 }
 
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -315,5 +328,11 @@ p {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
+  }
+
+  button:hover,
+  button:active,
+  a:hover {
+    transform: none !important;
   }
 }

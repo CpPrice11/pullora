@@ -296,11 +296,15 @@
   background: transparent;
   border: none;
   color: var(--color-text-secondary);
+  line-height: 1.15;
   min-height: 30px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 0 14px;
   font-size: 13px;
   box-shadow: none;
   transition: var(--transition);
+  white-space: normal;
 }
 
 .segmented-control button:hover,
@@ -2692,7 +2696,7 @@
 
   .cinematic-shell .segmented-control {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   }
 }
 

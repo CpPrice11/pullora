@@ -34,6 +34,12 @@ type BatchUpdateJob = {
   tag: string
 }
 
+const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
+
+function libraryFilterLabelKey(filter: LibraryFilter) {
+  return filter === 'available' ? 'library.availableFilter' : `library.${filter}`
+}
+
 interface SearchPageProps {
   hasLauncherBackground?: boolean
   onChangeLauncherBackground?: () => Promise<void> | void
@@ -888,33 +894,43 @@ function SearchPage({
           {renderHero()}
 
           <div className="search-form">
+            <label className="visually-hidden" htmlFor="library-search">
+              {t('library.searchLabel')}
+            </label>
             <input
+              id="library-search"
               type="text"
               placeholder={t('library.searchPlaceholder')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="search-input"
+              aria-label={t('library.searchLabel')}
             />
           </div>
 
           <div className="library-controls">
             <div className="segmented-control" aria-label={t('library.filterLabel')}>
-              {(['all', 'installed', 'favorites', 'updates', 'available'] as LibraryFilter[]).map((item) => (
+              {libraryFilters.map((item) => (
                 <button
                   key={item}
                   type="button"
                   className={filter === item ? 'active' : ''}
+                  aria-pressed={filter === item}
+                  title={t(libraryFilterLabelKey(item))}
                   onClick={() => setFilter(item)}
                 >
-                  {t(`library.${item === 'all' ? 'all' : item}`)}
+                  {t(libraryFilterLabelKey(item))}
                 </button>
               ))}
             </div>
 
-            <label className="sort-control" aria-label={t('library.sortLabel')}>
+            <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
+              <span className="visually-hidden">{t('library.sortLabel')}</span>
               <select
+                id="library-sort"
                 value={sort}
                 onChange={(event) => setSort(event.target.value as LibrarySort)}
+                aria-label={t('library.sortLabel')}
               >
                 <option value="updated">{t('library.recentlyUpdated')}</option>
                 <option value="status">{t('library.status')}</option>
@@ -968,7 +984,7 @@ function SearchPage({
             />
           )}
 
-          <p className="results-count">
+          <p className="results-count" role="status" aria-live="polite">
             {t('library.count', {
               visible: visibleRepositories.length.toLocaleString(),
               total: state.repositories.length.toLocaleString(),

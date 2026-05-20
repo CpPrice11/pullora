@@ -745,6 +745,18 @@ Object.assign(dictionaries.en, {
   'updates.batchFailed': 'Failed to start batch update',
 })
 
+Object.assign(dictionaries.uk, {
+  'nav.navigation': 'Навігація',
+  'library.searchLabel': 'Пошук у бібліотеці',
+  'library.availableFilter': 'Не встановлені',
+})
+
+Object.assign(dictionaries.en, {
+  'nav.navigation': 'Navigation',
+  'library.searchLabel': 'Search library',
+  'library.availableFilter': 'Not installed',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

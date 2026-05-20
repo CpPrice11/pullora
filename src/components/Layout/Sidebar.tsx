@@ -76,7 +76,7 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
   return (
     <aside className="sidebar">
-      <nav className="sidebar-nav" aria-label="Navigation">
+      <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
         {navItems.map((item) => {
           const label = t(item.labelKey)
 
