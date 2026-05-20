@@ -707,6 +707,44 @@ Object.assign(dictionaries.en, {
   'details.working': 'Working...',
 })
 
+Object.assign(dictionaries.uk, {
+  'updates.kicker': 'Центр оновлень',
+  'updates.centerTitle': 'Оновлення в бібліотеці',
+  'updates.centerText': 'Перевіряй усі встановлені застосунки тут. Масове оновлення запускає тільки portable EXE або архіви, setup/MSI лишаються ручним вибором.',
+  'updates.checkAll': 'Перевірити всі',
+  'updates.updateAllPortable': 'Оновити все portable',
+  'updates.updatingAll': 'Оновлюємо...',
+  'updates.available': 'Доступно',
+  'updates.skipped': 'Пропущено',
+  'updates.lastChecked': 'Перевірено',
+  'updates.skip': 'Пропустити',
+  'updates.showSkipped': 'Показати пропущені оновлення',
+  'updates.empty': 'Активних оновлень немає. Можна перевірити ще раз або повернути пропущені.',
+  'updates.noneReady': 'Немає оновлень, готових до запуску.',
+  'updates.noPortableAssets': 'Для цих оновлень не знайдено portable EXE або архівів. Відкрий версії й обери файл вручну.',
+  'updates.batchStarted': 'Запущено оновлень: {started}. Пропущено: {skipped}.',
+  'updates.batchFailed': 'Не вдалося запустити пакетне оновлення',
+})
+
+Object.assign(dictionaries.en, {
+  'updates.kicker': 'Updates center',
+  'updates.centerTitle': 'Updates in Library',
+  'updates.centerText': 'Check all installed apps here. Batch update starts only portable EXE files or archives; setup/MSI stays a manual choice.',
+  'updates.checkAll': 'Check all',
+  'updates.updateAllPortable': 'Update all portable',
+  'updates.updatingAll': 'Updating...',
+  'updates.available': 'Available',
+  'updates.skipped': 'Skipped',
+  'updates.lastChecked': 'Checked',
+  'updates.skip': 'Skip',
+  'updates.showSkipped': 'Show skipped updates',
+  'updates.empty': 'No active updates. You can check again or restore skipped updates.',
+  'updates.noneReady': 'No updates are ready to start.',
+  'updates.noPortableAssets': 'No portable EXE files or archives were found for these updates. Open versions and choose a file manually.',
+  'updates.batchStarted': 'Started updates: {started}. Skipped: {skipped}.',
+  'updates.batchFailed': 'Failed to start batch update',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

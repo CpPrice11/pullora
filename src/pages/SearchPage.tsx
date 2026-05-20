@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOwnerRepositories } from '../hooks/useGitHub'
 import { useSettings } from '../hooks/useSettings'
 import { useLibraryStatus } from '../hooks/useLibraryStatus'
+import { useDownload } from '../hooks/useDownload'
 import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import AppDetailsModal from '../components/Search/AppDetailsModal'
+import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import StatePanel from '../components/State/StatePanel'
-import { launchApp, openInstalledAppDir } from '../services/installed'
+import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../services/installed'
+import { getReleases } from '../services/github'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../services/favorites'
 import { pickImageFile } from '../services/dialog'
 import {
@@ -16,13 +19,20 @@ import {
   projectArtKey,
   setProjectArt,
 } from '../services/projectArt'
-import type { GitHubSearchResult, ProjectArt } from '../types'
+import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, ProjectArt } from '../types'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
+type BatchUpdateJob = {
+  url: string
+  fileName: string
+  owner: string
+  repo: string
+  tag: string
+}
 
 interface SearchPageProps {
   hasLauncherBackground?: boolean
@@ -65,6 +75,38 @@ function libraryErrorTextKey(kind: LibraryErrorKind) {
   }
 }
 
+function updateDismissKey(repo: GitHubSearchResult, latestVersion: string) {
+  return `${repo.owner.login}/${repo.name}@${latestVersion}`.toLowerCase()
+}
+
+function assetIsPortableInstall(asset: GitHubAsset) {
+  const name = asset.name.toLowerCase()
+  const isInstaller = name.includes('setup') ||
+    name.includes('installer') ||
+    name.endsWith('.msi')
+  if (isInstaller) return false
+
+  return name.includes('portable') ||
+    name.endsWith('.exe') ||
+    name.endsWith('.appimage') ||
+    name.endsWith('.zip') ||
+    name.endsWith('.tar.gz') ||
+    name.endsWith('.tgz') ||
+    name.endsWith('.tar.xz') ||
+    name.endsWith('.tar.bz2')
+}
+
+function pickPortableUpdateAsset(release: GitHubRelease | null) {
+  if (!release) return null
+  return [...release.assets]
+    .sort((left, right) => {
+      const leftPortable = left.name.toLowerCase().includes('portable') ? 0 : 1
+      const rightPortable = right.name.toLowerCase().includes('portable') ? 0 : 1
+      return leftPortable - rightPortable || left.name.localeCompare(right.name)
+    })
+    .find(assetIsPortableInstall) ?? null
+}
+
 function SearchPage({
   hasLauncherBackground = false,
   onChangeLauncherBackground,
@@ -86,7 +128,18 @@ function SearchPage({
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(new Set())
+  const [batchUpdating, setBatchUpdating] = useState(false)
+  const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
+  const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
+  const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
+  const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
+  const {
+    downloads: batchDownloads,
+    download: startBatchDownload,
+    cancel: cancelBatchDownload,
+  } = useDownload()
   const heroActionsRef = useRef<HTMLDivElement | null>(null)
   const owner = settings.githubOwner?.trim()
   const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
@@ -127,6 +180,127 @@ function SearchPage({
     }
     const freshInstalledApps = await refreshInstalledApps()
     await refreshLatestVersions(freshInstalledApps, state.repositories)
+  }
+
+  const refreshLocalStatus = useCallback(async () => {
+    const freshInstalledApps = await refreshInstalledApps()
+    await refreshLatestVersions(freshInstalledApps, state.repositories)
+  }, [refreshInstalledApps, refreshLatestVersions, state.repositories])
+
+  const handleSkipUpdate = (repo: GitHubSearchResult) => {
+    const latestVersion = getLatestVersion(repo)
+    if (!latestVersion) return
+    setDismissedUpdateKeys((current) => {
+      const next = new Set(current)
+      next.add(updateDismissKey(repo, latestVersion))
+      return next
+    })
+  }
+
+  const handleClearSkippedUpdates = () => {
+    setDismissedUpdateKeys(new Set())
+  }
+
+  const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
+    const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
+    setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
+    return id
+  }, [startBatchDownload])
+
+  const handleUpdateAllPortable = async () => {
+    setBatchUpdateError(null)
+    setBatchUpdateMessage(null)
+    setBatchCleanupMessage(null)
+
+    if (updateRepositories.length === 0) {
+      setBatchUpdateMessage(t('updates.noneReady'))
+      return
+    }
+
+    setBatchUpdating(true)
+    let started = 0
+    let skipped = 0
+
+    const results = await Promise.all(updateRepositories.map(async (repo) => {
+      const latestVersion = getLatestVersion(repo)
+      if (!latestVersion) {
+        skipped += 1
+        return
+      }
+
+      try {
+        const releases = await getReleases(repo.owner.login, repo.name)
+        const release = releases.find((item) => item.tag_name === latestVersion)
+          ?? releases.find((item) => !item.draft && !item.prerelease)
+          ?? null
+        const asset = pickPortableUpdateAsset(release)
+        if (!release || !asset) {
+          skipped += 1
+          return
+        }
+
+        await startBatchUpdateJob({
+          url: asset.browser_download_url,
+          fileName: asset.name,
+          owner: repo.owner.login,
+          repo: repo.name,
+          tag: release.tag_name,
+        })
+        started += 1
+      } catch (err) {
+        skipped += 1
+        return err instanceof Error ? err.message : t('updates.batchFailed')
+      }
+    }))
+
+    const errors = results.filter((item): item is string => typeof item === 'string')
+    if (started === 0) {
+      setBatchUpdating(false)
+      setBatchUpdateError(errors[0] ?? t('updates.noPortableAssets'))
+      return
+    }
+
+    setBatchUpdateMessage(t('updates.batchStarted', { started, skipped }))
+    if (errors.length > 0) {
+      setBatchUpdateError(errors[0])
+    }
+  }
+
+  const handleBatchRetry = async (download: DownloadProgress) => {
+    const job = batchUpdateJobs[download.id]
+    if (!job) return
+
+    setBatchUpdateError(null)
+    setBatchUpdating(true)
+    try {
+      const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
+      setBatchUpdateJobs((current) => {
+        const next = { ...current }
+        delete next[download.id]
+        next[id] = job
+        return next
+      })
+    } catch (err) {
+      setBatchUpdating(false)
+      setBatchUpdateError(err instanceof Error ? err.message : t('updates.batchFailed'))
+    }
+  }
+
+  const handleBatchOpenFolder = (download: DownloadProgress) => {
+    if (!download.owner || !download.repo) return
+    openInstalledAppDir(download.owner, download.repo)
+      .catch((err) => setBatchUpdateError(
+        err instanceof Error ? err.message : t('installed.openFolderError'),
+      ))
+  }
+
+  const handleBatchCleanup = async () => {
+    try {
+      const count = await cleanupIncompleteInstalls()
+      setBatchCleanupMessage(t('download.cleanupDone', { count }))
+    } catch (err) {
+      setBatchCleanupMessage(err instanceof Error ? err.message : t('download.cleanupError'))
+    }
   }
 
   const formatTime = (date: Date | null) => date
@@ -188,6 +362,32 @@ function SearchPage({
     }
   }, [heroActionsOpen])
 
+  useEffect(() => {
+    if (!batchUpdating) return
+    const batchIds = Object.keys(batchUpdateJobs)
+    if (batchIds.length === 0) return
+
+    const relevantDownloads = batchDownloads.filter((download) => batchUpdateJobs[download.id])
+    const allStarted = relevantDownloads.length === batchIds.length
+    const allSettled = allStarted && relevantDownloads.every((download) =>
+      download.status === 'completed' || download.status === 'failed',
+    )
+
+    if (!allSettled) return
+
+    setBatchUpdating(false)
+    void refreshLocalStatus()
+  }, [batchDownloads, batchUpdateJobs, batchUpdating, refreshLocalStatus])
+
+  const updateRepositories = useMemo(() => {
+    return state.repositories.filter((repo) => {
+      const installedApp = getInstalledApp(repo)
+      const latestVersion = getLatestVersion(repo)
+      if (!installedApp || !latestVersion || latestVersion === installedApp.activeVersion) return false
+      return !dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion))
+    })
+  }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, state.repositories])
+
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
@@ -200,10 +400,13 @@ function SearchPage({
         latestVersion &&
         latestVersion !== installedApp.activeVersion,
       )
+      const updateDismissed = Boolean(
+        latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
+      )
 
       if (filter === 'installed' && !installedApp) return false
       if (filter === 'favorites' && !isFavorite) return false
-      if (filter === 'updates' && !hasUpdate) return false
+      if (filter === 'updates' && (!hasUpdate || updateDismissed)) return false
       if (filter === 'available' && installedApp) return false
 
       if (!normalizedQuery) return true
@@ -246,7 +449,7 @@ function SearchPage({
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [favoriteKeys, filter, getInstalledApp, getLatestVersion, query, sort, state.repositories])
+  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, query, sort, state.repositories])
 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
@@ -362,6 +565,124 @@ function SearchPage({
     } finally {
       setFavoriteBusy(false)
     }
+  }
+
+  const renderUpdatesCenter = () => {
+    if (filter !== 'updates') return null
+
+    const skippedCount = dismissedUpdateKeys.size
+    const failedDownload = batchDownloads.find((download) => download.status === 'failed')
+    const chooseAnotherRepo = failedDownload
+      ? state.repositories.find((repo) =>
+        repo.owner.login === failedDownload.owner && repo.name === failedDownload.repo,
+      )
+      : updateRepositories[0]
+
+    return (
+      <section className="updates-center" aria-label={t('updates.centerTitle')}>
+        <div className="updates-center-main">
+          <div>
+            <span className="updates-center-kicker">{t('updates.kicker')}</span>
+            <h3>{t('updates.centerTitle')}</h3>
+            <p>{t('updates.centerText')}</p>
+          </div>
+          <div className="updates-center-actions">
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => refreshLocalStatus()}
+              disabled={checkingUpdates || batchUpdating}
+            >
+              {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
+            </button>
+            <button
+              type="button"
+              className="hero-primary-btn"
+              onClick={handleUpdateAllPortable}
+              disabled={updateRepositories.length === 0 || checkingUpdates || batchUpdating}
+            >
+              {batchUpdating ? t('updates.updatingAll') : t('updates.updateAllPortable')}
+            </button>
+          </div>
+        </div>
+
+        <div className="updates-center-stats">
+          <div>
+            <span>{t('updates.available')}</span>
+            <strong>{updateRepositories.length}</strong>
+          </div>
+          <div>
+            <span>{t('updates.skipped')}</span>
+            <strong>{skippedCount}</strong>
+          </div>
+          <div>
+            <span>{t('updates.lastChecked')}</span>
+            <strong>{formattedLatestVersionsTime ?? t('details.unknown')}</strong>
+          </div>
+        </div>
+
+        {skippedCount > 0 && (
+          <button
+            type="button"
+            className="updates-clear-skipped"
+            onClick={handleClearSkippedUpdates}
+          >
+            {t('updates.showSkipped')}
+          </button>
+        )}
+
+        {batchUpdateMessage && <div className="release-cleanup-note">{batchUpdateMessage}</div>}
+        {batchCleanupMessage && <div className="release-cleanup-note">{batchCleanupMessage}</div>}
+        {batchUpdateError && <div className="error-message">{batchUpdateError}</div>}
+
+        {updateRepositories.length > 0 ? (
+          <div className="updates-center-list">
+            {updateRepositories.slice(0, 6).map((repo) => {
+              const installedApp = getInstalledApp(repo)
+              const latestVersion = getLatestVersion(repo)
+              if (!installedApp || !latestVersion) return null
+
+              return (
+                <div key={`${repo.owner.login}/${repo.name}`} className="updates-center-row">
+                  <div>
+                    <strong>{repo.name}</strong>
+                    <span>
+                      {installedApp.activeVersion} {'->'} {latestVersion}
+                    </span>
+                  </div>
+                  <div className="updates-center-row-actions">
+                    <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(repo)}>
+                      {t('repo.updateAction')}
+                    </button>
+                    <button type="button" className="secondary-btn" onClick={() => setDetailsRepo(repo)}>
+                      {t('details.open')}
+                    </button>
+                    <button type="button" className="secondary-btn" onClick={() => handleSkipUpdate(repo)}>
+                      {t('updates.skip')}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="updates-center-empty">{t('updates.empty')}</p>
+        )}
+
+        <DownloadProgressPanel
+          downloads={batchDownloads}
+          onCancel={cancelBatchDownload}
+          onLaunch={(download) => {
+            if (!download.owner || !download.repo) return
+            launchApp(download.owner, download.repo).catch(() => {})
+          }}
+          onOpenFolder={handleBatchOpenFolder}
+          onRetry={handleBatchRetry}
+          onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
+          onCleanup={handleBatchCleanup}
+        />
+      </section>
+    )
   }
 
   const renderHero = () => {
@@ -601,6 +922,8 @@ function SearchPage({
               </select>
             </label>
           </div>
+
+          {renderUpdatesCenter()}
 
           {state.error && state.isStale && (
             <div className="library-cache-note" role="status">
