@@ -30,6 +30,7 @@ function SettingsPage({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [intervalDraft, setIntervalDraft] = useState('')
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
 
   useEffect(() => {
@@ -37,10 +38,12 @@ function SettingsPage({
       .then((loadedSettings) => {
         const normalizedSettings = normalizeSettings(loadedSettings)
         setSettings(normalizedSettings)
+        setIntervalDraft(String(normalizedSettings.checkIntervalHours))
         applyThemePreference(normalizedSettings.theme)
       })
       .catch(() => {
         setSettings(DEFAULT_SETTINGS)
+        setIntervalDraft(String(DEFAULT_SETTINGS.checkIntervalHours))
         applyThemePreference(DEFAULT_SETTINGS.theme)
       })
       .finally(() => setLoading(false))
@@ -139,12 +142,35 @@ function SettingsPage({
     if (savedSettings) {
       applyThemePreference(savedSettings.theme, true)
       notifyThemePreference(savedSettings.theme)
+      setIntervalDraft(String(savedSettings.checkIntervalHours))
     }
   }
 
   const handleClearCache = async () => {
     await clearGithubCache().catch(() => {})
     alert(t('settings.cacheCleared'))
+  }
+
+  const clampIntervalHours = (value: string | number) => {
+    const numericValue = typeof value === 'number' ? value : Number(value)
+    return Math.max(1, Math.min(168, Number.isFinite(numericValue) ? Math.trunc(numericValue) : 24))
+  }
+
+  const commitIntervalDraft = async () => {
+    if (!settings) return
+    const previousIntervalHours = settings.checkIntervalHours
+    const checkIntervalHours = clampIntervalHours(intervalDraft)
+    setIntervalDraft(String(checkIntervalHours))
+    const savedSettings = await persistSettings({ ...settings, checkIntervalHours }, settings)
+    if (!savedSettings) {
+      setIntervalDraft(String(previousIntervalHours))
+    }
+  }
+
+  const handleIntervalKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.currentTarget.blur()
+    }
   }
 
   const handleValidatePath = async () => {
@@ -297,7 +323,7 @@ function SettingsPage({
                   onKeyDown={handleInstallationPathKeyDown}
                   placeholder={t('settings.installPathPlaceholder')}
                 />
-                <button type="button" onClick={handleBrowse}>
+                <button type="button" className="secondary-btn" onClick={handleBrowse}>
                   {t('settings.choose')}
                 </button>
                 <button type="button" className="secondary-btn" onClick={handleValidatePath}>
@@ -330,12 +356,20 @@ function SettingsPage({
         return (
           <section id="settings-maintenance" className="danger-zone">
             <h3>{t('settings.maintenance')}</h3>
-            <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
-              {t('settings.reset')}
-            </button>
-            <button className="danger-btn" onClick={handleClearCache}>
-              {t('settings.clearCache')}
-            </button>
+            <div className="settings-action-stack">
+              <div className="settings-action-item">
+                <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
+                  {t('settings.reset')}
+                </button>
+                <p className="help-text">{t('settings.resetDescription')}</p>
+              </div>
+              <div className="settings-action-item">
+                <button className="secondary-btn" onClick={handleClearCache}>
+                  {t('settings.clearCache')}
+                </button>
+                <p className="help-text">{t('settings.clearCacheDescription')}</p>
+              </div>
+            </div>
           </section>
         )
 
@@ -379,19 +413,20 @@ function SettingsPage({
 
             <div className="form-group compact-control">
               <label htmlFor="checkInterval">{t('settings.interval')}</label>
-              <input
-                id="checkInterval"
-                type="number"
-                min={1}
-                max={168}
-                value={settings.checkIntervalHours}
-                onChange={(event) => {
-                  const value = Number(event.target.value)
-                  const checkIntervalHours = Math.max(1, Math.min(168, Number.isFinite(value) ? value : 24))
-                  persistSettings({ ...settings, checkIntervalHours }, settings)
-                }}
-                disabled={!settings.autoUpdateCheck}
-              />
+              <div className="interval-input-control">
+                <input
+                  id="checkInterval"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={intervalDraft}
+                  onBlur={commitIntervalDraft}
+                  onChange={(event) => setIntervalDraft(event.target.value.replace(/[^\d]/g, '').slice(0, 3))}
+                  onKeyDown={handleIntervalKeyDown}
+                  disabled={!settings.autoUpdateCheck}
+                />
+                <span>{t('settings.intervalUnitHours')}</span>
+              </div>
             </div>
 
             <div className="form-group">

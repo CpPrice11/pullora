@@ -332,6 +332,11 @@
   padding: 0 12px;
 }
 
+.cinematic-shell .sort-control select {
+  border-radius: 12px;
+  min-height: 37px;
+}
+
 .library-page .sort-control,
 .library-page .sort-control select {
   width: 100%;
@@ -570,9 +575,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: 22px;
+  padding: 16px;
   background: var(--color-mica);
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--color-border-subtle);
 }
 
@@ -588,10 +593,12 @@
   display: flex;
   gap: var(--spacing-sm);
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .path-input-row input {
-  flex: 1;
+  flex: 1 1 280px;
+  min-width: 180px;
 }
 
 .checkbox-label {
@@ -1147,11 +1154,11 @@
   align-items: center;
   animation: fluent-fade-up var(--motion-page);
   display: grid;
-  gap: 22px;
-  grid-template-columns: 108px minmax(0, 1fr) minmax(188px, 242px);
-  min-height: 198px;
+  gap: 18px;
+  grid-template-columns: 96px minmax(0, 1fr) minmax(180px, 230px);
+  min-height: 176px;
   overflow: visible;
-  padding: 22px 24px;
+  padding: 20px 24px;
   position: relative;
   min-width: 0;
   z-index: 4;
@@ -1183,11 +1190,11 @@
   align-self: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 22px;
+  border-radius: 20px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-  height: 108px;
+  height: 96px;
   overflow: hidden;
-  width: 108px;
+  width: 96px;
 }
 
 .library-hero-cover img {
@@ -1220,13 +1227,13 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .library-hero h2 {
   color: #ffffff;
-  font-size: clamp(30px, 3.35vw, 46px);
+  font-size: clamp(29px, 3.15vw, 42px);
   font-weight: 860;
   letter-spacing: 0;
   line-height: 0.98;
@@ -1249,7 +1256,7 @@
 .library-hero-repo {
   color: rgba(255, 255, 255, 0.76);
   font-size: 16px;
-  margin-top: 8px;
+  margin-top: 7px;
 }
 
 :root[data-theme='light'] .library-hero-repo,
@@ -1263,8 +1270,8 @@
   color: rgba(255, 255, 255, 0.82);
   display: -webkit-box;
   font-size: 15px;
-  line-height: 1.55;
-  margin-top: 14px;
+  line-height: 1.45;
+  margin-top: 10px;
   max-width: 640px;
   overflow: hidden;
   -webkit-box-orient: vertical;
@@ -1276,8 +1283,8 @@
   color: rgba(255, 255, 255, 0.74);
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
-  margin-top: 14px;
+  gap: 8px 16px;
+  margin-top: 10px;
 }
 
 .library-hero-meta span {
@@ -1294,9 +1301,9 @@
   align-items: stretch;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
   justify-self: end;
-  max-width: 250px;
+  max-width: 230px;
   min-width: 0;
   position: relative;
   width: 100%;
@@ -1321,10 +1328,10 @@
     0 18px 38px rgba(0, 0, 0, 0.28),
     0 0 0 1px rgba(91, 215, 255, 0.18);
   color: #041019 !important;
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 820;
-  min-height: 54px;
-  padding: 0 24px;
+  min-height: 48px;
+  padding: 0 22px;
   white-space: normal;
 }
 
@@ -1485,23 +1492,21 @@
 
 .cinematic-shell .library-controls {
   align-items: center;
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
-    rgba(18, 20, 24, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   grid-template-columns: minmax(0, auto) minmax(180px, 330px);
   margin-top: 0;
-  padding: 6px;
+  padding: 0;
   width: 100%;
 }
 
 .cinematic-shell .segmented-control {
   background: rgba(255, 255, 255, 0.065);
   border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: none;
-  padding: 4px;
+  padding: 3px;
 }
 
 :root[data-theme='light'] .cinematic-shell .segmented-control {
@@ -1510,12 +1515,12 @@
 }
 
 .cinematic-shell .segmented-control button {
-  border-radius: 10px;
+  border-radius: 9px;
   color: rgba(255, 255, 255, 0.72);
   font-size: 13px;
   font-weight: 760;
-  min-height: 34px;
-  padding: 0 16px;
+  min-height: 31px;
+  padding: 0 13px;
 }
 
 :root[data-theme='light'] .cinematic-shell .segmented-control button {
@@ -1623,23 +1628,23 @@
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
   overflow: auto;
-  padding: 22px;
+  padding: 16px;
 }
 
 .settings-nav button {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 14px;
+  border-radius: 12px;
   color: rgba(255, 255, 255, 0.72);
   font-size: 15px;
   font-weight: 760;
   justify-content: flex-start;
-  min-height: 42px;
+  min-height: 38px;
   overflow: hidden;
-  padding: 0 16px 0 18px;
+  padding: 0 14px 0 18px;
   position: relative;
   text-align: left;
 }
@@ -1769,6 +1774,8 @@
 
 .cinematic-shell .path-input-row button {
   flex: 0 0 auto;
+  min-height: 42px;
+  min-width: 108px;
 }
 
 .cinematic-shell .about-grid {
@@ -1785,10 +1792,10 @@
   border-radius: 26px;
   box-shadow: 0 30px 74px rgba(0, 0, 0, 0.3);
   display: grid;
-  gap: 20px;
-  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 16px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
   max-width: 1180px;
-  padding: 24px;
+  padding: 20px;
   min-width: 0;
   width: 100%;
 }
@@ -1797,19 +1804,19 @@
   align-items: center;
   background: linear-gradient(135deg, #008df0, #54d5ff);
   border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 22px;
+  border-radius: 18px;
   display: flex;
-  height: 76px;
+  height: 64px;
   justify-content: center;
-  width: 76px;
+  width: 64px;
 }
 
 .about-hero-mark span {
   border: 3px solid rgba(255, 255, 255, 0.92);
   border-radius: 999px;
-  height: 28px;
+  height: 24px;
   position: relative;
-  width: 28px;
+  width: 24px;
 }
 
 .about-hero-mark span::after {
@@ -1825,7 +1832,7 @@
 
 .about-hero-main h3 {
   color: #ffffff;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 860;
   line-height: 1;
   margin: 0;
@@ -1841,8 +1848,8 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 7px;
+  margin-top: 12px;
 }
 
 .about-hero-meta span {
@@ -1850,9 +1857,9 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.74);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 760;
-  padding: 6px 10px;
+  padding: 5px 9px;
 }
 
 .about-hero-meta .about-hero-state {
@@ -1910,9 +1917,10 @@
   border-radius: 18px;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  min-height: 78px;
   overflow: hidden;
-  padding: 12px 14px;
+  padding: 9px 12px;
   position: relative;
 }
 
@@ -1956,14 +1964,14 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
   display: flex !important;
-  height: 46px;
+  height: 38px;
   justify-content: center;
-  width: 46px;
+  width: 38px;
 }
 
 .about-release-orb span {
   color: #ffffff !important;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 860;
 }
 
@@ -1984,7 +1992,7 @@
 
 .cinematic-shell .about-release-title span:first-child {
   color: #ffffff;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 840;
 }
 
@@ -2017,8 +2025,8 @@
 }
 
 .cinematic-shell .about-release-actions .secondary-btn {
-  min-height: 38px;
-  min-width: 126px;
+  min-height: 34px;
+  min-width: 112px;
 }
 
 .cinematic-shell .app-card {
@@ -2183,9 +2191,9 @@
   box-shadow: 0 42px 110px rgba(0, 0, 0, 0.58);
   display: flex;
   flex-direction: column;
-  max-height: min(700px, calc(100vh - 48px));
+  max-height: min(640px, calc(100vh - 48px));
   overflow: hidden;
-  width: min(920px, calc(100vw - 56px));
+  width: min(860px, calc(100vw - 56px));
 }
 
 .settings-modal-loading {
@@ -2202,7 +2210,7 @@
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  padding: 18px 22px;
+  padding: 14px 20px;
 }
 
 .settings-modal-kicker {
@@ -2211,13 +2219,13 @@
   font-size: 12px;
   font-weight: 840;
   letter-spacing: 0.09em;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   text-transform: uppercase;
 }
 
 .settings-modal-header h2 {
   color: #ffffff;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 860;
   line-height: 1;
   margin: 0;
@@ -2243,9 +2251,9 @@
   border-radius: 0;
   box-shadow: none;
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-columns: 170px minmax(0, 1fr);
   max-width: none;
-  min-height: min(390px, calc(100vh - 210px));
+  min-height: min(330px, calc(100vh - 188px));
   overflow: hidden;
   padding: 0;
   width: 100%;
@@ -2256,7 +2264,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
     rgba(8, 10, 14, 0.28);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 14px;
+  padding: 12px;
 }
 
 .settings-modal .settings-content {
@@ -2272,13 +2280,13 @@
   border: 0;
   box-shadow: none;
   min-height: 0;
-  padding: 22px 28px 26px;
+  padding: 20px 24px 22px;
 }
 
 .settings-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
 }
 
 .launcher-background-control {
@@ -2293,15 +2301,50 @@
 
 .settings-modal .compact-control input,
 .settings-modal .compact-control select {
-  max-width: 320px;
+  max-width: 300px;
 }
 
 .settings-modal .danger-zone {
-  gap: 14px;
+  gap: 12px;
 }
 
 .settings-modal .danger-zone button {
-  max-width: 360px;
+  max-width: 330px;
+}
+
+.interval-input-control {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  max-width: 170px;
+  min-width: 0;
+}
+
+.interval-input-control input {
+  max-width: 110px;
+  text-align: center;
+}
+
+.interval-input-control span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+}
+
+.settings-action-stack {
+  display: grid;
+  gap: 14px;
+  max-width: 460px;
+}
+
+.settings-action-item {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-action-item .help-text {
+  margin: 0 !important;
+  max-width: 460px;
 }
 
 /* Project action menus */
@@ -2405,14 +2448,14 @@
 }
 
 .cinematic-shell .about-release-link {
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  min-height: 94px;
-  padding: 10px 14px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  min-height: 78px;
+  padding: 9px 12px;
 }
 
 .cinematic-shell .about-release-orb {
-  height: 42px;
-  width: 42px;
+  height: 38px;
+  width: 38px;
 }
 
 .cinematic-shell .about-release-asset {
