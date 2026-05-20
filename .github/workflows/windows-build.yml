@@ -31,8 +31,8 @@ jobs:
       - name: Setup Rust
         shell: pwsh
         run: |
-          rustup toolchain install 1.77.2 --profile minimal
-          rustup default 1.77.2
+          rustup toolchain install stable --profile minimal
+          rustup default stable
           rustup show
 
       - name: Install dependencies

@@ -85,13 +85,13 @@ npm run tauri-build
 Release safety check:
 
 ```bash
-npm run check:release -- -Version 1.8.0 -SkipSmokeTest
+npm run check:release -- -Version 1.8.1 -SkipSmokeTest
 ```
 
 Full local release check after build and GitHub release publishing:
 
 ```bash
-npm run check:release -- -Version 1.8.0 -CheckGitHubRelease
+npm run check:release -- -Version 1.8.1 -CheckGitHubRelease
 ```
 
 ## Release Policy
