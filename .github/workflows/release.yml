@@ -9,10 +9,13 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows:
     name: Verify Windows release build
-    runs-on: windows-latest
+    runs-on: windows-2025
     timeout-minutes: 45
 
     steps:
@@ -22,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Setup Rust
