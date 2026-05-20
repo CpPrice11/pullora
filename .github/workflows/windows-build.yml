@@ -40,7 +40,7 @@ jobs:
 
       - name: Check release metadata
         shell: pwsh
-        run: npm run check:release -- -SkipArtifacts -SkipSmokeTest
+        run: npm run check:release -- -SkipArtifacts -SkipSmokeTest -RcReadiness
 
       - name: Build frontend
         run: npm run build

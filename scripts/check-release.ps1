@@ -3,6 +3,7 @@ param(
   [string]$BuildRoot = "",
   [switch]$SkipArtifacts,
   [switch]$SkipSmokeTest,
+  [switch]$RcReadiness,
   [switch]$CheckGitHubRelease,
   [string]$Repository = "CpPrice11/air-launcher"
 )
@@ -85,6 +86,41 @@ try {
     Fail "AboutPage fallback is not v$Version"
   }
   Write-Host "[ok] AboutPage fallback = v$Version"
+
+  if ($RcReadiness) {
+    $releaseWorkflow = Read-Text ".github\workflows\release.yml"
+    $windowsWorkflow = Read-Text ".github\workflows\windows-build.yml"
+    $installedStore = Read-Text "src-tauri\src\storage\installed.rs"
+
+    $blockedWorkflowPatterns = @(
+      "softprops/action-gh-release",
+      "tauri-apps/tauri-action",
+      "x64-portable.zip",
+      "Compress-Archive",
+      "contents: write"
+    )
+
+    foreach ($pattern in $blockedWorkflowPatterns) {
+      if ($releaseWorkflow -match [regex]::Escape($pattern)) {
+        Fail "release.yml must be verification-only and must not contain '$pattern'"
+      }
+    }
+
+    if ($releaseWorkflow -notmatch "Assert no MSI or ZIP release assets are produced") {
+      Fail "release.yml must assert that MSI/ZIP assets are not produced"
+    }
+    if ($windowsWorkflow -notmatch "npm run check:release") {
+      Fail "windows-build.yml must run release metadata checks"
+    }
+    if ($installedStore -notmatch "fn migrate_store") {
+      Fail "installed store migration helper is missing"
+    }
+    if ($installedStore -notmatch "asset_name\.is_none" -or $installedStore -notmatch "install_kind\.is_none") {
+      Fail "installed store migration must backfill asset_name and install_kind"
+    }
+
+    Write-Host "[ok] RC readiness checks passed"
+  }
 
   if (-not $SkipArtifacts) {
     $buildDir = Join-Path $BuildRoot $Version
