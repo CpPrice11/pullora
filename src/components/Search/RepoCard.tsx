@@ -16,6 +16,7 @@ interface RepoCardProps {
   onFavoriteChange?: (isFavorite: boolean) => void
   onPickArt?: () => void
   onClearArt?: () => void
+  onDetails?: () => void
   onSelect: () => void
   onLaunch?: () => void
 }
@@ -31,6 +32,7 @@ function RepoCard({
   onFavoriteChange,
   onPickArt,
   onClearArt,
+  onDetails,
   onSelect,
   onLaunch,
 }: RepoCardProps) {
@@ -126,6 +128,12 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onClearArt?.()
+  }
+
+  const handleDetails = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onDetails?.()
   }
 
   const handleActionsToggle = (event: React.MouseEvent) => {
@@ -248,6 +256,14 @@ function RepoCard({
             </button>
             {actionsOpen && (
               <div className="project-actions-popover" aria-label={t('art.actions')}>
+                {isInstalled && onDetails && (
+                  <button
+                    type="button"
+                    onClick={handleDetails}
+                  >
+                    {t('details.open')}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handlePickArt}

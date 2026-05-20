@@ -1038,6 +1038,202 @@
   border-color: rgba(17, 24, 39, 0.12);
 }
 
+.app-details-modal {
+  max-width: 920px;
+  overflow: hidden;
+  width: min(94vw, 920px);
+}
+
+.app-details-header {
+  background:
+    linear-gradient(115deg, rgba(91, 215, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    rgba(12, 14, 18, 0.54);
+  margin: 0;
+  padding: 24px 26px;
+}
+
+.app-details-kicker {
+  color: #7ddeff;
+  display: block;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.app-details-body {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  max-height: min(680px, calc(100vh - 170px));
+  overflow: auto;
+  padding: 18px;
+  scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
+}
+
+.app-details-summary,
+.app-details-panel {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(91, 215, 255, 0.13), transparent 34%),
+    rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+  min-width: 0;
+  padding: 16px;
+}
+
+.app-details-summary {
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  grid-row: span 3;
+}
+
+.app-details-status-row,
+.app-details-actions,
+.app-details-version-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-details-actions button {
+  flex: 1 1 128px;
+  min-height: 40px;
+}
+
+.app-details-facts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-details-facts > div,
+.app-details-paths > div {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+}
+
+.app-details-facts span,
+.app-details-paths span,
+.app-details-version-main span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.app-details-facts strong,
+.app-details-paths strong,
+.app-details-version-main strong {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.app-details-health-message {
+  border-left: 3px solid var(--color-error);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 12px;
+}
+
+.app-details-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.app-details-panel-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.app-details-panel-title span {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 820;
+  text-transform: uppercase;
+}
+
+.app-details-panel-title strong {
+  color: var(--color-primary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.app-details-paths,
+.app-details-version-list {
+  display: grid;
+  gap: 10px;
+}
+
+.app-details-notes,
+.app-details-muted {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.app-details-version-row {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 12px;
+}
+
+.app-details-version-row.active {
+  background: rgba(91, 215, 255, 0.13);
+  border-color: rgba(91, 215, 255, 0.62);
+}
+
+.app-details-version-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-details-version-actions {
+  justify-content: flex-end;
+}
+
+:root[data-theme='light'] .app-details-header {
+  background:
+    linear-gradient(115deg, rgba(232, 244, 255, 0.92), rgba(255, 255, 255, 0.66)),
+    rgba(255, 255, 255, 0.72);
+  border-bottom-color: rgba(17, 24, 39, 0.1);
+}
+
+:root[data-theme='light'] .app-details-summary,
+:root[data-theme='light'] .app-details-panel {
+  background: rgba(255, 255, 255, 0.76);
+  border-color: rgba(17, 24, 39, 0.12);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme='light'] .app-details-facts > div,
+:root[data-theme='light'] .app-details-paths > div,
+:root[data-theme='light'] .app-details-version-row {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(17, 24, 39, 0.12);
+}
+
 @media (max-width: 820px) {
   .release-modal--wizard .release-asset-list,
   .release-confirm-grid {
@@ -1051,6 +1247,24 @@
   .release-nav-actions > * {
     flex: 1 1 auto;
     justify-content: center;
+  }
+
+  .app-details-body,
+  .app-details-facts,
+  .app-details-version-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-details-summary {
+    grid-row: auto;
+  }
+
+  .app-details-version-actions {
+    justify-content: stretch;
+  }
+
+  .app-details-version-actions button {
+    flex: 1 1 auto;
   }
 }
 

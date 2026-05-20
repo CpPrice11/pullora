@@ -669,6 +669,44 @@ Object.assign(dictionaries.en, {
   'download.cleanupError': 'Failed to clean temporary install files',
 })
 
+Object.assign(dictionaries.uk, {
+  'details.open': 'Деталі',
+  'details.kicker': 'Деталі застосунку',
+  'details.summary': 'Підсумок встановлення',
+  'details.activeVersion': 'Активна версія',
+  'details.latestVersion': 'Остання версія',
+  'details.localVersions': 'Локальні версії',
+  'details.activeFile': 'Файл запуску',
+  'details.paths': 'Шляхи',
+  'details.executablePath': 'Шлях до EXE',
+  'details.releaseNotes': 'Нотатки релізу',
+  'details.noReleaseNotes': 'Нотаток для цього релізу поки немає.',
+  'details.releaseNotesError': 'Не вдалося завантажити нотатки релізу',
+  'details.unknown': 'Невідомо',
+  'details.actionError': 'Дію не вдалося виконати',
+  'details.switchConfirm': 'Активувати версію {version}?',
+  'details.working': 'Працюємо...',
+})
+
+Object.assign(dictionaries.en, {
+  'details.open': 'Details',
+  'details.kicker': 'App details',
+  'details.summary': 'Install summary',
+  'details.activeVersion': 'Active version',
+  'details.latestVersion': 'Latest version',
+  'details.localVersions': 'Local versions',
+  'details.activeFile': 'Launch file',
+  'details.paths': 'Paths',
+  'details.executablePath': 'EXE path',
+  'details.releaseNotes': 'Release notes',
+  'details.noReleaseNotes': 'No release notes for this release yet.',
+  'details.releaseNotesError': 'Failed to load release notes',
+  'details.unknown': 'Unknown',
+  'details.actionError': 'The action could not be completed',
+  'details.switchConfirm': 'Activate version {version}?',
+  'details.working': 'Working...',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

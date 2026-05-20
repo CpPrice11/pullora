@@ -1,0 +1,360 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { GitHubRelease, GitHubSearchResult, InstalledApp, InstalledAppHealth, VersionInfo } from '../../types'
+import { getReleases } from '../../services/github'
+import {
+  launchApp,
+  openInstalledAppDir,
+  switchVersion,
+  uninstallVersion,
+  validateInstalledApp,
+} from '../../services/installed'
+import { useSettings } from '../../hooks/useSettings'
+import { useI18n } from '../../i18n'
+import './SearchComponents.css'
+import '../Modal/Modal.css'
+
+interface AppDetailsModalProps {
+  repo: GitHubSearchResult
+  installedApp: InstalledApp
+  latestVersion?: string
+  onClose: () => void
+  onChanged?: () => Promise<void> | void
+  onInstallVersion?: () => void
+}
+
+function appKey(owner: string, repo: string) {
+  return `${owner}/${repo}`
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function stripMarkdown(value: string) {
+  return value
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+    .replace(/[#>*_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function compareVersionTags(left: string, right: string) {
+  const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+  const rightParts = right.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
+  const length = Math.max(leftParts.length, rightParts.length)
+
+  for (let index = 0; index < length; index += 1) {
+    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0)
+    if (diff !== 0) return diff
+  }
+
+  return left.localeCompare(right)
+}
+
+function versionDate(version: VersionInfo, language: string) {
+  return new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+function findRelease(releases: GitHubRelease[], tag: string) {
+  return releases.find((release) => release.tag_name === tag) ?? null
+}
+
+function AppDetailsModal({
+  repo,
+  installedApp,
+  latestVersion,
+  onClose,
+  onChanged,
+  onInstallVersion,
+}: AppDetailsModalProps) {
+  const { language, t } = useI18n()
+  const { settings } = useSettings()
+  const [health, setHealth] = useState<InstalledAppHealth | null>(null)
+  const [healthLoading, setHealthLoading] = useState(true)
+  const [releases, setReleases] = useState<GitHubRelease[]>([])
+  const [releaseError, setReleaseError] = useState<string | null>(null)
+  const [busyTag, setBusyTag] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
+  const activeVersion = installedApp.versions.find((version) => version.tag === installedApp.activeVersion)
+  const activeRelease = findRelease(releases, installedApp.activeVersion)
+  const latestRelease = latestVersion ? findRelease(releases, latestVersion) : null
+  const notesRelease = activeRelease ?? latestRelease ?? releases[0] ?? null
+  const releaseNotes = useMemo(() => {
+    if (!notesRelease?.body) return ''
+    const cleaned = stripMarkdown(notesRelease.body)
+    return cleaned.length > 420 ? `${cleaned.slice(0, 420)}...` : cleaned
+  }, [notesRelease])
+
+  const installRoot = settings.installationPath
+  const appPath = installRoot
+    ? `${installRoot}\\${installedApp.owner}-${installedApp.repo}`
+    : ''
+
+  const sortedVersions = useMemo(
+    () => [...installedApp.versions].sort((left, right) => compareVersionTags(right.tag, left.tag)),
+    [installedApp.versions],
+  )
+
+  const refreshHealth = useCallback(async () => {
+    setHealthLoading(true)
+    try {
+      const nextHealth = await validateInstalledApp(installedApp.owner, installedApp.repo)
+      setHealth(nextHealth)
+    } catch (err) {
+      setHealth({
+        ok: false,
+        status: 'needsRepair',
+        message: err instanceof Error ? err.message : t('installed.healthRepair'),
+        executablePath: null,
+      })
+    } finally {
+      setHealthLoading(false)
+    }
+  }, [installedApp.owner, installedApp.repo, t])
+
+  useEffect(() => {
+    refreshHealth()
+  }, [refreshHealth])
+
+  useEffect(() => {
+    let ignore = false
+
+    getReleases(installedApp.owner, installedApp.repo)
+      .then((items) => {
+        if (!ignore) {
+          setReleases(items.filter((release) => !release.draft).slice(0, 8))
+          setReleaseError(null)
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setReleaseError(err instanceof Error ? err.message : t('details.releaseNotesError'))
+        }
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [installedApp.owner, installedApp.repo, t])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  const runAndRefresh = async (operation: () => Promise<void>, tag?: string) => {
+    setActionError(null)
+    setBusyTag(tag ?? 'app')
+    try {
+      await operation()
+      await onChanged?.()
+      await refreshHealth()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t('details.actionError'))
+    } finally {
+      setBusyTag(null)
+    }
+  }
+
+  const handleLaunch = () => runAndRefresh(
+    () => launchApp(installedApp.owner, installedApp.repo),
+    'launch',
+  )
+
+  const handleOpenFolder = () => runAndRefresh(
+    () => openInstalledAppDir(installedApp.owner, installedApp.repo),
+    'folder',
+  )
+
+  const handleSwitch = (tag: string) => {
+    if (!confirm(t('details.switchConfirm', { version: tag }))) return
+    void runAndRefresh(
+      () => switchVersion(installedApp.owner, installedApp.repo, tag),
+      tag,
+    )
+  }
+
+  const handleDelete = (tag: string) => {
+    if (!confirm(t('installed.uninstallConfirm', { repo: installedApp.repo, tag }))) return
+    void runAndRefresh(
+      () => uninstallVersion(installedApp.owner, installedApp.repo, tag),
+      tag,
+    )
+  }
+
+  const statusLabel = healthLoading
+    ? t('installed.checkingHealth')
+    : health?.ok
+      ? t('installed.healthReady')
+      : t('installed.healthRepair')
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content app-details-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="app-details-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="modal-header app-details-header">
+          <div>
+            <span className="app-details-kicker">{t('details.kicker')}</span>
+            <h2 id="app-details-title">{installedApp.name}</h2>
+            <p className="modal-subtitle">{appKey(repo.owner.login, repo.name)}</p>
+          </div>
+          <button
+            type="button"
+            className="close-btn"
+            onClick={onClose}
+            aria-label={t('release.close')}
+          >
+            {'\u00d7'}
+          </button>
+        </div>
+
+        <div className="app-details-body">
+          <section className="app-details-summary" aria-label={t('details.summary')}>
+            <div className="app-details-status-row">
+              <span className={`health-badge ${health?.ok ? 'ready' : 'repair'}`}>
+                {statusLabel}
+              </span>
+              {hasUpdate && latestVersion && (
+                <span className="repo-status update">{t('repo.new', { version: latestVersion })}</span>
+              )}
+            </div>
+            <div className="app-details-facts">
+              <div>
+                <span>{t('details.activeVersion')}</span>
+                <strong>{installedApp.activeVersion}</strong>
+              </div>
+              <div>
+                <span>{t('details.latestVersion')}</span>
+                <strong>{latestVersion ?? t('details.unknown')}</strong>
+              </div>
+              <div>
+                <span>{t('details.localVersions')}</span>
+                <strong>{installedApp.versions.length}</strong>
+              </div>
+              <div>
+                <span>{t('details.activeFile')}</span>
+                <strong>{activeVersion?.executable ?? t('details.unknown')}</strong>
+              </div>
+            </div>
+            {health && !health.ok && (
+              <p className="app-details-health-message">{health.message}</p>
+            )}
+            <div className="app-details-actions">
+              <button type="button" className="hero-primary-btn" onClick={handleLaunch} disabled={busyTag !== null}>
+                {t('installed.launch')}
+              </button>
+              <button type="button" className="secondary-btn" onClick={handleOpenFolder} disabled={busyTag !== null}>
+                {t('installed.folder')}
+              </button>
+              <button type="button" className="secondary-btn" onClick={onInstallVersion} disabled={busyTag !== null}>
+                {hasUpdate ? t('repo.updateAction') : t('repo.versions')}
+              </button>
+              {!healthLoading && health && !health.ok && (
+                <button type="button" className="secondary-btn" onClick={onInstallVersion} disabled={busyTag !== null}>
+                  {t('installed.repair')}
+                </button>
+              )}
+            </div>
+            {actionError && <div className="error-message">{actionError}</div>}
+          </section>
+
+          <section className="app-details-panel">
+            <div className="app-details-panel-title">
+              <span>{t('details.paths')}</span>
+            </div>
+            <div className="app-details-paths">
+              <div>
+                <span>{t('release.installPath')}</span>
+                <strong>{appPath || t('details.unknown')}</strong>
+              </div>
+              <div>
+                <span>{t('details.executablePath')}</span>
+                <strong>{health?.executablePath ?? t('details.unknown')}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="app-details-panel">
+            <div className="app-details-panel-title">
+              <span>{t('details.releaseNotes')}</span>
+              {notesRelease && <strong>{notesRelease.tag_name}</strong>}
+            </div>
+            {releaseError ? (
+              <p className="app-details-muted">{releaseError}</p>
+            ) : releaseNotes ? (
+              <p className="app-details-notes">{releaseNotes}</p>
+            ) : (
+              <p className="app-details-muted">{t('details.noReleaseNotes')}</p>
+            )}
+          </section>
+
+          <section className="app-details-panel app-details-versions">
+            <div className="app-details-panel-title">
+              <span>{t('details.localVersions')}</span>
+              <strong>{installedApp.versions.length}</strong>
+            </div>
+            <div className="app-details-version-list">
+              {sortedVersions.map((version) => {
+                const isActive = version.tag === installedApp.activeVersion
+                const isBusy = busyTag === version.tag
+                return (
+                  <div key={version.tag} className={`app-details-version-row ${isActive ? 'active' : ''}`}>
+                    <div className="app-details-version-main">
+                      <strong>{version.tag}</strong>
+                      <span>{versionDate(version, language)} · {formatBytes(version.sizeBytes)}</span>
+                      {version.assetName && <span>{version.assetName}</span>}
+                    </div>
+                    <div className="app-details-version-actions">
+                      {isActive ? (
+                        <span className="active-label">{t('installed.active')}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="small-btn"
+                          onClick={() => handleSwitch(version.tag)}
+                          disabled={busyTag !== null}
+                        >
+                          {isBusy ? t('details.working') : t('installed.activate')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="small-btn danger"
+                        onClick={() => handleDelete(version.tag)}
+                        disabled={busyTag !== null}
+                      >
+                        {t('installed.delete')}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default AppDetailsModal

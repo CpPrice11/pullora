@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings'
 import { useLibraryStatus } from '../hooks/useLibraryStatus'
 import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
+import AppDetailsModal from '../components/Search/AppDetailsModal'
 import StatePanel from '../components/State/StatePanel'
 import { launchApp, openInstalledAppDir } from '../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../services/favorites'
@@ -74,6 +75,7 @@ function SearchPage({
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
+  const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
   const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
@@ -464,6 +466,17 @@ function SearchPage({
                     type="button"
                     onClick={() => {
                       setHeroActionsOpen(false)
+                      setDetailsRepo(featuredRepo)
+                    }}
+                  >
+                    {t('details.open')}
+                  </button>
+                )}
+                {isInstalled && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeroActionsOpen(false)
                       handleOpenFolder()
                     }}
                   >
@@ -681,6 +694,7 @@ function SearchPage({
                   onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                   onPickArt={() => handlePickArt('cover', repo)}
                   onClearArt={() => handleClearArt(repo)}
+                  onDetails={() => setDetailsRepo(repo)}
                   onSelect={() => setSelectedRepo(repo)}
                   onLaunch={() => handleLaunch(repo)}
                 />
@@ -705,6 +719,23 @@ function SearchPage({
           currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
           onClose={() => setSelectedRepo(null)}
           onInstalled={handleInstalledFromRelease}
+        />
+      )}
+
+      {detailsRepo && getInstalledApp(detailsRepo) && (
+        <AppDetailsModal
+          repo={detailsRepo}
+          installedApp={getInstalledApp(detailsRepo)!}
+          latestVersion={getLatestVersion(detailsRepo)}
+          onClose={() => setDetailsRepo(null)}
+          onChanged={async () => {
+            const freshInstalledApps = await refreshInstalledApps()
+            await refreshLatestVersions(freshInstalledApps, state.repositories)
+          }}
+          onInstallVersion={() => {
+            setDetailsRepo(null)
+            setSelectedRepo(detailsRepo)
+          }}
         />
       )}
     </div>
