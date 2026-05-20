@@ -1,11 +1,12 @@
 {
   "name": "air-launcher",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "GitHub program launcher - download and run applications from GitHub releases",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "check:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-release.ps1",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri-dev": "tauri dev",
