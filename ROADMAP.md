@@ -2,11 +2,11 @@
 
 ## Summary
 
-Фокус `2.0.0`: polished GitHub release launcher. Проєкт лишається Tauri + Rust + React + TypeScript + CSS і не розширюється в локальний app manager, marketplace, GitHub OAuth або private repository client.
+Фокус `2.0.0`: stable polished GitHub release launcher. Проєкт лишається Tauri + Rust + React + TypeScript + CSS і не розширюється в локальний app manager, marketplace, GitHub OAuth або private repository client.
 
 Темп: малі milestones. Кожен готовий user-facing UI/UX або app behavior блок може отримувати окремий minor/patch release. Documentation-only зміни не потребують desktop release.
 
-Поточна база: `v1.1.14` має cinematic UI, Library-first навігацію, Settings modal, install wizard, portable-first install policy і release-процес із двома assets.
+База stable release спирається на `v1.9.2`: cinematic UI, Library-first навігація, Settings modal, install wizard, portable-first install policy, app details, updates filter, accessibility polish, RC-readiness checks і release-процес із двома assets.
 
 ## Milestones
 
@@ -101,7 +101,7 @@
 
 ## Public Interfaces / Types
 
-- `DownloadProgress` лишається stage-based contract із `v1.1.14`; нові поля додавати тільки optional.
+- `DownloadProgress` лишається stage-based contract; нові поля додавати тільки optional.
 - `installed_apps.json` переходить на `version: 2` тільки в milestone `v1.4.0`, із backward migration.
 - Нові app details/health APIs мають бути вузькими: validate, repair/cleanup, open folder, switch version, uninstall version.
 - Не додавати GitHub OAuth, private repos, marketplace, multi-owner catalogs або local app scanning до `2.0.0`.
