@@ -4,14 +4,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-windows:
-    name: Build Windows
+    name: Verify Windows release build
     runs-on: windows-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -24,62 +26,34 @@ jobs:
           cache: 'npm'
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup show
 
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri app (installer + msi)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Air Launcher ${{ github.ref_name }}'
-          releaseBody: |
-            ## Air Launcher ${{ github.ref_name }}
+      - name: Check release metadata
+        shell: pwsh
+        run: npm run check:release -- -SkipArtifacts -SkipSmokeTest -RcReadiness
 
-            ### Downloads
-            | File | Description |
-            |------|-------------|
-            | `Air.Launcher_*_x64-setup.exe` | Installer (recommended) |
-            | `Air.Launcher_*_x64.msi` | MSI installer |
-            | `Air.Launcher_*_x64-portable.zip` | Portable (no install needed) |
+      - name: Build frontend
+        run: npm run build
 
-            ### Installation
-            - **Installer**: run `*-setup.exe`, follows the wizard
-            - **MSI**: for enterprise/GPO deployment
-            - **Portable**: extract the zip and run `air-launcher.exe` directly
+      - name: Check Rust
+        working-directory: src-tauri
+        run: cargo check
 
-            ### Requirements
-            - Windows 10 / 11 (64-bit)
-            - WebView2 runtime (included in Windows 11, auto-installed on Windows 10)
-          releaseDraft: false
-          prerelease: false
-          includeUpdaterJson: false
+      - name: Build Tauri bundle
+        run: npm run tauri-build
 
-      # --- Portable ZIP ---
-      - name: Create portable ZIP
+      - name: Assert no MSI or ZIP release assets are produced
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v', ''
-          $exePath = "src-tauri\target\release\app.exe"
-          $outDir  = "portable"
-          New-Item -ItemType Directory -Force $outDir | Out-Null
-          Copy-Item $exePath "$outDir\air-launcher.exe"
-          Compress-Archive -Path "$outDir\*" `
-            -DestinationPath "Air.Launcher_${version}_x64-portable.zip" -Force
-
-      - name: Upload portable ZIP to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: Air.Launcher_*_x64-portable.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          $blocked = @(Get-ChildItem -Path src-tauri\target\release\bundle -Recurse -File -Include *.msi,*.zip -ErrorAction SilentlyContinue)
+          if ($blocked.Count -gt 0) {
+            throw "Release workflow must not produce MSI/ZIP assets: $($blocked.Name -join ', ')"
+          }
+          Write-Host "[ok] Release workflow produced no MSI/ZIP assets"

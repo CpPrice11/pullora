@@ -49,10 +49,43 @@ fn load_store(config_dir: &PathBuf) -> Result<InstalledStore, StorageError> {
     }
     let content = std::fs::read_to_string(&path)?;
     let mut store: InstalledStore = serde_json::from_str(&content)?;
-    if store.version < 2 {
-        store.version = 2;
+    if migrate_store(&mut store) {
+        save_store(config_dir, &store)?;
     }
     Ok(store)
+}
+
+fn migrate_store(store: &mut InstalledStore) -> bool {
+    let mut changed = false;
+
+    if store.version < 2 {
+        store.version = 2;
+        changed = true;
+    }
+
+    for app in &mut store.apps {
+        for version in &mut app.versions {
+            if version.asset_name.is_none() {
+                version.asset_name = Some(version.executable.clone());
+                changed = true;
+            }
+
+            if version.install_kind.is_none() {
+                let executable = version.executable.to_lowercase();
+                let install_kind = if executable.ends_with(".appimage") {
+                    "portable"
+                } else if executable.ends_with(".exe") {
+                    "portable"
+                } else {
+                    "archive"
+                };
+                version.install_kind = Some(install_kind.to_string());
+                changed = true;
+            }
+        }
+    }
+
+    changed
 }
 
 fn save_store(config_dir: &PathBuf, store: &InstalledStore) -> Result<(), StorageError> {
