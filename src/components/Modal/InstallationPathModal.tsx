@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
 import { pickDirectory } from '../../services/dialog'
 import { useI18n } from '../../i18n'
+import { useModalFocus } from '../../hooks/useModalFocus'
 import './Modal.css'
 
 interface InstallationPathModalProps {
@@ -9,20 +10,12 @@ interface InstallationPathModalProps {
 
 function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   const { t } = useI18n()
+  const modalRef = useRef<HTMLDivElement | null>(null)
   const [selectedPath, setSelectedPath] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  useModalFocus(modalRef, { onEscape: () => {} })
 
   const handleBrowse = async () => {
     const dir = await pickDirectory()
@@ -48,10 +41,12 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
   return (
     <div className="modal-overlay">
       <div
+        ref={modalRef}
         className="modal-content"
         role="dialog"
         aria-modal="true"
         aria-labelledby="first-run-title"
+        tabIndex={-1}
       >
         <div className="modal-header">
           <h2 id="first-run-title">{t('firstRun.title')}</h2>
@@ -72,6 +67,7 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
                 onChange={(e) => setSelectedPath(e.target.value)}
                 placeholder={t('firstRun.pathPlaceholder')}
                 disabled={loading}
+                data-autofocus="true"
               />
               <button type="button" onClick={handleBrowse} disabled={loading}>
                 {t('settings.choose')}

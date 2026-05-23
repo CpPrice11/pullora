@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import StatePanel from '../components/State/StatePanel'
+import { useModalFocus } from '../hooks/useModalFocus'
 import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
@@ -32,6 +33,7 @@ function SettingsPage({
   const [error, setError] = useState<string | null>(null)
   const [intervalDraft, setIntervalDraft] = useState('')
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
+  const modalRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     getSettings()
@@ -49,16 +51,7 @@ function SettingsPage({
       .finally(() => setLoading(false))
   }, [])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  useModalFocus(modalRef, { onEscape: onClose })
 
   const showSavedState = () => {
     setSaved(true)
@@ -209,10 +202,12 @@ function SettingsPage({
     return (
       <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
         <section
+          ref={modalRef}
           className="settings-modal settings-modal-loading"
           role="dialog"
           aria-modal="true"
           aria-label={t('settings.title')}
+          tabIndex={-1}
           onClick={(event) => event.stopPropagation()}
         >
           <button
@@ -262,6 +257,7 @@ function SettingsPage({
                   }
                   onKeyDown={handleGithubOwnerKeyDown}
                   placeholder={t('settings.githubOwnerPlaceholder')}
+                  data-autofocus="true"
                 />
               </div>
 
@@ -522,10 +518,12 @@ function SettingsPage({
   return (
     <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
       <section
+        ref={modalRef}
         className="settings-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="settings-modal-header">
@@ -560,6 +558,7 @@ function SettingsPage({
                 aria-current={activeSection === section.id ? 'page' : undefined}
                 aria-controls={settingsPanelId(section.id)}
                 onClick={() => handleSectionSelect(section.id)}
+                data-autofocus={activeSection === section.id ? 'true' : undefined}
               >
                 {section.label}
               </button>

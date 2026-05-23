@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useReleases } from '../../hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
+import { useModalFocus } from '../../hooks/useModalFocus'
 import type { DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
 import StatePanel from '../State/StatePanel'
@@ -157,6 +158,7 @@ function ReleaseSelector({
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null)
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
+  const modalRef = useRef<HTMLDivElement | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
 
   const visibleReleases = useMemo(
@@ -200,16 +202,7 @@ function ReleaseSelector({
     fetchReleases(true)
   }, [fetchReleases])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !downloading) {
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [downloading, onClose])
+  useModalFocus(modalRef, { onEscape: downloading ? undefined : onClose })
 
   useEffect(() => {
     if (visibleReleases.length > 0 && !selectedRelease) {
@@ -292,10 +285,12 @@ function ReleaseSelector({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
+        ref={modalRef}
         className="modal-content release-modal release-modal--wizard"
         role="dialog"
         aria-modal="true"
         aria-labelledby="release-selector-title"
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
@@ -332,6 +327,7 @@ function ReleaseSelector({
                 disabled={itemIndex > currentIndex || downloading}
                 aria-current={item === step ? 'step' : undefined}
                 aria-label={`${stepLabel(item, t)}. ${t(stepHelpKey(item))}`}
+                data-autofocus={item === step ? 'true' : undefined}
               >
                 {stepLabel(item, t)}
               </button>

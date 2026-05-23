@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GitHubRelease, GitHubSearchResult, InstalledApp, InstalledAppHealth, VersionInfo } from '../../types'
 import { getReleases } from '../../services/github'
 import {
@@ -10,6 +10,7 @@ import {
 } from '../../services/installed'
 import { useSettings } from '../../hooks/useSettings'
 import { useI18n } from '../../i18n'
+import { useModalFocus } from '../../hooks/useModalFocus'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -86,6 +87,7 @@ function AppDetailsModal({
   const [actionError, setActionError] = useState<string | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [notesExpanded, setNotesExpanded] = useState(false)
+  const modalRef = useRef<HTMLDivElement | null>(null)
 
   const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
   const activeVersion = installedApp.versions.find((version) => version.tag === installedApp.activeVersion)
@@ -153,14 +155,7 @@ function AppDetailsModal({
     }
   }, [installedApp.owner, installedApp.repo, t])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  useModalFocus(modalRef, { onEscape: onClose })
 
   useEffect(() => {
     setNotesExpanded(false)
@@ -226,10 +221,12 @@ function AppDetailsModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
+        ref={modalRef}
         className="modal-content app-details-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="app-details-title"
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header app-details-header">
@@ -283,7 +280,7 @@ function AppDetailsModal({
               <p className="app-details-health-message">{health.message}</p>
             )}
             <div className="app-details-actions">
-              <button type="button" className="hero-primary-btn" onClick={handleLaunch} disabled={busyTag !== null}>
+              <button type="button" className="hero-primary-btn" onClick={handleLaunch} disabled={busyTag !== null} data-autofocus="true">
                 {t('installed.launch')}
               </button>
               <button type="button" className="secondary-btn" onClick={handleOpenFolder} disabled={busyTag !== null}>

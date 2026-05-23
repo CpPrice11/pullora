@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { clearGithubCache, getReleases } from '../services/github'
 import { getLauncherVersion, installLauncherRelease } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease } from '../types'
 import { useI18n } from '../i18n'
+import { useModalFocus } from '../hooks/useModalFocus'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v2.1.0'
+const FALLBACK_CURRENT_VERSION = 'v2.1.1'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -66,6 +67,7 @@ function AboutPage() {
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
+  const confirmModalRef = useRef<HTMLDivElement | null>(null)
 
   const loadLauncherReleases = async () => {
     setRefreshState('idle')
@@ -98,16 +100,10 @@ function AboutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && pendingAction && !installingVersion) {
-        setPendingAction(null)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [installingVersion, pendingAction])
+  useModalFocus(confirmModalRef, {
+    active: Boolean(pendingAction),
+    onEscape: pendingAction && !installingVersion ? () => setPendingAction(null) : undefined,
+  })
 
   const getReleaseStatus = (tagName: string, hasPortableAsset: boolean) => {
     if (!hasPortableAsset) return t('about.portableUnavailableStatus')
@@ -334,10 +330,12 @@ function AboutPage() {
           }}
         >
           <div
+            ref={confirmModalRef}
             className="modal-content confirm-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="launcher-confirm-title"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="confirm-modal-header">
@@ -386,6 +384,7 @@ function AboutPage() {
                 className="secondary-btn"
                 disabled={installingVersion !== null}
                 onClick={() => setPendingAction(null)}
+                data-autofocus="true"
               >
                 {t('about.cancel')}
               </button>
