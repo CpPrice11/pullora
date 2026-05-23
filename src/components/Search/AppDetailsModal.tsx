@@ -84,17 +84,22 @@ function AppDetailsModal({
   const [releaseError, setReleaseError] = useState<string | null>(null)
   const [busyTag, setBusyTag] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [notesExpanded, setNotesExpanded] = useState(false)
 
   const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
   const activeVersion = installedApp.versions.find((version) => version.tag === installedApp.activeVersion)
   const activeRelease = findRelease(releases, installedApp.activeVersion)
   const latestRelease = latestVersion ? findRelease(releases, latestVersion) : null
   const notesRelease = activeRelease ?? latestRelease ?? releases[0] ?? null
-  const releaseNotes = useMemo(() => {
+  const cleanedReleaseNotes = useMemo(() => {
     if (!notesRelease?.body) return ''
-    const cleaned = stripMarkdown(notesRelease.body)
-    return cleaned.length > 420 ? `${cleaned.slice(0, 420)}...` : cleaned
+    return stripMarkdown(notesRelease.body)
   }, [notesRelease])
+  const releaseNotesLong = cleanedReleaseNotes.length > 420
+  const releaseNotes = releaseNotesLong && !notesExpanded
+    ? `${cleanedReleaseNotes.slice(0, 420)}...`
+    : cleanedReleaseNotes
 
   const installRoot = settings.installationPath
   const appPath = installRoot
@@ -157,6 +162,10 @@ function AppDetailsModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
+  useEffect(() => {
+    setNotesExpanded(false)
+  }, [notesRelease?.tag_name])
+
   const runAndRefresh = async (operation: () => Promise<void>, tag?: string) => {
     setActionError(null)
     setBusyTag(tag ?? 'app')
@@ -180,6 +189,17 @@ function AppDetailsModal({
     () => openInstalledAppDir(installedApp.owner, installedApp.repo),
     'folder',
   )
+
+  const handleCopy = async (key: string, value: string) => {
+    if (!value) return
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedKey(key)
+      window.setTimeout(() => setCopiedKey(null), 1400)
+    } catch {
+      setActionError(t('details.copyError'))
+    }
+  }
 
   const handleSwitch = (tag: string) => {
     if (!confirm(t('details.switchConfirm', { version: tag }))) return
@@ -283,13 +303,31 @@ function AppDetailsModal({
               <span>{t('details.paths')}</span>
             </div>
             <div className="app-details-paths">
-              <div>
+              <div className="app-details-copy-row">
                 <span>{t('release.installPath')}</span>
                 <strong>{appPath || t('details.unknown')}</strong>
+                {appPath && (
+                  <button
+                    type="button"
+                    className="small-btn app-details-copy-btn"
+                    onClick={() => handleCopy('installPath', appPath)}
+                  >
+                    {copiedKey === 'installPath' ? t('details.copied') : t('details.copy')}
+                  </button>
+                )}
               </div>
-              <div>
+              <div className="app-details-copy-row">
                 <span>{t('details.executablePath')}</span>
                 <strong>{health?.executablePath ?? t('details.unknown')}</strong>
+                {health?.executablePath && (
+                  <button
+                    type="button"
+                    className="small-btn app-details-copy-btn"
+                    onClick={() => handleCopy('executablePath', health.executablePath ?? '')}
+                  >
+                    {copiedKey === 'executablePath' ? t('details.copied') : t('details.copy')}
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -302,7 +340,18 @@ function AppDetailsModal({
             {releaseError ? (
               <p className="app-details-muted">{releaseError}</p>
             ) : releaseNotes ? (
-              <p className="app-details-notes">{releaseNotes}</p>
+              <>
+                <p className="app-details-notes">{releaseNotes}</p>
+                {releaseNotesLong && (
+                  <button
+                    type="button"
+                    className="app-details-text-btn"
+                    onClick={() => setNotesExpanded((value) => !value)}
+                  >
+                    {notesExpanded ? t('details.showLess') : t('details.showMore')}
+                  </button>
+                )}
+              </>
             ) : (
               <p className="app-details-muted">{t('details.noReleaseNotes')}</p>
             )}

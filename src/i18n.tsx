@@ -556,6 +556,11 @@ Object.assign(dictionaries.uk, {
   'release.stepConfirm': 'Підтвердження',
   'release.stepProgress': 'Прогрес',
   'release.stepResult': 'Готово',
+  'release.stepVersionHelp': 'Обери реліз. Air Launcher покаже поточну, новішу або старішу версію перед встановленням.',
+  'release.stepFileHelp': 'Рекомендований файл має бути portable EXE або архівом з EXE всередині. Setup/MSI лишаються ручним варіантом.',
+  'release.stepConfirmHelp': 'Перевір версію, файл і папку встановлення перед стартом.',
+  'release.stepProgressHelp': 'Стеж за завантаженням, перевіркою, пошуком EXE та реєстрацією версії.',
+  'release.stepResultHelp': 'Після успіху можна запустити застосунок, відкрити папку або повернутися до бібліотеки.',
   'release.next': 'Далі',
   'release.back': 'Назад',
   'release.confirmTitle': 'Підсумок встановлення',
@@ -601,6 +606,11 @@ Object.assign(dictionaries.en, {
   'release.stepConfirm': 'Confirm',
   'release.stepProgress': 'Progress',
   'release.stepResult': 'Done',
+  'release.stepVersionHelp': 'Choose a release. Air Launcher will show whether it is current, newer, or older before installing.',
+  'release.stepFileHelp': 'The recommended file should be a portable EXE or an archive containing an EXE. Setup/MSI remains a manual choice.',
+  'release.stepConfirmHelp': 'Check the version, file, and install folder before starting.',
+  'release.stepProgressHelp': 'Follow download, verification, EXE detection, and version registration.',
+  'release.stepResultHelp': 'After success, launch the app, open its folder, or return to the library.',
   'release.next': 'Next',
   'release.back': 'Back',
   'release.confirmTitle': 'Install summary',
@@ -692,6 +702,11 @@ Object.assign(dictionaries.uk, {
   'details.actionError': 'Дію не вдалося виконати',
   'details.switchConfirm': 'Активувати версію {version}?',
   'details.working': 'Працюємо...',
+  'details.copy': 'Копіювати',
+  'details.copied': 'Скопійовано',
+  'details.copyError': 'Не вдалося скопіювати шлях',
+  'details.showMore': 'Показати більше',
+  'details.showLess': 'Показати менше',
 })
 
 Object.assign(dictionaries.en, {
@@ -711,6 +726,11 @@ Object.assign(dictionaries.en, {
   'details.actionError': 'The action could not be completed',
   'details.switchConfirm': 'Activate version {version}?',
   'details.working': 'Working...',
+  'details.copy': 'Copy',
+  'details.copied': 'Copied',
+  'details.copyError': 'Could not copy the path',
+  'details.showMore': 'Show more',
+  'details.showLess': 'Show less',
 })
 
 Object.assign(dictionaries.uk, {

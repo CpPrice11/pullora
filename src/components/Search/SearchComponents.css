@@ -885,6 +885,31 @@
   opacity: 0.56;
 }
 
+.release-wizard-context {
+  background: rgba(91, 215, 255, 0.08);
+  border: 1px solid rgba(91, 215, 255, 0.16);
+  border-radius: 14px;
+  display: grid;
+  gap: 4px;
+  margin: 12px 26px 0;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.release-wizard-context span {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.release-wizard-context p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .cinematic-shell .release-modal--wizard .release-body {
   display: block;
   max-height: min(650px, calc(100vh - 205px));
@@ -1189,6 +1214,23 @@
   gap: 10px;
 }
 
+.app-details-copy-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.app-details-copy-row span,
+.app-details-copy-row strong {
+  grid-column: 1;
+}
+
+.app-details-copy-btn {
+  align-self: center;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 32px;
+  min-width: 92px;
+}
+
 .app-details-notes,
 .app-details-muted {
   color: var(--color-text-secondary);
@@ -1196,6 +1238,24 @@
   line-height: 1.55;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.app-details-text-btn {
+  align-self: start;
+  background: transparent;
+  border: 0;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  justify-self: start;
+  padding: 0;
+}
+
+.app-details-text-btn:hover {
+  color: #8be6ff;
+  text-decoration: underline;
+  transform: none;
 }
 
 .app-details-version-row {
@@ -1394,6 +1454,11 @@
   border-color: rgba(17, 24, 39, 0.12);
 }
 
+:root[data-theme='light'] .release-wizard-context {
+  background: rgba(232, 244, 255, 0.76);
+  border-color: rgba(0, 120, 212, 0.16);
+}
+
 @media (max-width: 820px) {
   .release-modal--wizard .release-asset-list,
   .release-confirm-grid {
@@ -1411,8 +1476,16 @@
 
   .app-details-body,
   .app-details-facts,
-  .app-details-version-row {
+  .app-details-version-row,
+  .app-details-copy-row {
     grid-template-columns: 1fr;
+  }
+
+  .app-details-copy-row span,
+  .app-details-copy-row strong,
+  .app-details-copy-btn {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .app-details-summary {
