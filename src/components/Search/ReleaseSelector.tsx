@@ -126,6 +126,17 @@ function stepLabel(step: WizardStep, t: (key: string) => string) {
   }
 }
 
+function stepHelpKey(step: WizardStep) {
+  switch (step) {
+    case 'version': return 'release.stepVersionHelp'
+    case 'file': return 'release.stepFileHelp'
+    case 'confirm': return 'release.stepConfirmHelp'
+    case 'progress': return 'release.stepProgressHelp'
+    case 'result': return 'release.stepResultHelp'
+    default: return 'release.stepVersionHelp'
+  }
+}
+
 function ReleaseSelector({
   owner,
   repo,
@@ -324,6 +335,11 @@ function ReleaseSelector({
               </button>
             )
           })}
+        </div>
+
+        <div className="release-wizard-context">
+          <span>{stepLabel(step, t)}</span>
+          <p>{t(stepHelpKey(step))}</p>
         </div>
 
         <div className="release-body">
