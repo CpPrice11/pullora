@@ -339,8 +339,8 @@
 }
 
 .cinematic-shell .release-modal {
-  max-width: 900px;
-  width: min(92vw, 900px);
+  max-width: 940px;
+  width: min(94vw, 940px);
 }
 
 .cinematic-shell .release-modal .modal-header {
@@ -348,7 +348,7 @@
     linear-gradient(115deg, rgba(91, 215, 255, 0.12), rgba(255, 255, 255, 0.04)),
     rgba(12, 14, 18, 0.54);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin: -26px -26px 0;
+  margin: 0;
   padding: 24px 26px;
 }
 
@@ -381,8 +381,9 @@
   gap: 14px;
   grid-template-columns: minmax(230px, 0.9fr) minmax(300px, 1.1fr);
   max-height: min(690px, calc(100vh - 180px));
-  overflow: auto;
-  padding: 18px 0 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 18px 26px 24px;
   scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
 }
 
@@ -836,20 +837,20 @@
 }
 
 .release-modal--wizard {
-  max-width: 940px;
-  width: min(94vw, 940px);
+  max-width: 1040px;
+  width: min(94vw, 1040px);
 }
 
 .cinematic-shell .release-modal--wizard {
-  max-width: 940px;
-  width: min(94vw, 940px);
+  max-width: 1040px;
+  width: min(94vw, 1040px);
 }
 
 .release-wizard-steps {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 14px 0 0;
+  padding: 14px 26px 0;
 }
 
 .cinematic-shell .release-wizard-steps {
@@ -887,13 +888,15 @@
 .cinematic-shell .release-modal--wizard .release-body {
   display: block;
   max-height: min(650px, calc(100vh - 205px));
-  overflow: auto;
-  padding: 18px 0 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 18px 26px 24px;
 }
 
 .release-wizard-panel {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .release-modal--wizard .release-picker {
@@ -979,6 +982,7 @@
 .release-install-path strong {
   font-size: 13px;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .release-install-path {
@@ -1039,9 +1043,13 @@
 }
 
 .app-details-modal {
-  max-width: 920px;
+  max-width: 1120px;
   overflow: hidden;
-  width: min(94vw, 920px);
+  width: min(94vw, 1120px);
+}
+
+.modal-content.app-details-modal {
+  overflow: hidden;
 }
 
 .app-details-header {
@@ -1049,7 +1057,7 @@
     linear-gradient(115deg, rgba(91, 215, 255, 0.12), rgba(255, 255, 255, 0.04)),
     rgba(12, 14, 18, 0.54);
   margin: 0;
-  padding: 24px 26px;
+  padding: 22px 26px;
 }
 
 .app-details-kicker {
@@ -1065,9 +1073,10 @@
 .app-details-body {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  grid-template-columns: minmax(300px, 0.88fr) minmax(420px, 1.12fr);
   max-height: min(680px, calc(100vh - 170px));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 18px;
   scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
 }
@@ -1119,6 +1128,7 @@
   display: grid;
   gap: 5px;
   min-width: 0;
+  overflow: hidden;
   padding: 11px 12px;
 }
 
@@ -1135,6 +1145,7 @@
 .app-details-version-main strong {
   color: var(--color-text);
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .app-details-health-message {
@@ -1184,6 +1195,7 @@
   font-size: 13px;
   line-height: 1.55;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .app-details-version-row {
@@ -1195,6 +1207,7 @@
   gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
+  overflow: hidden;
   padding: 12px;
 }
 
