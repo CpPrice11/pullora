@@ -33,6 +33,21 @@
   animation: fluent-dialog-in var(--motion-normal);
 }
 
+.modal-content.release-modal {
+  max-width: 940px;
+  width: min(94vw, 940px);
+}
+
+.modal-content.release-modal.release-modal--wizard {
+  max-width: 1040px;
+  width: min(94vw, 1040px);
+}
+
+.modal-content.app-details-modal {
+  max-width: 1120px;
+  width: min(94vw, 1120px);
+}
+
 .cinematic-shell .modal-content,
 .modal-content {
   background:
