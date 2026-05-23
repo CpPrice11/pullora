@@ -319,7 +319,7 @@ function ReleaseSelector({
           </button>
         </div>
 
-        <div className="release-wizard-steps" aria-label={t('release.wizardSteps')}>
+        <div className="release-wizard-steps" role="group" aria-label={t('release.wizardSteps')}>
           {wizardSteps.map((item) => {
             const currentIndex = wizardSteps.indexOf(step)
             const itemIndex = wizardSteps.indexOf(item)
@@ -330,6 +330,8 @@ function ReleaseSelector({
                 className={`release-step-pill ${item === step ? 'active' : ''} ${itemIndex < currentIndex ? 'done' : ''}`}
                 onClick={() => itemIndex <= currentIndex && setStep(item)}
                 disabled={itemIndex > currentIndex || downloading}
+                aria-current={item === step ? 'step' : undefined}
+                aria-label={`${stepLabel(item, t)}. ${t(stepHelpKey(item))}`}
               >
                 {stepLabel(item, t)}
               </button>

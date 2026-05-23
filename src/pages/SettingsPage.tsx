@@ -236,6 +236,9 @@ function SettingsPage({
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
 
+  const settingsPanelId = (sectionId: string) =>
+    sectionId === 'installation' ? 'settings-folders' : `settings-${sectionId}`
+
   const handleSectionSelect = (sectionId: string) => {
     setActiveSection(sectionId)
   }
@@ -554,6 +557,8 @@ function SettingsPage({
                 key={section.id}
                 type="button"
                 className={activeSection === section.id ? 'active' : ''}
+                aria-current={activeSection === section.id ? 'page' : undefined}
+                aria-controls={settingsPanelId(section.id)}
                 onClick={() => handleSectionSelect(section.id)}
               >
                 {section.label}

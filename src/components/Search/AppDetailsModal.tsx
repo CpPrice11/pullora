@@ -249,6 +249,9 @@ function AppDetailsModal({
         </div>
 
         <div className="app-details-body">
+          <div className="visually-hidden" aria-live="polite" aria-atomic="true">
+            {copiedKey ? t('details.copied') : ''}
+          </div>
           <section className="app-details-summary" aria-label={t('details.summary')}>
             <div className="app-details-status-row">
               <span className={`health-badge ${health?.ok ? 'ready' : 'repair'}`}>
@@ -310,6 +313,7 @@ function AppDetailsModal({
                   <button
                     type="button"
                     className="small-btn app-details-copy-btn"
+                    aria-label={t('details.copyInstallPath')}
                     onClick={() => handleCopy('installPath', appPath)}
                   >
                     {copiedKey === 'installPath' ? t('details.copied') : t('details.copy')}
@@ -323,6 +327,7 @@ function AppDetailsModal({
                   <button
                     type="button"
                     className="small-btn app-details-copy-btn"
+                    aria-label={t('details.copyExecutablePath')}
                     onClick={() => handleCopy('executablePath', health.executablePath ?? '')}
                   >
                     {copiedKey === 'executablePath' ? t('details.copied') : t('details.copy')}

@@ -705,6 +705,8 @@ Object.assign(dictionaries.uk, {
   'details.copy': 'Копіювати',
   'details.copied': 'Скопійовано',
   'details.copyError': 'Не вдалося скопіювати шлях',
+  'details.copyInstallPath': 'Копіювати шлях встановлення',
+  'details.copyExecutablePath': 'Копіювати шлях до EXE',
   'details.showMore': 'Показати більше',
   'details.showLess': 'Показати менше',
 })
@@ -729,6 +731,8 @@ Object.assign(dictionaries.en, {
   'details.copy': 'Copy',
   'details.copied': 'Copied',
   'details.copyError': 'Could not copy the path',
+  'details.copyInstallPath': 'Copy install path',
+  'details.copyExecutablePath': 'Copy EXE path',
   'details.showMore': 'Show more',
   'details.showLess': 'Show less',
 })

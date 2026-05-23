@@ -248,6 +248,7 @@ function RepoCard({
             <button
               type="button"
               className="project-actions-trigger"
+              aria-haspopup="menu"
               aria-expanded={actionsOpen}
               aria-label={t('projectActions.open')}
               onClick={handleActionsToggle}
@@ -255,10 +256,11 @@ function RepoCard({
               ...
             </button>
             {actionsOpen && (
-              <div className="project-actions-popover" aria-label={t('art.actions')}>
+              <div className="project-actions-popover" role="menu" aria-label={t('art.actions')}>
                 {isInstalled && onDetails && (
                   <button
                     type="button"
+                    role="menuitem"
                     onClick={handleDetails}
                   >
                     {t('details.open')}
@@ -266,12 +268,13 @@ function RepoCard({
                 )}
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={handlePickArt}
                 >
                   {t('art.changeCover')}
                 </button>
                 {art?.coverPath && onClearArt && (
-                  <button type="button" onClick={handleClearArt}>
+                  <button type="button" role="menuitem" onClick={handleClearArt}>
                     {t('art.resetCover')}
                   </button>
                 )}

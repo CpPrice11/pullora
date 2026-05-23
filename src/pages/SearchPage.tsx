@@ -780,6 +780,7 @@ function SearchPage({
             <button
               type="button"
               className="project-actions-trigger"
+              aria-haspopup="menu"
               aria-expanded={heroActionsOpen}
               aria-label={t('projectActions.open')}
               onClick={() => setHeroActionsOpen((current) => !current)}
@@ -787,10 +788,11 @@ function SearchPage({
               ...
             </button>
             {heroActionsOpen && (
-              <div className="project-actions-popover" aria-label={t('art.actions')}>
+              <div className="project-actions-popover" role="menu" aria-label={t('art.actions')}>
                 {isInstalled && (
                   <button
                     type="button"
+                    role="menuitem"
                     onClick={() => {
                       setHeroActionsOpen(false)
                       setDetailsRepo(featuredRepo)
@@ -802,6 +804,7 @@ function SearchPage({
                 {isInstalled && (
                   <button
                     type="button"
+                    role="menuitem"
                     onClick={() => {
                       setHeroActionsOpen(false)
                       handleOpenFolder()
@@ -812,6 +815,7 @@ function SearchPage({
                 )}
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     setHeroActionsOpen(false)
                     onChangeLauncherBackground?.()
@@ -819,17 +823,18 @@ function SearchPage({
                 >
                   {t('art.changeLauncherBackground')}
                 </button>
-                <button type="button" onClick={() => handlePickArt('cover')}>
+                <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
                   {t('art.changeCover')}
                 </button>
                 {featuredArt?.coverPath && (
-                  <button type="button" onClick={() => handleClearArt()}>
+                  <button type="button" role="menuitem" onClick={() => handleClearArt()}>
                     {t('art.resetCover')}
                   </button>
                 )}
                 {hasLauncherBackground && (
                   <button
                     type="button"
+                    role="menuitem"
                     onClick={() => {
                       setHeroActionsOpen(false)
                       onClearLauncherBackground?.()
