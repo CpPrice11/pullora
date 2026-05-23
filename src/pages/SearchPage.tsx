@@ -26,6 +26,7 @@ import './PageStyles.css'
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
+type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type BatchUpdateJob = {
   url: string
   fileName: string
@@ -318,6 +319,17 @@ function SearchPage({
   const formattedRefreshTime = formatTime(lastRefreshedAt ?? state.lastRefreshAt ?? state.lastLoadedAt)
   const formattedLatestVersionsTime = formatTime(latestVersionsCheckedAt)
   const libraryErrorKind = classifyLibraryError(state.error)
+  const libraryTrustKind: LibraryTrustKind = state.error && state.isStale
+    ? libraryErrorKind === 'rateLimit'
+      ? 'rateLimit'
+      : libraryErrorKind === 'offline'
+        ? 'offline'
+        : 'cached'
+    : state.loading || checkingUpdates
+      ? 'checking'
+      : latestVersionErrorCount > 0
+        ? 'partial'
+        : 'fresh'
 
   useEffect(() => {
     if (!settingsLoading) {
@@ -577,6 +589,13 @@ function SearchPage({
     if (filter !== 'updates') return null
 
     const skippedCount = dismissedUpdateKeys.size
+    const updatesEmptyKey = checkingUpdates
+      ? 'updates.emptyChecking'
+      : latestVersionErrorCount > 0
+        ? 'updates.emptyPartial'
+        : latestVersionsCheckedAt
+          ? 'updates.emptyCurrent'
+          : 'updates.emptyNotChecked'
     const failedDownload = batchDownloads.find((download) => download.status === 'failed')
     const chooseAnotherRepo = failedDownload
       ? state.repositories.find((repo) =>
@@ -672,7 +691,9 @@ function SearchPage({
             })}
           </div>
         ) : (
-          <p className="updates-center-empty">{t('updates.empty')}</p>
+          <p className="updates-center-empty">
+            {t(updatesEmptyKey, { count: latestVersionErrorCount })}
+          </p>
         )}
 
         <DownloadProgressPanel
@@ -687,6 +708,73 @@ function SearchPage({
           onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
           onCleanup={handleBatchCleanup}
         />
+      </section>
+    )
+  }
+
+  const renderLibraryTrustPanel = () => {
+    const canRetry = !state.loading && !checkingUpdates
+    const retryInstalled = Boolean(installedLoadError) && canRetry
+
+    return (
+      <section
+        className={`library-trust-panel library-trust-panel--${libraryTrustKind}`}
+        aria-live="polite"
+      >
+        <div className="library-trust-main">
+          <span className="library-trust-kicker">{t('library.trust.kicker')}</span>
+          <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
+          <p>{t(`library.trust.${libraryTrustKind}.text`, { count: latestVersionErrorCount })}</p>
+        </div>
+
+        <div className="library-trust-meta" aria-label={t('library.trust.meta')}>
+          <span>
+            <strong>{t('library.trust.visible')}</strong>
+            {t('library.count', {
+              visible: visibleRepositories.length.toLocaleString(),
+              total: state.repositories.length.toLocaleString(),
+            })}
+          </span>
+          <span>
+            <strong>{t('library.trust.data')}</strong>
+            {formattedRefreshTime
+              ? t(state.isStale ? 'refresh.staleAt' : 'refresh.updatedAt', { time: formattedRefreshTime })
+              : t('library.trust.notLoaded')}
+          </span>
+          <span>
+            <strong>{t('library.trust.versions')}</strong>
+            {checkingUpdates
+              ? t('library.trust.checkingVersions')
+              : formattedLatestVersionsTime
+                ? t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })
+                : t('library.trust.notChecked')}
+          </span>
+        </div>
+
+        {state.error && state.isStale && (
+          <details className="library-trust-details">
+            <summary>{t('state.details')}</summary>
+            <pre>{state.error}</pre>
+          </details>
+        )}
+
+        <div className="library-trust-actions">
+          {(state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt) && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={handleRefresh}
+              disabled={!canRetry}
+            >
+              {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
+            </button>
+          )}
+          {retryInstalled && (
+            <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
+              {t('library.trust.retryInstalled')}
+            </button>
+          )}
+        </div>
       </section>
     )
   }
@@ -859,20 +947,8 @@ function SearchPage({
         <h2>{t('library.title')}</h2>
         {owner && (
           <div className="page-actions">
-            {refreshState === 'success' && formattedRefreshTime && (
-              <span className="refresh-status success">
-                {t('refresh.updatedAt', { time: formattedRefreshTime })}
-              </span>
-            )}
             {refreshState === 'error' && (
               <span className="refresh-status error">{t('refresh.error')}</span>
-            )}
-            {refreshState === 'idle' && formattedRefreshTime && (
-              <span className={`refresh-status ${state.isStale ? 'warning' : ''}`}>
-                {state.isStale
-                  ? t('refresh.staleAt', { time: formattedRefreshTime })
-                  : t('refresh.updatedAt', { time: formattedRefreshTime })}
-              </span>
             )}
             <button
               type="button"
@@ -944,18 +1020,9 @@ function SearchPage({
             </label>
           </div>
 
-          {renderUpdatesCenter()}
+          {renderLibraryTrustPanel()}
 
-          {state.error && state.isStale && (
-            <div className="library-cache-note" role="status">
-              <strong>{t('library.cachedTitle')}</strong>
-              <span>{t('library.cachedText')}</span>
-              <details>
-                <summary>{t('state.details')}</summary>
-                <pre>{state.error}</pre>
-              </details>
-            </div>
-          )}
+          {renderUpdatesCenter()}
 
           {state.error && !state.isStale && (
             <StatePanel
@@ -989,18 +1056,11 @@ function SearchPage({
             />
           )}
 
-          <p className="results-count" role="status" aria-live="polite">
+          <p className="results-count">
             {t('library.count', {
               visible: visibleRepositories.length.toLocaleString(),
               total: state.repositories.length.toLocaleString(),
             })}
-            {checkingUpdates ? t('library.checkingInstalled') : ''}
-            {!checkingUpdates && latestVersionsCheckedAt && formattedLatestVersionsTime
-              ? t('library.latestCheckedAt', { time: formattedLatestVersionsTime })
-              : ''}
-            {!checkingUpdates && latestVersionErrorCount > 0
-              ? t('library.latestPartialError', { count: latestVersionErrorCount })
-              : ''}
           </p>
 
           <div className="search-results">
