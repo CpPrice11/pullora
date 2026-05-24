@@ -74,6 +74,8 @@ pub fn run() {
             commands::updates::get_launcher_version,
             commands::updates::check_for_updates,
             commands::updates::open_dir,
+            commands::updates::get_launcher_storage_info,
+            commands::updates::cleanup_launcher_update_files,
             commands::updates::install_launcher_release,
         ])
         .run(tauri::generate_context!())

@@ -47,6 +47,7 @@ pub struct Release {
     pub id: u64,
     pub tag_name: String,
     pub name: Option<String>,
+    pub html_url: Option<String>,
     pub draft: bool,
     pub prerelease: bool,
     pub published_at: Option<String>,

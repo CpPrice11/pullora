@@ -29,6 +29,7 @@ export interface GitHubRelease {
   id: number
   tag_name: string
   name: string | null
+  html_url?: string | null
   draft: boolean
   prerelease: boolean
   published_at: string | null
@@ -117,6 +118,15 @@ export interface UpdateAvailable {
   currentVersion: string
   latestVersion: string
   releaseUrl: string
+}
+
+export interface LauncherStorageInfo {
+  launcherDir: string
+  updateCachePath: string
+  backupPath: string
+  cleanupBytes: number
+  updateCacheCount: number
+  backupCount: number
 }
 
 // Download progress
