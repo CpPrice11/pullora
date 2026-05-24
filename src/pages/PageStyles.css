@@ -1983,16 +1983,16 @@
 .about-hero {
   align-items: center;
   background:
-    linear-gradient(115deg, rgba(91, 215, 255, 0.16), rgba(255, 255, 255, 0.055)),
-    rgba(18, 20, 24, 0.76);
-  border: 1px solid rgba(91, 215, 255, 0.22);
-  border-radius: 22px;
-  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.26);
+    linear-gradient(115deg, rgba(91, 215, 255, 0.1), rgba(255, 255, 255, 0.035)),
+    rgba(12, 16, 21, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
   display: grid;
-  gap: 14px;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(330px, auto);
+  gap: 12px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   max-width: 1180px;
-  padding: 16px 18px;
+  padding: 13px 16px;
   min-width: 0;
   width: 100%;
 }
@@ -2001,35 +2001,35 @@
   align-items: center;
   background: linear-gradient(135deg, #008df0, #54d5ff);
   border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 16px;
+  border-radius: 14px;
   display: flex;
-  height: 56px;
+  height: 48px;
   justify-content: center;
-  width: 56px;
+  width: 48px;
 }
 
 .about-hero-mark span {
   border: 3px solid rgba(255, 255, 255, 0.92);
   border-radius: 999px;
-  height: 24px;
+  height: 20px;
   position: relative;
-  width: 24px;
+  width: 20px;
 }
 
 .about-hero-mark span::after {
   background: #ffffff;
   border-radius: 999px;
   content: '';
-  height: 10px;
+  height: 8px;
   position: absolute;
-  right: -10px;
-  top: -9px;
-  width: 10px;
+  right: -8px;
+  top: -8px;
+  width: 8px;
 }
 
 .about-hero-main h3 {
   color: #ffffff;
-  font-size: 25px;
+  font-size: 23px;
   font-weight: 860;
   line-height: 1;
   margin: 0;
@@ -2038,26 +2038,26 @@
 
 .about-hero-main p {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-  margin: 6px 0 0;
+  font-size: 12px;
+  margin: 4px 0 0;
 }
 
 .about-hero-meta {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 9px;
+  gap: 5px;
+  margin-top: 8px;
 }
 
 .about-hero-meta span {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.74);
   font-size: 11px;
   font-weight: 760;
-  padding: 4px 8px;
+  padding: 3px 7px;
 }
 
 .about-hero-meta .about-hero-state {
@@ -2089,7 +2089,7 @@
 }
 
 .about-hero-actions {
-  max-width: 430px;
+  max-width: 560px;
 }
 
 .about-hero-actions .secondary-btn,
@@ -2162,8 +2162,8 @@
   background:
     linear-gradient(115deg, rgba(232, 244, 255, 0.94), rgba(255, 255, 255, 0.68)),
     rgba(255, 255, 255, 0.76);
-  border-color: rgba(0, 120, 212, 0.24);
-  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.16);
+  border-color: rgba(17, 24, 39, 0.1);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
 }
 
 :root[data-theme='light'] .about-hero-main h3 {
@@ -2198,6 +2198,67 @@
 
 :root[data-theme='light'] .about-status-strip strong {
   color: #111827;
+}
+
+.about-toast {
+  align-items: center;
+  backdrop-filter: blur(18px);
+  border-radius: 14px;
+  bottom: 24px;
+  box-shadow: 0 22px 64px rgba(0, 0, 0, 0.36);
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 780;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 48px));
+  min-height: 42px;
+  padding: 0 16px;
+  position: fixed;
+  right: 24px;
+  width: fit-content;
+  z-index: 120;
+}
+
+.about-toast::before {
+  border-radius: 999px;
+  content: '';
+  height: 8px;
+  flex: 0 0 auto;
+  width: 8px;
+}
+
+.about-toast--success {
+  background: rgba(20, 39, 29, 0.9);
+  border: 1px solid rgba(116, 240, 124, 0.36);
+}
+
+.about-toast--success::before {
+  background: #74f07c;
+}
+
+.about-toast--error {
+  background: rgba(45, 20, 29, 0.92);
+  border: 1px solid rgba(255, 107, 139, 0.42);
+}
+
+.about-toast--error::before {
+  background: #ff6b8b;
+}
+
+:root[data-theme='light'] .about-toast {
+  color: #111827;
+  box-shadow: 0 22px 56px rgba(15, 23, 42, 0.2);
+}
+
+:root[data-theme='light'] .about-toast--success {
+  background: rgba(238, 255, 244, 0.94);
+  border-color: rgba(22, 163, 74, 0.28);
+}
+
+:root[data-theme='light'] .about-toast--error {
+  background: rgba(255, 241, 244, 0.94);
+  border-color: rgba(220, 38, 38, 0.28);
 }
 
 .cinematic-shell .about-panel {
@@ -3086,7 +3147,7 @@
 
   .about-hero,
   .cinematic-shell .about-release-link {
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
   }
 
   .about-hero-actions,
@@ -3102,9 +3163,6 @@
     flex: 1 1 auto;
   }
 
-  .about-status-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (min-width: 1121px) and (max-width: 1360px) {
@@ -3206,21 +3264,12 @@
   }
 
   .about-hero {
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
   }
 
   .about-hero-mark {
-    height: 64px;
-    width: 64px;
-  }
-
-  .about-hero-refresh {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .about-status-strip {
-    grid-template-columns: 1fr;
+    height: 48px;
+    width: 48px;
   }
 
   .about-version-heading {
@@ -3229,6 +3278,14 @@
 
   .about-version-filters {
     width: 100%;
+  }
+
+  .about-toast {
+    bottom: 18px;
+    left: 18px;
+    max-width: calc(100vw - 36px);
+    right: 18px;
+    width: auto;
   }
 
   .settings-nav {

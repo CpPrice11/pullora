@@ -51,6 +51,36 @@ pub async fn open_dir(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn open_external_url(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("Only http and https URLs can be opened.".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-Command")
+        .arg("Start-Process -FilePath $args[0]")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    std::process::Command::new("xdg-open")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_launcher_storage_info() -> Result<LauncherStorageInfo, String> {
     collect_launcher_storage_info()
 }

@@ -6,6 +6,7 @@ import {
   getLauncherVersion,
   installLauncherRelease,
   openDir,
+  openExternalUrl,
 } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
@@ -16,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v2.3.1'
+const FALLBACK_CURRENT_VERSION = 'v2.3.2'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -159,6 +160,17 @@ function AboutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (!actionMessage && !actionError) return undefined
+
+    const timer = window.setTimeout(() => {
+      setActionMessage(null)
+      setActionError(null)
+    }, actionError ? 6000 : 3800)
+
+    return () => window.clearTimeout(timer)
+  }, [actionError, actionMessage])
+
   useModalFocus(confirmModalRef, {
     active: Boolean(pendingAction),
     onEscape: pendingAction && !installingVersion ? () => setPendingAction(null) : undefined,
@@ -247,9 +259,19 @@ function AboutPage() {
     }
   }
 
+  const openReleaseInBrowser = async (release: GitHubRelease) => {
+    try {
+      await openExternalUrl(releaseUrl(release))
+      setActionError(null)
+    } catch (err) {
+      setActionMessage(null)
+      setActionError(err instanceof Error ? err.message : t('about.openGitHubError'))
+    }
+  }
+
   const openLatestRelease = () => {
     if (!latestRelease) return
-    window.open(releaseUrl(latestRelease), '_blank', 'noopener,noreferrer')
+    void openReleaseInBrowser(latestRelease)
   }
 
   const copyDiagnostics = async () => {
@@ -348,7 +370,7 @@ function AboutPage() {
       </section>
 
       {(actionMessage || actionError) && (
-        <div className={actionError ? 'error-banner about-recovery-banner' : 'release-cleanup-note'}>
+        <div className={actionError ? 'about-toast about-toast--error' : 'about-toast about-toast--success'} role="status">
           {actionError ?? actionMessage}
         </div>
       )}
@@ -493,7 +515,7 @@ function AboutPage() {
                       >
                         {expanded ? t('about.hideNotes') : t('about.showNotes')}
                       </button>
-                      <button type="button" className="secondary-btn" onClick={() => window.open(releaseUrl(release), '_blank', 'noopener,noreferrer')}>
+                      <button type="button" className="secondary-btn" onClick={() => void openReleaseInBrowser(release)}>
                         {t('about.openGitHubReleaseShort')}
                       </button>
                     </div>
