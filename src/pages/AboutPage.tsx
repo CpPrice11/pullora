@@ -17,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v2.3.2'
+const FALLBACK_CURRENT_VERSION = 'v2.3.3'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -25,9 +25,9 @@ type PendingLauncherAction = {
   action: 'update' | 'rollback'
 }
 
-type AboutReleaseFilter = 'all' | 'rollback' | 'current' | 'older'
+type AboutReleaseFilter = 'all' | 'rollback' | 'current'
 
-const releaseFilters: AboutReleaseFilter[] = ['all', 'rollback', 'current', 'older']
+const releaseFilters: AboutReleaseFilter[] = ['all', 'rollback', 'current']
 
 function compareVersionTags(left: string, right: string) {
   const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
@@ -193,7 +193,6 @@ function AboutPage() {
 
       if (releaseFilter === 'rollback') return hasPortable && !isCurrent && comparison < 0
       if (releaseFilter === 'current') return isCurrent
-      if (releaseFilter === 'older') return comparison < 0
       return true
     })
   }, [currentVersion, releaseFilter, releases])
@@ -332,40 +331,7 @@ function AboutPage() {
             <span className={latestIsNewer ? 'about-hero-state newer' : 'about-hero-state current'}>
               {latestIsNewer ? t('about.newerStatus') : t('about.currentStatus')}
             </span>
-            <span>{t('about.rollbackReady')}: {rollbackCount}</span>
-            <span>{t('about.cleanupEstimate')}: {formatBytes(storageInfo?.cleanupBytes ?? 0, language)}</span>
-            {refreshState === 'success' && formattedRefreshTime && (
-              <span className="about-hero-refresh-chip">
-                {t('refresh.updatedAt', { time: formattedRefreshTime })}
-              </span>
-            )}
-            {refreshState === 'error' && (
-              <span className="about-hero-refresh-chip error">{t('refresh.error')}</span>
-            )}
           </div>
-        </div>
-        <div className="about-hero-actions">
-          <button type="button" className="secondary-btn" onClick={loadLauncherReleases} disabled={loadingReleases || installingVersion !== null}>
-            {loadingReleases ? t('library.refreshing') : t('library.refresh')}
-          </button>
-          <button type="button" className="secondary-btn" onClick={openLauncherFolder} aria-label={t('about.openLauncherFolder')}>
-            {t('about.openLauncherFolderShort')}
-          </button>
-          <button type="button" className="secondary-btn" onClick={openLatestRelease} disabled={!latestRelease} aria-label={t('about.openGitHubRelease')}>
-            {t('about.openGitHubReleaseShort')}
-          </button>
-          <button type="button" className="secondary-btn" onClick={copyDiagnostics} aria-label={t('about.copyDiagnostics')}>
-            {t('about.copyDiagnosticsShort')}
-          </button>
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={cleanupOldLauncherFiles}
-            disabled={!storageInfo || storageInfo.cleanupBytes === 0}
-            aria-label={t('about.cleanupOldVersions')}
-          >
-            {t('about.cleanupOldVersionsShort')}
-          </button>
         </div>
       </section>
 
@@ -392,6 +358,33 @@ function AboutPage() {
                 </button>
               ))}
             </div>
+          </div>
+          <div className="about-panel-toolbar" aria-label={t('about.launcherActions')}>
+            <button type="button" className="secondary-btn" onClick={loadLauncherReleases} disabled={loadingReleases || installingVersion !== null}>
+              {loadingReleases ? t('library.refreshing') : t('library.refresh')}
+            </button>
+            <button type="button" className="secondary-btn" onClick={openLauncherFolder}>
+              {t('about.openLauncherFolder')}
+            </button>
+            <button type="button" className="secondary-btn" onClick={openLatestRelease} disabled={!latestRelease}>
+              {t('about.openGitHubRelease')}
+            </button>
+            <button type="button" className="secondary-btn" onClick={copyDiagnostics}>
+              {t('about.copyDiagnosticsShort')}
+            </button>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={cleanupOldLauncherFiles}
+              disabled={!storageInfo || storageInfo.cleanupBytes === 0}
+            >
+              {t('about.cleanupOldVersionsShort')}
+            </button>
+            <span className="about-panel-meta">
+              {t('about.rollbackReady')}: {rollbackCount}
+              {storageInfo ? ` · ${t('about.cleanupEstimate')}: ${formatBytes(storageInfo.cleanupBytes, language)}` : ''}
+              {refreshState === 'success' && formattedRefreshTime ? ` · ${t('refresh.updatedAt', { time: formattedRefreshTime })}` : ''}
+            </span>
           </div>
           {installError && (
             <div className="error-banner about-recovery-banner">

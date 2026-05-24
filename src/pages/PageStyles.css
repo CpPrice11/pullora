@@ -1990,7 +1990,7 @@
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
   display: grid;
   gap: 12px;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr);
   max-width: 1180px;
   padding: 13px 16px;
   min-width: 0;
@@ -2075,74 +2075,6 @@
   color: #ff9bb0;
 }
 
-.about-hero-refresh {
-  min-width: 150px;
-}
-
-.about-hero-actions,
-.about-action-bar {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.about-hero-actions {
-  max-width: 560px;
-}
-
-.about-hero-actions .secondary-btn,
-.about-action-bar .secondary-btn {
-  min-height: 32px;
-  padding: 0 11px;
-}
-
-.about-status-strip {
-  background:
-    linear-gradient(115deg, rgba(91, 215, 255, 0.08), rgba(255, 255, 255, 0.035)),
-    rgba(8, 13, 19, 0.58);
-  border: 1px solid rgba(91, 215, 255, 0.14);
-  border-radius: 16px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: 1180px;
-  padding: 10px 12px;
-  width: 100%;
-}
-
-.about-status-strip div {
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  padding: 9px 10px;
-}
-
-.about-status-strip span {
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.about-status-strip strong {
-  color: #ffffff;
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-.about-action-bar {
-  justify-content: flex-start;
-  max-width: 1180px;
-  width: 100%;
-}
-
 .about-version-heading {
   align-items: center;
   gap: 14px;
@@ -2156,6 +2088,29 @@
 
 .about-version-filters {
   flex: 0 0 auto;
+}
+
+.about-panel-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px;
+  min-width: 0;
+}
+
+.about-panel-toolbar .secondary-btn {
+  min-height: 32px;
+  padding: 0 11px;
+}
+
+.about-panel-meta {
+  color: rgba(255, 255, 255, 0.56);
+  flex: 1 1 260px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: min(100%, 260px);
+  overflow-wrap: anywhere;
 }
 
 :root[data-theme='light'] .about-hero {
@@ -2180,24 +2135,9 @@
   border-color: rgba(17, 24, 39, 0.1);
 }
 
-:root[data-theme='light'] .about-status-strip {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(17, 24, 39, 0.1);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
-}
-
-:root[data-theme='light'] .about-status-strip div {
-  background: rgba(17, 24, 39, 0.04);
-  border-color: rgba(17, 24, 39, 0.1);
-}
-
-:root[data-theme='light'] .about-status-strip span,
-:root[data-theme='light'] .about-version-heading p {
+:root[data-theme='light'] .about-version-heading p,
+:root[data-theme='light'] .about-panel-meta {
   color: rgba(17, 24, 39, 0.58);
-}
-
-:root[data-theme='light'] .about-status-strip strong {
-  color: #111827;
 }
 
 .about-toast {
@@ -3150,14 +3090,12 @@
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
-  .about-hero-actions,
   .cinematic-shell .about-release-actions {
     grid-column: 1 / -1;
     justify-content: stretch;
     max-width: none;
   }
 
-  .about-hero-actions .secondary-btn,
   .cinematic-shell .about-release-actions .secondary-btn,
   .about-release-active-badge {
     flex: 1 1 auto;
