@@ -146,16 +146,16 @@
 }
 
 .library-trust-panel {
-  align-items: stretch;
+  align-items: center;
   animation: fluent-fade-up var(--motion-normal);
   background: color-mix(in srgb, var(--color-mica) 86%, transparent);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 16px;
+  border-radius: 13px;
   box-shadow: var(--shadow-sm);
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(220px, 1.15fr) minmax(320px, 1.85fr) auto;
-  padding: 14px 16px;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(360px, 2.1fr) auto;
+  padding: 9px 12px;
 }
 
 .library-trust-main {
@@ -166,23 +166,27 @@
 
 .library-trust-kicker {
   color: var(--color-primary);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 850;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 
 .library-trust-main strong {
   color: var(--color-text);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.25;
 }
 
 .library-trust-main p {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
   color: var(--color-text-secondary);
+  display: -webkit-box;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.35;
   margin: 0;
+  overflow: hidden;
 }
 
 .library-trust-meta {
@@ -193,22 +197,25 @@
 }
 
 .library-trust-meta span {
+  align-items: center;
   background: color-mix(in srgb, var(--color-control) 58%, transparent);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--color-text-secondary);
-  display: grid;
+  display: flex;
   font-size: 12px;
-  gap: 3px;
+  gap: 8px;
+  min-height: 36px;
   min-width: 0;
   overflow-wrap: anywhere;
-  padding: 9px 10px;
+  padding: 6px 9px;
 }
 
 .library-trust-meta strong {
   color: var(--color-text);
   font-size: 11px;
   letter-spacing: 0.04em;
+  min-width: max-content;
   text-transform: uppercase;
 }
 
@@ -239,8 +246,13 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
+}
+
+.library-trust-actions .secondary-btn {
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .library-trust-panel--fresh {
@@ -2968,6 +2980,16 @@
 
   .library-trust-meta {
     grid-template-columns: 1fr;
+  }
+
+  .library-trust-main p {
+    -webkit-line-clamp: 2;
+  }
+
+  .library-trust-meta span {
+    align-items: flex-start;
+    display: grid;
+    gap: 3px;
   }
 
   .library-trust-actions {

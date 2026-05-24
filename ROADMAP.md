@@ -1,10 +1,10 @@
-# Roadmap Air Launcher після v2.2.0
+# Roadmap Air Launcher після v2.2.1
 
 ## Summary
 
 Air Launcher вже пройшов базовий шлях до стабільного GitHub Releases launcher: cinematic UI, Library-first навігація, Settings modal, install wizard, portable-first policy, App details, Updates filter, self-update flow, release automation і accessibility pass.
 
-Поточна база: `v2.2.0`.
+Поточна база: `v2.2.1`.
 
 Головний фокус наступних релізів: зробити лаунчер не більшим, а надійнішим, зрозумілішим і приємнішим у щоденному використанні. Стек не змінюється: Tauri + Rust + React + TypeScript + CSS.
 
@@ -71,6 +71,13 @@ Air Launcher вже пройшов базовий шлях до стабільн
 - Empty state фільтра `Оновлення` тепер пояснює, чи все актуальне, ще перевіряється, або частину версій не вдалося перевірити.
 - Додано retry actions для проблем GitHub/latest versions і повторного читання installed store.
 - Прибрано дублювання дрібних статусів навколо кнопки refresh і під списком репозиторіїв.
+
+### v2.2.1 - Library Trust Compact Patch
+
+- Зменшено висоту блоку `Стан бібліотеки`.
+- Meta-дані `Показано`, `Дані`, `Версії` стали компактними однорядковими чипами на широкому екрані.
+- Основний опис стискається в один рядок, щоб список програм починався вище.
+- На вузькому viewport блок лишається читабельним і може переносити текст у два рядки.
 
 ## Next Milestones
 
