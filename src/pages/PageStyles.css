@@ -1986,13 +1986,13 @@
     linear-gradient(115deg, rgba(91, 215, 255, 0.16), rgba(255, 255, 255, 0.055)),
     rgba(18, 20, 24, 0.76);
   border: 1px solid rgba(91, 215, 255, 0.22);
-  border-radius: 26px;
-  box-shadow: 0 30px 74px rgba(0, 0, 0, 0.3);
+  border-radius: 22px;
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.26);
   display: grid;
-  gap: 16px;
-  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 14px;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(330px, auto);
   max-width: 1180px;
-  padding: 20px;
+  padding: 16px 18px;
   min-width: 0;
   width: 100%;
 }
@@ -2001,11 +2001,11 @@
   align-items: center;
   background: linear-gradient(135deg, #008df0, #54d5ff);
   border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 18px;
+  border-radius: 16px;
   display: flex;
-  height: 64px;
+  height: 56px;
   justify-content: center;
-  width: 64px;
+  width: 56px;
 }
 
 .about-hero-mark span {
@@ -2029,7 +2029,7 @@
 
 .about-hero-main h3 {
   color: #ffffff;
-  font-size: 28px;
+  font-size: 25px;
   font-weight: 860;
   line-height: 1;
   margin: 0;
@@ -2038,15 +2038,16 @@
 
 .about-hero-main p {
   color: rgba(255, 255, 255, 0.72);
-  margin: 8px 0 0;
+  font-size: 13px;
+  margin: 6px 0 0;
 }
 
 .about-hero-meta {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 9px;
 }
 
 .about-hero-meta span {
@@ -2054,9 +2055,9 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.74);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 760;
-  padding: 5px 9px;
+  padding: 4px 8px;
 }
 
 .about-hero-meta .about-hero-state {
@@ -2067,6 +2068,11 @@
 .about-hero-meta .about-hero-state.newer {
   border-color: rgba(91, 215, 255, 0.62);
   color: #7ddeff;
+}
+
+.about-hero-refresh-chip.error {
+  border-color: rgba(255, 107, 139, 0.5);
+  color: #ff9bb0;
 }
 
 .about-hero-refresh {
@@ -2083,13 +2089,13 @@
 }
 
 .about-hero-actions {
-  max-width: 340px;
+  max-width: 430px;
 }
 
 .about-hero-actions .secondary-btn,
 .about-action-bar .secondary-btn {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 11px;
 }
 
 .about-status-strip {
@@ -2138,7 +2144,7 @@
 }
 
 .about-version-heading {
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
 }
 
@@ -2196,8 +2202,8 @@
 
 .cinematic-shell .about-panel {
   background: rgba(18, 20, 24, 0.68);
-  border-radius: 22px;
-  padding: 24px 28px;
+  border-radius: 20px;
+  padding: 20px 24px;
 }
 
 :root[data-theme='light'] .cinematic-shell .about-panel {
@@ -2214,7 +2220,7 @@
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr) minmax(270px, auto);
-  min-height: 72px;
+  min-height: 64px;
   overflow: hidden;
   padding: 9px 12px;
   position: relative;
@@ -2316,8 +2322,10 @@
 }
 
 .cinematic-shell .about-release-actions {
+  align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
   gap: 7px;
   justify-content: flex-end;
   max-width: none;
@@ -2817,7 +2825,7 @@
 
 .cinematic-shell .about-release-link {
   grid-template-columns: 38px minmax(0, 1fr) auto;
-  min-height: 78px;
+  min-height: 64px;
   padding: 9px 12px;
 }
 
