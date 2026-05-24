@@ -1,5 +1,5 @@
 import { callTauri } from './tauri'
-import type { UpdateAvailable } from '../types'
+import type { LauncherStorageInfo, UpdateAvailable } from '../types'
 
 export async function checkForUpdates(): Promise<UpdateAvailable[]> {
   return callTauri<UpdateAvailable[]>('check_for_updates')
@@ -11,6 +11,14 @@ export async function getLauncherVersion(): Promise<string> {
 
 export async function openDir(path: string): Promise<void> {
   return callTauri('open_dir', { path })
+}
+
+export async function getLauncherStorageInfo(): Promise<LauncherStorageInfo> {
+  return callTauri<LauncherStorageInfo>('get_launcher_storage_info')
+}
+
+export async function cleanupLauncherUpdateFiles(): Promise<LauncherStorageInfo> {
+  return callTauri<LauncherStorageInfo>('cleanup_launcher_update_files')
 }
 
 export async function installLauncherRelease(
