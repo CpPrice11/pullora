@@ -925,6 +925,24 @@ Object.assign(dictionaries.en, {
   'about.confirmLauncherDir': 'Launcher folder',
 })
 
+Object.assign(dictionaries.uk, {
+  'settings.done': 'Готово',
+  'library.trust.expand': 'Деталі',
+  'library.trust.collapse': 'Згорнути',
+  'about.moreActions': 'Дії версії',
+  'about.versionCenterText': 'Переглядай релізи, нотатки, старі версії та безпечні дії з portable-версією лаунчера.',
+})
+
+Object.assign(dictionaries.en, {
+  'settings.done': 'Done',
+  'library.trust.expand': 'Details',
+  'library.trust.collapse': 'Collapse',
+  'about.moreActions': 'Version actions',
+  'about.versionCenterText': 'Review releases, notes, older versions, and safe actions for the launcher portable version.',
+  'about.rollbackReady': 'Older',
+  'about.filter.rollback': 'Older',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

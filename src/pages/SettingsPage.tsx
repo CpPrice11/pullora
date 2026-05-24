@@ -532,11 +532,6 @@ function SettingsPage({
             <h2 id="settings-title">{t('settings.title')}</h2>
           </div>
           <div className="settings-modal-header-actions">
-            <div className="settings-autosave-status" aria-live="polite">
-              {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
-              {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
-              {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
-            </div>
             <button
               type="button"
               className="close-btn settings-modal-close"
@@ -576,6 +571,16 @@ function SettingsPage({
             {renderActiveSection()}
           </div>
         </div>
+        <footer className="settings-modal-footer">
+          <div className="settings-autosave-status" aria-live="polite">
+            {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
+            {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
+            {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
+          </div>
+          <button type="button" className="secondary-btn settings-done-btn" onClick={onClose}>
+            {t('settings.done')}
+          </button>
+        </footer>
       </section>
     </div>
   )

@@ -5,6 +5,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { useModalFocus } from '../../hooks/useModalFocus'
 import type { DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
+import { openExternalUrl } from '../../services/updates'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
@@ -281,6 +282,9 @@ function ReleaseSelector({
   }
 
   const githubReleaseUrl = `https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name ?? ''}`
+  const handleOpenGithubRelease = () => {
+    void openExternalUrl(githubReleaseUrl).catch(() => {})
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -505,9 +509,9 @@ function ReleaseSelector({
                     >
                       {t('release.next')}
                     </button>
-                    <a href={githubReleaseUrl} target="_blank" rel="noreferrer" className="view-release-link release-github-link">
+                    <button type="button" className="view-release-link release-github-link" onClick={handleOpenGithubRelease}>
                       GitHub
-                    </a>
+                    </button>
                   </div>
                 </>
               )}

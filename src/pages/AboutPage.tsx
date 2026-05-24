@@ -17,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v2.3.4'
+const FALLBACK_CURRENT_VERSION = 'v2.3.5'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -106,7 +106,8 @@ function AboutPage() {
   const [currentVersion, setCurrentVersion] = useState(FALLBACK_CURRENT_VERSION)
   const [releases, setReleases] = useState<GitHubRelease[]>([])
   const [releaseFilter, setReleaseFilter] = useState<AboutReleaseFilter>('all')
-  const [expandedReleaseId, setExpandedReleaseId] = useState<number | null>(null)
+  const [notesRelease, setNotesRelease] = useState<GitHubRelease | null>(null)
+  const [menuReleaseId, setMenuReleaseId] = useState<number | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [loadingReleases, setLoadingReleases] = useState(true)
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
@@ -118,6 +119,7 @@ function AboutPage() {
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
   const confirmModalRef = useRef<HTMLDivElement | null>(null)
+  const notesModalRef = useRef<HTMLDivElement | null>(null)
 
   const loadLauncherStorageInfo = async () => {
     try {
@@ -171,9 +173,25 @@ function AboutPage() {
     return () => window.clearTimeout(timer)
   }, [actionError, actionMessage])
 
+  useEffect(() => {
+    if (menuReleaseId === null) return undefined
+
+    const closeMenu = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.about-release-menu')) setMenuReleaseId(null)
+    }
+
+    document.addEventListener('click', closeMenu)
+    return () => document.removeEventListener('click', closeMenu)
+  }, [menuReleaseId])
+
   useModalFocus(confirmModalRef, {
     active: Boolean(pendingAction),
     onEscape: pendingAction && !installingVersion ? () => setPendingAction(null) : undefined,
+  })
+  useModalFocus(notesModalRef, {
+    active: Boolean(notesRelease),
+    onEscape: notesRelease ? () => setNotesRelease(null) : undefined,
   })
 
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
@@ -414,8 +432,7 @@ function AboutPage() {
                     : compareVersionTags(release.tag_name, currentVersion) > 0
                       ? 'newer'
                       : 'older'
-                const notes = compactReleaseNotes(release.body)
-                const expanded = expandedReleaseId === release.id
+                const menuOpen = menuReleaseId === release.id
 
                 return (
                   <div
@@ -451,12 +468,6 @@ function AboutPage() {
                           {t('about.portableMissing')}
                         </span>
                       )}
-                      {expanded && (
-                        <div className="about-release-notes">
-                          <strong>{t('about.releaseNotesPreview')}</strong>
-                          <p>{notes || t('details.noReleaseNotes')}</p>
-                        </div>
-                      )}
                     </div>
                     <div className="about-release-actions">
                       {isCurrent ? (
@@ -475,16 +486,42 @@ function AboutPage() {
                               : t('about.rollback')}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        className="secondary-btn"
-                        onClick={() => setExpandedReleaseId(expanded ? null : release.id)}
-                      >
-                        {expanded ? t('about.hideNotes') : t('about.showNotes')}
-                      </button>
-                      <button type="button" className="secondary-btn" onClick={() => void openReleaseInBrowser(release)}>
-                        {t('about.openGitHubReleaseShort')}
-                      </button>
+                      <div className={`project-actions-menu about-release-menu ${menuOpen ? 'open' : ''}`}>
+                        <button
+                          type="button"
+                          className="project-actions-trigger"
+                          aria-haspopup="menu"
+                          aria-expanded={menuOpen}
+                          aria-label={t('about.moreActions')}
+                          onClick={() => setMenuReleaseId(menuOpen ? null : release.id)}
+                        >
+                          ...
+                        </button>
+                        {menuOpen && (
+                          <div className="project-actions-popover" role="menu" aria-label={t('about.moreActions')}>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setMenuReleaseId(null)
+                                setNotesRelease(release)
+                              }}
+                            >
+                              {t('about.showNotes')}
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setMenuReleaseId(null)
+                                void openReleaseInBrowser(release)
+                              }}
+                            >
+                              {t('about.openGitHubReleaseShort')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -493,6 +530,46 @@ function AboutPage() {
           )}
         </section>
       </div>
+
+      {notesRelease && (
+        <div className="modal-overlay" role="presentation" onClick={() => setNotesRelease(null)}>
+          <div
+            ref={notesModalRef}
+            className="modal-content about-notes-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="about-notes-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="about-notes-header">
+              <div>
+                <span className="about-notes-kicker">{t('about.releaseNotesPreview')}</span>
+                <h3 id="about-notes-title">{notesRelease.tag_name}</h3>
+              </div>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setNotesRelease(null)}
+                aria-label={t('settings.close')}
+              >
+                {'\u00d7'}
+              </button>
+            </div>
+            <div className="about-notes-body">
+              <p>{compactReleaseNotes(notesRelease.body) || t('details.noReleaseNotes')}</p>
+            </div>
+            <div className="about-notes-actions">
+              <button type="button" className="secondary-btn" onClick={() => void openReleaseInBrowser(notesRelease)}>
+                {t('about.openGitHubRelease')}
+              </button>
+              <button type="button" className="secondary-btn" onClick={() => setNotesRelease(null)}>
+                {t('settings.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {pendingAction && (
         <div

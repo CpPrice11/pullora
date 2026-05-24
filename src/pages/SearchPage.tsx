@@ -141,6 +141,7 @@ function SearchPage({
   const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
   const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
   const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
+  const [libraryTrustExpanded, setLibraryTrustExpanded] = useState(false)
   const { settings, loading: settingsLoading } = useSettings()
   const {
     downloads: batchDownloads,
@@ -718,63 +719,74 @@ function SearchPage({
 
     return (
       <section
-        className={`library-trust-panel library-trust-panel--${libraryTrustKind}`}
+        className={`library-trust-panel library-trust-panel--${libraryTrustKind} ${libraryTrustExpanded ? 'expanded' : ''}`}
         aria-live="polite"
       >
-        <div className="library-trust-main">
-          <span className="library-trust-kicker">{t('library.trust.kicker')}</span>
+        <div className="library-trust-summary">
           <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
-          <p>{t(`library.trust.${libraryTrustKind}.text`, { count: latestVersionErrorCount })}</p>
-        </div>
-
-        <div className="library-trust-meta" aria-label={t('library.trust.meta')}>
           <span>
-            <strong>{t('library.trust.visible')}</strong>
-            {t('library.count', {
+            {t('library.trust.visible')}: {t('library.count', {
               visible: visibleRepositories.length.toLocaleString(),
               total: state.repositories.length.toLocaleString(),
             })}
           </span>
-          <span>
-            <strong>{t('library.trust.data')}</strong>
-            {formattedRefreshTime
-              ? t(state.isStale ? 'refresh.staleAt' : 'refresh.updatedAt', { time: formattedRefreshTime })
-              : t('library.trust.notLoaded')}
-          </span>
-          <span>
-            <strong>{t('library.trust.versions')}</strong>
-            {checkingUpdates
-              ? t('library.trust.checkingVersions')
-              : formattedLatestVersionsTime
-                ? t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })
-                : t('library.trust.notChecked')}
-          </span>
+          {formattedLatestVersionsTime && (
+            <span>{t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })}</span>
+          )}
         </div>
+        <button
+          type="button"
+          className="library-trust-toggle"
+          aria-expanded={libraryTrustExpanded}
+          onClick={() => setLibraryTrustExpanded((expanded) => !expanded)}
+        >
+          {t(libraryTrustExpanded ? 'library.trust.collapse' : 'library.trust.expand')}
+        </button>
 
-        {state.error && state.isStale && (
-          <details className="library-trust-details">
-            <summary>{t('state.details')}</summary>
-            <pre>{state.error}</pre>
-          </details>
+        {libraryTrustExpanded && (
+          <div className="library-trust-expanded">
+            <p>{t(`library.trust.${libraryTrustKind}.text`, { count: latestVersionErrorCount })}</p>
+            <div className="library-trust-meta" aria-label={t('library.trust.meta')}>
+              <span>
+                <strong>{t('library.trust.data')}</strong>
+                {formattedRefreshTime
+                  ? t(state.isStale ? 'refresh.staleAt' : 'refresh.updatedAt', { time: formattedRefreshTime })
+                  : t('library.trust.notLoaded')}
+              </span>
+              <span>
+                <strong>{t('library.trust.versions')}</strong>
+                {checkingUpdates
+                  ? t('library.trust.checkingVersions')
+                  : formattedLatestVersionsTime
+                    ? t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })
+                    : t('library.trust.notChecked')}
+              </span>
+            </div>
+            {state.error && state.isStale && (
+              <details className="library-trust-details">
+                <summary>{t('state.details')}</summary>
+                <pre>{state.error}</pre>
+              </details>
+            )}
+            <div className="library-trust-actions">
+              {(state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt) && (
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={handleRefresh}
+                  disabled={!canRetry}
+                >
+                  {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
+                </button>
+              )}
+              {retryInstalled && (
+                <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
+                  {t('library.trust.retryInstalled')}
+                </button>
+              )}
+            </div>
+          </div>
         )}
-
-        <div className="library-trust-actions">
-          {(state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt) && (
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={handleRefresh}
-              disabled={!canRetry}
-            >
-              {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
-            </button>
-          )}
-          {retryInstalled && (
-            <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
-              {t('library.trust.retryInstalled')}
-            </button>
-          )}
-        </div>
       </section>
     )
   }
