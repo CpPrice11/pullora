@@ -63,6 +63,7 @@ pub fn run() {
             commands::installed::open_installed_app_dir,
             commands::installed::cleanup_incomplete_installs,
             commands::installed::uninstall_version,
+            commands::installed::uninstall_app,
             commands::installed::launch_app,
             commands::project_art::list_project_art_assets,
             commands::project_art::get_project_art_asset,

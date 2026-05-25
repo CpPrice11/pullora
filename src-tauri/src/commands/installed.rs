@@ -2,7 +2,7 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::storage::get_config_dir;
-use crate::storage::installed::{list_installed, remove_version, set_active_version, InstalledApp};
+use crate::storage::installed::{list_installed, remove_app, remove_version, set_active_version, InstalledApp};
 use crate::AppState;
 
 #[derive(Debug, Serialize)]
@@ -117,6 +117,28 @@ pub async fn uninstall_version(
 
     drop(settings);
     remove_version(&config_dir, &owner, &repo, &tag).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn uninstall_app(
+    owner: String,
+    repo: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let config_dir = get_config_dir();
+    let settings = state.settings.lock().await;
+    let install_path = settings
+        .installation_path
+        .as_ref()
+        .ok_or("Installation path not configured")?;
+    let app_dir = installed_app_dir(install_path, &owner, &repo);
+
+    if app_dir.exists() {
+        std::fs::remove_dir_all(&app_dir).map_err(|e| e.to_string())?;
+    }
+
+    drop(settings);
+    remove_app(&config_dir, &owner, &repo).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

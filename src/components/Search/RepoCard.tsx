@@ -17,6 +17,7 @@ interface RepoCardProps {
   onPickArt?: () => void
   onClearArt?: () => void
   onDetails?: () => void
+  onUninstall?: () => void
   onSelect: () => void
   onLaunch?: () => void
 }
@@ -33,6 +34,7 @@ function RepoCard({
   onPickArt,
   onClearArt,
   onDetails,
+  onUninstall,
   onSelect,
   onLaunch,
 }: RepoCardProps) {
@@ -134,6 +136,12 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onDetails?.()
+  }
+
+  const handleUninstall = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onUninstall?.()
   }
 
   const handleActionsToggle = (event: React.MouseEvent) => {
@@ -256,7 +264,7 @@ function RepoCard({
               ...
             </button>
             {actionsOpen && (
-              <div className="project-actions-popover" role="menu" aria-label={t('art.actions')}>
+              <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
                 {isInstalled && onDetails && (
                   <button
                     type="button"
@@ -276,6 +284,16 @@ function RepoCard({
                 {art?.coverPath && onClearArt && (
                   <button type="button" role="menuitem" onClick={handleClearArt}>
                     {t('art.resetCover')}
+                  </button>
+                )}
+                {isInstalled && onUninstall && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="danger-menu-item"
+                    onClick={handleUninstall}
+                  >
+                    {t('installed.uninstallApp')}
                   </button>
                 )}
               </div>

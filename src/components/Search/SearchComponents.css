@@ -1292,6 +1292,150 @@
   justify-content: flex-end;
 }
 
+.app-details-version-title,
+.app-details-version-tools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-details-version-tools .small-btn {
+  min-height: 34px;
+}
+
+.uninstall-overlay {
+  z-index: 1020;
+}
+
+.uninstall-confirm-modal {
+  max-width: 580px;
+  overflow: hidden;
+  width: min(580px, calc(100vw - 40px));
+}
+
+.uninstall-confirm-header {
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 107, 139, 0.12), transparent 46%),
+    rgba(12, 14, 18, 0.42);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.uninstall-confirm-header h2 {
+  color: var(--color-text);
+  font-size: 23px;
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.uninstall-confirm-kicker {
+  color: #ff9cb2;
+  display: block;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.uninstall-confirm-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 20px;
+}
+
+.uninstall-confirm-copy {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.uninstall-confirm-facts {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.uninstall-confirm-facts > div {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.uninstall-confirm-facts span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.uninstall-confirm-facts strong {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.uninstall-confirm-path {
+  grid-column: 1 / -1;
+}
+
+.uninstall-confirm-warning {
+  background: rgba(255, 107, 139, 0.08);
+  border: 1px solid rgba(255, 107, 139, 0.25);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+}
+
+.uninstall-confirm-warning strong {
+  color: #ffb3c3;
+  font-size: 13px;
+}
+
+.uninstall-confirm-warning p {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.uninstall-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.uninstall-confirm-actions button {
+  min-height: 42px;
+  min-width: 136px;
+}
+
+.uninstall-danger-btn {
+  background: rgba(171, 39, 69, 0.8);
+  border: 1px solid rgba(255, 107, 139, 0.5);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.uninstall-danger-btn:hover:not(:disabled) {
+  background: rgba(202, 45, 81, 0.92);
+}
+
+.uninstall-danger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .updates-center {
   animation: fluent-fade-up var(--motion-normal);
   background:
@@ -1453,6 +1597,27 @@
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
 }
 
+:root[data-theme='light'] .uninstall-confirm-header {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.08), transparent 46%),
+    rgba(255, 255, 255, 0.76);
+  border-bottom-color: rgba(17, 24, 39, 0.1);
+}
+
+:root[data-theme='light'] .uninstall-confirm-facts > div {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
+:root[data-theme='light'] .uninstall-confirm-warning {
+  background: rgba(254, 242, 242, 0.9);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+:root[data-theme='light'] .uninstall-confirm-warning strong {
+  color: #b91c1c;
+}
+
 :root[data-theme='light'] .app-details-facts > div,
 :root[data-theme='light'] .app-details-paths > div,
 :root[data-theme='light'] .app-details-version-row {
@@ -1508,6 +1673,20 @@
 
   .app-details-version-actions button {
     flex: 1 1 auto;
+  }
+
+  .app-details-version-tools {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .app-details-version-tools button,
+  .uninstall-confirm-actions button {
+    flex: 1 1 auto;
+  }
+
+  .uninstall-confirm-facts {
+    grid-template-columns: 1fr;
   }
 
   .updates-center-main,

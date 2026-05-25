@@ -191,3 +191,15 @@ pub fn remove_version(
 
     save_store(config_dir, &store)
 }
+
+pub fn remove_app(config_dir: &PathBuf, owner: &str, repo: &str) -> Result<(), StorageError> {
+    let mut store = load_store(config_dir)?;
+    store.version = 2;
+    let key = format!("{}/{}", owner, repo);
+
+    store
+        .apps
+        .retain(|app| format!("{}/{}", app.owner, app.repo) != key);
+
+    save_store(config_dir, &store)
+}
