@@ -5,12 +5,14 @@ import {
   launchApp,
   openInstalledAppDir,
   switchVersion,
+  uninstallApp,
   uninstallVersion,
   validateInstalledApp,
 } from '../../services/installed'
 import { useSettings } from '../../hooks/useSettings'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
+import UninstallConfirmModal from './UninstallConfirmModal'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -21,6 +23,12 @@ interface AppDetailsModalProps {
   onClose: () => void
   onChanged?: () => Promise<void> | void
   onInstallVersion?: () => void
+  onUninstalled?: (scope: 'app' | 'version', tag?: string) => void
+}
+
+type UninstallTarget = {
+  scope: 'app' | 'version'
+  tag?: string
 }
 
 function appKey(owner: string, repo: string) {
@@ -76,6 +84,7 @@ function AppDetailsModal({
   onClose,
   onChanged,
   onInstallVersion,
+  onUninstalled,
 }: AppDetailsModalProps) {
   const { language, t } = useI18n()
   const { settings } = useSettings()
@@ -87,6 +96,8 @@ function AppDetailsModal({
   const [actionError, setActionError] = useState<string | null>(null)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [notesExpanded, setNotesExpanded] = useState(false)
+  const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
+  const [uninstallError, setUninstallError] = useState<string | null>(null)
   const modalRef = useRef<HTMLDivElement | null>(null)
 
   const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
@@ -155,7 +166,7 @@ function AppDetailsModal({
     }
   }, [installedApp.owner, installedApp.repo, t])
 
-  useModalFocus(modalRef, { onEscape: onClose })
+  useModalFocus(modalRef, { active: !uninstallTarget, onEscape: onClose })
 
   useEffect(() => {
     setNotesExpanded(false)
@@ -205,11 +216,36 @@ function AppDetailsModal({
   }
 
   const handleDelete = (tag: string) => {
-    if (!confirm(t('installed.uninstallConfirm', { repo: installedApp.repo, tag }))) return
-    void runAndRefresh(
-      () => uninstallVersion(installedApp.owner, installedApp.repo, tag),
-      tag,
-    )
+    setUninstallError(null)
+    setUninstallTarget({ scope: 'version', tag })
+  }
+
+  const handleConfirmUninstall = async () => {
+    if (!uninstallTarget) return
+
+    const target = uninstallTarget
+    const tag = target.tag
+    setUninstallError(null)
+    setBusyTag(target.scope === 'app' ? 'uninstall-app' : tag ?? 'uninstall-version')
+
+    try {
+      if (target.scope === 'app') {
+        await uninstallApp(installedApp.owner, installedApp.repo)
+      } else if (tag) {
+        await uninstallVersion(installedApp.owner, installedApp.repo, tag)
+      }
+
+      setUninstallTarget(null)
+      onUninstalled?.(target.scope, tag)
+      await onChanged?.()
+      if (target.scope === 'version' && installedApp.versions.length > 1) {
+        await refreshHealth()
+      }
+    } catch (err) {
+      setUninstallError(err instanceof Error ? err.message : t('installed.uninstallError'))
+    } finally {
+      setBusyTag(null)
+    }
   }
 
   const statusLabel = healthLoading
@@ -219,6 +255,7 @@ function AppDetailsModal({
       : t('installed.healthRepair')
 
   return (
+    <>
     <div className="modal-overlay" onClick={onClose}>
       <div
         ref={modalRef}
@@ -361,8 +398,33 @@ function AppDetailsModal({
 
           <section className="app-details-panel app-details-versions">
             <div className="app-details-panel-title">
-              <span>{t('details.localVersions')}</span>
-              <strong>{installedApp.versions.length}</strong>
+              <div className="app-details-version-title">
+                <span>{t('details.localVersions')}</span>
+                <strong>{installedApp.versions.length}</strong>
+              </div>
+              <div className="app-details-version-tools">
+                <button
+                  type="button"
+                  className="small-btn danger"
+                  onClick={() => handleDelete(installedApp.activeVersion)}
+                  disabled={busyTag !== null}
+                >
+                  {t('installed.uninstallCurrent')}
+                </button>
+                {installedApp.versions.length > 1 && (
+                  <button
+                    type="button"
+                    className="small-btn danger"
+                    onClick={() => {
+                      setUninstallError(null)
+                      setUninstallTarget({ scope: 'app' })
+                    }}
+                    disabled={busyTag !== null}
+                  >
+                    {t('installed.uninstallAllVersions')}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="app-details-version-list">
               {sortedVersions.map((version) => {
@@ -388,14 +450,16 @@ function AppDetailsModal({
                           {isBusy ? t('details.working') : t('installed.activate')}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        className="small-btn danger"
-                        onClick={() => handleDelete(version.tag)}
-                        disabled={busyTag !== null}
-                      >
-                        {t('installed.delete')}
-                      </button>
+                      {!isActive && (
+                        <button
+                          type="button"
+                          className="small-btn danger"
+                          onClick={() => handleDelete(version.tag)}
+                          disabled={busyTag !== null}
+                        >
+                          {t('installed.uninstallVersion')}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -405,6 +469,24 @@ function AppDetailsModal({
         </div>
       </div>
     </div>
+    {uninstallTarget && (
+      <UninstallConfirmModal
+        installedApp={installedApp}
+        appPath={appPath}
+        scope={uninstallTarget.scope}
+        tag={uninstallTarget.tag}
+        busy={busyTag !== null}
+        error={uninstallError}
+        onCancel={() => {
+          if (!busyTag) {
+            setUninstallTarget(null)
+            setUninstallError(null)
+          }
+        }}
+        onConfirm={handleConfirmUninstall}
+      />
+    )}
+    </>
   )
 }
 

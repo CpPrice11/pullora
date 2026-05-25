@@ -13,6 +13,10 @@ export async function uninstallVersion(owner: string, repo: string, tag: string)
   return callTauri('uninstall_version', { owner, repo, tag })
 }
 
+export async function uninstallApp(owner: string, repo: string): Promise<void> {
+  return callTauri('uninstall_app', { owner, repo })
+}
+
 export async function launchApp(owner: string, repo: string): Promise<void> {
   return callTauri('launch_app', { owner, repo })
 }

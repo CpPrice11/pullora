@@ -6,9 +6,10 @@ import { useDownload } from '../hooks/useDownload'
 import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
 import AppDetailsModal from '../components/Search/AppDetailsModal'
+import UninstallConfirmModal from '../components/Search/UninstallConfirmModal'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import StatePanel from '../components/State/StatePanel'
-import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../services/installed'
+import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir, uninstallApp } from '../services/installed'
 import { getReleases } from '../services/github'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../services/favorites'
 import { pickImageFile } from '../services/dialog'
@@ -19,7 +20,7 @@ import {
   projectArtKey,
   setProjectArt,
 } from '../services/projectArt'
-import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, ProjectArt } from '../types'
+import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../types'
 import { useI18n } from '../i18n'
 import './PageStyles.css'
 
@@ -33,6 +34,10 @@ type BatchUpdateJob = {
   owner: string
   repo: string
   tag: string
+}
+type UninstallTarget = {
+  repo: GitHubSearchResult
+  installedApp: InstalledApp
 }
 
 const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
@@ -142,6 +147,10 @@ function SearchPage({
   const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
   const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
   const [libraryTrustExpanded, setLibraryTrustExpanded] = useState(false)
+  const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
+  const [uninstallBusy, setUninstallBusy] = useState(false)
+  const [uninstallError, setUninstallError] = useState<string | null>(null)
+  const [libraryActionMessage, setLibraryActionMessage] = useState<string | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
   const {
     downloads: batchDownloads,
@@ -194,6 +203,35 @@ function SearchPage({
     const freshInstalledApps = await refreshInstalledApps()
     await refreshLatestVersions(freshInstalledApps, state.repositories)
   }, [refreshInstalledApps, refreshLatestVersions, state.repositories])
+
+  const handleRequestUninstall = (repo: GitHubSearchResult) => {
+    const installedApp = getInstalledApp(repo)
+    if (!installedApp) return
+
+    setHeroActionsOpen(false)
+    setUninstallError(null)
+    setUninstallTarget({ repo, installedApp })
+  }
+
+  const handleConfirmUninstall = async () => {
+    if (!uninstallTarget) return
+
+    setUninstallBusy(true)
+    setUninstallError(null)
+    try {
+      await uninstallApp(uninstallTarget.installedApp.owner, uninstallTarget.installedApp.repo)
+      setLibraryActionMessage(t('installed.uninstallDone', { name: uninstallTarget.repo.name }))
+      if (detailsRepo?.id === uninstallTarget.repo.id) {
+        setDetailsRepo(null)
+      }
+      setUninstallTarget(null)
+      await refreshLocalStatus()
+    } catch (err) {
+      setUninstallError(err instanceof Error ? err.message : t('installed.uninstallError'))
+    } finally {
+      setUninstallBusy(false)
+    }
+  }
 
   const handleSkipUpdate = (repo: GitHubSearchResult) => {
     const latestVersion = getLatestVersion(repo)
@@ -380,6 +418,12 @@ function SearchPage({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [heroActionsOpen])
+
+  useEffect(() => {
+    if (!libraryActionMessage) return
+    const timer = window.setTimeout(() => setLibraryActionMessage(null), 4200)
+    return () => window.clearTimeout(timer)
+  }, [libraryActionMessage])
 
   useEffect(() => {
     if (!batchUpdating) return
@@ -888,7 +932,7 @@ function SearchPage({
               ...
             </button>
             {heroActionsOpen && (
-              <div className="project-actions-popover" role="menu" aria-label={t('art.actions')}>
+              <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
                 {isInstalled && (
                   <button
                     type="button"
@@ -941,6 +985,16 @@ function SearchPage({
                     }}
                   >
                     {t('art.resetLauncherBackground')}
+                  </button>
+                )}
+                {isInstalled && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="danger-menu-item"
+                    onClick={() => handleRequestUninstall(featuredRepo)}
+                  >
+                    {t('installed.uninstallApp')}
                   </button>
                 )}
               </div>
@@ -1111,6 +1165,7 @@ function SearchPage({
                   onPickArt={() => handlePickArt('cover', repo)}
                   onClearArt={() => handleClearArt(repo)}
                   onDetails={() => setDetailsRepo(repo)}
+                  onUninstall={() => handleRequestUninstall(repo)}
                   onSelect={() => setSelectedRepo(repo)}
                   onLaunch={() => handleLaunch(repo)}
                 />
@@ -1148,11 +1203,46 @@ function SearchPage({
             const freshInstalledApps = await refreshInstalledApps()
             await refreshLatestVersions(freshInstalledApps, state.repositories)
           }}
+          onUninstalled={(scope, tag) => {
+            setLibraryActionMessage(
+              scope === 'app'
+                ? t('installed.uninstallDone', { name: detailsRepo.name })
+                : t('installed.uninstallVersionDone', { version: tag ?? '' }),
+            )
+            if (scope === 'app') {
+              setDetailsRepo(null)
+            }
+          }}
           onInstallVersion={() => {
             setDetailsRepo(null)
             setSelectedRepo(detailsRepo)
           }}
         />
+      )}
+
+      {uninstallTarget && (
+        <UninstallConfirmModal
+          installedApp={uninstallTarget.installedApp}
+          appPath={settings.installationPath
+            ? `${settings.installationPath}\\${uninstallTarget.installedApp.owner}-${uninstallTarget.installedApp.repo}`
+            : ''}
+          scope="app"
+          busy={uninstallBusy}
+          error={uninstallError}
+          onCancel={() => {
+            if (!uninstallBusy) {
+              setUninstallTarget(null)
+              setUninstallError(null)
+            }
+          }}
+          onConfirm={handleConfirmUninstall}
+        />
+      )}
+
+      {libraryActionMessage && (
+        <div className="library-toast library-toast--success" role="status">
+          {libraryActionMessage}
+        </div>
       )}
     </div>
   )
