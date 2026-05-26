@@ -17,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v2.3.6'
+const FALLBACK_CURRENT_VERSION = 'v2.3.7'
 
 type PendingLauncherAction = {
   release: GitHubRelease

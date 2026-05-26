@@ -1001,6 +1001,30 @@ Object.assign(dictionaries.en, {
   'installed.uninstallError': 'Failed to uninstall the application',
 })
 
+Object.assign(dictionaries.uk, {
+  'details.switchKicker': 'Активна версія',
+  'details.switchTitle': 'Перемкнути {name}?',
+  'details.switchText': 'Лаунчер запускатиме обрану локальну версію. Файли інших версій залишаться на диску.',
+  'details.switchTarget': 'Нова активна версія',
+  'details.switchConfirmAction': 'Активувати',
+  'settings.resetConfirmTitle': 'Скинути налаштування?',
+  'settings.resetConfirmText': 'Буде відновлено стандартні тему, мову, власника репозиторіїв, папку встановлення та параметри оновлень. Встановлені програми не видаляються.',
+  'settings.resetDone': 'Налаштування скинуто',
+  'settings.cacheError': 'Не вдалося очистити API-кеш',
+})
+
+Object.assign(dictionaries.en, {
+  'details.switchKicker': 'Active version',
+  'details.switchTitle': 'Switch {name}?',
+  'details.switchText': 'The launcher will start the selected local version. Files for other versions will remain on disk.',
+  'details.switchTarget': 'New active version',
+  'details.switchConfirmAction': 'Activate',
+  'settings.resetConfirmTitle': 'Reset settings?',
+  'settings.resetConfirmText': 'Default theme, language, repository owner, install folder, and update preferences will be restored. Installed apps are not removed.',
+  'settings.resetDone': 'Settings reset',
+  'settings.cacheError': 'Failed to clear API cache',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void
