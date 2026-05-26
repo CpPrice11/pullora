@@ -13,6 +13,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
 import UninstallConfirmModal from './UninstallConfirmModal'
+import SwitchVersionConfirmModal from './SwitchVersionConfirmModal'
 import './SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -98,6 +99,8 @@ function AppDetailsModal({
   const [notesExpanded, setNotesExpanded] = useState(false)
   const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
+  const [switchTarget, setSwitchTarget] = useState<string | null>(null)
+  const [switchError, setSwitchError] = useState<string | null>(null)
   const modalRef = useRef<HTMLDivElement | null>(null)
 
   const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
@@ -166,7 +169,7 @@ function AppDetailsModal({
     }
   }, [installedApp.owner, installedApp.repo, t])
 
-  useModalFocus(modalRef, { active: !uninstallTarget, onEscape: onClose })
+  useModalFocus(modalRef, { active: !uninstallTarget && !switchTarget, onEscape: onClose })
 
   useEffect(() => {
     setNotesExpanded(false)
@@ -208,11 +211,26 @@ function AppDetailsModal({
   }
 
   const handleSwitch = (tag: string) => {
-    if (!confirm(t('details.switchConfirm', { version: tag }))) return
-    void runAndRefresh(
-      () => switchVersion(installedApp.owner, installedApp.repo, tag),
-      tag,
-    )
+    setSwitchError(null)
+    setSwitchTarget(tag)
+  }
+
+  const handleConfirmSwitch = async () => {
+    if (!switchTarget) return
+    const tag = switchTarget
+
+    setSwitchError(null)
+    setBusyTag(tag)
+    try {
+      await switchVersion(installedApp.owner, installedApp.repo, tag)
+      setSwitchTarget(null)
+      await onChanged?.()
+      await refreshHealth()
+    } catch (err) {
+      setSwitchError(err instanceof Error ? err.message : t('details.actionError'))
+    } finally {
+      setBusyTag(null)
+    }
   }
 
   const handleDelete = (tag: string) => {
@@ -484,6 +502,22 @@ function AppDetailsModal({
           }
         }}
         onConfirm={handleConfirmUninstall}
+      />
+    )}
+    {switchTarget && (
+      <SwitchVersionConfirmModal
+        appName={installedApp.name}
+        currentVersion={installedApp.activeVersion}
+        targetVersion={switchTarget}
+        busy={busyTag !== null}
+        error={switchError}
+        onCancel={() => {
+          if (!busyTag) {
+            setSwitchTarget(null)
+            setSwitchError(null)
+          }
+        }}
+        onConfirm={handleConfirmSwitch}
       />
     )}
     </>

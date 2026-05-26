@@ -33,7 +33,10 @@ function SettingsPage({
   const [error, setError] = useState<string | null>(null)
   const [intervalDraft, setIntervalDraft] = useState('')
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
+  const [resetPending, setResetPending] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const modalRef = useRef<HTMLElement | null>(null)
+  const resetModalRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     getSettings()
@@ -51,7 +54,17 @@ function SettingsPage({
       .finally(() => setLoading(false))
   }, [])
 
-  useModalFocus(modalRef, { onEscape: onClose })
+  useModalFocus(modalRef, { active: !resetPending, onEscape: onClose })
+  useModalFocus(resetModalRef, {
+    active: resetPending,
+    onEscape: saving ? undefined : () => setResetPending(false),
+  })
+
+  useEffect(() => {
+    if (!actionMessage) return
+    const timer = window.setTimeout(() => setActionMessage(null), 3600)
+    return () => window.clearTimeout(timer)
+  }, [actionMessage])
 
   const showSavedState = () => {
     setSaved(true)
@@ -128,20 +141,24 @@ function SettingsPage({
   }
 
   const handleResetSettings = async () => {
-    if (!window.confirm(t('settings.resetConfirm'))) return
-
     const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
     const savedSettings = await persistSettings(resetSettings, settings)
     if (savedSettings) {
+      setResetPending(false)
       applyThemePreference(savedSettings.theme, true)
       notifyThemePreference(savedSettings.theme)
       setIntervalDraft(String(savedSettings.checkIntervalHours))
+      setActionMessage(t('settings.resetDone'))
     }
   }
 
   const handleClearCache = async () => {
-    await clearGithubCache().catch(() => {})
-    alert(t('settings.cacheCleared'))
+    try {
+      await clearGithubCache()
+      setActionMessage(t('settings.cacheCleared'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.cacheError'))
+    }
   }
 
   const clampIntervalHours = (value: string | number) => {
@@ -355,19 +372,13 @@ function SettingsPage({
         return (
           <section id="settings-maintenance" className="danger-zone">
             <h3>{t('settings.maintenance')}</h3>
-            <div className="settings-action-stack">
-              <div className="settings-action-item">
-                <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
-                  {t('settings.reset')}
-                </button>
-                <p className="help-text">{t('settings.resetDescription')}</p>
-              </div>
-              <div className="settings-action-item">
-                <button className="secondary-btn" onClick={handleClearCache}>
-                  {t('settings.clearCache')}
-                </button>
-                <p className="help-text">{t('settings.clearCacheDescription')}</p>
-              </div>
+            <div className="settings-maintenance-actions">
+              <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
+                {t('settings.reset')}
+              </button>
+              <button className="secondary-btn" onClick={handleClearCache}>
+                {t('settings.clearCache')}
+              </button>
             </div>
           </section>
         )
@@ -504,7 +515,7 @@ function SettingsPage({
         return (
           <section id="settings-reset" className="danger-zone">
             <h3>{t('settings.resetSection')}</h3>
-            <button className="secondary-btn" onClick={handleResetSettings} disabled={saving}>
+            <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
               {t('settings.reset')}
             </button>
             <button className="danger-btn" onClick={handleClearCache}>
@@ -516,6 +527,7 @@ function SettingsPage({
   }
 
   return (
+    <>
     <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
       <section
         ref={modalRef}
@@ -583,6 +595,60 @@ function SettingsPage({
         </footer>
       </section>
     </div>
+    {resetPending && (
+      <div
+        className="settings-reset-overlay"
+        role="presentation"
+        onClick={() => !saving && setResetPending(false)}
+      >
+        <section
+          ref={resetModalRef}
+          className="settings-reset-confirm"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="settings-reset-title"
+          tabIndex={-1}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <header className="settings-reset-header">
+            <div>
+              <span className="settings-reset-kicker">{t('settings.maintenance')}</span>
+              <h3 id="settings-reset-title">{t('settings.resetConfirmTitle')}</h3>
+            </div>
+            <button
+              type="button"
+              className="close-btn"
+              disabled={saving}
+              aria-label={t('settings.close')}
+              onClick={() => setResetPending(false)}
+            >
+              {'\u00d7'}
+            </button>
+          </header>
+          <p>{t('settings.resetConfirmText')}</p>
+          <div className="settings-reset-actions">
+            <button type="button" className="secondary-btn" disabled={saving} onClick={() => setResetPending(false)}>
+              {t('installed.uninstallCancel')}
+            </button>
+            <button
+              type="button"
+              className="settings-reset-btn"
+              disabled={saving}
+              data-autofocus="true"
+              onClick={handleResetSettings}
+            >
+              {saving ? t('settings.saving') : t('settings.reset')}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
+    {actionMessage && (
+      <div className="library-toast library-toast--success" role="status">
+        {actionMessage}
+      </div>
+    )}
+    </>
   )
 }
 
