@@ -1,13 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchResponse {
-    pub total_count: u64,
-    pub incomplete_results: bool,
-    pub items: Vec<Repository>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OwnerRepositoriesResponse {
     pub items: Vec<Repository>,
     pub page: u32,

@@ -70,10 +70,6 @@ export function projectArtBackgroundUrl(
   return options.fallbackToCover === false ? null : projectArtCoverUrl(art)
 }
 
-export function isLauncherArt(art: ProjectArt) {
-  return projectArtKey(art.owner, art.repo) === projectArtKey(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
-}
-
 export async function getLauncherBackgroundArt(): Promise<ProjectArt | null> {
   return getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
 }

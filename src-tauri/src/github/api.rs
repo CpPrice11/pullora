@@ -2,7 +2,7 @@ use reqwest::Client;
 use std::sync::{Arc, Mutex};
 
 use super::cache::ApiCache;
-use super::models::{OwnerRepositoriesResponse, Release, Repository, SearchResponse};
+use super::models::{OwnerRepositoriesResponse, Release, Repository};
 
 pub struct GitHubClient {
     client: Client,
@@ -40,52 +40,6 @@ impl GitHubClient {
 
     fn auth_header(&self) -> Option<String> {
         self.token.as_ref().map(|t| format!("Bearer {}", t))
-    }
-
-    pub async fn search_repositories(
-        &self,
-        query: &str,
-        page: u32,
-    ) -> Result<SearchResponse, String> {
-        let cache_key = format!("search:{}:{}", query, page);
-
-        {
-            let cache = self.cache.lock().unwrap();
-            if let Some(cached) = cache.get_search(&cache_key) {
-                return Ok(cached.clone());
-            }
-        }
-
-        let url = format!(
-            "https://api.github.com/search/repositories?q={}&sort=stars&order=desc&per_page=20&page={}",
-            urlencoding::encode(query),
-            page
-        );
-
-        let mut req = self.client.get(&url);
-        if let Some(auth) = self.auth_header() {
-            req = req.header(reqwest::header::AUTHORIZATION, auth);
-        }
-
-        let response = req.send().await.map_err(|e| e.to_string())?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            if status.as_u16() == 403 {
-                return Err("GitHub API rate limit exceeded. Add a GitHub token in Settings to increase limits.".to_string());
-            }
-            return Err(format!("GitHub API error {}: {}", status, body));
-        }
-
-        let data: SearchResponse = response.json().await.map_err(|e| e.to_string())?;
-
-        {
-            let mut cache = self.cache.lock().unwrap();
-            cache.set_search(cache_key, data.clone());
-        }
-
-        Ok(data)
     }
 
     pub async fn list_owner_repositories(

@@ -2,7 +2,9 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::storage::get_config_dir;
-use crate::storage::installed::{list_installed, remove_app, remove_version, set_active_version, InstalledApp};
+use crate::storage::installed::{
+    list_installed, remove_app, remove_version, set_active_version, InstalledApp,
+};
 use crate::AppState;
 
 #[derive(Debug, Serialize)]
@@ -30,7 +32,7 @@ fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
                 .unwrap_or(false)
             {
                 // Prefer shorter paths (fewer directory levels = closer to root)
-                let is_better = best.as_ref().map_or(true, |b: &std::path::PathBuf| {
+                let is_better = best.as_ref().is_none_or(|b: &std::path::PathBuf| {
                     path.components().count() < b.components().count()
                 });
                 if is_better {
@@ -48,7 +50,12 @@ fn installed_app_dir(install_path: &str, owner: &str, repo: &str) -> std::path::
     std::path::PathBuf::from(install_path).join(format!("{}-{}", owner, repo))
 }
 
-fn active_version_dir(install_path: &str, owner: &str, repo: &str, tag: &str) -> std::path::PathBuf {
+fn active_version_dir(
+    install_path: &str,
+    owner: &str,
+    repo: &str,
+    tag: &str,
+) -> std::path::PathBuf {
     installed_app_dir(install_path, owner, repo).join(tag)
 }
 
@@ -225,7 +232,10 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     let mut removed = 0;
     let download_dir = root.join(".air-launcher-downloads");
     if download_dir.exists() {
-        for entry in std::fs::read_dir(&download_dir).map_err(|e| e.to_string())?.flatten() {
+        for entry in std::fs::read_dir(&download_dir)
+            .map_err(|e| e.to_string())?
+            .flatten()
+        {
             let path = entry.path();
             if path.is_file() {
                 std::fs::remove_file(&path).map_err(|e| e.to_string())?;
@@ -278,7 +288,6 @@ pub async fn launch_app(
         .iter()
         .find(|v| v.tag == app.active_version)
         .ok_or("Активну версію не знайдено")?;
-
 
     let exe_path = version_dir.join(&version.executable);
 

@@ -3,7 +3,7 @@ import { useReleases } from '../../hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
 import { useModalFocus } from '../../hooks/useModalFocus'
-import type { DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
+import type { AppSettings, DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from '../Install/DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
 import StatePanel from '../State/StatePanel'
@@ -25,6 +25,7 @@ interface ReleaseSelectorProps {
 type AssetKind = 'portable' | 'installer' | 'archive' | 'unsupported'
 type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
 type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
+type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
 
 const wizardSteps: WizardStep[] = ['version', 'file', 'confirm', 'progress', 'result']
 
@@ -98,9 +99,18 @@ function isAutoInstallable(kind: AssetKind | null) {
   return kind === 'portable' || kind === 'archive'
 }
 
-function sortAssetsPortableFirst(assets: GitHubAsset[]) {
+function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
+  if (strategy === 'manual') return [...assets]
+
   const rank = (asset: GitHubAsset) => {
     const kind = getAssetKind(asset)
+    if (strategy === 'installerFirst') {
+      if (kind === 'installer') return 0
+      if (kind === 'portable') return 1
+      if (kind === 'archive') return 2
+      return 3
+    }
+
     if (kind === 'portable') return 0
     if (kind === 'archive') return 1
     if (kind === 'installer') return 2
@@ -114,8 +124,19 @@ function sortAssetsPortableFirst(assets: GitHubAsset[]) {
   })
 }
 
-function pickRecommendedAsset(assets: GitHubAsset[]): GitHubAsset | null {
-  return sortAssetsPortableFirst(assets).find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
+function pickRecommendedAsset(assets: GitHubAsset[], strategy: AssetStrategy): GitHubAsset | null {
+  if (strategy === 'manual') return null
+  const sortedAssets = sortAssets(assets, strategy)
+  if (strategy === 'installerFirst') return sortedAssets[0] ?? null
+  return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
+}
+
+function strategyHelpKey(strategy: AssetStrategy) {
+  switch (strategy) {
+    case 'portableFirst': return 'release.strategyPortableFirst'
+    case 'installerFirst': return 'release.strategyInstallerFirst'
+    case 'manual': return 'release.strategyManual'
+  }
 }
 
 function stepLabel(step: WizardStep, t: (key: string) => string) {
@@ -161,6 +182,7 @@ function ReleaseSelector({
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
   const modalRef = useRef<HTMLDivElement | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
+  const assetStrategy = settings.assetStrategy ?? 'portableFirst'
 
   const visibleReleases = useMemo(
     () => releases.filter((release) =>
@@ -170,13 +192,13 @@ function ReleaseSelector({
   )
 
   const sortedAssets = useMemo(
-    () => selectedRelease ? sortAssetsPortableFirst(selectedRelease.assets) : [],
-    [selectedRelease],
+    () => selectedRelease ? sortAssets(selectedRelease.assets, assetStrategy) : [],
+    [assetStrategy, selectedRelease],
   )
 
   const recommendedAsset = useMemo(
-    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets) : null,
-    [selectedRelease],
+    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets, assetStrategy) : null,
+    [assetStrategy, selectedRelease],
   )
 
   const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
@@ -209,9 +231,13 @@ function ReleaseSelector({
     if (visibleReleases.length > 0 && !selectedRelease) {
       const first = visibleReleases[0]
       setSelectedRelease(first)
-      setSelectedAsset(pickRecommendedAsset(first.assets) ?? first.assets[0] ?? null)
+      setSelectedAsset(
+        pickRecommendedAsset(first.assets, assetStrategy)
+          ?? sortAssets(first.assets, assetStrategy)[0]
+          ?? null,
+      )
     }
-  }, [selectedRelease, visibleReleases])
+  }, [assetStrategy, selectedRelease, visibleReleases])
 
   useEffect(() => {
     if (!activeDownload) return
@@ -232,7 +258,11 @@ function ReleaseSelector({
 
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
-    setSelectedAsset(pickRecommendedAsset(release.assets) ?? release.assets[0] ?? null)
+    setSelectedAsset(
+      pickRecommendedAsset(release.assets, assetStrategy)
+        ?? sortAssets(release.assets, assetStrategy)[0]
+        ?? null,
+    )
     setDownloadError(null)
   }
 
@@ -436,6 +466,7 @@ function ReleaseSelector({
                   {sortedAssets.length > 0 ? (
                     <div className="release-picker">
                       <span className="release-section-label">{t('release.file')}</span>
+                      <p className="release-strategy-note">{t(strategyHelpKey(assetStrategy))}</p>
                       <p className="release-strategy-note">{t('release.autoInstallOnly')}</p>
                       <div className="release-asset-list">
                         {sortedAssets.map((asset) => {

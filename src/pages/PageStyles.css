@@ -3013,8 +3013,8 @@
 }
 
 .hero-actions-menu .project-actions-popover {
-  bottom: calc(100% + 8px);
-  top: auto;
+  bottom: auto;
+  top: calc(100% + 8px);
   z-index: 90;
 }
 

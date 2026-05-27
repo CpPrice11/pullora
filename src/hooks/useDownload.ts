@@ -1,32 +1,45 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import type { DownloadProgress } from '../types'
-import { startDownload, cancelDownload } from '../services/download'
+import { startDownload, getDownloads, cancelDownload } from '../services/download'
+
+function mergeDownloads(existing: DownloadProgress[], incoming: DownloadProgress[]) {
+  const byId = new Map(existing.map((item) => [item.id, item]))
+  incoming.forEach((item) => byId.set(item.id, item))
+  return [...byId.values()]
+}
 
 export function useDownload() {
   const [downloads, setDownloads] = useState<DownloadProgress[]>([])
   const unlistenRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
-    // Listen for progress events emitted by Tauri backend
-    listen<DownloadProgress>('download-progress', (event) => {
-      setDownloads((prev) => {
-        const idx = prev.findIndex((d) => d.id === event.payload.id)
-        if (idx === -1) return [...prev, event.payload]
-        const next = [...prev]
-        next[idx] = event.payload
-        return next
+    let active = true
+
+    getDownloads()
+      .then((items) => {
+        if (active) {
+          setDownloads((previous) => mergeDownloads(items, previous))
+        }
       })
+      .catch(() => {})
+
+    listen<DownloadProgress>('download-progress', (event) => {
+      setDownloads((previous) => mergeDownloads(previous, [event.payload]))
     })
       .then((unlisten) => {
+        if (!active) {
+          unlisten()
+          return
+        }
         unlistenRef.current = unlisten
       })
-      .catch(() => {
-        // Not running inside Tauri — no-op
-      })
+      .catch(() => {})
 
     return () => {
+      active = false
       unlistenRef.current?.()
+      unlistenRef.current = null
     }
   }, [])
 
@@ -48,11 +61,5 @@ export function useDownload() {
     setDownloads((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  const activeDownloads = downloads.filter(
-    (d) => d.status === 'downloading' || d.status === 'extracting' || d.status === 'pending',
-  )
-  const completedDownloads = downloads.filter((d) => d.status === 'completed')
-  const failedDownloads = downloads.filter((d) => d.status === 'failed')
-
-  return { downloads, activeDownloads, completedDownloads, failedDownloads, download, cancel }
+  return { downloads, download, cancel }
 }

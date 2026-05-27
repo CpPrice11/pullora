@@ -3,8 +3,8 @@ import type { AppSettings } from '../types'
 import {
   getSettings,
   setInstallationPath as saveInstallationPath,
-  updateSettings as saveSettings,
   checkIsFirstLaunch,
+  SETTINGS_CHANGE_EVENT,
 } from '../services/settings'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 
@@ -33,17 +33,26 @@ export function useSettings() {
     load()
   }, [])
 
+  useEffect(() => {
+    const handleSettingsChange = (event: Event) => {
+      const changedSettings = (event as CustomEvent<Partial<AppSettings>>).detail
+      if (!changedSettings) return
+
+      setSettings((previous) => normalizeSettings({ ...previous, ...changedSettings }))
+      if (changedSettings.installationPath) {
+        setIsFirstLaunch(false)
+      }
+    }
+
+    window.addEventListener(SETTINGS_CHANGE_EVENT, handleSettingsChange)
+    return () => window.removeEventListener(SETTINGS_CHANGE_EVENT, handleSettingsChange)
+  }, [])
+
   const setInstallationPath = async (path: string) => {
     await saveInstallationPath(path)
     setSettings((prev) => ({ ...prev, installationPath: path }))
     setIsFirstLaunch(false)
   }
 
-  const updateSettings = async (partial: Partial<AppSettings>) => {
-    const next = normalizeSettings({ ...settings, ...partial })
-    await saveSettings(next)
-    setSettings(next)
-  }
-
-  return { settings, isFirstLaunch, loading, setInstallationPath, updateSettings }
+  return { settings, isFirstLaunch, loading, setInstallationPath }
 }

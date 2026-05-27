@@ -1,17 +1,7 @@
 use tauri::State;
 
-use crate::github::models::{OwnerRepositoriesResponse, Release, SearchResponse};
+use crate::github::models::{OwnerRepositoriesResponse, Release};
 use crate::AppState;
-
-#[tauri::command]
-pub async fn search_repositories(
-    query: String,
-    page: Option<u32>,
-    state: State<'_, AppState>,
-) -> Result<SearchResponse, String> {
-    let client = state.github_client.lock().await;
-    client.search_repositories(&query, page.unwrap_or(1)).await
-}
 
 #[tauri::command]
 pub async fn list_owner_repositories(

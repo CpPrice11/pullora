@@ -50,7 +50,7 @@ fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
             make_executable(&out_path).ok();
 
             let score = executable_score(&entry_name);
-            if score > 0 && main_exe.as_ref().map_or(true, |(_, s)| score > *s) {
+            if score > 0 && main_exe.as_ref().is_none_or(|(_, s)| score > *s) {
                 main_exe = Some((entry_name, score));
             }
         }
@@ -91,7 +91,7 @@ fn extract_tar_from_reader<R: io::Read>(reader: R, dest_dir: &Path) -> Result<St
 
             let name = safe_path.to_string_lossy().to_string();
             let score = executable_score(&name);
-            if score > 0 && main_exe.as_ref().map_or(true, |(_, s)| score > *s) {
+            if score > 0 && main_exe.as_ref().is_none_or(|(_, s)| score > *s) {
                 main_exe = Some((name, score));
             }
         }

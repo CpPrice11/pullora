@@ -51,6 +51,21 @@ pub enum DownloadStage {
     Failed,
 }
 
+pub struct DownloadRequest {
+    pub id: String,
+    pub url: String,
+    pub file_name: String,
+    pub dest_dir: PathBuf,
+    pub owner: String,
+    pub repo: String,
+    pub tag: String,
+}
+
+struct DownloadTask {
+    request: DownloadRequest,
+    install_kind: String,
+}
+
 pub struct DownloadManager {
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
@@ -67,30 +82,25 @@ impl DownloadManager {
     pub async fn start_download(
         &self,
         app: AppHandle,
-        id: String,
-        url: String,
-        file_name: String,
-        dest_dir: PathBuf,
-        owner: String,
-        repo: String,
-        tag: String,
+        request: DownloadRequest,
     ) -> Result<String, String> {
-        let install_kind = install_kind_for_asset(&file_name)?;
+        let install_kind = install_kind_for_asset(&request.file_name)?;
         let active = self.active.clone();
         let cancelled = self.cancelled.clone();
+        let id = request.id.clone();
 
         let progress = DownloadProgress {
             id: id.clone(),
-            file_name: file_name.clone(),
+            file_name: request.file_name.clone(),
             downloaded_size: 0,
             total_size: 0,
             progress: 0.0,
             status: DownloadStatus::Pending,
             stage: DownloadStage::Queued,
-            owner: Some(owner.clone()),
-            repo: Some(repo.clone()),
-            tag: Some(tag.clone()),
-            install_path: Some(dest_dir.display().to_string()),
+            owner: Some(request.owner.clone()),
+            repo: Some(request.repo.clone()),
+            tag: Some(request.tag.clone()),
+            install_path: Some(request.dest_dir.display().to_string()),
             executable_path: None,
             error: None,
         };
@@ -108,19 +118,19 @@ impl DownloadManager {
         let id_clone = id.clone();
         let active_clone = active.clone();
         let cancelled_clone = cancelled.clone();
+        let task = DownloadTask {
+            request,
+            install_kind,
+        };
         tokio::spawn(async move {
+            let owner = task.request.owner.clone();
+            let repo = task.request.repo.clone();
+            let tag = task.request.tag.clone();
             log_download_event(&owner, &repo, &tag, "download started");
 
             let result = download_task(
                 app.clone(),
-                id_clone.clone(),
-                url,
-                file_name,
-                dest_dir,
-                owner.clone(),
-                repo.clone(),
-                tag.clone(),
-                install_kind,
+                task,
                 active_clone.clone(),
                 cancelled_clone.clone(),
             )
@@ -178,17 +188,24 @@ fn log_download_event(owner: &str, repo: &str, tag: &str, message: &str) {
 
 async fn download_task(
     app: AppHandle,
-    id: String,
-    url: String,
-    file_name: String,
-    dest_dir: PathBuf,
-    owner: String,
-    repo: String,
-    tag: String,
-    install_kind: String,
+    task: DownloadTask,
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
 ) -> Result<(), String> {
+    let DownloadTask {
+        request:
+            DownloadRequest {
+                id,
+                url,
+                file_name,
+                dest_dir,
+                owner,
+                repo,
+                tag,
+            },
+        install_kind,
+    } = task;
+
     let client = Client::builder()
         .user_agent("Air-Launcher/0.1.0")
         .build()
@@ -319,7 +336,9 @@ async fn download_task(
     })
     .await;
 
-    let resolved_executable = if executable.trim().is_empty() || !partial_dir.join(&executable).exists() {
+    let resolved_executable = if executable.trim().is_empty()
+        || !partial_dir.join(&executable).exists()
+    {
         let fallback_executable = find_executable_in_dir(&partial_dir).ok_or_else(|| {
             let _ = fs::remove_file(&tmp_path);
             let _ = cleanup_path(&partial_dir);
@@ -341,7 +360,7 @@ async fn download_task(
     }
 
     let executable_path = version_dir.join(&resolved_executable);
-    if false {
+    if !executable_path.exists() {
         let fallback_executable = find_executable_in_dir(&version_dir).ok_or_else(|| {
             let _ = fs::remove_file(&tmp_path);
             let _ = cleanup_path(&version_dir);
@@ -575,9 +594,9 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
                 .map(|e| e.eq_ignore_ascii_case("exe") || e.eq_ignore_ascii_case("appimage"))
                 .unwrap_or(false)
             {
-                let is_better = best.as_ref().map_or(true, |current| {
-                    path.components().count() < current.components().count()
-                });
+                let is_better = best
+                    .as_ref()
+                    .is_none_or(|current| path.components().count() < current.components().count());
                 if is_better {
                     *best = Some(path);
                 }

@@ -2,19 +2,9 @@ import { useState, useCallback } from 'react'
 import type { GitHubSearchResult, GitHubRelease } from '../types'
 import {
   clearGithubCache,
-  searchRepositories,
   listOwnerRepositories,
   getReleases,
 } from '../services/github'
-
-interface SearchState {
-  results: GitHubSearchResult[]
-  totalCount: number
-  loading: boolean
-  error: string | null
-  page: number
-  hasMore: boolean
-}
 
 interface OwnerRepositoriesState {
   repositories: GitHubSearchResult[]
@@ -26,56 +16,6 @@ interface OwnerRepositoriesState {
   lastRefreshAt: Date | null
   lastErrorAt: Date | null
   isStale: boolean
-}
-
-export function useGitHubSearch() {
-  const [query, setQuery] = useState('')
-  const [state, setState] = useState<SearchState>({
-    results: [],
-    totalCount: 0,
-    loading: false,
-    error: null,
-    page: 1,
-    hasMore: false,
-  })
-
-  const search = useCallback(async (q: string, page = 1) => {
-    if (!q.trim()) return
-
-    setState((prev) => ({ ...prev, loading: true, error: null }))
-    try {
-      const data = await searchRepositories(q, page)
-      setState((prev) => ({
-        results: page === 1 ? data.items : [...prev.results, ...data.items],
-        totalCount: data.total_count,
-        loading: false,
-        error: null,
-        page,
-        hasMore: data.items.length === 20,
-      }))
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-        error: err instanceof Error ? err.message : 'Search failed',
-      }))
-    }
-  }, [])
-
-  const handleSearch = useCallback(
-    (q: string) => {
-      setQuery(q)
-      search(q, 1)
-    },
-    [search],
-  )
-
-  const loadMore = useCallback(() => {
-    if (!state.hasMore || state.loading) return
-    search(query, state.page + 1)
-  }, [state.hasMore, state.loading, state.page, query, search])
-
-  return { query, state, handleSearch, loadMore }
 }
 
 export function useOwnerRepositories(owner: string | undefined) {

@@ -23,7 +23,7 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     checkIntervalHours: settings?.checkIntervalHours || DEFAULT_SETTINGS.checkIntervalHours,
     includePrereleases: settings?.includePrereleases ?? DEFAULT_SETTINGS.includePrereleases,
     assetStrategy: settings?.assetStrategy || DEFAULT_SETTINGS.assetStrategy,
-    githubOwner: DEFAULT_SETTINGS.githubOwner,
+    githubOwner: settings?.githubOwner ?? DEFAULT_SETTINGS.githubOwner,
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
     language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,

@@ -46,12 +46,6 @@ function libraryFilterLabelKey(filter: LibraryFilter) {
   return filter === 'available' ? 'library.availableFilter' : `library.${filter}`
 }
 
-interface SearchPageProps {
-  hasLauncherBackground?: boolean
-  onChangeLauncherBackground?: () => Promise<void> | void
-  onClearLauncherBackground?: () => Promise<void> | void
-}
-
 function classifyLibraryError(error: string | null): LibraryErrorKind {
   const normalized = error?.toLowerCase() ?? ''
   if (normalized.includes('rate limit') || normalized.includes('403')) return 'rateLimit'
@@ -119,11 +113,7 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
     .find(assetIsPortableInstall) ?? null
 }
 
-function SearchPage({
-  hasLauncherBackground = false,
-  onChangeLauncherBackground,
-  onClearLauncherBackground,
-}: SearchPageProps) {
+function SearchPage() {
   const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
@@ -957,34 +947,12 @@ function SearchPage({
                     {t('installed.folder')}
                   </button>
                 )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setHeroActionsOpen(false)
-                    onChangeLauncherBackground?.()
-                  }}
-                >
-                  {t('art.changeLauncherBackground')}
-                </button>
                 <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
                   {t('art.changeCover')}
                 </button>
                 {featuredArt?.coverPath && (
                   <button type="button" role="menuitem" onClick={() => handleClearArt()}>
                     {t('art.resetCover')}
-                  </button>
-                )}
-                {hasLauncherBackground && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setHeroActionsOpen(false)
-                      onClearLauncherBackground?.()
-                    }}
-                  >
-                    {t('art.resetLauncherBackground')}
                   </button>
                 )}
                 {isInstalled && (

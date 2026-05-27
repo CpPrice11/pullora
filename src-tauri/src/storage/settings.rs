@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 
 use super::StorageError;
 
@@ -41,7 +41,7 @@ impl Default for AppSettings {
     }
 }
 
-pub fn load_settings(config_dir: &PathBuf) -> Result<AppSettings, StorageError> {
+pub fn load_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
     let path = config_dir.join("config.json");
     if !path.exists() {
         return Ok(AppSettings::default());
@@ -51,7 +51,7 @@ pub fn load_settings(config_dir: &PathBuf) -> Result<AppSettings, StorageError> 
     Ok(settings)
 }
 
-pub fn save_settings(config_dir: &PathBuf, settings: &AppSettings) -> Result<(), StorageError> {
+pub fn save_settings(config_dir: &Path, settings: &AppSettings) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("config.json");
     let content = serde_json::to_string_pretty(settings)?;

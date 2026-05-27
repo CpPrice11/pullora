@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n'
 
 type Tab = 'search' | 'settings' | 'about'
-type NavIconName = 'library' | 'installed' | 'favorites' | 'settings' | 'about'
+type NavIconName = 'library' | 'settings' | 'about'
 
 interface SidebarProps {
   activeTab: Tab
@@ -37,19 +37,6 @@ function NavIcon({ name }: { name: NavIconName }) {
           <path {...common} d="M6.5 9.5v9h11v-9" />
           <path {...common} d="M9.5 18.5v-5h5v5" />
         </>
-      )}
-      {name === 'installed' && (
-        <>
-          <path {...common} d="M5 5h4v4H5zM10 5h4v4h-4zM15 5h4v4h-4z" />
-          <path {...common} d="M5 10h4v4H5zM10 10h4v4h-4zM15 10h4v4h-4z" />
-          <path {...common} d="M5 15h4v4H5zM10 15h4v4h-4zM15 15h4v4h-4z" />
-        </>
-      )}
-      {name === 'favorites' && (
-        <path
-          {...common}
-          d="m12 4.75 2.08 4.22 4.66.68-3.37 3.29.8 4.64L12 15.39l-4.17 2.19.8-4.64-3.37-3.29 4.66-.68L12 4.75Z"
-        />
       )}
       {name === 'settings' && (
         <>

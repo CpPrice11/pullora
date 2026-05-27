@@ -34,7 +34,7 @@ impl Default for ProjectArtStore {
     }
 }
 
-fn load_store(config_dir: &PathBuf) -> Result<ProjectArtStore, StorageError> {
+fn load_store(config_dir: &Path) -> Result<ProjectArtStore, StorageError> {
     let path = config_dir.join("project_art.json");
     if !path.exists() {
         return Ok(ProjectArtStore::default());
@@ -45,7 +45,7 @@ fn load_store(config_dir: &PathBuf) -> Result<ProjectArtStore, StorageError> {
     Ok(store)
 }
 
-fn save_store(config_dir: &PathBuf, store: &ProjectArtStore) -> Result<(), StorageError> {
+fn save_store(config_dir: &Path, store: &ProjectArtStore) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("project_art.json");
     let content = serde_json::to_string_pretty(store)?;
@@ -141,7 +141,7 @@ fn hydrate_project_art(mut project: ProjectArt) -> ProjectArt {
     project
 }
 
-pub fn list_project_art(config_dir: &PathBuf) -> Result<Vec<ProjectArt>, StorageError> {
+pub fn list_project_art(config_dir: &Path) -> Result<Vec<ProjectArt>, StorageError> {
     let store = load_store(config_dir)?;
     Ok(store
         .projects
@@ -151,7 +151,7 @@ pub fn list_project_art(config_dir: &PathBuf) -> Result<Vec<ProjectArt>, Storage
 }
 
 pub fn get_project_art(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
 ) -> Result<Option<ProjectArt>, StorageError> {
@@ -165,7 +165,7 @@ pub fn get_project_art(
 }
 
 pub fn set_project_art_asset(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
     kind: &str,
@@ -222,7 +222,7 @@ pub fn set_project_art_asset(
 }
 
 pub fn clear_project_art_asset(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
     kind: &str,

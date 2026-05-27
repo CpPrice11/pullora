@@ -126,11 +126,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return (
-        <SearchPage
-          hasLauncherBackground={hasLauncherBackground}
-          onChangeLauncherBackground={handleChangeLauncherBackground}
-          onClearLauncherBackground={handleClearLauncherBackground}
-        />
+        <SearchPage />
       )
       case 'about':     return <AboutPage />
       default:          return <SearchPage />

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 
 use super::StorageError;
 
@@ -42,7 +42,7 @@ impl Default for InstalledStore {
     }
 }
 
-fn load_store(config_dir: &PathBuf) -> Result<InstalledStore, StorageError> {
+fn load_store(config_dir: &Path) -> Result<InstalledStore, StorageError> {
     let path = config_dir.join("installed_apps.json");
     if !path.exists() {
         return Ok(InstalledStore::default());
@@ -72,13 +72,12 @@ fn migrate_store(store: &mut InstalledStore) -> bool {
 
             if version.install_kind.is_none() {
                 let executable = version.executable.to_lowercase();
-                let install_kind = if executable.ends_with(".appimage") {
-                    "portable"
-                } else if executable.ends_with(".exe") {
-                    "portable"
-                } else {
-                    "archive"
-                };
+                let install_kind =
+                    if executable.ends_with(".appimage") || executable.ends_with(".exe") {
+                        "portable"
+                    } else {
+                        "archive"
+                    };
                 version.install_kind = Some(install_kind.to_string());
                 changed = true;
             }
@@ -88,7 +87,7 @@ fn migrate_store(store: &mut InstalledStore) -> bool {
     changed
 }
 
-fn save_store(config_dir: &PathBuf, store: &InstalledStore) -> Result<(), StorageError> {
+fn save_store(config_dir: &Path, store: &InstalledStore) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("installed_apps.json");
     let content = serde_json::to_string_pretty(store)?;
@@ -96,13 +95,13 @@ fn save_store(config_dir: &PathBuf, store: &InstalledStore) -> Result<(), Storag
     Ok(())
 }
 
-pub fn list_installed(config_dir: &PathBuf) -> Result<Vec<InstalledApp>, StorageError> {
+pub fn list_installed(config_dir: &Path) -> Result<Vec<InstalledApp>, StorageError> {
     let store = load_store(config_dir)?;
     Ok(store.apps)
 }
 
 pub fn add_version(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
     version: VersionInfo,
@@ -134,7 +133,7 @@ pub fn add_version(
 }
 
 pub fn set_active_version(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
     tag: &str,
@@ -159,7 +158,7 @@ pub fn set_active_version(
 }
 
 pub fn remove_version(
-    config_dir: &PathBuf,
+    config_dir: &Path,
     owner: &str,
     repo: &str,
     tag: &str,
@@ -192,7 +191,7 @@ pub fn remove_version(
     save_store(config_dir, &store)
 }
 
-pub fn remove_app(config_dir: &PathBuf, owner: &str, repo: &str) -> Result<(), StorageError> {
+pub fn remove_app(config_dir: &Path, owner: &str, repo: &str) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
     store.version = 2;
     let key = format!("{}/{}", owner, repo);

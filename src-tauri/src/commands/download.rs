@@ -1,7 +1,7 @@
 use tauri::{AppHandle, State};
 use uuid::Uuid;
 
-use crate::download::manager::DownloadProgress;
+use crate::download::manager::{DownloadProgress, DownloadRequest};
 use crate::AppState;
 
 #[tauri::command]
@@ -27,7 +27,18 @@ pub async fn start_download(
 
     state
         .download_manager
-        .start_download(app, id.clone(), url, file_name, dest_dir, owner, repo, tag)
+        .start_download(
+            app,
+            DownloadRequest {
+                id: id.clone(),
+                url,
+                file_name,
+                dest_dir,
+                owner,
+                repo,
+                tag,
+            },
+        )
         .await
 }
 

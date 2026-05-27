@@ -93,7 +93,7 @@ pub async fn cleanup_launcher_update_files() -> Result<LauncherStorageInfo, Stri
 
     let backup_dir = launcher_backup_dir()?;
     let mut backups = backup_files(&backup_dir)?;
-    backups.sort_by_key(|item| item.0.clone());
+    backups.sort_by_key(|item| item.0);
     backups.reverse();
 
     for (_, path) in backups.into_iter().skip(1) {

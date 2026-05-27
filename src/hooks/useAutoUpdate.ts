@@ -5,20 +5,14 @@ import { clearGithubCache } from '../services/github'
 
 export function useAutoUpdate(intervalHours: number, enabled: boolean) {
   const [updates, setUpdates] = useState<UpdateAvailable[]>([])
-  const [checking, setChecking] = useState(false)
-  const [lastChecked, setLastChecked] = useState<Date | null>(null)
 
   const check = useCallback(async () => {
-    setChecking(true)
     try {
       await clearGithubCache()
       const found = await checkForUpdates()
       setUpdates(found)
-      setLastChecked(new Date())
     } catch {
       // Ignore — could be no installed apps or no network
-    } finally {
-      setChecking(false)
     }
   }, [])
 
@@ -35,5 +29,5 @@ export function useAutoUpdate(intervalHours: number, enabled: boolean) {
     setUpdates((prev) => prev.filter((u) => !(u.owner === owner && u.repo === repo)))
   }, [])
 
-  return { updates, checking, lastChecked, check, dismiss }
+  return { updates, dismiss }
 }

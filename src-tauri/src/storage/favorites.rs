@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::Path;
 
 use super::StorageError;
 
@@ -29,7 +29,7 @@ impl Default for FavoritesStore {
     }
 }
 
-fn load_store(config_dir: &PathBuf) -> Result<FavoritesStore, StorageError> {
+fn load_store(config_dir: &Path) -> Result<FavoritesStore, StorageError> {
     let path = config_dir.join("favorites.json");
     if !path.exists() {
         return Ok(FavoritesStore::default());
@@ -39,7 +39,7 @@ fn load_store(config_dir: &PathBuf) -> Result<FavoritesStore, StorageError> {
     Ok(store)
 }
 
-fn save_store(config_dir: &PathBuf, store: &FavoritesStore) -> Result<(), StorageError> {
+fn save_store(config_dir: &Path, store: &FavoritesStore) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("favorites.json");
     let content = serde_json::to_string_pretty(store)?;
@@ -47,12 +47,12 @@ fn save_store(config_dir: &PathBuf, store: &FavoritesStore) -> Result<(), Storag
     Ok(())
 }
 
-pub fn list_favorites(config_dir: &PathBuf) -> Result<Vec<FavoriteApp>, StorageError> {
+pub fn list_favorites(config_dir: &Path) -> Result<Vec<FavoriteApp>, StorageError> {
     let store = load_store(config_dir)?;
     Ok(store.favorites)
 }
 
-pub fn add_favorite(config_dir: &PathBuf, app: FavoriteApp) -> Result<(), StorageError> {
+pub fn add_favorite(config_dir: &Path, app: FavoriteApp) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", app.owner, app.repo);
     store
@@ -62,7 +62,7 @@ pub fn add_favorite(config_dir: &PathBuf, app: FavoriteApp) -> Result<(), Storag
     save_store(config_dir, &store)
 }
 
-pub fn remove_favorite(config_dir: &PathBuf, owner: &str, repo: &str) -> Result<(), StorageError> {
+pub fn remove_favorite(config_dir: &Path, owner: &str, repo: &str) -> Result<(), StorageError> {
     let mut store = load_store(config_dir)?;
     let key = format!("{}/{}", owner, repo);
     store
@@ -71,7 +71,7 @@ pub fn remove_favorite(config_dir: &PathBuf, owner: &str, repo: &str) -> Result<
     save_store(config_dir, &store)
 }
 
-pub fn is_favorite(config_dir: &PathBuf, owner: &str, repo: &str) -> bool {
+pub fn is_favorite(config_dir: &Path, owner: &str, repo: &str) -> bool {
     let key = format!("{}/{}", owner, repo);
     load_store(config_dir)
         .map(|s| {
