@@ -107,6 +107,48 @@
   width: 100%;
 }
 
+.ai-auth-card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px;
+}
+
+.ai-auth-card.ready {
+  border-color: rgba(116, 240, 124, 0.26);
+}
+
+.ai-auth-card.warning {
+  border-color: rgba(255, 208, 102, 0.24);
+}
+
+.ai-auth-card strong {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.ai-auth-card span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ai-auth-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.ai-auth-actions .secondary-btn {
+  height: 32px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
 .ai-inspector-actions {
   border-bottom: 1px solid var(--color-border-subtle);
   display: grid;
@@ -202,6 +244,42 @@
   white-space: nowrap;
 }
 
+.ai-recent-thread-list > button {
+  display: grid;
+  gap: 3px;
+  white-space: normal;
+}
+
+.ai-recent-thread-list strong,
+.ai-recent-thread-list span,
+.ai-recent-thread-list em {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-recent-thread-list strong {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.ai-recent-thread-list span,
+.ai-recent-thread-list em {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.ai-recent-thread-list p {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+  padding: 3px 2px 0;
+}
+
 .ai-chat {
   background: rgba(10, 13, 18, 0.42);
   display: flex;
@@ -265,6 +343,16 @@
 .ai-chat-welcome p {
   line-height: 1.55;
   margin: 0 0 20px;
+}
+
+.ai-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-empty-actions button {
+  height: 44px;
 }
 
 .ai-message {

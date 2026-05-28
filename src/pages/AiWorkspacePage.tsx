@@ -52,6 +52,36 @@ function threadTitle(thread: CodexThread, fallback: string) {
   return thread.name || thread.preview || fallback
 }
 
+function stringFromUnknown(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function accountLabel(account: Record<string, unknown> | null): string {
+  const nested = account?.account && typeof account.account === 'object'
+    ? account.account as Record<string, unknown>
+    : {}
+  return stringFromUnknown(nested.email)
+    || stringFromUnknown(nested.username)
+    || stringFromUnknown(nested.name)
+    || stringFromUnknown(account?.email)
+    || stringFromUnknown(account?.username)
+    || stringFromUnknown(account?.name)
+}
+
+function formatCodexTime(value?: number | null): string {
+  if (!value) return ''
+  const milliseconds = value > 100000000000 ? value : value * 1000
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(milliseconds))
+}
+
+function pathsMatch(first?: string | null, second?: string | null): boolean {
+  if (!first || !second) return false
+  return first.toLocaleLowerCase() === second.toLocaleLowerCase()
+}
+
 function textFromUnknown(value: unknown): string {
   if (typeof value === 'string') return value
   if (Array.isArray(value)) return value.map(textFromUnknown).filter(Boolean).join('\n')
@@ -86,6 +116,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [workspaces, setWorkspaces] = useState<AiWorkspace[]>([])
   const [selectedWorkspace, setSelectedWorkspace] = useState<AiWorkspace | null>(null)
   const [threads, setThreads] = useState<CodexThread[]>([])
+  const [recentThreads, setRecentThreads] = useState<CodexThread[]>([])
   const [selectedThread, setSelectedThread] = useState<CodexThread | null>(null)
   const [entries, setEntries] = useState<ChatEntry[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
@@ -104,11 +135,16 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [effort, setEffort] = useState('medium')
   const [approvalPolicy, setApprovalPolicy] = useState('on-request')
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
+  const autoConnectRef = useRef(false)
 
-  const accountReady = useMemo(() => Boolean(account?.account), [account])
+  const accountName = useMemo(() => accountLabel(account), [account])
+  const accountReady = useMemo(() => Boolean(account?.account || accountName), [account, accountName])
+  const activePath = selectedWorkspace?.path ?? selectedThread?.cwd ?? undefined
 
   const refreshRuntime = async () => {
-    setRuntime(await getCodexRuntimeStatus())
+    const status = await getCodexRuntimeStatus()
+    setRuntime(status)
+    return status
   }
 
   const refreshWorkspaces = async () => {
@@ -117,16 +153,31 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     setSelectedWorkspace((current) => current ?? all[0] ?? null)
   }
 
+  const refreshRecentThreads = async () => {
+    if (!settings.aiWorkspaceEnabled) return
+    try {
+      const response = await codexRequest<{ data?: CodexThread[] }>('thread/list', { limit: 30 })
+      setRecentThreads(response.data ?? [])
+    } catch {
+      setRecentThreads([])
+    }
+  }
+
   const connectCodex = async () => {
     setBusy(true)
     setError(null)
     try {
-      const nextAccount = await getCodexAccountStatus()
-      setAccount(nextAccount)
+      try {
+        const nextAccount = await getCodexAccountStatus()
+        setAccount(nextAccount)
+      } catch {
+        setAccount(null)
+      }
       const modelResponse = await codexRequest<{ data?: CodexModel[] }>('model/list', {})
         .catch(() => ({ data: [] }))
       setModels(modelResponse.data ?? [])
       await refreshRuntime()
+      await refreshRecentThreads()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t('ai.connectError'))
     } finally {
@@ -137,6 +188,12 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   useEffect(() => {
     Promise.all([refreshRuntime(), refreshWorkspaces()]).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!settings.aiWorkspaceEnabled || autoConnectRef.current) return
+    autoConnectRef.current = true
+    connectCodex().catch(() => {})
+  }, [settings.aiWorkspaceEnabled])
 
   useEffect(() => {
     if (!requestedRepo) return
@@ -189,7 +246,10 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   }, [t])
 
   useEffect(() => {
-    if (!selectedWorkspace || !settings.aiWorkspaceEnabled || !runtime?.running) return
+    if (!selectedWorkspace || !settings.aiWorkspaceEnabled || !runtime?.running) {
+      setThreads([])
+      return
+    }
     codexRequest<{ data?: CodexThread[] }>('thread/list', {
       cwd: [selectedWorkspace.path],
       limit: 30,
@@ -260,6 +320,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
       })
       setSelectedThread(response.thread)
       setThreads((current) => [response.thread, ...current.filter((thread) => thread.id !== response.thread.id)])
+      setRecentThreads((current) => [response.thread, ...current.filter((thread) => thread.id !== response.thread.id)])
       setEntries([])
       return response.thread
     } catch (caught) {
@@ -274,6 +335,8 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     setBusy(true)
     try {
       const response = await codexRequest<{ thread: CodexThread }>('thread/resume', { threadId: thread.id })
+      const workspace = workspaces.find((item) => pathsMatch(item.path, response.thread.cwd))
+      setSelectedWorkspace(workspace ?? null)
       setSelectedThread(response.thread)
       setEntries(entriesFromThread(response.thread))
     } catch (caught) {
@@ -318,7 +381,8 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     try {
       await codexRequest('turn/start', {
         threadId: thread.id,
-        cwd: selectedWorkspace?.path,
+        cwd: activePath,
+        runtimeWorkspaceRoots: activePath ? [activePath] : [],
         model: model || null,
         effort,
         approvalPolicy,
@@ -452,6 +516,16 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
               <button type="button" className="secondary-btn" onClick={handleClone} disabled={busy}>{t('ai.cloneAction')}</button>
             </div>
           )}
+          <div className={`ai-auth-card ${accountReady ? 'ready' : 'warning'}`}>
+            <strong>{accountReady ? t('ai.authReady') : t('ai.authMissing')}</strong>
+            <span>{accountReady ? (accountName || t('ai.authReadyText')) : t('ai.authMissingText')}</span>
+            <div className="ai-auth-actions">
+              <button type="button" className="secondary-btn" onClick={connectCodex} disabled={busy}>{t('ai.checkRuntime')}</button>
+              <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(activePath).catch(() => {})}>
+                {accountReady ? t('ai.openCodex') : t('ai.signInViaCodex')}
+              </button>
+            </div>
+          </div>
           <div className="ai-workspace-list">
             {workspaces.map((workspace) => (
               <button
@@ -465,6 +539,27 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
               </button>
             ))}
             {workspaces.length === 0 && <p>{t('ai.noWorkspaces')}</p>}
+          </div>
+          <div className="ai-pane-title ai-thread-title">
+            <h2>{t('ai.recentSessions')}</h2>
+            <button type="button" onClick={() => void refreshRecentThreads()} title={t('ai.refreshSessions')}>↻</button>
+          </div>
+          <div className="ai-thread-list ai-recent-thread-list">
+            {recentThreads.map((thread) => (
+              <button
+                key={thread.id}
+                type="button"
+                className={selectedThread?.id === thread.id ? 'active' : ''}
+                onClick={() => void resumeThread(thread)}
+              >
+                <strong>{threadTitle(thread, t('ai.untitledThread'))}</strong>
+                <span>{thread.cwd || t('ai.codexSession')}</span>
+                {formatCodexTime(thread.updatedAt ?? thread.createdAt) && (
+                  <em>{formatCodexTime(thread.updatedAt ?? thread.createdAt)}</em>
+                )}
+              </button>
+            ))}
+            {recentThreads.length === 0 && <p>{runtime?.running ? t('ai.noRecentSessions') : t('ai.connectForSessions')}</p>}
           </div>
           {selectedWorkspace && (
             <>
@@ -489,16 +584,19 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
         </aside>
 
         <main className="ai-chat">
-          {!selectedWorkspace ? (
+          {!selectedWorkspace && !selectedThread ? (
             <div className="ai-empty">
               <h2>{t('ai.startTitle')}</h2>
               <p>{t('ai.startText')}</p>
-              <button type="button" className="hero-primary-btn" onClick={handleAddFolder}>{t('ai.addFolder')}</button>
+              <div className="ai-empty-actions">
+                <button type="button" className="hero-primary-btn" onClick={handleAddFolder}>{t('ai.addFolder')}</button>
+                <button type="button" className="secondary-btn" onClick={() => void refreshRecentThreads()}>{t('ai.refreshSessions')}</button>
+              </div>
             </div>
           ) : (
             <>
               <div className="ai-chat-controls">
-                <strong>{selectedWorkspace.name}</strong>
+                <strong>{selectedWorkspace?.name ?? threadTitle(selectedThread!, t('ai.codexSession'))}</strong>
                 <select aria-label={t('ai.model')} value={model} onChange={(event) => setModel(event.target.value)}>
                   <option value="">{t('ai.defaultModel')}</option>
                   {models.map((availableModel) => {
@@ -558,7 +656,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                 />
                 <div className="ai-composer-actions">
                   <button type="button" className="secondary-btn" onClick={attachImage}>{t('ai.addImage')}</button>
-                  <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(selectedWorkspace.path).catch(() => {})}>
+                  <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(activePath).catch(() => {})}>
                     {t('ai.openCodex')}
                   </button>
                   <button type="button" className="hero-primary-btn" onClick={sendMessage} disabled={streaming || (!composer.trim() && attachments.length === 0)}>
@@ -575,11 +673,13 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
             <h2>{t('ai.activity')}</h2>
             <button type="button" className="ai-inspector-close" onClick={() => setRightPanelOpen(false)}>{'\u00d7'}</button>
           </div>
-          {selectedWorkspace && (
+          {(selectedWorkspace || activePath || selectedThread) && (
             <div className="ai-inspector-actions">
-              <button type="button" className="secondary-btn ai-open-folder" onClick={() => openDir(selectedWorkspace.path).catch(() => {})}>
-                {t('ai.openFolder')}
-              </button>
+              {activePath && (
+                <button type="button" className="secondary-btn ai-open-folder" onClick={() => openDir(activePath).catch(() => {})}>
+                  {t('ai.openFolder')}
+                </button>
+              )}
               {selectedThread && (
                 <button type="button" className="secondary-btn" onClick={startReview}>
                   {t('ai.review')}
@@ -590,10 +690,12 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                   {t('ai.interrupt')}
                 </button>
               )}
-              <button type="button" className="secondary-btn" onClick={() => void removeWorkspace(false)}>
-                {t('ai.unlink')}
-              </button>
-              {selectedWorkspace.clonedByLauncher && (
+              {selectedWorkspace && (
+                <button type="button" className="secondary-btn" onClick={() => void removeWorkspace(false)}>
+                  {t('ai.unlink')}
+                </button>
+              )}
+              {selectedWorkspace?.clonedByLauncher && (
                 <button type="button" className="secondary-btn ai-danger-action" onClick={() => void removeWorkspace(true)}>
                   {t('ai.deleteFiles')}
                 </button>

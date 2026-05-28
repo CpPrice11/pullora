@@ -1219,6 +1219,32 @@ Object.assign(dictionaries.en, {
   'ai.logoutError': 'Could not sign out of Codex.',
 })
 
+Object.assign(dictionaries.uk, {
+  'ai.authReady': 'Codex авторизовано',
+  'ai.authReadyText': 'Акаунт готовий до роботи через локальний Codex.',
+  'ai.authMissing': 'Потрібна авторизація',
+  'ai.authMissingText': 'Відкрийте Codex і увійдіть, після цього натисніть перевірку.',
+  'ai.recentSessions': 'Минулі сесії Codex',
+  'ai.refreshSessions': 'Оновити сесії',
+  'ai.noRecentSessions': 'Codex не повернув попередніх сесій.',
+  'ai.connectForSessions': 'Підключіть Codex, щоб побачити минулі сесії.',
+  'ai.codexSession': 'Сесія Codex',
+  'ai.signInViaCodex': 'Увійти через Codex',
+})
+
+Object.assign(dictionaries.en, {
+  'ai.authReady': 'Codex signed in',
+  'ai.authReadyText': 'The account is ready through local Codex.',
+  'ai.authMissing': 'Sign-in required',
+  'ai.authMissingText': 'Open Codex and sign in, then run the check again.',
+  'ai.recentSessions': 'Past Codex sessions',
+  'ai.refreshSessions': 'Refresh sessions',
+  'ai.noRecentSessions': 'Codex did not return previous sessions.',
+  'ai.connectForSessions': 'Connect Codex to show past sessions.',
+  'ai.codexSession': 'Codex session',
+  'ai.signInViaCodex': 'Sign in via Codex',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void
