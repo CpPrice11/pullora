@@ -48,6 +48,8 @@ interface CodexModel {
   displayName?: string
 }
 
+type InspectorTab = 'changes' | 'terminal' | 'approvals'
+
 function threadTitle(thread: CodexThread, fallback: string) {
   return thread.name || thread.preview || fallback
 }
@@ -134,12 +136,17 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [collaborationMode, setCollaborationMode] = useState('default')
   const [effort, setEffort] = useState('medium')
   const [approvalPolicy, setApprovalPolicy] = useState('on-request')
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('changes')
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const autoConnectRef = useRef(false)
 
   const accountName = useMemo(() => accountLabel(account), [account])
   const accountReady = useMemo(() => Boolean(account?.account || accountName), [account, accountName])
   const activePath = selectedWorkspace?.path ?? selectedThread?.cwd ?? undefined
+  const selectedTitle = selectedThread
+    ? threadTitle(selectedThread, t('ai.codexSession'))
+    : t('ai.newChat')
+  const pendingApprovals = activity.filter((entry) => entry.pendingApproval)
 
   const refreshRuntime = async () => {
     const status = await getCodexRuntimeStatus()
@@ -490,12 +497,22 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     <div className="page ai-workspace-page">
       <header className="ai-page-header">
         <div>
-          <span className="ai-kicker">{t('ai.beta')}</span>
-          <h1>{t('ai.title')}</h1>
+          <div className="ai-title-row">
+            <h1>{t('ai.title')}</h1>
+            <span>{t('ai.betaLabel')}</span>
+          </div>
         </div>
-        <div className="ai-header-status">
-          <span className={runtime?.running ? 'ready' : ''}>{runtime?.running ? t('ai.connected') : t('ai.disconnected')}</span>
-          <button type="button" className="secondary-btn" onClick={connectCodex} disabled={busy}>{t('ai.connect')}</button>
+        <div className="ai-header-actions">
+          <span className={runtime?.running ? 'ai-runtime-status ready' : 'ai-runtime-status'}>
+            <i aria-hidden="true" />
+            {runtime?.running ? t('ai.codexConnected') : t('ai.codexDisconnected')}
+          </span>
+          <button type="button" className="hero-primary-btn" onClick={() => void startThread()} disabled={busy || !selectedWorkspace}>
+            {t('ai.newChatAction')}
+          </button>
+          <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(activePath).catch(() => {})}>
+            {t('ai.openInCodex')}
+          </button>
         </div>
       </header>
 
@@ -507,15 +524,32 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
             <h2>{t('ai.workspaces')}</h2>
             <button type="button" onClick={handleAddFolder} title={t('ai.addFolder')}>+</button>
           </div>
-          <div className="ai-sidebar-actions">
-            <button type="button" className="secondary-btn" onClick={() => setShowClone((shown) => !shown)}>{t('ai.clone')}</button>
-          </div>
           {showClone && (
             <div className="ai-clone-form">
               <input value={cloneUrl} onChange={(event) => setCloneUrl(event.target.value)} placeholder="https://github.com/owner/repo" />
               <button type="button" className="secondary-btn" onClick={handleClone} disabled={busy}>{t('ai.cloneAction')}</button>
             </div>
           )}
+          <div className="ai-workspace-list">
+            {workspaces.map((workspace) => (
+              <button
+                type="button"
+                key={workspace.id}
+                className={selectedWorkspace?.id === workspace.id ? 'active' : ''}
+                onClick={() => void selectWorkspace(workspace)}
+              >
+                <span className="ai-workspace-avatar">{workspace.name.slice(0, 1).toUpperCase()}</span>
+                <span className="ai-workspace-copy">
+                  <strong>{workspace.name}</strong>
+                  <span>{workspace.path}</span>
+                </span>
+              </button>
+            ))}
+            {workspaces.length === 0 && <p>{t('ai.noWorkspaces')}</p>}
+          </div>
+          <div className="ai-sidebar-actions">
+            <button type="button" className="secondary-btn" onClick={() => setShowClone((shown) => !shown)}>{t('ai.clone')}</button>
+          </div>
           <div className={`ai-auth-card ${accountReady ? 'ready' : 'warning'}`}>
             <strong>{accountReady ? t('ai.authReady') : t('ai.authMissing')}</strong>
             <span>{accountReady ? (accountName || t('ai.authReadyText')) : t('ai.authMissingText')}</span>
@@ -526,22 +560,8 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
               </button>
             </div>
           </div>
-          <div className="ai-workspace-list">
-            {workspaces.map((workspace) => (
-              <button
-                type="button"
-                key={workspace.id}
-                className={selectedWorkspace?.id === workspace.id ? 'active' : ''}
-                onClick={() => void selectWorkspace(workspace)}
-              >
-                <strong>{workspace.name}</strong>
-                <span>{workspace.path}</span>
-              </button>
-            ))}
-            {workspaces.length === 0 && <p>{t('ai.noWorkspaces')}</p>}
-          </div>
           <div className="ai-pane-title ai-thread-title">
-            <h2>{t('ai.recentSessions')}</h2>
+            <h2>{t('ai.chats')}</h2>
             <button type="button" onClick={() => void refreshRecentThreads()} title={t('ai.refreshSessions')}>↻</button>
           </div>
           <div className="ai-thread-list ai-recent-thread-list">
@@ -595,29 +615,11 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
             </div>
           ) : (
             <>
-              <div className="ai-chat-controls">
-                <strong>{selectedWorkspace?.name ?? threadTitle(selectedThread!, t('ai.codexSession'))}</strong>
-                <select aria-label={t('ai.model')} value={model} onChange={(event) => setModel(event.target.value)}>
-                  <option value="">{t('ai.defaultModel')}</option>
-                  {models.map((availableModel) => {
-                    const value = availableModel.model ?? availableModel.id ?? ''
-                    if (!value) return null
-                    return <option key={value} value={value}>{availableModel.displayName ?? value}</option>
-                  })}
-                </select>
-                <select aria-label={t('ai.reasoning')} value={effort} onChange={(event) => setEffort(event.target.value)}>
-                  <option value="low">{t('ai.effortLow')}</option>
-                  <option value="medium">{t('ai.effortMedium')}</option>
-                  <option value="high">{t('ai.effortHigh')}</option>
-                </select>
-                <select aria-label={t('ai.mode')} value={collaborationMode} onChange={(event) => setCollaborationMode(event.target.value)}>
-                  <option value="default">{t('ai.modeDefault')}</option>
-                  <option value="plan">{t('ai.modePlan')}</option>
-                </select>
-                <select aria-label={t('ai.permissions')} value={approvalPolicy} onChange={(event) => setApprovalPolicy(event.target.value)}>
-                  <option value="on-request">{t('ai.approvalOnRequest')}</option>
-                  <option value="untrusted">{t('ai.approvalGuarded')}</option>
-                </select>
+              <div className="ai-chat-heading">
+                <div>
+                  <strong>{selectedTitle}</strong>
+                  <span>{selectedWorkspace?.name ?? t('ai.codexSession')}{activePath ? ` - ${activePath}` : ''}</span>
+                </div>
                 <button type="button" className="secondary-btn ai-inspector-toggle" onClick={() => setRightPanelOpen(true)}>
                   {t('ai.activity')}
                 </button>
@@ -655,10 +657,28 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                   placeholder={t('ai.composerPlaceholder')}
                 />
                 <div className="ai-composer-actions">
-                  <button type="button" className="secondary-btn" onClick={attachImage}>{t('ai.addImage')}</button>
-                  <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(activePath).catch(() => {})}>
-                    {t('ai.openCodex')}
-                  </button>
+                  <button type="button" className="secondary-btn ai-attach-btn" onClick={attachImage}>{t('ai.addImage')}</button>
+                  <select aria-label={t('ai.model')} value={model} onChange={(event) => setModel(event.target.value)}>
+                    <option value="">{t('ai.defaultModel')}</option>
+                    {models.map((availableModel) => {
+                      const value = availableModel.model ?? availableModel.id ?? ''
+                      if (!value) return null
+                      return <option key={value} value={value}>{availableModel.displayName ?? value}</option>
+                    })}
+                  </select>
+                  <select aria-label={t('ai.reasoning')} value={effort} onChange={(event) => setEffort(event.target.value)}>
+                    <option value="low">{t('ai.effortLow')}</option>
+                    <option value="medium">{t('ai.effortMedium')}</option>
+                    <option value="high">{t('ai.effortHigh')}</option>
+                  </select>
+                  <select aria-label={t('ai.mode')} value={collaborationMode} onChange={(event) => setCollaborationMode(event.target.value)}>
+                    <option value="default">{t('ai.modeDefault')}</option>
+                    <option value="plan">{t('ai.modePlan')}</option>
+                  </select>
+                  <select aria-label={t('ai.permissions')} value={approvalPolicy} onChange={(event) => setApprovalPolicy(event.target.value)}>
+                    <option value="on-request">{t('ai.approvalOnRequest')}</option>
+                    <option value="untrusted">{t('ai.approvalGuarded')}</option>
+                  </select>
                   <button type="button" className="hero-primary-btn" onClick={sendMessage} disabled={streaming || (!composer.trim() && attachments.length === 0)}>
                     {t('ai.send')}
                   </button>
@@ -672,6 +692,17 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
           <div className="ai-pane-title">
             <h2>{t('ai.activity')}</h2>
             <button type="button" className="ai-inspector-close" onClick={() => setRightPanelOpen(false)}>{'\u00d7'}</button>
+          </div>
+          <div className="ai-inspector-tabs" role="tablist" aria-label={t('ai.activity')}>
+            <button type="button" className={inspectorTab === 'changes' ? 'active' : ''} onClick={() => setInspectorTab('changes')}>
+              {t('ai.changes')}
+            </button>
+            <button type="button" className={inspectorTab === 'terminal' ? 'active' : ''} onClick={() => setInspectorTab('terminal')}>
+              {t('ai.terminal')}
+            </button>
+            <button type="button" className={inspectorTab === 'approvals' ? 'active' : ''} onClick={() => setInspectorTab('approvals')}>
+              {t('ai.approvals')}
+            </button>
           </div>
           {(selectedWorkspace || activePath || selectedThread) && (
             <div className="ai-inspector-actions">
@@ -702,21 +733,37 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
               )}
             </div>
           )}
-          <div className="ai-activity-list">
-            {activity.length === 0 && <p>{t('ai.noActivity')}</p>}
-            {activity.map((entry) => (
-              <div key={entry.id} className="ai-activity-entry">
-                <strong>{entry.label}</strong>
-                {entry.detail && <p>{entry.detail}</p>}
-                {entry.pendingApproval && (
+          {inspectorTab === 'changes' && (
+            <div className="ai-activity-list">
+              {activity.length === 0 && <p>{t('ai.noChanges')}</p>}
+              {activity.map((entry) => (
+                <div key={entry.id} className="ai-activity-entry">
+                  <strong>{entry.label}</strong>
+                  {entry.detail && <p>{entry.detail}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+          {inspectorTab === 'terminal' && (
+            <div className="ai-terminal-panel">
+              <p>{t('ai.noTerminal')}</p>
+            </div>
+          )}
+          {inspectorTab === 'approvals' && (
+            <div className="ai-activity-list">
+              {pendingApprovals.length === 0 && <p>{t('ai.noApprovals')}</p>}
+              {pendingApprovals.map((entry) => (
+                <div key={entry.id} className="ai-activity-entry">
+                  <strong>{entry.label}</strong>
+                  {entry.detail && <p>{entry.detail}</p>}
                   <div>
                     <button type="button" onClick={() => void answerApproval(entry, true)}>{t('ai.allow')}</button>
                     <button type="button" onClick={() => void answerApproval(entry, false)}>{t('ai.deny')}</button>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </aside>
       </div>
     </div>
