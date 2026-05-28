@@ -1,7 +1,9 @@
+use base64::{engine::general_purpose, Engine as _};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, State};
 use tokio::process::Command;
+use uuid::Uuid;
 
 use crate::codex::CodexRuntimeStatus;
 use crate::storage::ai_workspace::{self, AiWorkspace};
@@ -26,6 +28,16 @@ fn parse_github_repo(url: &str) -> Result<(String, String), String> {
         return Err("Посилання GitHub не містить owner і repo.".to_string());
     }
     Ok((segments[3].to_string(), segments[4].to_string()))
+}
+
+fn image_extension(mime_type: &str) -> Result<&'static str, String> {
+    match mime_type {
+        "image/png" => Ok("png"),
+        "image/jpeg" => Ok("jpg"),
+        "image/webp" => Ok("webp"),
+        "image/gif" => Ok("gif"),
+        _ => Err("Підтримуються лише PNG, JPEG, WebP або GIF зображення.".to_string()),
+    }
 }
 
 #[tauri::command]
@@ -53,6 +65,37 @@ pub async fn add_ai_workspace(
         false,
     )
     .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn save_codex_pasted_image(
+    data_base64: String,
+    mime_type: String,
+) -> Result<String, String> {
+    let extension = image_extension(mime_type.trim())?;
+    let payload = data_base64
+        .split_once(',')
+        .map(|(_, data)| data)
+        .unwrap_or(data_base64.trim());
+    let bytes = general_purpose::STANDARD
+        .decode(payload)
+        .map_err(|error| format!("Не вдалося прочитати зображення з clipboard: {}", error))?;
+    if bytes.is_empty() {
+        return Err("Clipboard-зображення порожнє.".to_string());
+    }
+    if bytes.len() > 25 * 1024 * 1024 {
+        return Err("Зображення завелике. Максимум: 25 MB.".to_string());
+    }
+
+    let directory = std::env::temp_dir()
+        .join("Air Launcher")
+        .join("ai-workspace-paste");
+    std::fs::create_dir_all(&directory)
+        .map_err(|error| format!("Не вдалося створити тимчасову папку: {}", error))?;
+    let path = directory.join(format!("paste-{}.{}", Uuid::new_v4(), extension));
+    std::fs::write(&path, bytes)
+        .map_err(|error| format!("Не вдалося зберегти clipboard-зображення: {}", error))?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]

@@ -83,6 +83,7 @@ pub fn run() {
             commands::updates::install_launcher_release,
             commands::ai_workspace::list_ai_workspaces,
             commands::ai_workspace::add_ai_workspace,
+            commands::ai_workspace::save_codex_pasted_image,
             commands::ai_workspace::clone_ai_workspace,
             commands::ai_workspace::touch_ai_workspace,
             commands::ai_workspace::unlink_ai_workspace,

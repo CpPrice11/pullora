@@ -1242,6 +1242,7 @@ Object.assign(dictionaries.uk, {
   'ai.noChanges': 'Команди, зміни й події Codex з’являться тут.',
   'ai.noTerminal': 'Вивід термінала з’явиться тут, коли Codex запускатиме команди.',
   'ai.noApprovals': 'Немає запитів дозволу.',
+  'ai.pasteImageError': 'Не вдалося додати зображення з clipboard.',
 })
 
 Object.assign(dictionaries.en, {
@@ -1267,6 +1268,7 @@ Object.assign(dictionaries.en, {
   'ai.noChanges': 'Codex commands, changes, and events will appear here.',
   'ai.noTerminal': 'Terminal output will appear here when Codex runs commands.',
   'ai.noApprovals': 'No approval requests.',
+  'ai.pasteImageError': 'Failed to add the clipboard image.',
 })
 
 interface LanguageContextValue {

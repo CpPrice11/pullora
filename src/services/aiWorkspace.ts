@@ -26,6 +26,10 @@ export async function deleteAiWorkspaceFiles(id: string): Promise<void> {
   return callTauri('delete_ai_workspace_files', { id, confirmed: true })
 }
 
+export async function saveCodexPastedImage(dataBase64: string, mimeType: string): Promise<string> {
+  return callTauri<string>('save_codex_pasted_image', { dataBase64, mimeType })
+}
+
 export async function getCodexRuntimeStatus(): Promise<CodexRuntimeStatus> {
   return callTauri<CodexRuntimeStatus>('get_codex_runtime_status')
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DragEvent, KeyboardEvent } from 'react'
+import type { ClipboardEvent, DragEvent, KeyboardEvent } from 'react'
 import type { AiWorkspace, CodexRuntimeStatus, CodexThread, GitHubSearchResult } from '../types'
 import { useI18n } from '../i18n'
 import { useSettings } from '../hooks/useSettings'
@@ -17,6 +17,7 @@ import {
   listenCodexEvents,
   listAiWorkspaces,
   openCodexDesktop,
+  saveCodexPastedImage,
   touchAiWorkspace,
   unlinkAiWorkspace,
 } from '../services/aiWorkspace'
@@ -108,6 +109,15 @@ function entriesFromThread(thread: CodexThread | null): ChatEntry[] {
       }]
     }),
   )
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
 }
 
 function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspacePageProps) {
@@ -364,6 +374,24 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
       .map((file) => (file as File & { path?: string }).path)
       .filter((path): path is string => Boolean(path))
     if (paths.length > 0) setAttachments((current) => [...current, ...paths])
+  }
+
+  const handlePaste = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const imageFiles = Array.from(event.clipboardData.files)
+      .filter((file) => file.type.startsWith('image/'))
+    if (imageFiles.length === 0) return
+
+    event.preventDefault()
+    setError(null)
+    try {
+      const savedImages = await Promise.all(imageFiles.map(async (file) => {
+        const dataUrl = await fileToDataUrl(file)
+        return saveCodexPastedImage(dataUrl, file.type)
+      }))
+      setAttachments((current) => [...current, ...savedImages])
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.pasteImageError'))
+    }
   }
 
   const sendMessage = async () => {
@@ -654,6 +682,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                   onKeyDown={handleComposerKeyDown}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={handleDrop}
+                  onPaste={handlePaste}
                   placeholder={t('ai.composerPlaceholder')}
                 />
                 <div className="ai-composer-actions">

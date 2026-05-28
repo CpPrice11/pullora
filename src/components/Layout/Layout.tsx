@@ -1,5 +1,4 @@
 import React from 'react'
-import Header from './Header'
 import Sidebar from './Sidebar'
 import './Layout.css'
 
@@ -36,7 +35,6 @@ function Layout({
         aria-hidden="true"
       />
       <div className="cinematic-backdrop" aria-hidden="true" />
-      <Header />
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
         <main className="layout-content" key={contentKey ?? activeTab}>
