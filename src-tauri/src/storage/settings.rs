@@ -24,6 +24,28 @@ pub struct AppSettings {
     pub ai_workspace_root: String,
     #[serde(default = "default_codex_runtime_preference")]
     pub codex_runtime_preference: String,
+    #[serde(default)]
+    pub appearance: Option<AppAppearanceSettings>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AppAppearanceSettings {
+    pub preset: String,
+    pub accent: String,
+    pub accent_hover: String,
+    pub background: String,
+    pub surface: String,
+    pub surface2: String,
+    pub sidebar: String,
+    pub text: String,
+    pub muted: String,
+    pub border: String,
+    pub font_family: String,
+    pub font_size: u32,
+    pub radius: u32,
+    pub density: String,
+    pub custom_css: String,
 }
 
 fn default_asset_strategy() -> String {
@@ -58,6 +80,7 @@ impl Default for AppSettings {
             ai_workspace_enabled: false,
             ai_workspace_root: default_ai_workspace_root(),
             codex_runtime_preference: default_codex_runtime_preference(),
+            appearance: None,
         }
     }
 }

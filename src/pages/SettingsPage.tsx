@@ -8,8 +8,8 @@ import { codexRequest, getCodexAccountStatus, getCodexRuntimeStatus, loginCodexW
 import type { CodexRuntimeStatus } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
-import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
+import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
+import { APPEARANCE_PRESETS, DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import './PageStyles.css'
 
@@ -51,11 +51,13 @@ function SettingsPage({
         setSettings(normalizedSettings)
         setIntervalDraft(String(normalizedSettings.checkIntervalHours))
         applyThemePreference(normalizedSettings.theme)
+        applyAppearanceSettings(normalizedSettings.appearance)
       })
       .catch(() => {
         setSettings(DEFAULT_SETTINGS)
         setIntervalDraft(String(DEFAULT_SETTINGS.checkIntervalHours))
         applyThemePreference(DEFAULT_SETTINGS.theme)
+        applyAppearanceSettings(DEFAULT_SETTINGS.appearance)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -127,6 +129,20 @@ function SettingsPage({
     }
   }
 
+  const handleAppearanceChange = async (patch: Partial<NonNullable<AppSettings['appearance']>>) => {
+    if (!settings) return
+    const appearance = normalizeAppearance({ ...settings.appearance, ...patch })
+    const savedSettings = await persistSettings({ ...settings, appearance }, settings)
+    if (savedSettings) {
+      applyAppearanceSettings(savedSettings.appearance)
+    }
+  }
+
+  const handleAppearancePresetChange = async (preset: NonNullable<AppSettings['appearance']>['preset']) => {
+    const base = APPEARANCE_PRESETS[preset]
+    await handleAppearanceChange({ ...base, preset })
+  }
+
   const handleBrowse = async () => {
     const dir = await pickDirectory()
     if (dir && settings) {
@@ -152,6 +168,7 @@ function SettingsPage({
     if (savedSettings) {
       setResetPending(false)
       applyThemePreference(savedSettings.theme, true)
+      applyAppearanceSettings(savedSettings.appearance)
       notifyThemePreference(savedSettings.theme)
       setIntervalDraft(String(savedSettings.checkIntervalHours))
       setActionMessage(t('settings.resetDone'))
@@ -303,6 +320,7 @@ function SettingsPage({
 
   const sections = [
     { id: 'general', label: t('settings.general') },
+    { id: 'appearance', label: t('settings.appearance') },
     { id: 'installation', label: t('settings.installation') },
     { id: 'aiWorkspace', label: t('settings.aiWorkspace') },
     { id: 'updates', label: t('settings.updates') },
@@ -311,6 +329,19 @@ function SettingsPage({
 
   const settingsPanelId = (sectionId: string) =>
     sectionId === 'installation' ? 'settings-folders' : `settings-${sectionId}`
+
+  const appearance = normalizeAppearance(settings.appearance)
+  const colorFields: Array<[keyof NonNullable<AppSettings['appearance']>, string]> = [
+    ['accent', t('settings.accent')],
+    ['accentHover', t('settings.accentHover')],
+    ['background', t('settings.background')],
+    ['surface', t('settings.surface')],
+    ['surface2', t('settings.surface2')],
+    ['sidebar', t('settings.sidebarColor')],
+    ['text', t('settings.textColor')],
+    ['muted', t('settings.mutedColor')],
+    ['border', t('settings.borderColor')],
+  ]
 
   const handleSectionSelect = (sectionId: string) => {
     setActiveSection(sectionId)
@@ -618,19 +649,112 @@ function SettingsPage({
 
       case 'appearance':
         return (
-          <section id="settings-appearance" className="settings-section">
+          <section id="settings-appearance" className="settings-section appearance-settings-section">
             <h3>{t('settings.appearance')}</h3>
-            <div className="form-group compact-control">
-              <label htmlFor="theme">{t('settings.theme')}</label>
-              <select
-                id="theme"
-                value={settings.theme}
-                onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
-              >
-                <option value="light">{t('settings.light')}</option>
-                <option value="dark">{t('settings.dark')}</option>
-                <option value="auto">{t('settings.auto')}</option>
-              </select>
+            <div className="settings-grid">
+              <div className="form-group compact-control">
+                <label htmlFor="themeAppearance">{t('settings.theme')}</label>
+                <select
+                  id="themeAppearance"
+                  value={settings.theme}
+                  onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
+                >
+                  <option value="light">{t('settings.light')}</option>
+                  <option value="dark">{t('settings.dark')}</option>
+                  <option value="auto">{t('settings.auto')}</option>
+                </select>
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="appearancePreset">{t('settings.appearancePreset')}</label>
+                <select
+                  id="appearancePreset"
+                  value={appearance.preset}
+                  onChange={(event) => handleAppearancePresetChange(event.target.value as NonNullable<AppSettings['appearance']>['preset'])}
+                >
+                  <option value="steam">{t('settings.presetSteam')}</option>
+                  <option value="steamLight">{t('settings.presetSteamLight')}</option>
+                  <option value="midnight">{t('settings.presetMidnight')}</option>
+                  <option value="custom">{t('settings.presetCustom')}</option>
+                </select>
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="appearanceDensity">{t('settings.density')}</label>
+                <select
+                  id="appearanceDensity"
+                  value={appearance.density}
+                  onChange={(event) => handleAppearanceChange({ density: event.target.value as NonNullable<AppSettings['appearance']>['density'], preset: 'custom' })}
+                >
+                  <option value="compact">{t('settings.densityCompact')}</option>
+                  <option value="comfortable">{t('settings.densityComfortable')}</option>
+                  <option value="spacious">{t('settings.densitySpacious')}</option>
+                </select>
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="appearanceFontSize">{t('settings.fontSize')}</label>
+                <input
+                  id="appearanceFontSize"
+                  type="range"
+                  min="11"
+                  max="18"
+                  value={appearance.fontSize}
+                  onChange={(event) => handleAppearanceChange({ fontSize: Number(event.target.value), preset: 'custom' })}
+                />
+                <span className="settings-range-value">{appearance.fontSize}px</span>
+              </div>
+
+              <div className="form-group compact-control">
+                <label htmlFor="appearanceRadius">{t('settings.radius')}</label>
+                <input
+                  id="appearanceRadius"
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={appearance.radius}
+                  onChange={(event) => handleAppearanceChange({ radius: Number(event.target.value), preset: 'custom' })}
+                />
+                <span className="settings-range-value">{appearance.radius}px</span>
+              </div>
+
+              <div className="form-group compact-control settings-grid-wide">
+                <label htmlFor="appearanceFont">{t('settings.fontFamily')}</label>
+                <input
+                  id="appearanceFont"
+                  type="text"
+                  value={appearance.fontFamily}
+                  onChange={(event) => setSettings({ ...settings, appearance: { ...appearance, fontFamily: event.target.value, preset: 'custom' } })}
+                  onBlur={() => handleAppearanceChange({ fontFamily: settings.appearance?.fontFamily, preset: 'custom' })}
+                />
+              </div>
+            </div>
+
+            <div className="appearance-color-grid">
+              {colorFields.map(([key, label]) => (
+                <label className="appearance-color-field" key={key}>
+                  <span>{label}</span>
+                  <input
+                    type="color"
+                    value={String(appearance[key])}
+                    onChange={(event) => handleAppearanceChange({ [key]: event.target.value, preset: 'custom' } as Partial<NonNullable<AppSettings['appearance']>>)}
+                  />
+                  <code>{String(appearance[key])}</code>
+                </label>
+              ))}
+            </div>
+
+            <div className="form-group settings-grid-wide">
+              <label htmlFor="customCss">{t('settings.customCss')}</label>
+              <textarea
+                id="customCss"
+                className="settings-css-editor"
+                value={appearance.customCss}
+                onChange={(event) => setSettings({ ...settings, appearance: { ...appearance, customCss: event.target.value, preset: 'custom' } })}
+                onBlur={() => handleAppearanceChange({ customCss: settings.appearance?.customCss, preset: 'custom' })}
+                placeholder=":root { --color-primary: #66c0f4; }"
+              />
+              <p className="help-text">{t('settings.customCssHelp')}</p>
             </div>
           </section>
         )

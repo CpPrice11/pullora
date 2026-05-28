@@ -1,21 +1,21 @@
 :root {
   color-scheme: light;
-  --color-primary: #0067c0;
-  --color-primary-dark: #005a9e;
-  --color-primary-light: #e8f2ff;
-  --color-accent-wash: rgba(0, 103, 192, 0.12);
-  --color-bg: #f6f6f6;
-  --color-bg-elevated: #ffffff;
-  --color-bg-secondary: #f3f3f3;
-  --color-mica: rgba(255, 255, 255, 0.84);
-  --color-sidebar: rgba(243, 243, 243, 0.92);
-  --color-control: rgba(255, 255, 255, 0.78);
-  --color-control-hover: rgba(255, 255, 255, 0.95);
-  --color-nav-active: rgba(255, 255, 255, 0.9);
-  --color-text: #1f1f1f;
-  --color-text-secondary: #5f5f5f;
-  --color-text-tertiary: #7a7a7a;
-  --color-border: #d1d1d1;
+  --color-primary: #66c0f4;
+  --color-primary-dark: #8fd3ff;
+  --color-primary-light: rgba(102, 192, 244, 0.14);
+  --color-accent-wash: rgba(102, 192, 244, 0.12);
+  --color-bg: #1b2838;
+  --color-bg-elevated: #1e2a38;
+  --color-bg-secondary: #2a475e;
+  --color-mica: rgba(30, 42, 56, 0.86);
+  --color-sidebar: #171a21;
+  --color-control: rgba(42, 71, 94, 0.62);
+  --color-control-hover: rgba(42, 71, 94, 0.92);
+  --color-nav-active: rgba(102, 192, 244, 0.12);
+  --color-text: #c7d5e0;
+  --color-text-secondary: #8ba3b5;
+  --color-text-tertiary: #6f8799;
+  --color-border: #2a475e;
   --color-border-subtle: rgba(0, 0, 0, 0.08);
   --color-success: #0f7b0f;
   --color-error: #c42b1c;
@@ -28,12 +28,13 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 
-  --border-radius: 8px;
-  --border-radius-lg: 12px;
+  --border-radius: 3px;
+  --border-radius-lg: 9px;
+  --density-scale: 0.86;
 
-  --font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family: 'Motiva Sans', 'Segoe UI', Arial, sans-serif;
   --font-size-sm: 12px;
-  --font-size-base: 14px;
+  --font-size-base: 13px;
   --font-size-lg: 16px;
   --font-size-xl: 18px;
   --font-size-2xl: 24px;
@@ -145,7 +146,7 @@ button {
   border-radius: var(--border-radius);
   padding: var(--spacing-sm) var(--spacing-md);
   transition: var(--transition), filter var(--motion-fast);
-  background-color: var(--color-primary);
+  background: linear-gradient(180deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 72%, #000 28%));
   color: white;
   font-weight: 600;
   min-width: 0;

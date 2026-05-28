@@ -2772,6 +2772,71 @@
   grid-column: 1 / -1;
 }
 
+.settings-grid-wide {
+  grid-column: 1 / -1;
+}
+
+.appearance-settings-section {
+  gap: 18px;
+}
+
+.appearance-color-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.appearance-color-field {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-bg-secondary) 72%, transparent);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--border-radius-lg);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  padding: 10px;
+}
+
+.appearance-color-field span {
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appearance-color-field input[type='color'] {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  width: 34px;
+}
+
+.appearance-color-field code {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  grid-column: 1 / -1;
+}
+
+.settings-range-value {
+  color: var(--color-text-secondary);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 750;
+  margin-top: 6px;
+}
+
+.settings-css-editor {
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  min-height: 130px;
+  resize: vertical;
+  width: 100%;
+}
+
 .settings-inline-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2781,6 +2846,13 @@
 .settings-modal .compact-control input,
 .settings-modal .compact-control select {
   max-width: 300px;
+}
+
+.settings-modal .compact-control input[type='range'] {
+  accent-color: var(--color-primary);
+  max-width: 300px;
+  min-height: 26px;
+  padding: 0;
 }
 
 .settings-modal .danger-zone {
