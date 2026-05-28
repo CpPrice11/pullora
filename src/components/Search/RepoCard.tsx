@@ -114,11 +114,13 @@ function RepoCard({
 
   const handleLaunch = (event: React.MouseEvent) => {
     event.stopPropagation()
+    setActionsOpen(false)
     onLaunch?.()
   }
 
   const handleSelect = (event: React.MouseEvent) => {
     event.stopPropagation()
+    setActionsOpen(false)
     onSelect()
   }
 
@@ -235,26 +237,6 @@ function RepoCard({
         >
           {isFav ? '\u2605' : '\u2606'}
         </button>
-        {isInstalled && hasUpdate && (
-          <button
-            type="button"
-            className="launch-btn"
-            onClick={handleLaunch}
-            aria-label={`${t('repo.launch')}: ${repo.name}`}
-          >
-            {t('repo.launch')}
-          </button>
-        )}
-        {isInstalled && (
-          <button
-            type="button"
-            className="secondary-btn versions-btn"
-            onClick={handleSelect}
-            aria-label={`${t('repo.versions')}: ${repo.name}`}
-          >
-            {t('repo.versions')}
-          </button>
-        )}
         {onPickArt && (
           <div
             className={`project-actions-menu repo-actions-menu ${actionsOpen ? 'open' : ''}`}
@@ -273,6 +255,24 @@ function RepoCard({
             </button>
             {actionsOpen && (
               <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
+                {isInstalled && hasUpdate && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLaunch}
+                  >
+                    {t('repo.launch')}
+                  </button>
+                )}
+                {isInstalled && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleSelect}
+                  >
+                    {t('repo.versions')}
+                  </button>
+                )}
                 {isInstalled && onDetails && (
                   <button
                     type="button"

@@ -1,0 +1,109 @@
+# Feature Roadmap Air Launcher
+
+## Напрям
+
+Base Features roadmap описує розвиток Air Launcher як GitHub Releases launcher без AI-залежностей. Цей напрям відповідає за Library, встановлення, оновлення, локальні версії, favorites, налаштування, maintenance і надійний release flow.
+
+Принципи:
+
+- Основний сценарій має бути швидким: знайти застосунок, встановити, оновити або запустити.
+- Portable-first flow лишається передбачуваним і безпечним.
+- Setup EXE підтримується як окремий інсталятор, але не змішується з portable version registry.
+- GitHub API/cache має деградувати м'яко: cached/offline/partial стани без блокування локальної бібліотеки.
+- Усі destructive дії мають мати зрозуміле підтвердження і recovery path.
+
+## Поточна База
+
+- Завантаження публічних репозиторіїв GitHub owner з releases.
+- Фільтри Library, installed/favorites/update states.
+- Встановлення portable EXE або архівів як локальних версій.
+- Вибір release asset через release selector.
+- Локальний реєстр встановлених застосунків і активних версій.
+- Запуск, switch version, uninstall version/app.
+- Favorites registry.
+- Auto-update checks для встановлених застосунків.
+- About page з версіями самого лаунчера і rollback/update flow.
+- GitHub cache і maintenance дії.
+
+## v3.1.0 - Library Reliability
+
+Перший slice після v3.0.4:
+
+- Library cards стали компактнішими.
+- На картці лишився один primary action, а другорядні дії перенесені в меню `...`.
+- `Launch`, `Versions`, details, AI Workspace, cover actions і uninstall доступні без перевантаження картки.
+
+- Уніфікувати trust/status panel для fresh/cached/offline/partial/rate-limit станів.
+- Покращити empty/error/no-owner стани Library.
+- Винести GitHub API/cache diagnostics у зрозумілу секцію maintenance.
+- Зменшити візуальний шум у Library cards без втрати основних статусів.
+- Покращити retry/load-more сценарії.
+- QA: offline, rate limit, empty owner, owner without releases, cached data.
+
+## v3.2.0 - Version Management
+
+- Зробити локальні версії зрозумілішими: active, older, newest, missing executable.
+- Покращити switch-version confirmation.
+- Додати компактний version history у деталях застосунку.
+- Покращити repair flow для missing executable.
+- Валідувати asset name/install kind для старих записів.
+- QA: install v1, install v2, switch, delete inactive, delete active, repair.
+
+## v3.3.0 - Install / Update Polish
+
+- Чіткіший multi-step progress: queued, downloading, verifying, extracting, detecting executable, registering.
+- Краще пояснення installer/setup assets і unsupported assets.
+- Покращити cancel/retry після failed download.
+- Додати recovery notes після невдалого install/update.
+- Уніфікувати кнопки install/update/download у release selector.
+- QA: portable EXE, ZIP, unsupported asset, failed network, cancel, retry.
+
+## v3.4.0 - Recovery & Maintenance
+
+- Окремий maintenance dashboard: cache, backups, partial installs, logs.
+- Safe cleanup незавершених встановлень із підсумком, що буде видалено.
+- Відкрити папки: installs, update cache, backups/config.
+- Експорт diagnostic summary для bug reports.
+- Більш зрозуміле reset settings без видалення встановлених застосунків.
+- QA: cleanup empty/non-empty, inaccessible folders, reset, cache clear.
+
+## v3.5.0 - Settings & GitHub Sources
+
+- Покращити owner/source налаштування.
+- Підготувати foundation для кількох GitHub owners або custom repository list.
+- Краще пояснити GitHub token/rate-limit, якщо буде додано token flow.
+- Зберігати source-specific cache metadata.
+- QA: owner change, cache invalidation, no network, invalid owner.
+
+## v4.0.0 - Stable Launcher Core
+
+- Повна ревізія base launcher сценаріїв без AI.
+- Уніфікація install/update/uninstall confirmation dialogs.
+- Стабільний recovery path для всіх filesystem операцій.
+- Документований release process.
+- Regression matrix для Library, Installed, Favorites, About update center і Settings.
+
+## Backlog
+
+- Multiple GitHub owners.
+- Custom repository pin list.
+- Local-only app entries.
+- Import/export installed registry.
+- Download speed/ETA.
+- Optional checksums/signature metadata, якщо доступно в release.
+- Better app icon/cover management.
+- Command palette для швидкого запуску.
+
+## QA Для Base Features Releases
+
+- `npm run build`
+- `cargo check`
+- `npm run tauri-build`
+- `npm run check:release -- -Version <version> -RcReadiness`
+- smoke-test portable EXE
+- Library: online/offline/cached/rate-limit/no-owner
+- Install: portable EXE, archive, unsupported asset, failed/cancelled download
+- Installed: launch, switch, uninstall version, uninstall app, repair
+- Favorites: add/remove/refresh/install update
+- About: current version, update, rollback, no portable asset
+- Settings: owner, install path, updates, maintenance, reset
