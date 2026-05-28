@@ -10,7 +10,7 @@ import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import ReleaseSelector from './components/Search/ReleaseSelector'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
-import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
+import { applyAppearanceSettings, applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import { LanguageProvider, useI18n } from './i18n'
 import type { GitHubSearchResult, UpdateAvailable } from './types'
 import { pickImageFile } from './services/dialog'
@@ -84,7 +84,8 @@ function App() {
 
   useEffect(() => {
     setThemePreference(settings.theme)
-  }, [settings.theme])
+    applyAppearanceSettings(settings.appearance)
+  }, [settings.theme, settings.appearance])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')

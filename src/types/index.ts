@@ -61,6 +61,25 @@ export interface AppSettings {
   aiWorkspaceEnabled?: boolean
   aiWorkspaceRoot?: string
   codexRuntimePreference?: 'system'
+  appearance?: AppAppearanceSettings
+}
+
+export interface AppAppearanceSettings {
+  preset: 'steam' | 'steamLight' | 'midnight' | 'custom'
+  accent: string
+  accentHover: string
+  background: string
+  surface: string
+  surface2: string
+  sidebar: string
+  text: string
+  muted: string
+  border: string
+  fontFamily: string
+  fontSize: number
+  radius: number
+  density: 'compact' | 'comfortable' | 'spacious'
+  customCss: string
 }
 
 export interface InstallPathValidation {
