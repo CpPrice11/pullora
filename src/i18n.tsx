@@ -1230,6 +1230,18 @@ Object.assign(dictionaries.uk, {
   'ai.connectForSessions': 'Підключіть Codex, щоб побачити минулі сесії.',
   'ai.codexSession': 'Сесія Codex',
   'ai.signInViaCodex': 'Увійти через Codex',
+  'ai.betaLabel': 'Beta',
+  'ai.codexConnected': 'Codex підключено',
+  'ai.codexDisconnected': 'Codex не підключено',
+  'ai.newChatAction': 'Новий чат',
+  'ai.openInCodex': 'Відкрити в Codex',
+  'ai.chats': 'Чати',
+  'ai.changes': 'Зміни',
+  'ai.terminal': 'Термінал',
+  'ai.approvals': 'Дозволи',
+  'ai.noChanges': 'Команди, зміни й події Codex з’являться тут.',
+  'ai.noTerminal': 'Вивід термінала з’явиться тут, коли Codex запускатиме команди.',
+  'ai.noApprovals': 'Немає запитів дозволу.',
 })
 
 Object.assign(dictionaries.en, {
@@ -1243,6 +1255,18 @@ Object.assign(dictionaries.en, {
   'ai.connectForSessions': 'Connect Codex to show past sessions.',
   'ai.codexSession': 'Codex session',
   'ai.signInViaCodex': 'Sign in via Codex',
+  'ai.betaLabel': 'Beta',
+  'ai.codexConnected': 'Codex connected',
+  'ai.codexDisconnected': 'Codex disconnected',
+  'ai.newChatAction': 'New chat',
+  'ai.openInCodex': 'Open in Codex',
+  'ai.chats': 'Chats',
+  'ai.changes': 'Changes',
+  'ai.terminal': 'Terminal',
+  'ai.approvals': 'Approvals',
+  'ai.noChanges': 'Codex commands, changes, and events will appear here.',
+  'ai.noTerminal': 'Terminal output will appear here when Codex runs commands.',
+  'ai.noApprovals': 'No approval requests.',
 })
 
 interface LanguageContextValue {

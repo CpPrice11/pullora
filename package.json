@@ -1,6 +1,6 @@
 {
   "name": "air-launcher",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "GitHub program launcher - download and run applications from GitHub releases",
   "type": "module",
   "scripts": {
