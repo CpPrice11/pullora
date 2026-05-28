@@ -1,7 +1,7 @@
 import type { AppSettings } from '../types'
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 1,
+  version: 2,
   installationPath: '',
   autoUpdateCheck: true,
   checkIntervalHours: 24,
@@ -11,6 +11,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   githubToken: null,
   theme: 'auto',
   language: 'uk',
+  aiWorkspaceEnabled: false,
+  aiWorkspaceRoot: '',
+  codexRuntimePreference: 'system',
 }
 
 export function normalizeSettings(settings: Partial<AppSettings> | null | undefined): AppSettings {
@@ -27,5 +30,8 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
     language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,
+    aiWorkspaceEnabled: settings?.aiWorkspaceEnabled ?? DEFAULT_SETTINGS.aiWorkspaceEnabled,
+    aiWorkspaceRoot: settings?.aiWorkspaceRoot ?? DEFAULT_SETTINGS.aiWorkspaceRoot,
+    codexRuntimePreference: 'system',
   }
 }

@@ -4,15 +4,17 @@ import Layout from './components/Layout/Layout'
 import SearchPage from './pages/SearchPage'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
+import AiWorkspacePage from './pages/AiWorkspacePage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import ReleaseSelector from './components/Search/ReleaseSelector'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
-import { LanguageProvider } from './i18n'
-import type { UpdateAvailable } from './types'
+import { LanguageProvider, useI18n } from './i18n'
+import type { GitHubSearchResult, UpdateAvailable } from './types'
 import { pickImageFile } from './services/dialog'
+import { listenCodexEvents } from './services/aiWorkspace'
 import {
   clearLauncherBackgroundArt,
   getLauncherBackgroundArt,
@@ -20,8 +22,46 @@ import {
   setLauncherBackgroundArt,
 } from './services/projectArt'
 
-type ContentTab = 'search' | 'about'
+type ContentTab = 'search' | 'aiWorkspace' | 'about'
 type NavigationTab = ContentTab | 'settings'
+
+function AiWorkspaceNotifications() {
+  const { t } = useI18n()
+  const [notice, setNotice] = useState<{ text: string; kind: 'success' | 'error' } | null>(null)
+
+  useEffect(() => {
+    let unlisten: Array<() => void> = []
+    let timer: number | undefined
+
+    const showNotice = (text: string, kind: 'success' | 'error') => {
+      setNotice({ text, kind })
+      if (timer) window.clearTimeout(timer)
+      timer = window.setTimeout(() => setNotice(null), 4400)
+    }
+
+    listenCodexEvents(
+      (payload) => {
+        if (payload.method === 'turn/completed') {
+          showNotice(t('ai.backgroundCompleted'), 'success')
+        }
+      },
+      () => showNotice(t('ai.backgroundFailed'), 'error'),
+    ).then((listeners) => { unlisten = listeners }).catch(() => {})
+
+    return () => {
+      if (timer) window.clearTimeout(timer)
+      unlisten.forEach((stop) => stop())
+    }
+  }, [t])
+
+  if (!notice) return null
+
+  return (
+    <div className={`library-toast library-toast--${notice.kind}`} role="status" aria-live="polite">
+      {notice.text}
+    </div>
+  )
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState<ContentTab>('search')
@@ -31,6 +71,7 @@ function App() {
   const [showPathModal, setShowPathModal] = useState(false)
   const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
   const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
+  const [aiWorkspaceRepo, setAiWorkspaceRepo] = useState<GitHubSearchResult | null>(null)
 
   // Start auto-update after settings are loaded
   const { updates, dismiss } = useAutoUpdate(
@@ -126,7 +167,16 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return (
-        <SearchPage />
+        <SearchPage onOpenAiWorkspace={(repo) => {
+          setAiWorkspaceRepo(repo)
+          setActiveTab('aiWorkspace')
+        }} />
+      )
+      case 'aiWorkspace': return (
+        <AiWorkspacePage
+          requestedRepo={aiWorkspaceRepo}
+          onRequestedRepoConsumed={() => setAiWorkspaceRepo(null)}
+        />
       )
       case 'about':     return <AboutPage />
       default:          return <SearchPage />
@@ -142,6 +192,7 @@ function App() {
         backgroundImage={launcherBackground}
         settingsOpen={settingsOpen}
       >
+        <AiWorkspaceNotifications />
         {updates.length > 0 && (
           <UpdateBanner
             updates={updates}

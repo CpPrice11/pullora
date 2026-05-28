@@ -1,0 +1,624 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { DragEvent, KeyboardEvent } from 'react'
+import type { AiWorkspace, CodexRuntimeStatus, CodexThread, GitHubSearchResult } from '../types'
+import { useI18n } from '../i18n'
+import { useSettings } from '../hooks/useSettings'
+import { updateSettings } from '../services/settings'
+import { pickDirectory, pickImageFile } from '../services/dialog'
+import { openDir } from '../services/updates'
+import {
+  addAiWorkspace,
+  cloneAiWorkspace,
+  codexRequest,
+  codexRespond,
+  deleteAiWorkspaceFiles,
+  getCodexAccountStatus,
+  getCodexRuntimeStatus,
+  listenCodexEvents,
+  listAiWorkspaces,
+  openCodexDesktop,
+  touchAiWorkspace,
+  unlinkAiWorkspace,
+} from '../services/aiWorkspace'
+import StatePanel from '../components/State/StatePanel'
+import './AiWorkspacePage.css'
+
+interface AiWorkspacePageProps {
+  requestedRepo?: GitHubSearchResult | null
+  onRequestedRepoConsumed?: () => void
+}
+
+interface ChatEntry {
+  id: string
+  role: 'user' | 'assistant' | 'event'
+  text: string
+}
+
+interface ActivityEntry {
+  id: string
+  label: string
+  detail?: string
+  pendingApproval?: boolean
+  requestId?: string | number
+}
+
+interface CodexModel {
+  id?: string
+  model?: string
+  displayName?: string
+}
+
+function threadTitle(thread: CodexThread, fallback: string) {
+  return thread.name || thread.preview || fallback
+}
+
+function textFromUnknown(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map(textFromUnknown).filter(Boolean).join('\n')
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return textFromUnknown(record.text ?? record.content ?? record.message ?? record.delta ?? '')
+  }
+  return ''
+}
+
+function entriesFromThread(thread: CodexThread | null): ChatEntry[] {
+  if (!thread?.turns) return []
+  return thread.turns.flatMap((turn) =>
+    turn.items.flatMap((item, index) => {
+      const kind = String(item.type ?? '')
+      const text = textFromUnknown(item)
+      if (!text) return []
+      return [{
+        id: `${turn.id}-${index}`,
+        role: kind.toLowerCase().includes('user') ? 'user' : 'assistant',
+        text,
+      }]
+    }),
+  )
+}
+
+function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspacePageProps) {
+  const { t } = useI18n()
+  const { settings } = useSettings()
+  const [runtime, setRuntime] = useState<CodexRuntimeStatus | null>(null)
+  const [account, setAccount] = useState<Record<string, unknown> | null>(null)
+  const [workspaces, setWorkspaces] = useState<AiWorkspace[]>([])
+  const [selectedWorkspace, setSelectedWorkspace] = useState<AiWorkspace | null>(null)
+  const [threads, setThreads] = useState<CodexThread[]>([])
+  const [selectedThread, setSelectedThread] = useState<CodexThread | null>(null)
+  const [entries, setEntries] = useState<ChatEntry[]>([])
+  const [activity, setActivity] = useState<ActivityEntry[]>([])
+  const [composer, setComposer] = useState('')
+  const [attachments, setAttachments] = useState<string[]>([])
+  const [cloneUrl, setCloneUrl] = useState('')
+  const [showClone, setShowClone] = useState(false)
+  const [linkedLibraryRepo, setLinkedLibraryRepo] = useState<string | undefined>()
+  const [busy, setBusy] = useState(false)
+  const [streaming, setStreaming] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
+  const [models, setModels] = useState<CodexModel[]>([])
+  const [model, setModel] = useState('')
+  const [collaborationMode, setCollaborationMode] = useState('default')
+  const [effort, setEffort] = useState('medium')
+  const [approvalPolicy, setApprovalPolicy] = useState('on-request')
+  const composerRef = useRef<HTMLTextAreaElement | null>(null)
+
+  const accountReady = useMemo(() => Boolean(account?.account), [account])
+
+  const refreshRuntime = async () => {
+    setRuntime(await getCodexRuntimeStatus())
+  }
+
+  const refreshWorkspaces = async () => {
+    const all = await listAiWorkspaces()
+    setWorkspaces(all)
+    setSelectedWorkspace((current) => current ?? all[0] ?? null)
+  }
+
+  const connectCodex = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const nextAccount = await getCodexAccountStatus()
+      setAccount(nextAccount)
+      const modelResponse = await codexRequest<{ data?: CodexModel[] }>('model/list', {})
+        .catch(() => ({ data: [] }))
+      setModels(modelResponse.data ?? [])
+      await refreshRuntime()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.connectError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    Promise.all([refreshRuntime(), refreshWorkspaces()]).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!requestedRepo) return
+    setCloneUrl(requestedRepo.html_url)
+    setLinkedLibraryRepo(requestedRepo.full_name)
+    setShowClone(true)
+    onRequestedRepoConsumed?.()
+  }, [requestedRepo, onRequestedRepoConsumed])
+
+  useEffect(() => {
+    let unlisten: Array<() => void> = []
+    listenCodexEvents(
+      (payload) => {
+        const method = payload.method ?? ''
+        const detail = textFromUnknown(payload.params)
+        if (method.includes('agentMessage') && method.toLowerCase().includes('delta')) {
+          setStreaming(true)
+          setEntries((current) => {
+            const last = current[current.length - 1]
+            if (last?.id === 'streaming') {
+              return [...current.slice(0, -1), { ...last, text: last.text + detail }]
+            }
+            return [...current, { id: 'streaming', role: 'assistant', text: detail }]
+          })
+        } else if (method === 'turn/completed') {
+          setStreaming(false)
+          setEntries((current) => current.map((entry) => entry.id === 'streaming'
+            ? { ...entry, id: `assistant-${Date.now()}` }
+            : entry))
+          setActivity((current) => [{ id: String(Date.now()), label: t('ai.turnCompleted') }, ...current])
+        } else {
+          const approval = method.toLowerCase().includes('approval')
+          setActivity((current) => [{
+            id: `${method}-${Date.now()}`,
+            label: approval ? t('ai.approvalRequested') : method || t('ai.runtimeEvent'),
+            detail,
+            pendingApproval: approval,
+            requestId: payload.id,
+          }, ...current].slice(0, 24))
+        }
+      },
+      (message) => {
+        setError(message)
+        setStreaming(false)
+      },
+    )
+      .then((listeners) => { unlisten = listeners })
+      .catch(() => {})
+    return () => unlisten.forEach((stop) => stop())
+  }, [t])
+
+  useEffect(() => {
+    if (!selectedWorkspace || !settings.aiWorkspaceEnabled || !runtime?.running) return
+    codexRequest<{ data?: CodexThread[] }>('thread/list', {
+      cwd: [selectedWorkspace.path],
+      limit: 30,
+    })
+      .then((response) => setThreads(response.data ?? []))
+      .catch(() => setThreads([]))
+  }, [runtime?.running, selectedWorkspace, settings.aiWorkspaceEnabled])
+
+  const enableBeta = async () => {
+    setBusy(true)
+    try {
+      await updateSettings({ ...settings, aiWorkspaceEnabled: true })
+      await connectCodex()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.enableError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleAddFolder = async () => {
+    const path = await pickDirectory()
+    if (!path) return
+    try {
+      const workspace = await addAiWorkspace(path)
+      setWorkspaces((current) => [workspace, ...current.filter((item) => item.id !== workspace.id)])
+      setSelectedWorkspace(workspace)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.workspaceError'))
+    }
+  }
+
+  const handleClone = async () => {
+    if (!cloneUrl.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      const workspace = await cloneAiWorkspace(cloneUrl.trim(), linkedLibraryRepo)
+      setWorkspaces((current) => [workspace, ...current.filter((item) => item.id !== workspace.id)])
+      setSelectedWorkspace(workspace)
+      setShowClone(false)
+      setCloneUrl('')
+      setLinkedLibraryRepo(undefined)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.cloneError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const selectWorkspace = async (workspace: AiWorkspace) => {
+    setSelectedWorkspace(workspace)
+    setSelectedThread(null)
+    setEntries([])
+    await touchAiWorkspace(workspace.id).catch(() => {})
+  }
+
+  const startThread = async () => {
+    if (!selectedWorkspace) return null
+    setBusy(true)
+    setError(null)
+    try {
+      const response = await codexRequest<{ thread: CodexThread }>('thread/start', {
+        cwd: selectedWorkspace.path,
+        runtimeWorkspaceRoots: [selectedWorkspace.path],
+        model: model || null,
+        approvalPolicy,
+      })
+      setSelectedThread(response.thread)
+      setThreads((current) => [response.thread, ...current.filter((thread) => thread.id !== response.thread.id)])
+      setEntries([])
+      return response.thread
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.threadError'))
+      return null
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const resumeThread = async (thread: CodexThread) => {
+    setBusy(true)
+    try {
+      const response = await codexRequest<{ thread: CodexThread }>('thread/resume', { threadId: thread.id })
+      setSelectedThread(response.thread)
+      setEntries(entriesFromThread(response.thread))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.threadError'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const attachImage = async () => {
+    const image = await pickImageFile()
+    if (image) setAttachments((current) => [...current, image])
+  }
+
+  const handleDrop = (event: DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault()
+    const paths = Array.from(event.dataTransfer.files)
+      .map((file) => (file as File & { path?: string }).path)
+      .filter((path): path is string => Boolean(path))
+    if (paths.length > 0) setAttachments((current) => [...current, ...paths])
+  }
+
+  const sendMessage = async () => {
+    if (!composer.trim() && attachments.length === 0) return
+    const resolvedModel = model || models[0]?.model || models[0]?.id || ''
+    if (collaborationMode === 'plan' && !resolvedModel) {
+      setError(t('ai.modeRequiresModel'))
+      return
+    }
+    const thread = selectedThread ?? await startThread()
+    if (!thread) return
+    const text = composer.trim()
+    const pendingAttachments = attachments
+    setEntries((current) => [...current, {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      text: text || t('ai.imageMessage', { count: pendingAttachments.length }),
+    }])
+    setComposer('')
+    setAttachments([])
+    setStreaming(true)
+    try {
+      await codexRequest('turn/start', {
+        threadId: thread.id,
+        cwd: selectedWorkspace?.path,
+        model: model || null,
+        effort,
+        approvalPolicy,
+        collaborationMode: collaborationMode === 'plan' ? {
+          mode: 'plan',
+          settings: {
+            model: resolvedModel,
+            reasoning_effort: effort,
+            developer_instructions: null,
+          },
+        } : null,
+        input: [
+          ...(text ? [{ type: 'text', text }] : []),
+          ...pendingAttachments.map((path) => ({ type: 'localImage', path })),
+        ],
+      })
+    } catch (caught) {
+      setStreaming(false)
+      setError(caught instanceof Error ? caught.message : t('ai.sendError'))
+    }
+  }
+
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault()
+      void sendMessage()
+    }
+  }
+
+  const answerApproval = async (entry: ActivityEntry, approved: boolean) => {
+    if (entry.requestId === undefined) return
+    await codexRespond(entry.requestId, { decision: approved ? 'accept' : 'decline' }).catch(() => {})
+    setActivity((current) => current.map((item) => item.id === entry.id ? { ...item, pendingApproval: false } : item))
+  }
+
+  const startReview = async () => {
+    if (!selectedThread) return
+    setActivity((current) => [{ id: `review-${Date.now()}`, label: t('ai.reviewStarting') }, ...current])
+    try {
+      await codexRequest('review/start', {
+        threadId: selectedThread.id,
+        target: { type: 'uncommittedChanges' },
+      })
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.reviewError'))
+    }
+  }
+
+  const interruptTurn = async () => {
+    if (!selectedThread) return
+    await codexRequest('turn/interrupt', { threadId: selectedThread.id }).catch(() => {})
+    setStreaming(false)
+  }
+
+  const removeWorkspace = async (removeFiles: boolean) => {
+    if (!selectedWorkspace) return
+    const prompt = removeFiles ? t('ai.deleteConfirm') : t('ai.unlinkConfirm')
+    if (!window.confirm(prompt)) return
+    try {
+      if (removeFiles) {
+        await deleteAiWorkspaceFiles(selectedWorkspace.id)
+      } else {
+        await unlinkAiWorkspace(selectedWorkspace.id)
+      }
+      setWorkspaces((current) => current.filter((workspace) => workspace.id !== selectedWorkspace.id))
+      setSelectedWorkspace(null)
+      setSelectedThread(null)
+      setEntries([])
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('ai.removeError'))
+    }
+  }
+
+  if (!settings.aiWorkspaceEnabled) {
+    return (
+      <div className="page ai-workspace-page ai-onboarding">
+        <section className="ai-onboarding-panel">
+          <span className="ai-kicker">{t('ai.beta')}</span>
+          <h1>{t('ai.title')}</h1>
+          <p>{t('ai.onboardingText')}</p>
+          <div className="ai-onboarding-points">
+            <span>{t('ai.pointRuntime')}</span>
+            <span>{t('ai.pointSecurity')}</span>
+            <span>{t('ai.pointThreads')}</span>
+          </div>
+          {runtime && !runtime.installed && <StatePanel kind="error" title={t('ai.codexMissing')} message={t('ai.codexMissingText')} />}
+          {error && <StatePanel kind="error" title={t('ai.connection')} message={error} />}
+          <div className="ai-action-row">
+            <button type="button" className="hero-primary-btn" disabled={busy || !runtime?.installed} onClick={enableBeta}>
+              {t('ai.enable')}
+            </button>
+            <button type="button" className="secondary-btn" onClick={() => openCodexDesktop().catch(() => {})}>
+              {t('ai.openCodex')}
+            </button>
+            <button type="button" className="secondary-btn" onClick={() => refreshRuntime().catch(() => {})}>
+              {t('ai.checkRuntime')}
+            </button>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  return (
+    <div className="page ai-workspace-page">
+      <header className="ai-page-header">
+        <div>
+          <span className="ai-kicker">{t('ai.beta')}</span>
+          <h1>{t('ai.title')}</h1>
+        </div>
+        <div className="ai-header-status">
+          <span className={runtime?.running ? 'ready' : ''}>{runtime?.running ? t('ai.connected') : t('ai.disconnected')}</span>
+          <button type="button" className="secondary-btn" onClick={connectCodex} disabled={busy}>{t('ai.connect')}</button>
+        </div>
+      </header>
+
+      {error && <StatePanel kind="error" title={t('ai.connection')} message={error} />}
+
+      <div className="ai-workbench">
+        <aside className="ai-workspaces">
+          <div className="ai-pane-title">
+            <h2>{t('ai.workspaces')}</h2>
+            <button type="button" onClick={handleAddFolder} title={t('ai.addFolder')}>+</button>
+          </div>
+          <div className="ai-sidebar-actions">
+            <button type="button" className="secondary-btn" onClick={() => setShowClone((shown) => !shown)}>{t('ai.clone')}</button>
+          </div>
+          {showClone && (
+            <div className="ai-clone-form">
+              <input value={cloneUrl} onChange={(event) => setCloneUrl(event.target.value)} placeholder="https://github.com/owner/repo" />
+              <button type="button" className="secondary-btn" onClick={handleClone} disabled={busy}>{t('ai.cloneAction')}</button>
+            </div>
+          )}
+          <div className="ai-workspace-list">
+            {workspaces.map((workspace) => (
+              <button
+                type="button"
+                key={workspace.id}
+                className={selectedWorkspace?.id === workspace.id ? 'active' : ''}
+                onClick={() => void selectWorkspace(workspace)}
+              >
+                <strong>{workspace.name}</strong>
+                <span>{workspace.path}</span>
+              </button>
+            ))}
+            {workspaces.length === 0 && <p>{t('ai.noWorkspaces')}</p>}
+          </div>
+          {selectedWorkspace && (
+            <>
+              <div className="ai-pane-title ai-thread-title">
+                <h2>{t('ai.threads')}</h2>
+                <button type="button" onClick={() => void startThread()} title={t('ai.newChat')}>+</button>
+              </div>
+              <div className="ai-thread-list">
+                {threads.map((thread) => (
+                  <button
+                    key={thread.id}
+                    type="button"
+                    className={selectedThread?.id === thread.id ? 'active' : ''}
+                    onClick={() => void resumeThread(thread)}
+                  >
+                    {threadTitle(thread, t('ai.untitledThread'))}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </aside>
+
+        <main className="ai-chat">
+          {!selectedWorkspace ? (
+            <div className="ai-empty">
+              <h2>{t('ai.startTitle')}</h2>
+              <p>{t('ai.startText')}</p>
+              <button type="button" className="hero-primary-btn" onClick={handleAddFolder}>{t('ai.addFolder')}</button>
+            </div>
+          ) : (
+            <>
+              <div className="ai-chat-controls">
+                <strong>{selectedWorkspace.name}</strong>
+                <select aria-label={t('ai.model')} value={model} onChange={(event) => setModel(event.target.value)}>
+                  <option value="">{t('ai.defaultModel')}</option>
+                  {models.map((availableModel) => {
+                    const value = availableModel.model ?? availableModel.id ?? ''
+                    if (!value) return null
+                    return <option key={value} value={value}>{availableModel.displayName ?? value}</option>
+                  })}
+                </select>
+                <select aria-label={t('ai.reasoning')} value={effort} onChange={(event) => setEffort(event.target.value)}>
+                  <option value="low">{t('ai.effortLow')}</option>
+                  <option value="medium">{t('ai.effortMedium')}</option>
+                  <option value="high">{t('ai.effortHigh')}</option>
+                </select>
+                <select aria-label={t('ai.mode')} value={collaborationMode} onChange={(event) => setCollaborationMode(event.target.value)}>
+                  <option value="default">{t('ai.modeDefault')}</option>
+                  <option value="plan">{t('ai.modePlan')}</option>
+                </select>
+                <select aria-label={t('ai.permissions')} value={approvalPolicy} onChange={(event) => setApprovalPolicy(event.target.value)}>
+                  <option value="on-request">{t('ai.approvalOnRequest')}</option>
+                  <option value="untrusted">{t('ai.approvalGuarded')}</option>
+                </select>
+                <button type="button" className="secondary-btn ai-inspector-toggle" onClick={() => setRightPanelOpen(true)}>
+                  {t('ai.activity')}
+                </button>
+              </div>
+              <div className="ai-messages">
+                {entries.length === 0 && (
+                  <div className="ai-chat-welcome">
+                    <h2>{t('ai.newChat')}</h2>
+                    <p>{accountReady ? t('ai.composerHint') : t('ai.authHint')}</p>
+                  </div>
+                )}
+                {entries.map((entry) => (
+                  <article key={entry.id} className={`ai-message ${entry.role}`}>
+                    <span>{entry.role === 'user' ? t('ai.you') : t('ai.codex')}</span>
+                    <p>{entry.text}</p>
+                  </article>
+                ))}
+                {streaming && <div className="ai-streaming">{t('ai.working')}</div>}
+              </div>
+              <div className="ai-composer">
+                {attachments.length > 0 && (
+                  <div className="ai-attachments">
+                    {attachments.map((path) => (
+                      <span key={path}>{path.split(/[\\/]/).pop()}</span>
+                    ))}
+                  </div>
+                )}
+                <textarea
+                  ref={composerRef}
+                  value={composer}
+                  onChange={(event) => setComposer(event.target.value)}
+                  onKeyDown={handleComposerKeyDown}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={handleDrop}
+                  placeholder={t('ai.composerPlaceholder')}
+                />
+                <div className="ai-composer-actions">
+                  <button type="button" className="secondary-btn" onClick={attachImage}>{t('ai.addImage')}</button>
+                  <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(selectedWorkspace.path).catch(() => {})}>
+                    {t('ai.openCodex')}
+                  </button>
+                  <button type="button" className="hero-primary-btn" onClick={sendMessage} disabled={streaming || (!composer.trim() && attachments.length === 0)}>
+                    {t('ai.send')}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+
+        <aside className={`ai-inspector ${rightPanelOpen ? 'open' : ''}`}>
+          <div className="ai-pane-title">
+            <h2>{t('ai.activity')}</h2>
+            <button type="button" className="ai-inspector-close" onClick={() => setRightPanelOpen(false)}>{'\u00d7'}</button>
+          </div>
+          {selectedWorkspace && (
+            <div className="ai-inspector-actions">
+              <button type="button" className="secondary-btn ai-open-folder" onClick={() => openDir(selectedWorkspace.path).catch(() => {})}>
+                {t('ai.openFolder')}
+              </button>
+              {selectedThread && (
+                <button type="button" className="secondary-btn" onClick={startReview}>
+                  {t('ai.review')}
+                </button>
+              )}
+              {streaming && (
+                <button type="button" className="secondary-btn" onClick={interruptTurn}>
+                  {t('ai.interrupt')}
+                </button>
+              )}
+              <button type="button" className="secondary-btn" onClick={() => void removeWorkspace(false)}>
+                {t('ai.unlink')}
+              </button>
+              {selectedWorkspace.clonedByLauncher && (
+                <button type="button" className="secondary-btn ai-danger-action" onClick={() => void removeWorkspace(true)}>
+                  {t('ai.deleteFiles')}
+                </button>
+              )}
+            </div>
+          )}
+          <div className="ai-activity-list">
+            {activity.length === 0 && <p>{t('ai.noActivity')}</p>}
+            {activity.map((entry) => (
+              <div key={entry.id} className="ai-activity-entry">
+                <strong>{entry.label}</strong>
+                {entry.detail && <p>{entry.detail}</p>}
+                {entry.pendingApproval && (
+                  <div>
+                    <button type="button" onClick={() => void answerApproval(entry, true)}>{t('ai.allow')}</button>
+                    <button type="button" onClick={() => void answerApproval(entry, false)}>{t('ai.deny')}</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
+}
+
+export default AiWorkspacePage

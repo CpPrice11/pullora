@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+mod codex;
 mod commands;
 mod download;
 mod github;
@@ -15,6 +16,7 @@ pub struct AppState {
     pub github_client: Arc<Mutex<GitHubClient>>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
     pub download_manager: Arc<DownloadManager>,
+    pub codex_runtime: Arc<codex::CodexRuntime>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -27,6 +29,7 @@ pub fn run() {
         github_client: Arc::new(Mutex::new(GitHubClient::new(token))),
         settings: Arc::new(Mutex::new(settings)),
         download_manager: Arc::new(DownloadManager::new()),
+        codex_runtime: Arc::new(codex::CodexRuntime::new()),
     };
 
     tauri::Builder::default()
@@ -78,6 +81,19 @@ pub fn run() {
             commands::updates::get_launcher_storage_info,
             commands::updates::cleanup_launcher_update_files,
             commands::updates::install_launcher_release,
+            commands::ai_workspace::list_ai_workspaces,
+            commands::ai_workspace::add_ai_workspace,
+            commands::ai_workspace::clone_ai_workspace,
+            commands::ai_workspace::touch_ai_workspace,
+            commands::ai_workspace::unlink_ai_workspace,
+            commands::ai_workspace::delete_ai_workspace_files,
+            commands::ai_workspace::get_codex_runtime_status,
+            commands::ai_workspace::codex_request,
+            commands::ai_workspace::codex_respond,
+            commands::ai_workspace::codex_account_status,
+            commands::ai_workspace::codex_login_with_api_key,
+            commands::ai_workspace::stop_codex_runtime,
+            commands::ai_workspace::open_codex_desktop,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

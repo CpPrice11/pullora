@@ -2791,6 +2791,46 @@
   max-width: 330px;
 }
 
+.ai-settings-section {
+  gap: 16px;
+}
+
+.ai-settings-runtime {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.ai-settings-runtime strong,
+.ai-settings-runtime span {
+  display: block;
+}
+
+.ai-settings-runtime strong {
+  color: var(--color-text);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ai-settings-runtime span {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.ai-key-login {
+  max-width: 100%;
+}
+
+:root[data-theme='light'] .ai-settings-runtime {
+  background: rgba(17, 24, 39, 0.04);
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
 .interval-input-control {
   align-items: center;
   display: inline-flex;

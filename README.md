@@ -1,113 +1,61 @@
 # Air Launcher
 
-Air Launcher — легкий desktop launcher для Windows 11, який знаходить програми в публічних GitHub repositories, встановлює їх із GitHub Releases, запускає, оновлює й допомагає керувати локальними версіями.
+Air Launcher - desktop launcher для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у GitHub Releases, встановлює portable-версії, керує оновленнями та має beta-середовище `AI Workspace` для роботи з кодом через офіційний Codex.
 
-Поточний фокус продукту: stable polished GitHub release launcher. Проєкт не розширюється в локальний app manager, marketplace або клієнт для private repositories.
+Інтерфейс за замовчуванням українською; англійська підтримується для всіх екранів і повідомлень.
 
 ## Можливості
 
-- Показує публічні repositories вибраного GitHub owner, у яких є releases.
-- Не показує сам `air-launcher` у бібліотеці застосунків.
-- Встановлює portable EXE та архіви з GitHub Releases.
-- Показує setup/MSI assets як другорядні ручні файли з попередженням.
-- Має install wizard: версія, файл, підтвердження, прогрес, результат.
-- Підтримує запуск, оновлення, rollback і видалення локальних версій.
-- Має Library-first cinematic UI з фільтрами Встановлені, Обране, Оновлення і Не встановлені.
-- Підтримує portable self-update самого лаунчера з About.
-- Підтримує українську й англійську мови; українська є мовою за замовчуванням.
+- `Library` з фільтрами, hero-карткою, деталями застосунку та install wizard.
+- Portable-first встановлення: portable EXE та архіви з EXE рекомендовані; setup/MSI лишаються ручним варіантом.
+- Локальні версії, запуск, rollback, видалення, self-update і очищення старих версій лаунчера.
+- `AI Workspace` beta: локальні папки, clone GitHub-репозиторію, спільні Codex sessions, streaming chat, зображення, activity/approvals/review і handoff у Codex Desktop.
+- Теми, глобальний фон лаунчера й українська/англійська мови.
 
-## Який файл завантажувати
+## AI Workspace Beta
 
-У кожному публічному release Air Launcher вручну публікуються тільки два assets:
+`v3.0.0` додає opt-in розділ `AI Workspace` у sidebar. Він використовує вже встановлений офіційний `codex.exe` та experimental `codex app-server --listen stdio://`.
 
-- `Air.Launcher_<version>_portable_x64.exe` — portable-версія для запуску без інсталятора та для safe/self-update лаунчера.
-- `Air.Launcher_<version>_x64-setup.exe` — один setup installer для ручної інсталяції.
+- Air Launcher не вбудовує Codex і не записує OpenAI API key у власні налаштування.
+- Авторизацією та історією сесій керує Codex; у Settings можна перевірити runtime, передати ключ без збереження або відкрити Codex Desktop.
+- Workspaces мають окремий реєстр від Library-застосунків. Типовий каталог clone змінюється в Settings.
+- Видалення workspace за замовчуванням лише відв'язує папку. Видалити файли можна окремо лише для clone, створеного лаунчером, із підтвердженням.
+- Приватні GitHub clone покладаються на системний Git і Git Credential Manager.
 
-Не додавати MSI, portable ZIP або дублікати setup/portable assets, якщо це прямо не потрібно. GitHub автоматично додає `Source code (zip)` і `Source code (tar.gz)`; Air Launcher не використовує їх як install/update assets.
+Через experimental протокол окремі можливості можуть залежати від установленої версії Codex. При несумісності роботу можна продовжити в офіційному Codex Desktop.
 
-## Як користуватись
+## Файли Релізу
 
-1. Завантаж `Air.Launcher_<version>_portable_x64.exe` або setup EXE з останнього release.
-2. Запусти Air Launcher.
-3. У Settings перевір GitHub owner і папку встановлення.
-4. У Library натисни `Оновити`, щоб перечитати публічні repositories та releases.
-5. Встановлюй або запускай застосунки з карток Library.
-6. У About можна оновити або відкотити сам лаунчер через portable asset.
+Кожен GitHub release Air Launcher містить лише два завантажувані assets:
+
+- `Air.Launcher_<version>_portable_x64.exe` - portable-версія і шлях self-update.
+- `Air.Launcher_<version>_x64-setup.exe` - один setup installer.
+
+MSI і portable ZIP assets не публікуються без окремого рішення.
 
 ## Розробка
 
-Стек не переписуємо:
-
-- Tauri 2
-- Rust
-- React
-- TypeScript
-- CSS
-- Vite
-
-Встановити залежності:
+Стек: Tauri 2, Rust, React, TypeScript, CSS і Vite.
 
 ```bash
 npm ci
-```
-
-Запустити frontend:
-
-```bash
 npm run dev
-```
-
-Запустити Tauri в dev-режимі:
-
-```bash
-npm run tauri-dev
-```
-
-Перевірити frontend:
-
-```bash
 npm run build
-```
-
-Перевірити Rust/Tauri backend:
-
-```bash
-cd src-tauri
-cargo check
-```
-
-Зібрати production desktop app:
-
-```bash
+cd src-tauri && cargo check
 npm run tauri-build
 ```
 
-Release safety check:
+Перевірка metadata та release-readiness:
 
-```bash
-npm run check:release -- -Version 2.0.0 -SkipSmokeTest
-```
-
-Full local release check after build and GitHub release publishing:
-
-```bash
-npm run check:release -- -Version 2.0.0 -CheckGitHubRelease
+```powershell
+npm run check:release -- -Version 3.0.0 -RcReadiness -SkipArtifacts
 ```
 
 ## Release Policy
 
-- Build artifacts не зберігати в Git.
-- Зібрані файли зберігати в `C:\Users\sasha\OneDrive\Документи\Projects\Air Launcher Builds\<version>`.
-- Перед user-facing UI/UX або app behavior release перевірити:
-  - `npm run build`
-  - `cargo check`
-  - `npm run tauri-build`
-  - smoke-test portable EXE
-- GitHub release має містити тільки:
-  - portable EXE
-  - один setup EXE
-- MSI/ZIP assets не додавати без окремого рішення.
+- Build artifacts не зберігаються в Git.
+- Релізні файли зберігаються у `C:\Users\sasha\OneDrive\Документи\Projects\Air Launcher Builds\<version>`.
+- Перед user-facing release виконуються `npm run build`, `cargo check`, `npm run tauri-build`, release-check і smoke-test portable EXE.
+- GitHub release після публікації перевіряється на наявність лише portable EXE і setup EXE.
 
-## Roadmap
-
-Дорога до стабільної `2.0.0`, QA matrix і release checklist збережені в [ROADMAP.md](ROADMAP.md).
+Поточний напрям розвитку описаний у [ROADMAP.md](ROADMAP.md).

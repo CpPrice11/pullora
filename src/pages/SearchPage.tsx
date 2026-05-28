@@ -113,7 +113,11 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
     .find(assetIsPortableInstall) ?? null
 }
 
-function SearchPage() {
+interface SearchPageProps {
+  onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
+}
+
+function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
   const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
@@ -947,6 +951,16 @@ function SearchPage() {
                     {t('installed.folder')}
                   </button>
                 )}
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setHeroActionsOpen(false)
+                    onOpenAiWorkspace?.(featuredRepo)
+                  }}
+                >
+                  {t('ai.openInWorkspace')}
+                </button>
                 <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
                   {t('art.changeCover')}
                 </button>
@@ -1133,6 +1147,7 @@ function SearchPage() {
                   onPickArt={() => handlePickArt('cover', repo)}
                   onClearArt={() => handleClearArt(repo)}
                   onDetails={() => setDetailsRepo(repo)}
+                  onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
                   onUninstall={() => handleRequestUninstall(repo)}
                   onSelect={() => setSelectedRepo(repo)}
                   onLaunch={() => handleLaunch(repo)}

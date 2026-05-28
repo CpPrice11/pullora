@@ -1,3 +1,4 @@
+pub mod ai_workspace;
 pub mod favorites;
 pub mod installed;
 pub mod logs;

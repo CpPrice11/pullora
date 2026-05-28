@@ -4,6 +4,8 @@ import { getSettings, updateSettings, validateInstallationPath } from '../servic
 import { openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
+import { codexRequest, getCodexAccountStatus, getCodexRuntimeStatus, loginCodexWithApiKey, openCodexDesktop } from '../services/aiWorkspace'
+import type { CodexRuntimeStatus } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
@@ -35,6 +37,10 @@ function SettingsPage({
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [codexRuntime, setCodexRuntime] = useState<CodexRuntimeStatus | null>(null)
+  const [codexAccount, setCodexAccount] = useState<Record<string, unknown> | null>(null)
+  const [codexApiKey, setCodexApiKey] = useState('')
+  const [codexChecking, setCodexChecking] = useState(false)
   const modalRef = useRef<HTMLElement | null>(null)
   const resetModalRef = useRef<HTMLElement | null>(null)
 
@@ -215,6 +221,60 @@ function SettingsPage({
     }
   }
 
+  const handleCheckCodex = async () => {
+    setCodexChecking(true)
+    setError(null)
+    try {
+      const runtime = await getCodexRuntimeStatus()
+      setCodexRuntime(runtime)
+      if (runtime.installed) {
+        const account = await getCodexAccountStatus()
+        setCodexAccount(account)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('ai.connectError'))
+    } finally {
+      setCodexChecking(false)
+    }
+  }
+
+  const handleAiRootBrowse = async () => {
+    const dir = await pickDirectory()
+    if (dir && settings) {
+      await persistSettings({ ...settings, aiWorkspaceRoot: dir }, settings)
+    }
+  }
+
+  const handleCodexLogin = async () => {
+    if (!codexApiKey.trim()) return
+    setCodexChecking(true)
+    setError(null)
+    try {
+      await loginCodexWithApiKey(codexApiKey)
+      setCodexApiKey('')
+      await handleCheckCodex()
+      setActionMessage(t('ai.loginReady'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('ai.loginError'))
+    } finally {
+      setCodexChecking(false)
+    }
+  }
+
+  const handleCodexLogout = async () => {
+    setCodexChecking(true)
+    setError(null)
+    try {
+      await codexRequest('account/logout', {})
+      setCodexAccount(null)
+      setActionMessage(t('ai.loggedOut'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('ai.logoutError'))
+    } finally {
+      setCodexChecking(false)
+    }
+  }
+
   if (loading || !settings) {
     return (
       <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
@@ -244,6 +304,7 @@ function SettingsPage({
   const sections = [
     { id: 'general', label: t('settings.general') },
     { id: 'installation', label: t('settings.installation') },
+    { id: 'aiWorkspace', label: t('settings.aiWorkspace') },
     { id: 'updates', label: t('settings.updates') },
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
@@ -365,6 +426,88 @@ function SettingsPage({
                 </span>
               )}
             </div>
+          </section>
+        )
+
+      case 'aiWorkspace':
+        return (
+          <section id="settings-aiWorkspace" className="settings-section ai-settings-section">
+            <h3>{t('settings.aiWorkspace')}</h3>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={Boolean(settings.aiWorkspaceEnabled)}
+                onChange={(event) =>
+                  persistSettings({ ...settings, aiWorkspaceEnabled: event.target.checked }, settings)
+                }
+              />
+              {t('ai.enableBeta')}
+            </label>
+            <p className="help-text">{t('ai.betaSettingsHelp')}</p>
+            <div className="form-group">
+              <label htmlFor="aiWorkspaceRoot">{t('ai.defaultRoot')}</label>
+              <div className="path-input-row">
+                <input
+                  id="aiWorkspaceRoot"
+                  type="text"
+                  value={settings.aiWorkspaceRoot ?? ''}
+                  onChange={(event) => setSettings({ ...settings, aiWorkspaceRoot: event.target.value })}
+                  onBlur={() => persistSettings(settings, settings)}
+                />
+                <button type="button" className="secondary-btn" onClick={handleAiRootBrowse}>
+                  {t('settings.choose')}
+                </button>
+                {settings.aiWorkspaceRoot && (
+                  <button type="button" className="secondary-btn" onClick={() => openDir(settings.aiWorkspaceRoot ?? '').catch(() => {})}>
+                    {t('settings.open')}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="ai-settings-runtime">
+              <div>
+                <strong>{t('ai.codexRuntime')}</strong>
+                <span>
+                  {codexRuntime?.installed
+                    ? codexRuntime.running ? t('ai.connected') : t('ai.installed')
+                    : t('ai.notChecked')}
+                </span>
+              </div>
+              <div className="settings-inline-actions">
+                <button type="button" className="secondary-btn" disabled={codexChecking} onClick={handleCheckCodex}>
+                  {t('ai.checkRuntime')}
+                </button>
+                <button type="button" className="secondary-btn" onClick={() => openCodexDesktop().catch(() => {})}>
+                  {t('ai.openCodex')}
+                </button>
+              </div>
+            </div>
+            {codexRuntime?.installed && !codexAccount?.account && (
+              <div className="form-group ai-key-login">
+                <label htmlFor="codexKey">{t('ai.loginWithKey')}</label>
+                <div className="path-input-row">
+                  <input
+                    id="codexKey"
+                    type="password"
+                    value={codexApiKey}
+                    onChange={(event) => setCodexApiKey(event.target.value)}
+                    autoComplete="off"
+                    placeholder="sk-..."
+                  />
+                  <button type="button" className="secondary-btn" disabled={codexChecking || !codexApiKey.trim()} onClick={handleCodexLogin}>
+                    {t('ai.login')}
+                  </button>
+                </div>
+                <p className="help-text">{t('ai.secretNotice')}</p>
+              </div>
+            )}
+            {codexRuntime?.installed && Boolean(codexAccount?.account) && (
+              <div className="settings-inline-actions">
+                <button type="button" className="secondary-btn" disabled={codexChecking} onClick={handleCodexLogout}>
+                  {t('ai.logout')}
+                </button>
+              </div>
+            )}
           </section>
         )
 

@@ -18,16 +18,34 @@ pub struct AppSettings {
     pub github_token: Option<String>,
     pub theme: String,
     pub language: String,
+    #[serde(default)]
+    pub ai_workspace_enabled: bool,
+    #[serde(default = "default_ai_workspace_root")]
+    pub ai_workspace_root: String,
+    #[serde(default = "default_codex_runtime_preference")]
+    pub codex_runtime_preference: String,
 }
 
 fn default_asset_strategy() -> String {
     "portableFirst".to_string()
 }
 
+pub fn default_ai_workspace_root() -> String {
+    dirs::document_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("Air Launcher Workspaces")
+        .to_string_lossy()
+        .to_string()
+}
+
+fn default_codex_runtime_preference() -> String {
+    "system".to_string()
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: 2,
             installation_path: None,
             auto_update_check: true,
             check_interval_hours: 24,
@@ -37,6 +55,9 @@ impl Default for AppSettings {
             github_token: None,
             theme: "auto".to_string(),
             language: "uk".to_string(),
+            ai_workspace_enabled: false,
+            ai_workspace_root: default_ai_workspace_root(),
+            codex_runtime_preference: default_codex_runtime_preference(),
         }
     }
 }

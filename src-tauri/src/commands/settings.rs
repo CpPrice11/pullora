@@ -31,6 +31,11 @@ pub async fn update_settings(
         }
     }
 
+    if new_settings.ai_workspace_enabled && !new_settings.ai_workspace_root.trim().is_empty() {
+        std::fs::create_dir_all(&new_settings.ai_workspace_root)
+            .map_err(|e| format!("Не вдалося підготувати папку AI Workspace: {}", e))?;
+    }
+
     let config_dir = get_config_dir();
     save_settings(&config_dir, &new_settings).map_err(|e| e.to_string())?;
 
