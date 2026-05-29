@@ -93,7 +93,6 @@ pub fn run() {
             commands::ai_workspace::codex_respond,
             commands::ai_workspace::codex_account_status,
             commands::ai_workspace::codex_login_with_api_key,
-            commands::ai_workspace::stop_codex_runtime,
             commands::ai_workspace::open_codex_desktop,
         ])
         .run(tauri::generate_context!())

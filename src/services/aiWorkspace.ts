@@ -53,10 +53,6 @@ export async function loginCodexWithApiKey(apiKey: string): Promise<void> {
   return callTauri('codex_login_with_api_key', { apiKey })
 }
 
-export async function stopCodexRuntime(): Promise<void> {
-  return callTauri('stop_codex_runtime')
-}
-
 export async function openCodexDesktop(path?: string): Promise<void> {
   return callTauri('open_codex_desktop', { path })
 }

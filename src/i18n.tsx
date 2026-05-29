@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 export type AppLanguage = 'uk' | 'en'
 
-export const LANGUAGE_CHANGE_EVENT = 'air-launcher-language-change'
+const LANGUAGE_CHANGE_EVENT = 'air-launcher-language-change'
 
 type Dictionary = Record<string, string>
 
@@ -21,7 +21,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.saved': 'Збережено',
     'settings.loading': 'Завантажуємо налаштування...',
     'settings.installation': 'Встановлення',
-    'settings.folders': 'Папки',
     'settings.installPath': 'Папка встановлення',
     'settings.installPathPlaceholder': 'Обери папку...',
     'settings.choose': 'Обрати...',
@@ -32,7 +31,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.pathInaccessible': 'Папка недоступна',
     'settings.pathNoWrite': 'Немає прав на запис',
     'settings.pathCheckError': 'Не вдалося перевірити папку',
-    'settings.github': 'GitHub',
     'settings.githubOwner': 'Власник репозиторіїв',
     'settings.githubOwnerPlaceholder': 'Наприклад CpPrice11',
     'settings.updates': 'Оновлення',
@@ -74,16 +72,10 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.dark': 'Темна',
     'settings.auto': 'Авто',
     'settings.language': 'Мова',
-    'settings.languageSection': 'Мова',
     'settings.ukrainian': 'Українська',
     'settings.english': 'English',
-    'settings.service': 'Службові дії',
-    'settings.resetSection': 'Скидання',
     'settings.reset': 'Скинути налаштування',
     'settings.clearCache': 'Очистити API-кеш',
-    'settings.resetDescription': 'Скидає owner, тему, мову, папку встановлення й інші параметри до стандартних.',
-    'settings.clearCacheDescription': 'Очищає кеш GitHub API. Встановлені програми й локальні версії не видаляються.',
-    'settings.resetConfirm': 'Скинути всі налаштування до стандартних?',
     'settings.cacheCleared': 'Кеш очищено',
     'settings.saveError': 'Не вдалося зберегти налаштування',
     'settings.themeError': 'Не вдалося зберегти тему',
@@ -257,7 +249,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.saved': 'Saved',
     'settings.loading': 'Loading settings...',
     'settings.installation': 'Installation',
-    'settings.folders': 'Folders',
     'settings.installPath': 'Install folder',
     'settings.installPathPlaceholder': 'Choose a folder...',
     'settings.choose': 'Choose...',
@@ -268,7 +259,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.pathInaccessible': 'Folder is inaccessible',
     'settings.pathNoWrite': 'No write permission',
     'settings.pathCheckError': 'Failed to check folder',
-    'settings.github': 'GitHub',
     'settings.githubOwner': 'Repository owner',
     'settings.githubOwnerPlaceholder': 'For example CpPrice11',
     'settings.updates': 'Updates',
@@ -310,16 +300,10 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'settings.dark': 'Dark',
     'settings.auto': 'Auto',
     'settings.language': 'Language',
-    'settings.languageSection': 'Language',
     'settings.ukrainian': 'Ukrainian',
     'settings.english': 'English',
-    'settings.service': 'Maintenance',
-    'settings.resetSection': 'Reset',
     'settings.reset': 'Reset settings',
     'settings.clearCache': 'Clear API cache',
-    'settings.resetDescription': 'Resets the owner, theme, language, install folder, and other preferences to defaults.',
-    'settings.clearCacheDescription': 'Clears the GitHub API cache. Installed apps and local versions are not removed.',
-    'settings.resetConfirm': 'Reset all settings to defaults?',
     'settings.cacheCleared': 'Cache cleared',
     'settings.saveError': 'Failed to save settings',
     'settings.themeError': 'Failed to save theme',

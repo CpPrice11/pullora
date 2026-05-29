@@ -130,6 +130,11 @@
   animation: skeleton-sheen 1.25s ease-in-out infinite;
 }
 
+@keyframes skeleton-sheen {
+  from { background-position: -220px 0, 0 0; }
+  to { background-position: calc(100% + 220px) 0, 0 0; }
+}
+
 .state-skeleton-icon,
 .state-skeleton-line,
 .state-skeleton-action {

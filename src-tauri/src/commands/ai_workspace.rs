@@ -237,11 +237,6 @@ pub async fn codex_login_with_api_key(
 }
 
 #[tauri::command]
-pub async fn stop_codex_runtime(state: State<'_, AppState>) -> Result<(), String> {
-    state.codex_runtime.stop().await
-}
-
-#[tauri::command]
 pub async fn open_codex_desktop(
     path: Option<String>,
     state: State<'_, AppState>,

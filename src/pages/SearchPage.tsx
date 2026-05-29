@@ -1022,51 +1022,53 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
         <>
           {renderHero()}
 
-          <div className="search-form">
-            <label className="visually-hidden" htmlFor="library-search">
-              {t('library.searchLabel')}
-            </label>
-            <input
-              id="library-search"
-              type="text"
-              placeholder={t('library.searchPlaceholder')}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="search-input"
-              aria-label={t('library.searchLabel')}
-            />
-          </div>
-
-          <div className="library-controls">
-            <div className="segmented-control" aria-label={t('library.filterLabel')}>
-              {libraryFilters.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={filter === item ? 'active' : ''}
-                  aria-pressed={filter === item}
-                  title={t(libraryFilterLabelKey(item))}
-                  onClick={() => setFilter(item)}
-                >
-                  {t(libraryFilterLabelKey(item))}
-                </button>
-              ))}
+          <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
+            <div className="search-form">
+              <label className="visually-hidden" htmlFor="library-search">
+                {t('library.searchLabel')}
+              </label>
+              <input
+                id="library-search"
+                type="text"
+                placeholder={t('library.searchPlaceholder')}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="search-input"
+                aria-label={t('library.searchLabel')}
+              />
             </div>
 
-            <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
-              <span className="visually-hidden">{t('library.sortLabel')}</span>
-              <select
-                id="library-sort"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as LibrarySort)}
-                aria-label={t('library.sortLabel')}
-              >
-                <option value="updated">{t('library.recentlyUpdated')}</option>
-                <option value="status">{t('library.status')}</option>
-                <option value="name">{t('library.name')}</option>
-              </select>
-            </label>
-          </div>
+            <div className="library-controls">
+              <div className="segmented-control" aria-label={t('library.filterLabel')}>
+                {libraryFilters.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={filter === item ? 'active' : ''}
+                    aria-pressed={filter === item}
+                    title={t(libraryFilterLabelKey(item))}
+                    onClick={() => setFilter(item)}
+                  >
+                    {t(libraryFilterLabelKey(item))}
+                  </button>
+                ))}
+              </div>
+
+              <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
+                <span className="visually-hidden">{t('library.sortLabel')}</span>
+                <select
+                  id="library-sort"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as LibrarySort)}
+                  aria-label={t('library.sortLabel')}
+                >
+                  <option value="updated">{t('library.recentlyUpdated')}</option>
+                  <option value="status">{t('library.status')}</option>
+                  <option value="name">{t('library.name')}</option>
+                </select>
+              </label>
+            </div>
+          </section>
 
           {renderLibraryTrustPanel()}
 

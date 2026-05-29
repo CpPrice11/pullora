@@ -413,7 +413,6 @@ function SettingsPage({
         )
 
       case 'installation':
-      case 'folders':
         return (
           <section id="settings-folders" className="settings-section">
             <h3>{t('settings.installation')}</h3>
@@ -553,27 +552,6 @@ function SettingsPage({
               <button className="secondary-btn" onClick={handleClearCache}>
                 {t('settings.clearCache')}
               </button>
-            </div>
-          </section>
-        )
-
-      case 'github':
-        return (
-          <section id="settings-github" className="settings-section">
-            <h3>{t('settings.github')}</h3>
-            <div className="form-group compact-control">
-              <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
-              <input
-                id="githubOwner"
-                type="text"
-                value={settings.githubOwner ?? ''}
-                onBlur={handleGithubOwnerBlur}
-                onChange={(event) =>
-                  setSettings({ ...settings, githubOwner: event.target.value })
-                }
-                onKeyDown={handleGithubOwnerKeyDown}
-                placeholder={t('settings.githubOwnerPlaceholder')}
-              />
             </div>
           </section>
         )
@@ -759,37 +737,8 @@ function SettingsPage({
           </section>
         )
 
-      case 'language':
-        return (
-          <section id="settings-language" className="settings-section">
-            <h3>{t('settings.languageSection')}</h3>
-            <div className="form-group compact-control">
-              <label htmlFor="language">{t('settings.language')}</label>
-              <select
-                id="language"
-                value={settings.language}
-                onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
-              >
-                <option value="uk">{t('settings.ukrainian')}</option>
-                <option value="en">{t('settings.english')}</option>
-              </select>
-            </div>
-          </section>
-        )
-
-      case 'reset':
       default:
-        return (
-          <section id="settings-reset" className="danger-zone">
-            <h3>{t('settings.resetSection')}</h3>
-            <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
-              {t('settings.reset')}
-            </button>
-            <button className="danger-btn" onClick={handleClearCache}>
-              {t('settings.clearCache')}
-            </button>
-          </section>
-        )
+        return null
     }
   }
 

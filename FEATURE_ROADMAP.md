@@ -33,6 +33,11 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - На картці лишився один primary action, а другорядні дії перенесені в меню `...`.
 - `Launch`, `Versions`, details, AI Workspace, cover actions і uninstall доступні без перевантаження картки.
 
+Другий slice після v3.0.5:
+
+- Search, filter і sort у Library об'єднані в компактний toolstrip.
+- Контроли мають стабільнішу висоту й краще складаються на вузьких екранах.
+
 - Уніфікувати trust/status panel для fresh/cached/offline/partial/rate-limit станів.
 - Покращити empty/error/no-owner стани Library.
 - Винести GitHub API/cache diagnostics у зрозумілу секцію maintenance.

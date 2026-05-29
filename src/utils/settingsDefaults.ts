@@ -71,7 +71,7 @@ export const APPEARANCE_PRESETS: Record<AppAppearanceSettings['preset'], AppAppe
   },
 }
 
-export const DEFAULT_APPEARANCE = APPEARANCE_PRESETS.steam
+const DEFAULT_APPEARANCE = APPEARANCE_PRESETS.steam
 
 function normalizeColor(value: unknown, fallback: string) {
   if (typeof value !== 'string') return fallback

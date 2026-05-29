@@ -2,7 +2,7 @@ import type { AppSettings } from '../types'
 import { normalizeAppearance } from './settingsDefaults'
 
 export type ThemePreference = AppSettings['theme']
-export type ResolvedTheme = 'light' | 'dark'
+type ResolvedTheme = 'light' | 'dark'
 
 export const THEME_CHANGE_EVENT = 'air-launcher-theme-change'
 
@@ -45,7 +45,6 @@ export function applyAppearanceSettings(appearance: AppSettings['appearance'] | 
   root.style.setProperty('--color-primary', normalized.accent)
   root.style.setProperty('--color-primary-dark', normalized.accentHover)
   root.style.setProperty('--color-primary-light', `${normalized.accent}24`)
-  root.style.setProperty('--color-accent-wash', `${normalized.accent}1f`)
   root.style.setProperty('--color-bg', normalized.background)
   root.style.setProperty('--color-bg-elevated', normalized.surface)
   root.style.setProperty('--color-bg-secondary', normalized.surface2)
@@ -53,7 +52,6 @@ export function applyAppearanceSettings(appearance: AppSettings['appearance'] | 
   root.style.setProperty('--color-sidebar', normalized.sidebar)
   root.style.setProperty('--color-control', `${normalized.surface2}cc`)
   root.style.setProperty('--color-control-hover', normalized.surface2)
-  root.style.setProperty('--color-nav-active', `${normalized.accent}1f`)
   root.style.setProperty('--color-text', normalized.text)
   root.style.setProperty('--color-text-secondary', normalized.muted)
   root.style.setProperty('--color-text-tertiary', `${normalized.muted}cc`)

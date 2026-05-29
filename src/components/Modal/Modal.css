@@ -1,24 +1,18 @@
 .modal-overlay {
-  animation: fluent-overlay-in var(--motion-fast);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(8px);
-  display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.cinematic-shell .modal-overlay,
-.modal-overlay {
+  animation: fluent-overlay-in var(--motion-fast);
   background:
     radial-gradient(circle at 72% 12%, rgba(91, 215, 255, 0.12), transparent 24%),
     rgba(3, 5, 8, 0.66);
   backdrop-filter: blur(10px) brightness(0.68);
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1000;
 }
 
 .modal-content {
@@ -48,7 +42,6 @@
   width: min(94vw, 1120px);
 }
 
-.cinematic-shell .modal-content,
 .modal-content {
   background:
     linear-gradient(145deg, rgba(33, 36, 43, 0.96), rgba(22, 24, 30, 0.96));
@@ -58,14 +51,12 @@
   color: #ffffff;
 }
 
-:root[data-theme='light'] .cinematic-shell .modal-overlay,
 :root[data-theme='light'] .modal-overlay {
   background:
     radial-gradient(circle at 72% 12%, rgba(0, 120, 212, 0.12), transparent 24%),
     rgba(238, 242, 246, 0.66);
 }
 
-:root[data-theme='light'] .cinematic-shell .modal-content,
 :root[data-theme='light'] .modal-content {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 242, 246, 0.96));

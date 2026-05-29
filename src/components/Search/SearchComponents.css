@@ -160,9 +160,7 @@
 }
 
 .fav-btn,
-.launch-btn,
-.install-btn,
-.versions-btn {
+.install-btn {
   min-height: 32px;
 }
 
@@ -199,71 +197,6 @@
   transform: translateY(-1px);
 }
 
-.launch-btn {
-  background: var(--color-control);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  min-width: 96px;
-  padding: 0 16px;
-}
-
-.versions-btn {
-  min-width: 88px;
-  padding: 0 14px;
-}
-
-.launch-btn:hover,
-.versions-btn:hover {
-  background: var(--color-control-hover);
-  box-shadow: var(--shadow-control-hover);
-  transform: translateY(-1px);
-}
-
-.library-skeleton {
-  display: grid;
-  gap: 12px;
-  grid-column: 1 / -1;
-}
-
-.skeleton-card {
-  background:
-    linear-gradient(90deg, transparent, var(--color-control-hover), transparent),
-    var(--color-bg-elevated);
-  background-size: 220px 100%, 100% 100%;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 12px;
-  height: 120px;
-  overflow: hidden;
-  position: relative;
-  animation: skeleton-sheen 1.25s ease-in-out infinite;
-}
-
-@keyframes skeleton-sheen {
-  from { background-position: -220px 0, 0 0; }
-  to { background-position: calc(100% + 220px) 0, 0 0; }
-}
-
-.error-banner {
-  align-items: center;
-  animation: fluent-fade-up var(--motion-normal);
-  background: color-mix(in srgb, var(--color-error) 11%, var(--color-bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--color-error) 30%, var(--color-border-subtle));
-  border-left: 4px solid var(--color-error);
-  border-radius: 12px;
-  color: var(--color-error);
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  padding: 14px 16px;
-}
-
-.error-banner button {
-  background: var(--color-control);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  flex-shrink: 0;
-}
-
 .results-count {
   color: var(--color-text-secondary);
   font-size: 13px;
@@ -286,10 +219,6 @@
 
 .release-modal {
   max-width: 560px;
-}
-
-.cinematic-shell .release-modal,
-.release-modal {
   overflow: hidden;
 }
 
@@ -1961,21 +1890,6 @@
   color: #061018 !important;
 }
 
-.cinematic-shell .launch-btn,
-.cinematic-shell .versions-btn,
-.cinematic-shell .art-mini-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.cinematic-shell .art-mini-btn {
-  min-width: 78px;
-}
-
-:root[data-theme='light'] .cinematic-shell .launch-btn,
-:root[data-theme='light'] .cinematic-shell .versions-btn,
-:root[data-theme='light'] .cinematic-shell .art-mini-btn,
 :root[data-theme='light'] .cinematic-shell .fav-btn {
   background: rgba(255, 255, 255, 0.74);
   border-color: rgba(17, 24, 39, 0.14);

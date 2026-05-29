@@ -14,7 +14,7 @@ export async function listProjectArt(): Promise<ProjectArt[]> {
   }
 }
 
-export async function getProjectArt(owner: string, repo: string): Promise<ProjectArt | null> {
+async function getProjectArt(owner: string, repo: string): Promise<ProjectArt | null> {
   try {
     return await callTauri<ProjectArt | null>('get_project_art_asset', { owner, repo })
   } catch {
@@ -48,7 +48,7 @@ export function projectArtKey(owner: string, repo: string) {
   return `${owner.toLowerCase()}/${repo.toLowerCase()}`
 }
 
-export function toProjectArtUrl(path?: string | null): string | null {
+function toProjectArtUrl(path?: string | null): string | null {
   if (!path) return null
   try {
     return convertFileSrc(path).replace(/\\/g, '/')
