@@ -25,7 +25,7 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - About page з версіями самого лаунчера і rollback/update flow.
 - GitHub cache і maintenance дії.
 
-## v3.1.0 - Library Reliability
+## v3.1.0 - Library Reliability [Closed]
 
 Перший slice після v3.0.4:
 
@@ -38,21 +38,30 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Search, filter і sort у Library об'єднані в компактний toolstrip.
 - Контроли мають стабільнішу висоту й краще складаються на вузьких екранах.
 
-- Уніфікувати trust/status panel для fresh/cached/offline/partial/rate-limit станів.
-- Покращити empty/error/no-owner стани Library.
-- Винести GitHub API/cache diagnostics у зрозумілу секцію maintenance.
-- Зменшити візуальний шум у Library cards без втрати основних статусів.
-- Покращити retry/load-more сценарії.
-- QA: offline, rate limit, empty owner, owner without releases, cached data.
+Третій slice після v3.1.0:
 
-## v3.2.0 - Version Management
+- Trust/status panel отримав явний статусний маркер і inline retry для проблемних станів.
+- No-owner і no-match стани отримали прямі дії: відкрити Settings або скинути фільтри.
 
-- Зробити локальні версії зрозумілішими: active, older, newest, missing executable.
-- Покращити switch-version confirmation.
-- Додати компактний version history у деталях застосунку.
-- Покращити repair flow для missing executable.
-- Валідувати asset name/install kind для старих записів.
-- QA: install v1, install v2, switch, delete inactive, delete active, repair.
+Четвертий slice після v3.1.0:
+
+- Hover/focus на Library card одразу оновлює hero preview для швидкого перегляду project art.
+- Картки отримали компактний статусний rail для installed/update/available без додаткового текстового шуму.
+
+Фінальний closing patch:
+
+- GitHub/API diagnostics винесені в Settings -> Maintenance з copy diagnostics і cache actions.
+- `v3.1.0` вважається закритим для переходу до спільного `v3.2.0`; залишковий QA: offline, rate limit, empty owner, owner without releases, cached data.
+
+## v3.2.0 - Version Management [Closed]
+
+Спільний v3.2.0 patch:
+
+- App Details показує компактний version history із active/newest/older/missing states.
+- Version rows показують install kind, asset name і missing executable warning.
+- Repair flow лишається через install/update action, але missing executable тепер помітний у summary і version row.
+- Switch-version confirmation лишається через dedicated modal.
+- Залишковий QA: install v1, install v2, switch, delete inactive, delete active, repair.
 
 ## v3.3.0 - Install / Update Polish
 

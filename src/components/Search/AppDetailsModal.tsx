@@ -126,6 +126,8 @@ function AppDetailsModal({
     () => [...installedApp.versions].sort((left, right) => compareVersionTags(right.tag, left.tag)),
     [installedApp.versions],
   )
+  const newestLocalTag = sortedVersions[0]?.tag
+  const missingActiveExecutable = Boolean(health && !health.ok && health.status === 'missingExecutable')
 
   const refreshHealth = useCallback(async () => {
     setHealthLoading(true)
@@ -444,16 +446,46 @@ function AppDetailsModal({
                 )}
               </div>
             </div>
+            <div className="app-details-version-summary">
+              <div>
+                <span>{t('details.versionStateActive')}</span>
+                <strong>{installedApp.activeVersion}</strong>
+              </div>
+              <div>
+                <span>{t('details.versionStateNewest')}</span>
+                <strong>{newestLocalTag ?? t('details.unknown')}</strong>
+              </div>
+              <div>
+                <span>{t('details.versionHistory')}</span>
+                <strong>{t('details.versionHistoryCount', { count: sortedVersions.length })}</strong>
+              </div>
+            </div>
             <div className="app-details-version-list">
               {sortedVersions.map((version) => {
                 const isActive = version.tag === installedApp.activeVersion
                 const isBusy = busyTag === version.tag
+                const isNewest = version.tag === newestLocalTag
+                const isMissing = isActive && missingActiveExecutable
+                const stateLabel = isMissing
+                  ? t('details.versionStateMissing')
+                  : isActive
+                    ? t('details.versionStateActive')
+                    : isNewest
+                      ? t('details.versionStateNewest')
+                      : t('details.versionStateOlder')
+                const kindLabel = version.installKind
+                  ? t('details.installKindValue', { kind: version.installKind })
+                  : t('details.installKindUnknown')
                 return (
-                  <div key={version.tag} className={`app-details-version-row ${isActive ? 'active' : ''}`}>
+                  <div key={version.tag} className={`app-details-version-row ${isActive ? 'active' : ''} ${isMissing ? 'missing' : ''}`}>
                     <div className="app-details-version-main">
-                      <strong>{version.tag}</strong>
-                      <span>{versionDate(version, language)} · {formatBytes(version.sizeBytes)}</span>
-                      {version.assetName && <span>{version.assetName}</span>}
+                      <div className="app-details-version-heading">
+                        <strong>{version.tag}</strong>
+                        <em>{stateLabel}</em>
+                      </div>
+                      <span>{versionDate(version, language)} · {formatBytes(version.sizeBytes)} · {kindLabel}</span>
+                      <span>{version.assetName || t('details.assetNameUnknown')}</span>
+                      {isMissing && <span className="app-details-version-warning">{health?.message}</span>}
                     </div>
                     <div className="app-details-version-actions">
                       {isActive ? (
