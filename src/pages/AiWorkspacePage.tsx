@@ -39,6 +39,8 @@ interface ActivityEntry {
   id: string
   label: string
   detail?: string
+  kind?: 'command' | 'diff' | 'approval' | 'runtime' | 'turn'
+  status?: 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'interrupted'
   pendingApproval?: boolean
   requestId?: string | number
 }
@@ -95,6 +97,26 @@ function textFromUnknown(value: unknown): string {
   return ''
 }
 
+function classifyActivityKind(method: string, approval: boolean): ActivityEntry['kind'] {
+  const normalized = method.toLowerCase()
+  if (approval) return 'approval'
+  if (normalized.includes('exec') || normalized.includes('command') || normalized.includes('terminal')) return 'command'
+  if (normalized.includes('diff') || normalized.includes('patch') || normalized.includes('file')) return 'diff'
+  if (normalized.includes('turn')) return 'turn'
+  return 'runtime'
+}
+
+function classifyActivityStatus(method: string, approval: boolean): ActivityEntry['status'] {
+  const normalized = method.toLowerCase()
+  if (approval) return 'waiting'
+  if (normalized.includes('completed')) return 'completed'
+  if (normalized.includes('failed') || normalized.includes('error')) return 'failed'
+  if (normalized.includes('interrupted')) return 'interrupted'
+  if (normalized.includes('queued')) return 'queued'
+  if (normalized.includes('running') || normalized.includes('started') || normalized.includes('delta')) return 'running'
+  return undefined
+}
+
 function entriesFromThread(thread: CodexThread | null): ChatEntry[] {
   if (!thread?.turns) return []
   return thread.turns.flatMap((turn) =>
@@ -147,6 +169,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [effort, setEffort] = useState('medium')
   const [approvalPolicy, setApprovalPolicy] = useState('on-request')
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('changes')
+  const [diagnosticsCopied, setDiagnosticsCopied] = useState(false)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const autoConnectRef = useRef(false)
 
@@ -157,6 +180,31 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     ? threadTitle(selectedThread, t('ai.codexSession'))
     : t('ai.newChat')
   const pendingApprovals = activity.filter((entry) => entry.pendingApproval)
+  const visibleActivity = activity.filter((entry) => {
+    if (inspectorTab === 'approvals') return entry.kind === 'approval' || entry.pendingApproval
+    if (inspectorTab === 'terminal') return entry.kind === 'command'
+    return entry.kind !== 'approval'
+  })
+  const runtimeTitle = !runtime
+    ? t('ai.runtimeNotChecked')
+    : !runtime.installed
+      ? t('ai.codexMissing')
+      : runtime.running
+        ? t('ai.codexConnected')
+        : t('ai.runtimeStopped')
+  const runtimeText = !runtime
+    ? t('ai.runtimeNotCheckedText')
+    : !runtime.installed
+      ? t('ai.codexMissingText')
+      : runtime.running
+        ? t('ai.runtimeReadyText')
+        : t('ai.runtimeStoppedText')
+  const runtimeHeaderKey = runtime?.running
+    ? 'ai.codexConnected'
+    : runtime?.installed
+      ? 'ai.runtimeStoppedShort'
+      : 'ai.codexDisconnected'
+  const runtimeHeaderClass = runtime?.running ? 'ready' : runtime?.installed ? 'warning' : ''
 
   const refreshRuntime = async () => {
     const status = await getCodexRuntimeStatus()
@@ -202,6 +250,18 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     }
   }
 
+  const reconnectCodex = async () => {
+    await connectCodex()
+    if (selectedWorkspace) {
+      codexRequest<{ data?: CodexThread[] }>('thread/list', {
+        cwd: [selectedWorkspace.path],
+        limit: 30,
+      })
+        .then((response) => setThreads(response.data ?? []))
+        .catch(() => setThreads([]))
+    }
+  }
+
   useEffect(() => {
     Promise.all([refreshRuntime(), refreshWorkspaces()]).catch(() => {})
   }, [])
@@ -240,13 +300,21 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
           setEntries((current) => current.map((entry) => entry.id === 'streaming'
             ? { ...entry, id: `assistant-${Date.now()}` }
             : entry))
-          setActivity((current) => [{ id: String(Date.now()), label: t('ai.turnCompleted') }, ...current])
+          setActivity((current) => [{
+            id: String(Date.now()),
+            label: t('ai.turnCompleted'),
+            kind: 'turn',
+            status: 'completed',
+          }, ...current])
         } else {
           const approval = method.toLowerCase().includes('approval')
+          const kind = classifyActivityKind(method, approval)
           setActivity((current) => [{
             id: `${method}-${Date.now()}`,
             label: approval ? t('ai.approvalRequested') : method || t('ai.runtimeEvent'),
             detail,
+            kind,
+            status: classifyActivityStatus(method, approval),
             pendingApproval: approval,
             requestId: payload.id,
           }, ...current].slice(0, 24))
@@ -254,7 +322,15 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
       },
       (message) => {
         setError(message)
+        setRuntime((current) => current ? { ...current, running: false, error: message } : current)
         setStreaming(false)
+        setActivity((current) => [{
+          id: `runtime-failure-${Date.now()}`,
+          label: t('ai.runtimeDisconnected'),
+          detail: message,
+          kind: 'runtime',
+          status: 'failed',
+        } satisfies ActivityEntry, ...current].slice(0, 24))
       },
     )
       .then((listeners) => { unlisten = listeners })
@@ -455,7 +531,12 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
 
   const startReview = async () => {
     if (!selectedThread) return
-    setActivity((current) => [{ id: `review-${Date.now()}`, label: t('ai.reviewStarting') }, ...current])
+    setActivity((current) => [{
+      id: `review-${Date.now()}`,
+      label: t('ai.reviewStarting'),
+      kind: 'diff',
+      status: 'running',
+    } satisfies ActivityEntry, ...current])
     try {
       await codexRequest('review/start', {
         threadId: selectedThread.id,
@@ -470,7 +551,44 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     if (!selectedThread) return
     await codexRequest('turn/interrupt', { threadId: selectedThread.id }).catch(() => {})
     setStreaming(false)
+    setActivity((current) => [{
+      id: `interrupt-${Date.now()}`,
+      label: t('ai.turnInterrupted'),
+      kind: 'turn',
+      status: 'interrupted',
+    } satisfies ActivityEntry, ...current].slice(0, 24))
   }
+
+  const copyActivityEntry = async (entry: ActivityEntry) => {
+    const lines = [
+      `type: ${entry.kind ?? 'event'}`,
+      `status: ${entry.status ?? 'unknown'}`,
+      `label: ${entry.label}`,
+      `detail: ${entry.detail ?? ''}`,
+    ]
+    await navigator.clipboard.writeText(lines.join('\n'))
+  }
+
+  const renderActivityEntry = (entry: ActivityEntry, forceApprovalActions = false) => (
+    <div key={entry.id} className={`ai-activity-entry ${entry.kind ? `kind-${entry.kind}` : ''}`}>
+      <div className="ai-activity-entry-head">
+        <strong>{entry.label}</strong>
+        <span>{t(`ai.activityStatus.${entry.status ?? 'event'}`)}</span>
+      </div>
+      {entry.detail && <p>{entry.detail}</p>}
+      <div className="ai-activity-entry-actions">
+        <button type="button" onClick={() => copyActivityEntry(entry).catch(() => setError(t('ai.activityCopyError')))}>
+          {t('ai.copyActivity')}
+        </button>
+        {(forceApprovalActions || entry.pendingApproval) && (
+          <>
+            <button type="button" onClick={() => void answerApproval(entry, true)}>{t('ai.allow')}</button>
+            <button type="button" onClick={() => void answerApproval(entry, false)}>{t('ai.deny')}</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
 
   const removeWorkspace = async (removeFiles: boolean) => {
     if (!selectedWorkspace) return
@@ -491,6 +609,75 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     }
   }
 
+  const copyRuntimeDiagnostics = async () => {
+    const lines = [
+      `installed: ${runtime?.installed ? 'yes' : 'no'}`,
+      `running: ${runtime?.running ? 'yes' : 'no'}`,
+      `protocol: ${runtime?.protocol ?? 'not checked'}`,
+      `auth: ${accountReady ? 'ready' : 'missing'}`,
+      `path: ${runtime?.executablePath ?? 'missing'}`,
+      `error: ${runtime?.error || error || 'none'}`,
+    ]
+
+    await navigator.clipboard.writeText(lines.join('\n'))
+    setDiagnosticsCopied(true)
+    window.setTimeout(() => setDiagnosticsCopied(false), 2600)
+  }
+
+  const renderRuntimeDiagnostics = () => (
+    <section className={`ai-runtime-card ${runtime?.running ? 'ready' : runtime?.installed ? 'warning' : 'error'}`}>
+      <div className="ai-runtime-card-heading">
+        <span className="ai-runtime-card-mark" aria-hidden="true" />
+        <div>
+          <strong>{runtimeTitle}</strong>
+          <p>{runtimeText}</p>
+        </div>
+      </div>
+      <dl className="ai-runtime-facts">
+        <div>
+          <dt>{t('ai.runtimeInstalled')}</dt>
+          <dd>{runtime?.installed ? t('ai.yes') : t('ai.no')}</dd>
+        </div>
+        <div>
+          <dt>{t('ai.runtimeConnection')}</dt>
+          <dd>{runtime?.running ? t('ai.connected') : t('ai.disconnected')}</dd>
+        </div>
+        <div>
+          <dt>{t('ai.runtimeProtocol')}</dt>
+          <dd>{runtime?.protocol ?? t('ai.notChecked')}</dd>
+        </div>
+        <div>
+          <dt>{t('ai.runtimeAuth')}</dt>
+          <dd>{accountReady ? t('ai.authReady') : t('ai.authMissing')}</dd>
+        </div>
+        <div className="wide">
+          <dt>{t('ai.runtimePath')}</dt>
+          <dd>{runtime?.executablePath || t('ai.runtimePathMissing')}</dd>
+        </div>
+        {(runtime?.error || error) && (
+          <div className="wide">
+            <dt>{t('ai.runtimeLastError')}</dt>
+            <dd>{runtime?.error || error}</dd>
+          </div>
+        )}
+      </dl>
+      <div className="ai-runtime-card-actions">
+        <button type="button" className="secondary-btn" onClick={() => refreshRuntime().catch(() => {})} disabled={busy}>
+          {t('ai.checkRuntime')}
+        </button>
+        <button type="button" className="secondary-btn" onClick={() => void reconnectCodex()} disabled={busy || !runtime?.installed}>
+          {t(runtime?.running ? 'ai.reconnect' : 'ai.connect')}
+        </button>
+        <button type="button" className="secondary-btn" onClick={() => openCodexDesktop(activePath).catch(() => {})}>
+          {t('ai.openCodex')}
+        </button>
+        <button type="button" className="secondary-btn" onClick={() => copyRuntimeDiagnostics().catch(() => setError(t('ai.runtimeCopyError')))}>
+          {diagnosticsCopied ? t('ai.runtimeCopied') : t('ai.copyRuntimeDiagnostics')}
+        </button>
+      </div>
+    </section>
+  )
+
   if (!settings.aiWorkspaceEnabled) {
     return (
       <div className="page ai-workspace-page ai-onboarding">
@@ -503,8 +690,16 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
             <span>{t('ai.pointSecurity')}</span>
             <span>{t('ai.pointThreads')}</span>
           </div>
-          {runtime && !runtime.installed && <StatePanel kind="error" title={t('ai.codexMissing')} message={t('ai.codexMissingText')} />}
-          {error && <StatePanel kind="error" title={t('ai.connection')} message={error} />}
+          {renderRuntimeDiagnostics()}
+          {error && (
+            <StatePanel
+              kind="error"
+              title={t('ai.connection')}
+              message={error}
+              actionLabel={runtime?.installed ? t('ai.reconnect') : t('ai.checkRuntime')}
+              onAction={runtime?.installed ? reconnectCodex : refreshRuntime}
+            />
+          )}
           <div className="ai-action-row">
             <button type="button" className="hero-primary-btn" disabled={busy || !runtime?.installed} onClick={enableBeta}>
               {t('ai.enable')}
@@ -531,9 +726,9 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
           </div>
         </div>
         <div className="ai-header-actions">
-          <span className={runtime?.running ? 'ai-runtime-status ready' : 'ai-runtime-status'}>
+          <span className={`ai-runtime-status ${runtimeHeaderClass}`}>
             <i aria-hidden="true" />
-            {runtime?.running ? t('ai.codexConnected') : t('ai.codexDisconnected')}
+            {t(runtimeHeaderKey)}
           </span>
           <button type="button" className="hero-primary-btn" onClick={() => void startThread()} disabled={busy || !selectedWorkspace}>
             {t('ai.newChatAction')}
@@ -544,7 +739,17 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
         </div>
       </header>
 
-      {error && <StatePanel kind="error" title={t('ai.connection')} message={error} />}
+      {error && (
+        <StatePanel
+          kind="error"
+          title={t('ai.connection')}
+          message={error}
+          actionLabel={runtime?.installed ? t('ai.reconnect') : t('ai.checkRuntime')}
+          onAction={runtime?.installed ? reconnectCodex : refreshRuntime}
+        />
+      )}
+
+      {renderRuntimeDiagnostics()}
 
       <div className="ai-workbench">
         <aside className="ai-workspaces">
@@ -764,33 +969,20 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
           )}
           {inspectorTab === 'changes' && (
             <div className="ai-activity-list">
-              {activity.length === 0 && <p>{t('ai.noChanges')}</p>}
-              {activity.map((entry) => (
-                <div key={entry.id} className="ai-activity-entry">
-                  <strong>{entry.label}</strong>
-                  {entry.detail && <p>{entry.detail}</p>}
-                </div>
-              ))}
+              {visibleActivity.length === 0 && <p>{t('ai.noChanges')}</p>}
+              {visibleActivity.map((entry) => renderActivityEntry(entry))}
             </div>
           )}
           {inspectorTab === 'terminal' && (
-            <div className="ai-terminal-panel">
-              <p>{t('ai.noTerminal')}</p>
+            <div className="ai-activity-list ai-terminal-panel">
+              {visibleActivity.length === 0 && <p>{t('ai.noTerminal')}</p>}
+              {visibleActivity.map((entry) => renderActivityEntry(entry))}
             </div>
           )}
           {inspectorTab === 'approvals' && (
             <div className="ai-activity-list">
               {pendingApprovals.length === 0 && <p>{t('ai.noApprovals')}</p>}
-              {pendingApprovals.map((entry) => (
-                <div key={entry.id} className="ai-activity-entry">
-                  <strong>{entry.label}</strong>
-                  {entry.detail && <p>{entry.detail}</p>}
-                  <div>
-                    <button type="button" onClick={() => void answerApproval(entry, true)}>{t('ai.allow')}</button>
-                    <button type="button" onClick={() => void answerApproval(entry, false)}>{t('ai.deny')}</button>
-                  </div>
-                </div>
-              ))}
+              {pendingApprovals.map((entry) => renderActivityEntry(entry, true))}
             </div>
           )}
         </aside>

@@ -114,10 +114,11 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
 }
 
 interface SearchPageProps {
+  onOpenSettings?: () => void
   onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
 }
 
-function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
+function SearchPage({ onOpenSettings, onOpenAiWorkspace }: SearchPageProps) {
   const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
@@ -239,6 +240,12 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
 
   const handleClearSkippedUpdates = () => {
     setDismissedUpdateKeys(new Set())
+  }
+
+  const handleResetLibraryFilters = () => {
+    setQuery('')
+    setFilter('all')
+    setSort('updated')
   }
 
   const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
@@ -754,32 +761,50 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
   const renderLibraryTrustPanel = () => {
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
+    const shouldOfferRetry = state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt
+    const showInlineRetry = shouldOfferRetry && libraryTrustKind !== 'fresh' && libraryTrustKind !== 'checking'
 
     return (
       <section
         className={`library-trust-panel library-trust-panel--${libraryTrustKind} ${libraryTrustExpanded ? 'expanded' : ''}`}
         aria-live="polite"
       >
+        <span className="library-trust-mark" aria-hidden="true" />
         <div className="library-trust-summary">
-          <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
-          <span>
-            {t('library.trust.visible')}: {t('library.count', {
-              visible: visibleRepositories.length.toLocaleString(),
-              total: state.repositories.length.toLocaleString(),
-            })}
-          </span>
-          {formattedLatestVersionsTime && (
-            <span>{t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })}</span>
-          )}
+          <span className="library-trust-kicker">{t('library.trust.kicker')}</span>
+          <div className="library-trust-copy">
+            <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
+            <span>
+              {t('library.trust.visible')}: {t('library.count', {
+                visible: visibleRepositories.length.toLocaleString(),
+                total: state.repositories.length.toLocaleString(),
+              })}
+            </span>
+            {formattedLatestVersionsTime && (
+              <span>{t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })}</span>
+            )}
+          </div>
         </div>
-        <button
-          type="button"
-          className="library-trust-toggle"
-          aria-expanded={libraryTrustExpanded}
-          onClick={() => setLibraryTrustExpanded((expanded) => !expanded)}
-        >
-          {t(libraryTrustExpanded ? 'library.trust.collapse' : 'library.trust.expand')}
-        </button>
+        <div className="library-trust-inline-actions">
+          {showInlineRetry && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={handleRefresh}
+              disabled={!canRetry}
+            >
+              {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
+            </button>
+          )}
+          <button
+            type="button"
+            className="library-trust-toggle"
+            aria-expanded={libraryTrustExpanded}
+            onClick={() => setLibraryTrustExpanded((expanded) => !expanded)}
+          >
+            {t(libraryTrustExpanded ? 'library.trust.collapse' : 'library.trust.expand')}
+          </button>
+        </div>
 
         {libraryTrustExpanded && (
           <div className="library-trust-expanded">
@@ -807,7 +832,7 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
               </details>
             )}
             <div className="library-trust-actions">
-              {(state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt) && (
+              {shouldOfferRetry && !showInlineRetry && (
                 <button
                   type="button"
                   className="secondary-btn"
@@ -1015,6 +1040,8 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
           kind="empty"
           title={t('library.noOwnerTitle')}
           message={t('library.noOwnerText')}
+          actionLabel={onOpenSettings ? t('library.openSettings') : undefined}
+          onAction={onOpenSettings}
         />
       )}
 
@@ -1127,8 +1154,12 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
                 message={state.repositories.length === 0
                   ? t('library.emptyText')
                   : t('library.noMatchesText')}
-                actionLabel={state.repositories.length === 0 ? t('library.refresh') : undefined}
-                onAction={state.repositories.length === 0 ? handleRefresh : undefined}
+                actionLabel={state.repositories.length === 0
+                  ? t('library.refresh')
+                  : t('library.resetFilters')}
+                onAction={state.repositories.length === 0
+                  ? handleRefresh
+                  : handleResetLibraryFilters}
               />
             )}
 
@@ -1158,9 +1189,9 @@ function SearchPage({ onOpenAiWorkspace }: SearchPageProps) {
             })}
           </div>
 
-          {state.hasMore && !state.loading && (
-            <button type="button" onClick={loadMore} className="load-more-btn">
-              {t('library.loadMore')}
+          {state.hasMore && (
+            <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
+              {state.loading ? t('library.loadingMore') : t('library.loadMore')}
             </button>
           )}
         </>

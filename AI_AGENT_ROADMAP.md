@@ -30,23 +30,37 @@ Beta-обмеження:
 - Одна сесія працює з одним основним workspace.
 - Multi-root, realtime/voice і cloud flows відкладаються до стабільної підтримки Codex protocol.
 
-## v3.1.0 - Runtime Reliability
+## v3.1.0 - Runtime Reliability [Closed]
 
-- Докладніші стани compatibility/auth/reconnect.
-- Ясні повідомлення для runtime missing, installed but stopped, protocol unavailable, auth required.
-- Відновлення активного turn після повторного відкриття розділу.
-- Кращий reconnect після аварійного завершення app-server.
-- Runtime diagnostics panel із версією, executable path, protocol status і останньою помилкою.
-- QA матриця для аварійного завершення app-server і відмов permissions.
+Перший спільний v3.1.0 slice після Library polish:
 
-## v3.2.0 - Agent Activity & Approvals
+- Додано Runtime diagnostics card із installed/running/protocol/path/auth/last error.
+- Runtime crash/disconnect подія одразу переводить UI у disconnected state і показує останню помилку.
 
-- Окремі activity-вкладки для commands, diff і approvals.
-- Кращий timeline для turn lifecycle: queued, running, waiting approval, completed, failed, interrupted.
-- Більш зрозумілі approval cards із ризиком, cwd, command і результатом.
-- Фільтри activity за типом події.
-- Копіювання diagnostic details для bug reports.
-- QA: command approval, denial, interrupt, failed command, long-running command.
+Другий спільний v3.1.0 slice:
+
+- Header runtime status розрізняє connected, installed but stopped і disconnected/missing.
+- Додано copy diagnostics для runtime troubleshooting і bug reports.
+
+Третій спільний v3.1.0 slice:
+
+- Runtime failure додається в activity як окрема подія з detail.
+- Error states отримали reconnect/check action, а reconnect оновлює recent і workspace threads.
+
+Фінальний closing patch:
+
+- Runtime Reliability scope закрито для переходу до `v3.2.0`: diagnostics, copy diagnostics, missing/stopped/connected states, reconnect recovery і runtime failure activity готові.
+- Залишковий QA: runtime missing, installed/stopped, app-server crash, auth missing, permission denial.
+
+## v3.2.0 - Agent Activity & Approvals [Closed]
+
+Спільний v3.2.0 patch:
+
+- Activity entries класифікуються як command, diff, approval, runtime або turn.
+- Activity tabs тепер фільтрують entries для changes, terminal і approvals.
+- Timeline status показує event/queued/running/waiting/completed/failed/interrupted.
+- Approval cards отримали status badge і copy activity diagnostics.
+- Залишковий QA: command approval, denial, interrupt, failed command, long-running command.
 
 ## v3.3.0 - Workspace Comfort
 

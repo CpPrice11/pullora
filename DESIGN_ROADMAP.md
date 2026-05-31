@@ -24,7 +24,7 @@ Air Launcher має бути простим, швидким і не перева
 - Custom CSS поверх теми.
 - Persist appearance settings у config.
 
-## v3.1.0 - Simple Library
+## v3.1.0 - Simple Library [Closed]
 
 Мета: зробити головний екран чистішим і швидшим для щоденного використання.
 
@@ -39,24 +39,31 @@ Air Launcher має бути простим, швидким і не перева
 - Search/filter/sort зібрані в один компактний Library toolstrip.
 - Поле пошуку, фільтри і sort вирівняні по висоті, з акуратним responsive fallback.
 
-- Переробити картки застосунків у компактніший формат.
-- Залишити на картці тільки основні дії: Запустити, Встановити, Оновити.
-- Другорядні дії перенести в `...` або деталі.
-- Візуально розділити статуси: встановлено, доступно, оновлення, помилка.
-- Зробити search/filter панель меншою і стабільною по висоті.
-- Додати hover/selected state з project-art preview.
-- Перевірити читабельність на 1280x720.
+Третій slice після v3.1.0:
 
-## v3.2.0 - Project Details Drawer
+- Library trust/status panel має чіткіший статусний маркер і менше прихованих recovery дій.
+- Empty/no-owner/no-match стани стали більш actionable без додаткового UI-шуму.
+
+Четвертий slice після v3.1.0:
+
+- Hover/focus на картці тепер підсвічує project-art preview у hero без додаткового кліку.
+- Статуси карток отримали тонкий rail, щоб installed/update/available читались швидше на 1280x720.
+
+Фінальний closing patch:
+
+- Simple Library scope закрито: cards, primary actions, secondary menu, compact toolstrip, actionable states, hover/selected preview і status rail готові.
+- Залишкова перевірка перед релізом: 1280x720, українська/англійська, dark/light/custom appearance.
+
+## v3.2.0 - Project Details Drawer [Closed]
 
 Мета: прибрати перевантаження з карток і перенести деталі в окрему панель.
 
-- Правий drawer для деталей застосунку.
-- Версії, assets, GitHub metadata і uninstall дії всередині drawer.
-- Чіткий primary action залежно від стану: Install, Launch, Update.
-- Вкладки або секції: Overview, Versions, Files, Advanced.
-- Підтвердження небезпечних дій без `window.confirm`.
-- Анімація відкриття без втрати продуктивності.
+Спільний v3.2.0 patch:
+
+- App Details перетворено на right-side drawer-style surface.
+- Overview, paths, release notes і versions згруповані як компактні секції без повернення деталей на картку.
+- Primary/secondary actions лишаються у details panel, dangerous дії мають existing confirmation modals.
+- Залишковий QA: 1000x700, 1280x720, long names/paths, keyboard close/focus.
 
 ## v3.3.0 - Air Identity
 

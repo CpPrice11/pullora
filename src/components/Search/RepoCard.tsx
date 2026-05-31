@@ -175,6 +175,8 @@ function RepoCard({
     <article
       className={`repo-card repo-card--${statusClass} ${isSelected ? 'selected' : ''}`}
       onClick={handlePreview}
+      onFocus={handlePreview}
+      onMouseEnter={handlePreview}
       tabIndex={0}
       role="button"
       aria-label={`${repo.name}, ${statusLabel}`}

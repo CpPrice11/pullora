@@ -20,6 +20,15 @@ interface SettingsPageProps {
   onClose: () => void
 }
 
+function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
+  switch (strategy) {
+    case 'installerFirst': return 'settings.installerFirst'
+    case 'manual': return 'settings.manual'
+    case 'portableFirst':
+    default: return 'settings.portableFirst'
+  }
+}
+
 function SettingsPage({
   hasLauncherBackground,
   onChangeLauncherBackground,
@@ -181,6 +190,31 @@ function SettingsPage({
       setActionMessage(t('settings.cacheCleared'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cacheError'))
+    }
+  }
+
+  const handleCopyMaintenanceDiagnostics = async () => {
+    if (!settings) return
+
+    const lines = [
+      'Air Launcher maintenance diagnostics',
+      `githubOwner: ${settings.githubOwner || 'not set'}`,
+      `installationPath: ${settings.installationPath || 'not set'}`,
+      `assetStrategy: ${settings.assetStrategy}`,
+      `includePrereleases: ${settings.includePrereleases ? 'yes' : 'no'}`,
+      `autoUpdateCheck: ${settings.autoUpdateCheck ? 'yes' : 'no'}`,
+      `checkIntervalHours: ${settings.checkIntervalHours}`,
+      `theme: ${settings.theme}`,
+      `language: ${settings.language}`,
+      `aiWorkspaceEnabled: ${settings.aiWorkspaceEnabled ? 'yes' : 'no'}`,
+      `codexRuntimePreference: ${settings.codexRuntimePreference}`,
+    ]
+
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      setActionMessage(t('settings.diagnosticsCopied'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.diagnosticsCopyError'))
     }
   }
 
@@ -545,12 +579,37 @@ function SettingsPage({
         return (
           <section id="settings-maintenance" className="danger-zone">
             <h3>{t('settings.maintenance')}</h3>
+            <p className="help-text">{t('settings.maintenanceHelp')}</p>
+            <div className="settings-diagnostics-card">
+              <span className="settings-reset-kicker">{t('settings.githubDiagnostics')}</span>
+              <dl>
+                <div>
+                  <dt>{t('settings.githubOwner')}</dt>
+                  <dd>{settings.githubOwner || t('settings.notSet')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.assets')}</dt>
+                  <dd>{t(assetStrategyLabelKey(settings.assetStrategy))}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.prerelease')}</dt>
+                  <dd>{settings.includePrereleases ? t('ai.yes') : t('ai.no')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.autoCheck')}</dt>
+                  <dd>{settings.autoUpdateCheck ? t('ai.yes') : t('ai.no')}</dd>
+                </div>
+              </dl>
+            </div>
             <div className="settings-maintenance-actions">
               <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
                 {t('settings.reset')}
               </button>
               <button className="secondary-btn" onClick={handleClearCache}>
                 {t('settings.clearCache')}
+              </button>
+              <button className="secondary-btn" onClick={handleCopyMaintenanceDiagnostics}>
+                {t('settings.copyDiagnostics')}
               </button>
             </div>
           </section>

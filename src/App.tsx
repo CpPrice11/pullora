@@ -168,10 +168,13 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return (
-        <SearchPage onOpenAiWorkspace={(repo) => {
-          setAiWorkspaceRepo(repo)
-          setActiveTab('aiWorkspace')
-        }} />
+        <SearchPage
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenAiWorkspace={(repo) => {
+            setAiWorkspaceRepo(repo)
+            setActiveTab('aiWorkspace')
+          }}
+        />
       )
       case 'aiWorkspace': return (
         <AiWorkspacePage

@@ -16,6 +16,31 @@
   min-width: 0;
 }
 
+.repo-card::before {
+  background: var(--color-border);
+  border-radius: 999px;
+  bottom: 12px;
+  content: '';
+  left: 0;
+  opacity: 0.82;
+  position: absolute;
+  top: 12px;
+  width: 3px;
+}
+
+.repo-card--installed::before {
+  background: var(--color-success);
+}
+
+.repo-card--update::before {
+  background: var(--color-primary);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+
+.repo-card--available::before {
+  background: color-mix(in srgb, var(--color-text-secondary) 38%, transparent);
+}
+
 .repo-card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
   box-shadow: var(--shadow-md);
@@ -39,6 +64,12 @@
   height: 42px;
   object-fit: cover;
   width: 42px;
+}
+
+.repo-card.selected .owner-avatar,
+.repo-card:hover .owner-avatar {
+  border-color: color-mix(in srgb, var(--color-primary) 62%, var(--color-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 13%, transparent);
 }
 
 .repo-info {
@@ -765,6 +796,23 @@
   transition: opacity var(--motion-normal);
 }
 
+.cinematic-shell .repo-card::before {
+  bottom: 16px;
+  left: -1px;
+  top: 16px;
+  width: 4px;
+}
+
+.cinematic-shell .repo-card--installed::before {
+  background: #95fb9b;
+  box-shadow: 0 0 18px rgba(116, 240, 124, 0.28);
+}
+
+.cinematic-shell .repo-card--update::before {
+  background: #5bd7ff;
+  box-shadow: 0 0 22px rgba(91, 215, 255, 0.36);
+}
+
 .release-modal--wizard {
   max-width: 1040px;
   width: min(94vw, 1040px);
@@ -1003,9 +1051,11 @@
 }
 
 .app-details-modal {
-  max-width: 1120px;
+  border-radius: 22px 0 0 22px;
+  margin-left: auto;
+  max-width: 1180px;
   overflow: hidden;
-  width: min(94vw, 1120px);
+  width: min(94vw, 1180px);
 }
 
 .modal-content.app-details-modal {
@@ -1039,6 +1089,12 @@
   overflow-y: auto;
   padding: 18px;
   scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
+}
+
+.modal-overlay:has(.app-details-modal) {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
 }
 
 .app-details-summary,
@@ -1211,10 +1267,75 @@
   border-color: rgba(91, 215, 255, 0.62);
 }
 
+.app-details-version-row.missing {
+  background: rgba(255, 107, 139, 0.12);
+  border-color: rgba(255, 107, 139, 0.42);
+}
+
 .app-details-version-main {
   display: grid;
   gap: 4px;
   min-width: 0;
+}
+
+.app-details-version-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-details-version-summary > div {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.app-details-version-summary span {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.app-details-version-summary strong {
+  color: var(--color-text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.app-details-version-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-details-version-heading em {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  padding: 3px 7px;
+}
+
+.app-details-version-row.active .app-details-version-heading em {
+  border-color: rgba(91, 215, 255, 0.55);
+  color: var(--color-primary);
+}
+
+.app-details-version-row.missing .app-details-version-heading em,
+.app-details-version-warning {
+  color: var(--color-error);
+}
+
+.app-details-version-warning {
+  font-weight: 760;
 }
 
 .app-details-version-actions {
@@ -1681,6 +1802,7 @@
 
   .app-details-body,
   .app-details-facts,
+  .app-details-version-summary,
   .app-details-version-row,
   .app-details-copy-row {
     grid-template-columns: 1fr;
@@ -1777,6 +1899,18 @@
   border-radius: 15px;
   height: 64px;
   width: 64px;
+}
+
+.cinematic-shell .repo-card.selected .owner-avatar,
+.cinematic-shell .repo-card:hover .owner-avatar {
+  border-color: rgba(91, 215, 255, 0.58);
+  box-shadow: 0 0 0 4px rgba(91, 215, 255, 0.14);
+}
+
+:root[data-theme='light'] .cinematic-shell .repo-card.selected .owner-avatar,
+:root[data-theme='light'] .cinematic-shell .repo-card:hover .owner-avatar {
+  border-color: rgba(0, 120, 212, 0.42);
+  box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.1);
 }
 
 .cinematic-shell .repo-info {
