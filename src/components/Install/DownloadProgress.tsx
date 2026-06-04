@@ -43,6 +43,20 @@ function stageLabel(stage: DownloadStage | undefined, t: (key: string) => string
   }
 }
 
+function stageDescription(stage: DownloadStage | undefined, t: (key: string) => string) {
+  switch (stage) {
+    case 'queued': return t('download.stageQueuedText')
+    case 'downloading': return t('download.stageDownloadingText')
+    case 'verifying': return t('download.stageVerifyingText')
+    case 'extracting': return t('download.stageExtractingText')
+    case 'detectingExecutable': return t('download.stageDetectingExecutableText')
+    case 'registering': return t('download.stageRegisteringText')
+    case 'completed': return t('download.stageCompletedText')
+    case 'failed': return t('download.stageFailedText')
+    default: return t('download.stageQueuedText')
+  }
+}
+
 function currentStage(download: DL): DownloadStage {
   if (download.stage) return download.stage
   if (download.status === 'pending') return 'queued'
@@ -109,6 +123,8 @@ function DownloadProgressPanel({
                 )}
               </div>
 
+              <p className="download-stage-note">{stageDescription(stage, t)}</p>
+
               <div className="progress-bar-wrap">
                 <div
                   className="progress-bar-fill"
@@ -168,6 +184,11 @@ function DownloadProgressPanel({
                 <div className="download-recovery">
                   <strong>{t('download.recoveryTitle')}</strong>
                   <p>{t('download.recoveryText')}</p>
+                  <ul className="download-recovery-steps">
+                    <li>{t('download.recoveryStepRetry')}</li>
+                    <li>{t('download.recoveryStepAsset')}</li>
+                    <li>{t('download.recoveryStepCleanup')}</li>
+                  </ul>
                   {download.error && (
                     <details className="download-error-details">
                       <summary>{t('download.details')}</summary>

@@ -65,7 +65,7 @@ Air Launcher має бути простим, швидким і не перева
 - Primary/secondary actions лишаються у details panel, dangerous дії мають existing confirmation modals.
 - Залишковий QA: 1000x700, 1280x720, long names/paths, keyboard close/focus.
 
-## v3.3.0 - Air Identity
+## v3.3.0 - Air Identity [Closed]
 
 Мета: додати власну ізюминку, не перевантажуючи UI.
 
@@ -76,7 +76,15 @@ Air Launcher має бути простим, швидким і не перева
 - Плавні переходи між фонами.
 - Налаштування сили blur, затемнення і видимості фону.
 
-## v3.4.0 - Theme Editor Pro
+Спільний v3.3.0 patch:
+
+- Library тепер передає project-art background активного/hovered hero проєкту в головний cinematic фон.
+- Якщо background відсутній, використовується cover як м'який project-art fallback; якщо project art немає, лишається базовий Air gradient.
+- Існуючі blur/overlay/transition шари Layout працюють і для живого Library preview, зберігаючи читабельність UI.
+- Розширені налаштування blur/dim/background visibility лишаються для Theme Editor Pro, щоб не перевантажувати базовий v3.3.0 UI.
+- Залишковий QA: без project art, cover-only art, custom launcher background, dark/light/custom appearance.
+
+## v3.4.0 - Theme Editor Pro [Closed]
 
 Мета: довести кастомізацію до рівня Fandom Translator, але простіше для звичайного користувача.
 
@@ -87,6 +95,14 @@ Air Launcher має бути простим, швидким і не перева
 - Окремі налаштування: card opacity, background blur, sidebar width.
 - Валідація custom CSS або safe warning при помилках.
 - Кнопка `Скопіювати CSS змінні`.
+
+Спільний v3.4.0 patch:
+
+- Appearance отримав Theme Editor Pro actions: export JSON, import JSON, reset only theme, copy CSS variables.
+- Theme import нормалізує palette/font/radius/density і не змінює Library owner, install path, update preferences або AI Workspace registry.
+- CSS variable export генерується з тих самих values, які застосовуються live theme engine.
+- Existing presets/colors/custom CSS лишаються в одному компактному Appearance flow.
+- Залишковий QA: export/import invalid JSON, reset theme, copy CSS variables, custom CSS.
 
 ## v3.5.0 - Responsive Polish
 

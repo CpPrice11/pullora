@@ -17,6 +17,7 @@ import {
   clearProjectArt,
   listProjectArt,
   projectArtCoverUrl,
+  projectArtBackgroundUrl,
   projectArtKey,
   setProjectArt,
 } from '../services/projectArt'
@@ -116,9 +117,10 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
 interface SearchPageProps {
   onOpenSettings?: () => void
   onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
+  onPreviewBackground?: (url: string | null) => void
 }
 
-function SearchPage({ onOpenSettings, onOpenAiWorkspace }: SearchPageProps) {
+function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: SearchPageProps) {
   const { language, t } = useI18n()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
@@ -537,6 +539,15 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace }: SearchPageProps) {
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
   const featuredCover = projectArtCoverUrl(featuredArt)
+  const featuredBackground = projectArtBackgroundUrl(featuredArt)
+
+  useEffect(() => {
+    onPreviewBackground?.(featuredBackground)
+  }, [featuredBackground, onPreviewBackground])
+
+  useEffect(() => {
+    return () => onPreviewBackground?.(null)
+  }, [onPreviewBackground])
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
     setLaunchError(null)

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
-import { openDir } from '../services/updates'
+import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
 import { pickDirectory } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import { codexRequest, getCodexAccountStatus, getCodexRuntimeStatus, loginCodexWithApiKey, openCodexDesktop } from '../services/aiWorkspace'
-import type { CodexRuntimeStatus } from '../types'
+import type { CodexRuntimeStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
+import { appearanceCssText, applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import { APPEARANCE_PRESETS, DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import './PageStyles.css'
@@ -27,6 +27,31 @@ function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
     case 'portableFirst':
     default: return 'settings.portableFirst'
   }
+}
+
+type CodexCapabilityStatus = 'available' | 'unavailable' | 'notChecked'
+
+interface CodexCapabilityProbe {
+  id: string
+  labelKey: string
+  method: string
+  status: CodexCapabilityStatus
+  detail?: string
+}
+
+const CODEX_CAPABILITY_PROBES: Array<Omit<CodexCapabilityProbe, 'status' | 'detail'>> = [
+  { id: 'models', labelKey: 'ai.capabilityModels', method: 'model/list' },
+  { id: 'threads', labelKey: 'ai.capabilityThreads', method: 'thread/list' },
+  { id: 'skills', labelKey: 'ai.capabilitySkills', method: 'skill/list' },
+  { id: 'plugins', labelKey: 'ai.capabilityPlugins', method: 'plugin/list' },
+  { id: 'apps', labelKey: 'ai.capabilityApps', method: 'app/list' },
+  { id: 'mcp', labelKey: 'ai.capabilityMcp', method: 'mcp/list' },
+]
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
 function SettingsPage({
@@ -48,10 +73,15 @@ function SettingsPage({
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [codexRuntime, setCodexRuntime] = useState<CodexRuntimeStatus | null>(null)
   const [codexAccount, setCodexAccount] = useState<Record<string, unknown> | null>(null)
+  const [codexCapabilities, setCodexCapabilities] = useState<CodexCapabilityProbe[]>(
+    CODEX_CAPABILITY_PROBES.map((probe) => ({ ...probe, status: 'notChecked' })),
+  )
   const [codexApiKey, setCodexApiKey] = useState('')
   const [codexChecking, setCodexChecking] = useState(false)
+  const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const modalRef = useRef<HTMLElement | null>(null)
   const resetModalRef = useRef<HTMLElement | null>(null)
+  const themeImportRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     getSettings()
@@ -82,6 +112,13 @@ function SettingsPage({
     const timer = window.setTimeout(() => setActionMessage(null), 3600)
     return () => window.clearTimeout(timer)
   }, [actionMessage])
+
+  useEffect(() => {
+    if (activeSection !== 'maintenance') return
+    getLauncherStorageInfo()
+      .then(setStorageInfo)
+      .catch(() => {})
+  }, [activeSection])
 
   const showSavedState = () => {
     setSaved(true)
@@ -152,6 +189,65 @@ function SettingsPage({
     await handleAppearanceChange({ ...base, preset })
   }
 
+  const handleExportTheme = () => {
+    if (!settings) return
+    const payload = JSON.stringify({ theme: settings.theme, appearance }, null, 2)
+    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'air-launcher-theme.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportTheme = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!settings) return
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    try {
+      const payload = JSON.parse(await file.text()) as Partial<AppSettings>
+      const theme = payload.theme === 'light' || payload.theme === 'dark' || payload.theme === 'auto'
+        ? payload.theme
+        : settings.theme
+      const importedAppearance = normalizeAppearance(payload.appearance)
+      const savedSettings = await persistSettings({ ...settings, theme, appearance: importedAppearance }, settings)
+      if (savedSettings) {
+        applyThemePreference(savedSettings.theme, true)
+        notifyThemePreference(savedSettings.theme)
+        applyAppearanceSettings(savedSettings.appearance)
+        setActionMessage(t('settings.themeImported'))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.themeImportError'))
+    }
+  }
+
+  const handleResetTheme = async () => {
+    if (!settings) return
+    const savedSettings = await persistSettings({
+      ...settings,
+      theme: DEFAULT_SETTINGS.theme,
+      appearance: DEFAULT_SETTINGS.appearance,
+    }, settings)
+    if (savedSettings) {
+      applyThemePreference(savedSettings.theme, true)
+      notifyThemePreference(savedSettings.theme)
+      applyAppearanceSettings(savedSettings.appearance)
+      setActionMessage(t('settings.themeResetDone'))
+    }
+  }
+
+  const handleCopyCssVariables = async () => {
+    try {
+      await navigator.clipboard.writeText(appearanceCssText(appearance))
+      setActionMessage(t('settings.cssVariablesCopied'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.cssVariablesCopyError'))
+    }
+  }
+
   const handleBrowse = async () => {
     const dir = await pickDirectory()
     if (dir && settings) {
@@ -208,6 +304,12 @@ function SettingsPage({
       `language: ${settings.language}`,
       `aiWorkspaceEnabled: ${settings.aiWorkspaceEnabled ? 'yes' : 'no'}`,
       `codexRuntimePreference: ${settings.codexRuntimePreference}`,
+      `launcherDir: ${storageInfo?.launcherDir ?? 'not checked'}`,
+      `updateCachePath: ${storageInfo?.updateCachePath ?? 'not checked'}`,
+      `updateCacheCount: ${storageInfo?.updateCacheCount ?? 'not checked'}`,
+      `backupPath: ${storageInfo?.backupPath ?? 'not checked'}`,
+      `backupCount: ${storageInfo?.backupCount ?? 'not checked'}`,
+      `cleanupBytes: ${storageInfo?.cleanupBytes ?? 'not checked'}`,
     ]
 
     try {
@@ -216,6 +318,47 @@ function SettingsPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.diagnosticsCopyError'))
     }
+  }
+
+  const handleRefreshStorageInfo = async () => {
+    try {
+      setStorageInfo(await getLauncherStorageInfo())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.storageInfoError'))
+    }
+  }
+
+  const handleCleanupLauncherFiles = async () => {
+    if (!window.confirm(t('settings.cleanupConfirm'))) return
+    try {
+      const info = await cleanupLauncherUpdateFiles()
+      setStorageInfo(info)
+      setActionMessage(t('settings.cleanupDone'))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.cleanupError'))
+    }
+  }
+
+  const probeCodexCapabilities = async (runtimeInstalled: boolean) => {
+    if (!runtimeInstalled) {
+      setCodexCapabilities(CODEX_CAPABILITY_PROBES.map((probe) => ({ ...probe, status: 'unavailable' })))
+      return
+    }
+
+    const results: CodexCapabilityProbe[] = []
+    for (const probe of CODEX_CAPABILITY_PROBES) {
+      try {
+        await codexRequest(probe.method, probe.id === 'threads' ? { limit: 1 } : {})
+        results.push({ ...probe, status: 'available' })
+      } catch (err) {
+        results.push({
+          ...probe,
+          status: 'unavailable',
+          detail: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+    setCodexCapabilities(results)
   }
 
   const clampIntervalHours = (value: string | number) => {
@@ -279,9 +422,14 @@ function SettingsPage({
       const runtime = await getCodexRuntimeStatus()
       setCodexRuntime(runtime)
       if (runtime.installed) {
-        const account = await getCodexAccountStatus()
-        setCodexAccount(account)
+        try {
+          const account = await getCodexAccountStatus()
+          setCodexAccount(account)
+        } catch {
+          setCodexAccount(null)
+        }
       }
+      await probeCodexCapabilities(runtime.installed)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('ai.connectError'))
     } finally {
@@ -546,6 +694,23 @@ function SettingsPage({
                 </button>
               </div>
             </div>
+            <div className="settings-diagnostics-card ai-capabilities-card">
+              <span className="settings-reset-kicker">{t('ai.capabilities')}</span>
+              <p className="help-text">{t('ai.capabilitiesHelp')}</p>
+              <dl>
+                {codexCapabilities.map((capability) => (
+                  <div key={capability.id}>
+                    <dt>{t(capability.labelKey)}</dt>
+                    <dd>
+                      <span className={`settings-capability-pill ${capability.status}`}>
+                        {t(`ai.capabilityStatus.${capability.status}`)}
+                      </span>
+                      {capability.detail && <small>{capability.detail}</small>}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
             {codexRuntime?.installed && !codexAccount?.account && (
               <div className="form-group ai-key-login">
                 <label htmlFor="codexKey">{t('ai.loginWithKey')}</label>
@@ -600,6 +765,44 @@ function SettingsPage({
                   <dd>{settings.autoUpdateCheck ? t('ai.yes') : t('ai.no')}</dd>
                 </div>
               </dl>
+            </div>
+            <div className="settings-diagnostics-card">
+              <span className="settings-reset-kicker">{t('settings.storageDiagnostics')}</span>
+              <dl>
+                <div>
+                  <dt>{t('settings.launcherFolder')}</dt>
+                  <dd>{storageInfo?.launcherDir ?? t('settings.notChecked')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.updateCache')}</dt>
+                  <dd>{storageInfo ? `${storageInfo.updateCacheCount} · ${storageInfo.updateCachePath}` : t('settings.notChecked')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.backups')}</dt>
+                  <dd>{storageInfo ? `${storageInfo.backupCount} · ${storageInfo.backupPath}` : t('settings.notChecked')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.cleanupSize')}</dt>
+                  <dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes) : t('settings.notChecked')}</dd>
+                </div>
+              </dl>
+              <div className="settings-maintenance-actions settings-storage-actions">
+                <button className="secondary-btn" onClick={handleRefreshStorageInfo}>
+                  {t('settings.refreshDiagnostics')}
+                </button>
+                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.launcherDir).catch(() => {})} disabled={!storageInfo}>
+                  {t('settings.openLauncherFolder')}
+                </button>
+                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.updateCachePath).catch(() => {})} disabled={!storageInfo}>
+                  {t('settings.openUpdateCache')}
+                </button>
+                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.backupPath).catch(() => {})} disabled={!storageInfo}>
+                  {t('settings.openBackups')}
+                </button>
+                <button className="secondary-btn" onClick={handleCleanupLauncherFiles} disabled={!storageInfo || storageInfo.cleanupBytes === 0}>
+                  {t('settings.cleanupLauncherFiles')}
+                </button>
+              </div>
             </div>
             <div className="settings-maintenance-actions">
               <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
@@ -687,7 +890,33 @@ function SettingsPage({
       case 'appearance':
         return (
           <section id="settings-appearance" className="settings-section appearance-settings-section">
-            <h3>{t('settings.appearance')}</h3>
+            <div className="settings-section-heading-row">
+              <div>
+                <h3>{t('settings.appearance')}</h3>
+                <p className="help-text">{t('settings.themeEditorHelp')}</p>
+              </div>
+              <div className="settings-inline-actions settings-theme-actions">
+                <button type="button" className="secondary-btn" onClick={handleExportTheme}>
+                  {t('settings.exportTheme')}
+                </button>
+                <button type="button" className="secondary-btn" onClick={() => themeImportRef.current?.click()}>
+                  {t('settings.importTheme')}
+                </button>
+                <button type="button" className="secondary-btn" onClick={handleCopyCssVariables}>
+                  {t('settings.copyCssVariables')}
+                </button>
+                <button type="button" className="secondary-btn" onClick={handleResetTheme}>
+                  {t('settings.resetTheme')}
+                </button>
+                <input
+                  ref={themeImportRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="settings-hidden-file-input"
+                  onChange={handleImportTheme}
+                />
+              </div>
+            </div>
             <div className="settings-grid">
               <div className="form-group compact-control">
                 <label htmlFor="themeAppearance">{t('settings.theme')}</label>

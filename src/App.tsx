@@ -70,6 +70,7 @@ function App() {
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [showPathModal, setShowPathModal] = useState(false)
   const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
+  const [searchPreviewBackground, setSearchPreviewBackground] = useState<string | null>(null)
   const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
   const [aiWorkspaceRepo, setAiWorkspaceRepo] = useState<GitHubSearchResult | null>(null)
 
@@ -165,6 +166,10 @@ function App() {
     setActiveTab(tab)
   }
 
+  const visibleBackground = activeTab === 'search' && searchPreviewBackground
+    ? searchPreviewBackground
+    : launcherBackground
+
   const renderContent = () => {
     switch (activeTab) {
       case 'search':    return (
@@ -174,6 +179,7 @@ function App() {
             setAiWorkspaceRepo(repo)
             setActiveTab('aiWorkspace')
           }}
+          onPreviewBackground={setSearchPreviewBackground}
         />
       )
       case 'aiWorkspace': return (
@@ -193,7 +199,7 @@ function App() {
         activeTab={settingsOpen ? 'settings' : activeTab}
         contentKey={activeTab}
         onTabChange={handleTabChange}
-        backgroundImage={launcherBackground}
+        backgroundImage={visibleBackground}
         settingsOpen={settingsOpen}
       >
         <AiWorkspaceNotifications />

@@ -63,7 +63,7 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Switch-version confirmation лишається через dedicated modal.
 - Залишковий QA: install v1, install v2, switch, delete inactive, delete active, repair.
 
-## v3.3.0 - Install / Update Polish
+## v3.3.0 - Install / Update Polish [Closed]
 
 - Чіткіший multi-step progress: queued, downloading, verifying, extracting, detecting executable, registering.
 - Краще пояснення installer/setup assets і unsupported assets.
@@ -72,7 +72,15 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Уніфікувати кнопки install/update/download у release selector.
 - QA: portable EXE, ZIP, unsupported asset, failed network, cancel, retry.
 
-## v3.4.0 - Recovery & Maintenance
+Спільний v3.3.0 patch:
+
+- Progress panel отримав текстове пояснення активного stage: queued, downloading, verifying, extracting, detecting executable, registering, completed або failed.
+- Failed install/update тепер показує recovery checklist: retry, choose another asset, cleanup incomplete installs.
+- Release selector зберігає існуючий wizard flow і recovery actions, але result/progress стали зрозумілішими без додаткового modal clutter.
+- Версію застосунку піднято до `3.3.0`.
+- Залишковий QA: portable EXE, ZIP, unsupported asset, failed network, cancel, retry.
+
+## v3.4.0 - Recovery & Maintenance [Closed]
 
 - Окремий maintenance dashboard: cache, backups, partial installs, logs.
 - Safe cleanup незавершених встановлень із підсумком, що буде видалено.
@@ -80,6 +88,14 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Експорт diagnostic summary для bug reports.
 - Більш зрозуміле reset settings без видалення встановлених застосунків.
 - QA: cleanup empty/non-empty, inaccessible folders, reset, cache clear.
+
+Спільний v3.4.0 patch:
+
+- Settings -> Maintenance тепер показує storage diagnostics для launcher folder, update cache, backups і cleanable size.
+- Додані direct actions: refresh diagnostics, open launcher folder, open update cache, open backups, cleanup old launcher files.
+- Maintenance diagnostics copy включає storage paths/counts/cleanup bytes разом із GitHub/API context.
+- Existing API cache clear і full settings reset лишаються окремими діями без зміни встановлених застосунків.
+- Залишковий QA: empty/non-empty cache, unavailable folders, cleanup confirmation, copy diagnostics.
 
 ## v3.5.0 - Settings & GitHub Sources
 

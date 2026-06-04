@@ -62,7 +62,7 @@ Beta-обмеження:
 - Approval cards отримали status badge і copy activity diagnostics.
 - Залишковий QA: command approval, denial, interrupt, failed command, long-running command.
 
-## v3.3.0 - Workspace Comfort
+## v3.3.0 - Workspace Comfort [Closed]
 
 - Покращене керування недавніми workspaces та threads.
 - Відновлення draft і вкладень.
@@ -72,13 +72,29 @@ Beta-обмеження:
 - Кращий unlink/delete-created-clone confirmation.
 - QA: local folder, clone URL, clone from Library, unlink, delete clone, restore draft.
 
-## v3.4.0 - Codex Extensions
+Спільний v3.3.0 patch:
+
+- AI Workspace відновлює останній вибраний workspace після перезапуску сторінки.
+- Composer autosaves draft text і attachment paths окремо для активного workspace/thread.
+- При поверненні до workspace/thread draft автоматично відновлюється, а UI показує компактну дію clear draft.
+- Existing recent threads і workspace lists збережені без змішування з Library metadata або Codex secrets.
+- Залишковий QA: local folder, clone URL, clone from Library, restore draft, clear draft, send after restore.
+
+## v3.4.0 - Codex Extensions [Closed]
 
 - Керування доступними `Skills`, `Plugins`, `Apps` і `MCP`, лише якщо відповідні методи наявні в app-server.
 - Зрозумілий стан unavailable/unsupported без ламання базового chat-flow.
 - Read-only list доступних capabilities.
 - Capability-specific diagnostics і help text.
 - Безпечне увімкнення extension features як opt-in.
+
+Спільний v3.4.0 patch:
+
+- Settings -> AI Workspace отримав read-only Codex capabilities panel.
+- Capability probe перевіряє experimental list methods для models, threads, skills, plugins, apps і MCP без автоматичного увімкнення extensions.
+- Unsupported/unavailable methods показуються як unavailable із diagnostic detail, не ламаючи базовий chat-flow.
+- Base AI Workspace registry і Library metadata не змішуються.
+- Залишковий QA: runtime missing, runtime connected, unsupported methods, auth missing, reconnect.
 
 ## v3.5.0 - Multi-session Foundation
 

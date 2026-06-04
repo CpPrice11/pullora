@@ -597,6 +597,25 @@
   outline: 1px solid var(--color-primary);
 }
 
+.ai-draft-row {
+  align-items: center;
+  color: var(--color-text-tertiary);
+  display: flex;
+  font-size: 12px;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 7px;
+}
+
+.ai-draft-row button {
+  background: transparent;
+  border: 0;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 760;
+  padding: 0;
+}
+
 .ai-attachments {
   display: flex;
   flex-wrap: wrap;

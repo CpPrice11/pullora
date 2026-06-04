@@ -53,6 +53,39 @@ interface CodexModel {
 
 type InspectorTab = 'changes' | 'terminal' | 'approvals'
 
+type ComposerDraft = {
+  text: string
+  attachments: string[]
+  updatedAt: number
+}
+
+const AI_COMPOSER_DRAFTS_KEY = 'airLauncher.aiWorkspace.composerDrafts.v1'
+const AI_LAST_WORKSPACE_KEY = 'airLauncher.aiWorkspace.lastWorkspaceId'
+
+function readComposerDrafts(): Record<string, ComposerDraft> {
+  try {
+    return JSON.parse(window.localStorage.getItem(AI_COMPOSER_DRAFTS_KEY) || '{}') as Record<string, ComposerDraft>
+  } catch {
+    return {}
+  }
+}
+
+function writeComposerDrafts(drafts: Record<string, ComposerDraft>) {
+  try {
+    window.localStorage.setItem(AI_COMPOSER_DRAFTS_KEY, JSON.stringify(drafts))
+  } catch {
+    // Drafts are comfort-only state; storage failures should not block chat.
+  }
+}
+
+function readLastWorkspaceId(): string | null {
+  try {
+    return window.localStorage.getItem(AI_LAST_WORKSPACE_KEY)
+  } catch {
+    return null
+  }
+}
+
 function threadTitle(thread: CodexThread, fallback: string) {
   return thread.name || thread.preview || fallback
 }
@@ -172,10 +205,13 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [diagnosticsCopied, setDiagnosticsCopied] = useState(false)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const autoConnectRef = useRef(false)
+  const activeDraftKeyRef = useRef<string | null>(null)
+  const skipNextDraftSaveRef = useRef(false)
 
   const accountName = useMemo(() => accountLabel(account), [account])
   const accountReady = useMemo(() => Boolean(account?.account || accountName), [account, accountName])
   const activePath = selectedWorkspace?.path ?? selectedThread?.cwd ?? undefined
+  const composerDraftKey = selectedThread?.id ?? activePath ?? null
   const selectedTitle = selectedThread
     ? threadTitle(selectedThread, t('ai.codexSession'))
     : t('ai.newChat')
@@ -214,8 +250,9 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
 
   const refreshWorkspaces = async () => {
     const all = await listAiWorkspaces()
+    const lastWorkspaceId = readLastWorkspaceId()
     setWorkspaces(all)
-    setSelectedWorkspace((current) => current ?? all[0] ?? null)
+    setSelectedWorkspace((current) => current ?? all.find((workspace) => workspace.id === lastWorkspaceId) ?? all[0] ?? null)
   }
 
   const refreshRecentThreads = async () => {
@@ -279,6 +316,51 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     setShowClone(true)
     onRequestedRepoConsumed?.()
   }, [requestedRepo, onRequestedRepoConsumed])
+
+  useEffect(() => {
+    if (selectedWorkspace) {
+      try {
+        window.localStorage.setItem(AI_LAST_WORKSPACE_KEY, selectedWorkspace.id)
+      } catch {
+        // Last workspace is comfort-only state; ignore storage failures.
+      }
+    }
+  }, [selectedWorkspace])
+
+  useEffect(() => {
+    activeDraftKeyRef.current = composerDraftKey
+    skipNextDraftSaveRef.current = true
+
+    if (!composerDraftKey) {
+      setComposer('')
+      setAttachments([])
+      return
+    }
+
+    const draft = readComposerDrafts()[composerDraftKey]
+    setComposer(draft?.text ?? '')
+    setAttachments(draft?.attachments ?? [])
+  }, [composerDraftKey])
+
+  useEffect(() => {
+    if (!composerDraftKey || activeDraftKeyRef.current !== composerDraftKey) return
+    if (skipNextDraftSaveRef.current) {
+      skipNextDraftSaveRef.current = false
+      return
+    }
+
+    const drafts = readComposerDrafts()
+    if (!composer.trim() && attachments.length === 0) {
+      delete drafts[composerDraftKey]
+    } else {
+      drafts[composerDraftKey] = {
+        text: composer,
+        attachments,
+        updatedAt: Date.now(),
+      }
+    }
+    writeComposerDrafts(drafts)
+  }, [attachments, composer, composerDraftKey])
 
   useEffect(() => {
     let unlisten: Array<() => void> = []
@@ -398,6 +480,16 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     setSelectedThread(null)
     setEntries([])
     await touchAiWorkspace(workspace.id).catch(() => {})
+  }
+
+  const clearComposerDraft = () => {
+    if (composerDraftKey) {
+      const drafts = readComposerDrafts()
+      delete drafts[composerDraftKey]
+      writeComposerDrafts(drafts)
+    }
+    setComposer('')
+    setAttachments([])
   }
 
   const startThread = async () => {
@@ -890,6 +982,12 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                   onPaste={handlePaste}
                   placeholder={t('ai.composerPlaceholder')}
                 />
+                {composerDraftKey && (composer.trim() || attachments.length > 0) && (
+                  <div className="ai-draft-row">
+                    <span>{t('ai.draftSaved')}</span>
+                    <button type="button" onClick={clearComposerDraft}>{t('ai.clearDraft')}</button>
+                  </div>
+                )}
                 <div className="ai-composer-actions">
                   <button type="button" className="secondary-btn ai-attach-btn" onClick={attachImage}>{t('ai.addImage')}</button>
                   <select aria-label={t('ai.model')} value={model} onChange={(event) => setModel(event.target.value)}>

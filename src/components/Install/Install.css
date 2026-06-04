@@ -143,6 +143,14 @@
   color: var(--color-text-secondary);
 }
 
+.download-stage-note {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  grid-column: 2;
+  line-height: 1.4;
+  margin: -2px 0 0;
+}
+
 .download-pct { font-weight: 600; flex-shrink: 0; }
 
 .download-timeline {
@@ -207,6 +215,16 @@
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
+}
+
+.download-recovery-steps {
+  color: var(--color-text-secondary);
+  display: grid;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 1.4;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .download-error-details {
@@ -341,6 +359,7 @@
   }
 
   .download-stage-mark,
+  .download-stage-note,
   .progress-bar-wrap,
   .download-timeline,
   .download-meta,
