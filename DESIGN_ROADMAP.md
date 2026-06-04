@@ -104,7 +104,7 @@ Air Launcher має бути простим, швидким і не перева
 - Existing presets/colors/custom CSS лишаються в одному компактному Appearance flow.
 - Залишковий QA: export/import invalid JSON, reset theme, copy CSS variables, custom CSS.
 
-## v3.5.0 - Responsive Polish
+## v3.5.0 - Responsive Polish [Closed]
 
 Мета: зробити інтерфейс зручним на різних розмірах вікна.
 
@@ -115,7 +115,15 @@ Air Launcher має бути простим, швидким і не перева
 - Перевірка 1000x700, 1280x720, 1920x1080.
 - Покращення keyboard focus states.
 
-## v3.6.0 - Motion & Feedback
+Фінальний roadmap-closing patch:
+
+- AI Workspace sidebar отримав компактніший session search і metadata rows для recent/workspace sessions.
+- Settings owner/source cards, Theme Editor actions і Maintenance diagnostics отримали responsive card styling.
+- Додано глобальний `:focus-visible` style для keyboard navigation.
+- Existing sidebar/layout responsive rules збережені; додаткові card/input styles не ламають 1000x700 flow.
+- Залишковий QA: 1000x700, 1280x720, 1920x1080, keyboard focus.
+
+## v3.6.0 - Motion & Feedback [Closed]
 
 Мета: зробити інтерфейс живішим, але без зайвої анімації.
 
@@ -126,7 +134,15 @@ Air Launcher має бути простим, швидким і не перева
 - Reduced motion support.
 - Чіткі empty/error/offline стани.
 
-## v4.0.0 - Design Stabilization
+Фінальний roadmap-closing patch:
+
+- Додано global reduced-motion handling через `prefers-reduced-motion`.
+- Local AI draft cleanup додає activity feedback entry замість прихованої silent action.
+- Existing toast/status/skeleton/error states збережені як єдина feedback система без додаткового visual noise.
+- Install/update progress і maintenance actions вже мають explicit status/recovery states після попередніх slices.
+- Залишковий QA: reduced motion, toast visibility, loading/error/empty states.
+
+## v4.0.0 - Design Stabilization [Closed]
 
 Мета: стабільний дизайн-реліз після перевірки всіх основних сценаріїв.
 
@@ -137,6 +153,13 @@ Air Launcher має бути простим, швидким і не перева
 - QA українська/англійська.
 - QA без project art і з project art.
 - Документувати правила дизайну для майбутніх змін.
+
+Фінальний roadmap-closing patch:
+
+- Додано `docs/DESIGN_GUIDELINES.md` із правилами Steam-style compact UI, Air identity, focus/reduced-motion і Theme Editor boundaries.
+- Appearance, Maintenance, AI Workspace і Library surfaces приведені до спільних card/chip/action patterns.
+- Project-art фон, custom background, presets і custom CSS лишаються сумісними.
+- Roadmap milestones до `v4.0.0` закриті; backlog лишається для future optional enhancements.
 
 ## Backlog
 

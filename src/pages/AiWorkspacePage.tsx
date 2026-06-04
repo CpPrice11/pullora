@@ -166,6 +166,13 @@ function entriesFromThread(thread: CodexThread | null): ChatEntry[] {
   )
 }
 
+function threadMatchesQuery(thread: CodexThread, query: string, fallback: string) {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return true
+  return [threadTitle(thread, fallback), thread.cwd ?? '', thread.id]
+    .some((value) => value.toLowerCase().includes(normalized))
+}
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -184,6 +191,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
   const [selectedWorkspace, setSelectedWorkspace] = useState<AiWorkspace | null>(null)
   const [threads, setThreads] = useState<CodexThread[]>([])
   const [recentThreads, setRecentThreads] = useState<CodexThread[]>([])
+  const [threadSearch, setThreadSearch] = useState('')
   const [selectedThread, setSelectedThread] = useState<CodexThread | null>(null)
   const [entries, setEntries] = useState<ChatEntry[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
@@ -216,6 +224,14 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     ? threadTitle(selectedThread, t('ai.codexSession'))
     : t('ai.newChat')
   const pendingApprovals = activity.filter((entry) => entry.pendingApproval)
+  const filteredRecentThreads = useMemo(
+    () => recentThreads.filter((thread) => threadMatchesQuery(thread, threadSearch, t('ai.untitledThread'))),
+    [recentThreads, threadSearch, t],
+  )
+  const filteredThreads = useMemo(
+    () => threads.filter((thread) => threadMatchesQuery(thread, threadSearch, t('ai.untitledThread'))),
+    [threads, threadSearch, t],
+  )
   const visibleActivity = activity.filter((entry) => {
     if (inspectorTab === 'approvals') return entry.kind === 'approval' || entry.pendingApproval
     if (inspectorTab === 'terminal') return entry.kind === 'command'
@@ -490,6 +506,19 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
     }
     setComposer('')
     setAttachments([])
+  }
+
+  const clearAllComposerDrafts = () => {
+    if (!window.confirm(t('ai.clearDraftsConfirm'))) return
+    writeComposerDrafts({})
+    setComposer('')
+    setAttachments([])
+    setActivity((current) => [{
+      id: `draft-cleanup-${Date.now()}`,
+      label: t('ai.draftsCleared'),
+      kind: 'runtime',
+      status: 'completed',
+    } satisfies ActivityEntry, ...current].slice(0, 24))
   }
 
   const startThread = async () => {
@@ -874,6 +903,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
           </div>
           <div className="ai-sidebar-actions">
             <button type="button" className="secondary-btn" onClick={() => setShowClone((shown) => !shown)}>{t('ai.clone')}</button>
+            <button type="button" className="secondary-btn" onClick={clearAllComposerDrafts}>{t('ai.clearAllDrafts')}</button>
           </div>
           <div className={`ai-auth-card ${accountReady ? 'ready' : 'warning'}`}>
             <strong>{accountReady ? t('ai.authReady') : t('ai.authMissing')}</strong>
@@ -889,8 +919,16 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
             <h2>{t('ai.chats')}</h2>
             <button type="button" onClick={() => void refreshRecentThreads()} title={t('ai.refreshSessions')}>↻</button>
           </div>
+          <input
+            className="ai-thread-search"
+            type="search"
+            value={threadSearch}
+            onChange={(event) => setThreadSearch(event.target.value)}
+            placeholder={t('ai.searchSessions')}
+            aria-label={t('ai.searchSessions')}
+          />
           <div className="ai-thread-list ai-recent-thread-list">
-            {recentThreads.map((thread) => (
+            {filteredRecentThreads.map((thread) => (
               <button
                 key={thread.id}
                 type="button"
@@ -905,6 +943,7 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
               </button>
             ))}
             {recentThreads.length === 0 && <p>{runtime?.running ? t('ai.noRecentSessions') : t('ai.connectForSessions')}</p>}
+            {recentThreads.length > 0 && filteredRecentThreads.length === 0 && <p>{t('ai.noSessionMatches')}</p>}
           </div>
           {selectedWorkspace && (
             <>
@@ -913,16 +952,20 @@ function AiWorkspacePage({ requestedRepo, onRequestedRepoConsumed }: AiWorkspace
                 <button type="button" onClick={() => void startThread()} title={t('ai.newChat')}>+</button>
               </div>
               <div className="ai-thread-list">
-                {threads.map((thread) => (
+                {filteredThreads.map((thread) => (
                   <button
                     key={thread.id}
                     type="button"
                     className={selectedThread?.id === thread.id ? 'active' : ''}
                     onClick={() => void resumeThread(thread)}
                   >
-                    {threadTitle(thread, t('ai.untitledThread'))}
+                    <strong>{threadTitle(thread, t('ai.untitledThread'))}</strong>
+                    {formatCodexTime(thread.updatedAt ?? thread.createdAt) && (
+                      <em>{formatCodexTime(thread.updatedAt ?? thread.createdAt)}</em>
+                    )}
                   </button>
                 ))}
+                {threads.length > 0 && filteredThreads.length === 0 && <p>{t('ai.noSessionMatches')}</p>}
               </div>
             </>
           )}

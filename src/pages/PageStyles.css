@@ -2533,6 +2533,50 @@
   grid-column: 1 / -1;
 }
 
+.settings-source-summary {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--border-radius-lg);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.settings-source-summary strong {
+  color: var(--color-text);
+  font-size: 15px;
+}
+
+.settings-source-summary p,
+.settings-source-summary small {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.settings-owner-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.settings-owner-chips button {
+  background: var(--color-control);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.settings-owner-chips button.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .appearance-settings-section {
   gap: 18px;
 }
@@ -2802,6 +2846,22 @@
 :root[data-theme='light'] .settings-diagnostics-card {
   background: rgba(17, 24, 39, 0.04);
   border-color: rgba(17, 24, 39, 0.1);
+}
+
+:where(button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 .settings-reset-overlay {

@@ -97,7 +97,7 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Existing API cache clear і full settings reset лишаються окремими діями без зміни встановлених застосунків.
 - Залишковий QA: empty/non-empty cache, unavailable folders, cleanup confirmation, copy diagnostics.
 
-## v3.5.0 - Settings & GitHub Sources
+## v3.5.0 - Settings & GitHub Sources [Closed]
 
 - Покращити owner/source налаштування.
 - Підготувати foundation для кількох GitHub owners або custom repository list.
@@ -105,13 +105,29 @@ Base Features roadmap описує розвиток Air Launcher як GitHub Rel
 - Зберігати source-specific cache metadata.
 - QA: owner change, cache invalidation, no network, invalid owner.
 
-## v4.0.0 - Stable Launcher Core
+Фінальний roadmap-closing patch:
+
+- Settings -> General отримав source summary для активного GitHub owner.
+- Додано recent owner chips як foundation для майбутніх multi-source сценаріїв без зміни поточної single-owner моделі.
+- Owner change продовжує очищати GitHub cache, щоб source switch не змішував cached data.
+- GitHub token/rate-limit пояснення зафіксоване як source-scoped future flow, окремо від Codex secrets.
+- Залишковий QA: owner change, recent owner selection, cache invalidation, invalid owner.
+
+## v4.0.0 - Stable Launcher Core [Closed]
 
 - Повна ревізія base launcher сценаріїв без AI.
 - Уніфікація install/update/uninstall confirmation dialogs.
 - Стабільний recovery path для всіх filesystem операцій.
 - Документований release process.
 - Regression matrix для Library, Installed, Favorites, About update center і Settings.
+
+Фінальний roadmap-closing patch:
+
+- Core version піднято до `4.0.0`.
+- Додано `docs/RELEASE_PROCESS.md` із Windows-only release policy, artifact names і release gate commands.
+- Додано `docs/REGRESSION_MATRIX.md` для Library, install/versioning, Settings/Maintenance, About self-update, AI Workspace і UI QA.
+- Maintenance, install/update recovery, version management, source settings і release checks тепер мають documented stabilization path.
+- Backlog лишається як future ideas, але roadmap milestones до `v4.0.0` закриті.
 
 ## Backlog
 

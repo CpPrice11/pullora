@@ -59,3 +59,9 @@ npm run check:release -- -Version 3.0.0 -RcReadiness -SkipArtifacts
 - GitHub release після публікації перевіряється на наявність лише portable EXE і setup EXE.
 
 Поточний напрям розвитку описаний у [ROADMAP.md](ROADMAP.md).
+
+Додаткові стабілізаційні документи:
+
+- [Release Process](docs/RELEASE_PROCESS.md)
+- [Regression Matrix](docs/REGRESSION_MATRIX.md)
+- [Design Guidelines](docs/DESIGN_GUIDELINES.md)

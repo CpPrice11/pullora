@@ -96,7 +96,7 @@ Beta-обмеження:
 - Base AI Workspace registry і Library metadata не змішуються.
 - Залишковий QA: runtime missing, runtime connected, unsupported methods, auth missing, reconnect.
 
-## v3.5.0 - Multi-session Foundation
+## v3.5.0 - Multi-session Foundation [Closed]
 
 - Підготовка UI/data model для кількох sessions без обов'язкового multi-root.
 - Recent threads list із пошуком.
@@ -104,13 +104,28 @@ Beta-обмеження:
 - Safe cleanup старих або failed sessions.
 - QA: кілька threads в одному workspace, switch thread, restore state.
 
-## v4.0.0 - Stable AI Workspace
+Фінальний roadmap-closing patch:
+
+- AI Workspace отримав session search для recent і workspace threads.
+- Recent/workspace session rows показують title, path/time metadata і active state.
+- Draft restore з `v3.3.0` доповнено safe cleanup локальних drafts без видалення Codex sessions або workspace files.
+- Multi-session foundation лишається single-workspace runtime-safe, без примусового multi-root.
+- Залишковий QA: кілька threads, search, switch thread, restore draft, clear all drafts.
+
+## v4.0.0 - Stable AI Workspace [Closed]
 
 - Повна ревізія beta limitations.
 - Стабільний runtime compatibility matrix.
 - Документований troubleshooting для Codex runtime/auth/protocol.
 - Regression matrix для workspace registry, threads, streaming, approvals, Desktop handoff.
 - Рішення, що лишається beta, а що стає stable.
+
+Фінальний roadmap-closing patch:
+
+- AI Workspace stabilization покрита `docs/REGRESSION_MATRIX.md` із runtime/auth/workspace/thread/approval/handoff сценаріями.
+- Codex capabilities лишаються read-only diagnostics; extensions не вмикаються автоматично.
+- Runtime ownership, auth ownership і no-secret rule лишаються незмінними.
+- AI Workspace лишається opt-in beta за статусом UI, але core shell/recovery/session comfort стабілізовані для `v4.0.0`.
 
 ## Майбутні Напрями
 

@@ -48,10 +48,37 @@ const CODEX_CAPABILITY_PROBES: Array<Omit<CodexCapabilityProbe, 'status' | 'deta
   { id: 'mcp', labelKey: 'ai.capabilityMcp', method: 'mcp/list' },
 ]
 
+const RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
+
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function readRecentGithubOwners() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(RECENT_GITHUB_OWNERS_KEY) || '[]')
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function writeRecentGithubOwner(owner: string) {
+  const normalized = owner.trim()
+  if (!normalized) return readRecentGithubOwners()
+
+  const nextOwners = [
+    normalized,
+    ...readRecentGithubOwners().filter((item) => item.toLowerCase() !== normalized.toLowerCase()),
+  ].slice(0, 5)
+  try {
+    window.localStorage.setItem(RECENT_GITHUB_OWNERS_KEY, JSON.stringify(nextOwners))
+  } catch {
+    // Recent owners are a convenience list only.
+  }
+  return nextOwners
 }
 
 function SettingsPage({
@@ -79,6 +106,7 @@ function SettingsPage({
   const [codexApiKey, setCodexApiKey] = useState('')
   const [codexChecking, setCodexChecking] = useState(false)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
+  const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
   const modalRef = useRef<HTMLElement | null>(null)
   const resetModalRef = useRef<HTMLElement | null>(null)
   const themeImportRef = useRef<HTMLInputElement | null>(null)
@@ -99,6 +127,10 @@ function SettingsPage({
         applyAppearanceSettings(DEFAULT_SETTINGS.appearance)
       })
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    setRecentGithubOwners(readRecentGithubOwners())
   }, [])
 
   useModalFocus(modalRef, { active: !resetPending, onEscape: onClose })
@@ -398,7 +430,17 @@ function SettingsPage({
   const handleGithubOwnerBlur = async () => {
     if (!settings) return
     await persistSettings(settings, settings)
+    setRecentGithubOwners(writeRecentGithubOwner(settings.githubOwner ?? ''))
     await clearGithubCache().catch(() => {})
+  }
+
+  const selectRecentGithubOwner = async (owner: string) => {
+    if (!settings) return
+    const savedSettings = await persistSettings({ ...settings, githubOwner: owner }, settings)
+    if (savedSettings) {
+      setRecentGithubOwners(writeRecentGithubOwner(owner))
+      await clearGithubCache().catch(() => {})
+    }
   }
 
   const handleGithubOwnerKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -550,6 +592,28 @@ function SettingsPage({
                   placeholder={t('settings.githubOwnerPlaceholder')}
                   data-autofocus="true"
                 />
+                <p className="help-text">{t('settings.githubSourceHelp')}</p>
+                {recentGithubOwners.length > 0 && (
+                  <div className="settings-owner-chips" aria-label={t('settings.recentOwners')}>
+                    {recentGithubOwners.map((owner) => (
+                      <button
+                        key={owner}
+                        type="button"
+                        className={owner.toLowerCase() === (settings.githubOwner ?? '').toLowerCase() ? 'active' : ''}
+                        onClick={() => void selectRecentGithubOwner(owner)}
+                      >
+                        {owner}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="settings-source-summary">
+                <span className="settings-reset-kicker">{t('settings.sourceSummary')}</span>
+                <strong>{settings.githubOwner || t('settings.notSet')}</strong>
+                <p>{t('settings.sourceSummaryText')}</p>
+                <small>{t('settings.githubTokenHelp')}</small>
               </div>
 
               <div className="form-group compact-control">
