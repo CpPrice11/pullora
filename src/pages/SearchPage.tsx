@@ -1057,155 +1057,177 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
       )}
 
       {owner && (
-        <>
-          {renderHero()}
-
-          <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
-            <div className="search-form">
-              <label className="visually-hidden" htmlFor="library-search">
-                {t('library.searchLabel')}
-              </label>
-              <input
-                id="library-search"
-                type="text"
-                placeholder={t('library.searchPlaceholder')}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="search-input"
-                aria-label={t('library.searchLabel')}
-              />
+        <div className="library-sam-workspace">
+          <section className="library-sam-list-pane" aria-label={t('library.title')}>
+            <div className="library-sam-pane-head">
+              <div>
+                <span className="library-sam-kicker">{owner}</span>
+                <h3>{t('library.title')}</h3>
+              </div>
+              <p className="results-count">
+                {t('library.count', {
+                  visible: visibleRepositories.length.toLocaleString(),
+                  total: state.repositories.length.toLocaleString(),
+                })}
+              </p>
             </div>
 
-            <div className="library-controls">
-              <div className="segmented-control" aria-label={t('library.filterLabel')}>
-                {libraryFilters.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className={filter === item ? 'active' : ''}
-                    aria-pressed={filter === item}
-                    title={t(libraryFilterLabelKey(item))}
-                    onClick={() => setFilter(item)}
-                  >
-                    {t(libraryFilterLabelKey(item))}
-                  </button>
-                ))}
+            <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
+              <div className="search-form">
+                <label className="visually-hidden" htmlFor="library-search">
+                  {t('library.searchLabel')}
+                </label>
+                <input
+                  id="library-search"
+                  type="text"
+                  placeholder={t('library.searchPlaceholder')}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="search-input"
+                  aria-label={t('library.searchLabel')}
+                />
               </div>
 
-              <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
-                <span className="visually-hidden">{t('library.sortLabel')}</span>
-                <select
-                  id="library-sort"
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value as LibrarySort)}
-                  aria-label={t('library.sortLabel')}
-                >
-                  <option value="updated">{t('library.recentlyUpdated')}</option>
-                  <option value="status">{t('library.status')}</option>
-                  <option value="name">{t('library.name')}</option>
-                </select>
-              </label>
-            </div>
-          </section>
+              <div className="library-controls">
+                <div className="segmented-control" aria-label={t('library.filterLabel')}>
+                  {libraryFilters.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={filter === item ? 'active' : ''}
+                      aria-pressed={filter === item}
+                      title={t(libraryFilterLabelKey(item))}
+                      onClick={() => setFilter(item)}
+                    >
+                      {t(libraryFilterLabelKey(item))}
+                    </button>
+                  ))}
+                </div>
 
-          {renderLibraryTrustPanel()}
+                <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
+                  <span className="visually-hidden">{t('library.sortLabel')}</span>
+                  <select
+                    id="library-sort"
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value as LibrarySort)}
+                    aria-label={t('library.sortLabel')}
+                  >
+                    <option value="updated">{t('library.recentlyUpdated')}</option>
+                    <option value="status">{t('library.status')}</option>
+                    <option value="name">{t('library.name')}</option>
+                  </select>
+                </label>
+              </div>
+            </section>
 
-          {renderUpdatesCenter()}
+            {renderLibraryTrustPanel()}
 
-          {state.error && !state.isStale && (
-            <StatePanel
-              kind="error"
-              title={t(libraryErrorTitleKey(libraryErrorKind))}
-              message={t(libraryErrorTextKey(libraryErrorKind))}
-              details={state.error}
-              detailsLabel={t('state.details')}
-              actionLabel={t('library.tryAgain')}
-              onAction={handleRefresh}
-            />
-          )}
-
-          {installedLoadError && (
-            <StatePanel
-              kind="error"
-              title={t('state.installedErrorTitle')}
-              message={t('library.installedStatusErrorText')}
-              details={installedLoadError}
-              detailsLabel={t('state.details')}
-              actionLabel={t('library.tryAgain')}
-              onAction={() => refreshInstalledApps()}
-            />
-          )}
-
-          {launchError && (
-            <StatePanel
-              kind="error"
-              title={t('state.launchErrorTitle')}
-              message={launchError}
-            />
-          )}
-
-          <p className="results-count">
-            {t('library.count', {
-              visible: visibleRepositories.length.toLocaleString(),
-              total: state.repositories.length.toLocaleString(),
-            })}
-          </p>
-
-          <div className="search-results">
-            {showLoadingState && (
-              <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />
-            )}
-
-            {visibleRepositories.length === 0 && !state.loading && (
+            {state.error && !state.isStale && (
               <StatePanel
-                kind="empty"
-                title={state.repositories.length === 0
-                  ? t('library.emptyTitle')
-                  : t('library.noMatchesTitle')}
-                message={state.repositories.length === 0
-                  ? t('library.emptyText')
-                  : t('library.noMatchesText')}
-                actionLabel={state.repositories.length === 0
-                  ? t('library.refresh')
-                  : t('library.resetFilters')}
-                onAction={state.repositories.length === 0
-                  ? handleRefresh
-                  : handleResetLibraryFilters}
+                kind="error"
+                title={t(libraryErrorTitleKey(libraryErrorKind))}
+                message={t(libraryErrorTextKey(libraryErrorKind))}
+                details={state.error}
+                detailsLabel={t('state.details')}
+                actionLabel={t('library.tryAgain')}
+                onAction={handleRefresh}
               />
             )}
 
-            {visibleRepositories.map((repo) => {
-              const key = projectArtKey(repo.owner.login, repo.name)
+            {installedLoadError && (
+              <StatePanel
+                kind="error"
+                title={t('state.installedErrorTitle')}
+                message={t('library.installedStatusErrorText')}
+                details={installedLoadError}
+                detailsLabel={t('state.details')}
+                actionLabel={t('library.tryAgain')}
+                onAction={() => refreshInstalledApps()}
+              />
+            )}
 
-              return (
-                <RepoCard
-                  key={repo.id}
-                  repo={repo}
-                  installedApp={getInstalledApp(repo)}
-                  latestVersion={getLatestVersion(repo)}
-                  art={projectArt[key]}
-                  isFavorite={favoriteKeys.has(key)}
-                  isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                  onPreview={() => setFeaturedRepo(repo)}
-                  onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                  onPickArt={() => handlePickArt('cover', repo)}
-                  onClearArt={() => handleClearArt(repo)}
-                  onDetails={() => setDetailsRepo(repo)}
-                  onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
-                  onUninstall={() => handleRequestUninstall(repo)}
-                  onSelect={() => setSelectedRepo(repo)}
-                  onLaunch={() => handleLaunch(repo)}
+            {launchError && (
+              <StatePanel
+                kind="error"
+                title={t('state.launchErrorTitle')}
+                message={launchError}
+              />
+            )}
+
+            <div className="search-results">
+              {showLoadingState && (
+                <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />
+              )}
+
+              {visibleRepositories.length === 0 && !state.loading && (
+                <StatePanel
+                  kind="empty"
+                  title={state.repositories.length === 0
+                    ? t('library.emptyTitle')
+                    : t('library.noMatchesTitle')}
+                  message={state.repositories.length === 0
+                    ? t('library.emptyText')
+                    : t('library.noMatchesText')}
+                  actionLabel={state.repositories.length === 0
+                    ? t('library.refresh')
+                    : t('library.resetFilters')}
+                  onAction={state.repositories.length === 0
+                    ? handleRefresh
+                    : handleResetLibraryFilters}
                 />
-              )
-            })}
-          </div>
+              )}
 
-          {state.hasMore && (
-            <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
-              {state.loading ? t('library.loadingMore') : t('library.loadMore')}
-            </button>
-          )}
-        </>
+              {visibleRepositories.map((repo) => {
+                const key = projectArtKey(repo.owner.login, repo.name)
+
+                return (
+                  <RepoCard
+                    key={repo.id}
+                    repo={repo}
+                    installedApp={getInstalledApp(repo)}
+                    latestVersion={getLatestVersion(repo)}
+                    art={projectArt[key]}
+                    isFavorite={favoriteKeys.has(key)}
+                    isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+                    onPreview={() => setFeaturedRepo(repo)}
+                    onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+                    onPickArt={() => handlePickArt('cover', repo)}
+                    onClearArt={() => handleClearArt(repo)}
+                    onDetails={() => setDetailsRepo(repo)}
+                    onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
+                    onUninstall={() => handleRequestUninstall(repo)}
+                    onSelect={() => setSelectedRepo(repo)}
+                    onLaunch={() => handleLaunch(repo)}
+                  />
+                )
+              })}
+            </div>
+
+            {state.hasMore && (
+              <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
+                {state.loading ? t('library.loadingMore') : t('library.loadMore')}
+              </button>
+            )}
+          </section>
+
+          <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
+            <div className="library-sam-details-toolbar">
+              <span>{t('details.open')}</span>
+              {owner && (
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={handleRefresh}
+                  disabled={state.loading || checkingUpdates}
+                >
+                  {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
+                </button>
+              )}
+            </div>
+            {renderHero()}
+            {renderUpdatesCenter()}
+          </aside>
+        </div>
       )}
 
       {selectedRepo && (

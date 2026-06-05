@@ -156,3 +156,38 @@
   color: var(--color-text-secondary);
   margin: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
 }
+
+.sam-shell .modal-overlay,
+.modal-overlay {
+  background: rgba(5, 9, 13, 0.76);
+  backdrop-filter: none;
+}
+
+.sam-shell .modal-content,
+.modal-content {
+  background: #121d27;
+  border: 1px solid #30495f;
+  border-radius: 2px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  color: #e7eef6;
+}
+
+.sam-shell .modal-header,
+.modal-header {
+  border-bottom-color: #263848;
+}
+
+.sam-shell .modal-description,
+.sam-shell .modal-footer-text,
+.modal-description,
+.modal-footer-text {
+  color: #9fb4c6;
+}
+
+.sam-shell .error-message,
+.error-message {
+  background: rgba(255, 125, 134, 0.09);
+  border-left-color: #ff7d86;
+  border-radius: 2px;
+  color: #ff9da5;
+}
