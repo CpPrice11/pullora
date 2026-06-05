@@ -2048,3 +2048,206 @@
     flex: 1 1 auto;
   }
 }
+
+.sam-shell .repo-card {
+  align-items: center;
+  animation: none;
+  background: #111b25;
+  border: 0;
+  border-bottom: 1px solid #263848;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  min-height: 66px;
+  padding: 7px 10px 7px 12px;
+}
+
+.sam-shell .repo-card::before {
+  background: #425b70;
+  border-radius: 0;
+  bottom: 0;
+  left: 0;
+  top: 0;
+  width: 3px;
+}
+
+.sam-shell .repo-card--installed::before {
+  background: #66c06f;
+}
+
+.sam-shell .repo-card--update::before {
+  background: #4ba3df;
+  box-shadow: none;
+}
+
+.sam-shell .repo-card:hover,
+.sam-shell .repo-card.selected {
+  background: #1d3447;
+  border-color: #355771;
+  box-shadow: none;
+  transform: none;
+}
+
+.sam-shell .repo-card:focus-visible,
+.sam-shell .repo-card:focus-within {
+  outline: 2px solid rgba(75, 163, 223, 0.6);
+  outline-offset: -2px;
+}
+
+.sam-shell .repo-card-media,
+.sam-shell .owner-avatar {
+  height: 36px;
+  width: 36px;
+}
+
+.sam-shell .owner-avatar {
+  background: #0d161f;
+  border-color: #30495f;
+  border-radius: 2px;
+}
+
+.sam-shell .repo-card.selected .owner-avatar,
+.sam-shell .repo-card:hover .owner-avatar {
+  border-color: #4ba3df;
+  box-shadow: none;
+}
+
+.sam-shell .repo-title-line {
+  gap: 7px;
+}
+
+.sam-shell .repo-name {
+  color: #eef6ff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sam-shell .repo-owner {
+  color: #7f98ac;
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.sam-shell .repo-description {
+  color: #9db1c1;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.sam-shell .repo-meta {
+  color: #7f98ac;
+  font-size: 11px;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+
+.sam-shell .repo-lang {
+  background: #203346;
+  border-radius: 2px;
+  color: #9ed5f7;
+  padding: 1px 5px;
+}
+
+.sam-shell .repo-card-actions {
+  gap: 4px;
+}
+
+.sam-shell .fav-btn,
+.sam-shell .install-btn,
+.sam-shell .repo-actions-menu .project-actions-trigger {
+  border-radius: 2px;
+  min-height: 28px;
+}
+
+.sam-shell .fav-btn {
+  background: #172635;
+  border-color: #2a4054;
+  color: #9db1c1;
+  width: 28px;
+}
+
+.sam-shell .fav-btn:hover,
+.sam-shell .fav-btn.active {
+  background: #263f55;
+  box-shadow: none;
+  color: #ffffff;
+  transform: none;
+}
+
+.sam-shell .install-btn {
+  background: #4ba3df;
+  border-color: #83c8f2;
+  color: #07131c;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 82px;
+  padding: 0 10px;
+}
+
+.sam-shell .install-btn:hover {
+  background: #75bee9;
+  transform: none;
+}
+
+.sam-shell .release-modal .modal-header,
+.sam-shell .release-modal .release-body,
+.sam-shell .release-selection-summary,
+.sam-shell .asset-summary,
+.sam-shell .release-version-card,
+.sam-shell .release-asset-card {
+  background: #142231;
+  border-color: #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .release-body {
+  scrollbar-color: #4ba3df #0f1821;
+}
+
+.sam-shell .release-version-card.active,
+.sam-shell .release-asset-card.active {
+  background: #294c67;
+  border-color: #4ba3df;
+  box-shadow: none;
+}
+
+.sam-shell .release-summary-main strong,
+.sam-shell .release-summary-kicker,
+.sam-shell .release-selection-summary p,
+.sam-shell .release-summary-assets {
+  color: #e7eef6;
+}
+
+.sam-shell .release-action-primary {
+  background: #4ba3df;
+  border-color: #83c8f2;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #07131c;
+}
+
+.sam-shell .release-action-primary:hover:not(:disabled) {
+  background: #75bee9;
+  color: #07131c;
+  transform: none;
+}
+
+.sam-shell .close-btn {
+  background: #1a2b3a;
+  border-color: #30495f;
+  border-radius: 2px;
+}
+
+@media (max-width: 760px) {
+  .sam-shell .repo-card {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .sam-shell .repo-card-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}

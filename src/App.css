@@ -48,6 +48,47 @@
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
 }
 
+/* MY SAM direction: dense dark workstation, flat controls, blue selection. */
+:root,
+:root[data-theme='dark'],
+:root[data-theme='light'] {
+  color-scheme: dark;
+  --color-primary: #4ba3df;
+  --color-primary-dark: #6db9ec;
+  --color-primary-light: rgba(75, 163, 223, 0.18);
+  --color-bg: #0d141b;
+  --color-bg-elevated: #172331;
+  --color-bg-secondary: #111b25;
+  --color-mica: #152231;
+  --color-sidebar: #101821;
+  --color-control: #1b2a39;
+  --color-control-hover: #22384c;
+  --color-text: #e7eef6;
+  --color-text-secondary: #a3b4c4;
+  --color-text-tertiary: #73889a;
+  --color-border: #2a4054;
+  --color-border-subtle: #243749;
+  --color-success: #66c06f;
+  --color-error: #ff7d86;
+  --color-warning: #e7bd45;
+  --border-radius: 2px;
+  --border-radius-lg: 4px;
+  --density-scale: 0.84;
+  --font-family: 'Segoe UI', Arial, sans-serif;
+  --shadow-control: none;
+  --shadow-control-hover: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+:root[data-theme='light'] button,
+:root[data-theme='light'] input,
+:root[data-theme='light'] textarea,
+:root[data-theme='light'] select {
+  color-scheme: dark;
+}
+
 :root.theme-transition *,
 :root.theme-transition *::before,
 :root.theme-transition *::after {
@@ -146,6 +187,23 @@ button {
   min-width: 0;
 }
 
+.sam-shell button,
+.modal-content button {
+  background: #203346;
+  border-color: #31506a;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #eaf3fb;
+  font-weight: 650;
+}
+
+.sam-shell button:hover,
+.modal-content button:hover {
+  background: #2a4860;
+  border-color: #4ba3df;
+  box-shadow: none;
+}
+
 button:hover {
   background-color: var(--color-primary-dark);
   box-shadow: var(--shadow-md);
@@ -182,6 +240,18 @@ select {
   min-height: 36px;
   transition: var(--transition);
   min-width: 0;
+}
+
+.sam-shell input,
+.sam-shell textarea,
+.sam-shell select,
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  background: #0e1822;
+  border-color: #2b4054;
+  border-radius: 2px;
+  color: #e7eef6;
 }
 
 .visually-hidden {
@@ -243,12 +313,12 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: #0f1821;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+  background: #2b4054;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -319,4 +389,34 @@ p {
   a:hover {
     transform: none !important;
   }
+}
+
+:root,
+:root[data-theme='dark'],
+:root[data-theme='light'] {
+  color-scheme: dark;
+  --color-primary: #4ba3df;
+  --color-primary-dark: #6db9ec;
+  --color-primary-light: rgba(75, 163, 223, 0.18);
+  --color-bg: #0d141b;
+  --color-bg-elevated: #172331;
+  --color-bg-secondary: #111b25;
+  --color-mica: #152231;
+  --color-sidebar: #101821;
+  --color-control: #1b2a39;
+  --color-control-hover: #22384c;
+  --color-text: #e7eef6;
+  --color-text-secondary: #a3b4c4;
+  --color-text-tertiary: #73889a;
+  --color-border: #2a4054;
+  --color-border-subtle: #243749;
+  --color-success: #66c06f;
+  --color-error: #ff7d86;
+  --color-warning: #e7bd45;
+  --border-radius: 2px;
+  --border-radius-lg: 4px;
+  --shadow-control: none;
+  --shadow-control-hover: none;
+  --shadow-sm: none;
+  --shadow-md: none;
 }

@@ -71,7 +71,21 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
   return (
     <aside className="sidebar">
+      <div className="sam-sidebar-header">
+        <div>
+          <span className="sam-sidebar-kicker">Workspace</span>
+          <strong>AIR LAUNCHER</strong>
+        </div>
+        <span className="sam-sidebar-sync" aria-label="Online" title="Online" />
+      </div>
+
+      <div className="sam-sidebar-control">
+        <span className="sam-sidebar-label">Source</span>
+        <span className="sam-sidebar-value">GitHub Releases</span>
+      </div>
+
       <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
+        <span className="sam-sidebar-label">Navigation</span>
         {navItems.map((item) => {
           const label = t(item.labelKey)
 

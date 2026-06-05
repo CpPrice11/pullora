@@ -378,3 +378,64 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.sam-shell .download-panel {
+  background: #142231;
+  border-color: #263848;
+  border-radius: 2px;
+  box-shadow: none;
+  margin-top: 10px;
+  padding: 12px;
+}
+
+.sam-shell .download-panel::before {
+  display: none;
+}
+
+.sam-shell .download-panel-title {
+  color: #8fa6b9;
+  font-size: 12px;
+}
+
+.sam-shell .download-item {
+  background: #111b25;
+  border-color: #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .download-stage-mark {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+}
+
+.sam-shell .download-stage-mark span,
+.sam-shell .download-name {
+  color: #e7eef6;
+}
+
+.sam-shell .progress-bar-wrap {
+  background: #0d161f;
+  border-color: #263848;
+  border-radius: 0;
+  height: 5px;
+}
+
+.sam-shell .progress-bar-fill {
+  background: #4ba3df;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sam-shell .download-step,
+.sam-shell .download-recovery {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+}
+
+.sam-shell .download-step.current {
+  background: #294c67;
+  border-color: #4ba3df;
+}

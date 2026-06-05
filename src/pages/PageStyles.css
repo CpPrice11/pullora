@@ -3525,3 +3525,392 @@
     grid-template-columns: 1fr;
   }
 }
+
+.sam-shell .page {
+  animation: none;
+  gap: 10px;
+  max-width: none;
+  min-height: 100%;
+  padding: 14px;
+}
+
+.sam-shell .page-header {
+  background: #121d27;
+  border: 1px solid #263848;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.sam-shell .page-header h2,
+.sam-shell .library-page .page-header h2 {
+  color: #edf6ff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 0;
+  text-shadow: none;
+}
+
+.sam-shell .page-actions,
+.sam-shell .library-page .page-actions {
+  gap: 6px;
+}
+
+.sam-shell .refresh-btn,
+.sam-shell .secondary-btn,
+.sam-shell .small-btn,
+.sam-shell .project-actions-trigger {
+  background: #1a2b3a;
+  border-color: #30495f;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #dcecf8;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.sam-shell .refresh-btn:hover,
+.sam-shell .secondary-btn:hover,
+.sam-shell .small-btn:hover,
+.sam-shell .project-actions-trigger:hover {
+  background: #223a4f;
+  border-color: #4ba3df;
+  transform: none;
+}
+
+.library-sam-workspace {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(430px, 0.94fr) minmax(360px, 1.06fr);
+  min-height: 0;
+}
+
+.library-sam-list-pane,
+.library-sam-details-pane {
+  background: #121d27;
+  border: 1px solid #263848;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.library-sam-list-pane {
+  max-height: calc(100vh - 128px);
+  overflow: hidden;
+}
+
+.library-sam-details-pane {
+  max-height: calc(100vh - 128px);
+  overflow: auto;
+  padding: 10px;
+}
+
+.library-sam-pane-head,
+.library-sam-details-toolbar {
+  align-items: center;
+  border-bottom: 1px solid #263848;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.library-sam-pane-head h3 {
+  color: #edf6ff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.library-sam-kicker,
+.library-sam-details-toolbar span {
+  color: #7e96aa;
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sam-shell .results-count {
+  color: #8fa6b9;
+  font-size: 12px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.sam-shell .library-toolstrip {
+  border-bottom: 1px solid #263848;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+  padding: 9px 10px;
+}
+
+.sam-shell .search-form {
+  display: flex;
+}
+
+.sam-shell .search-input,
+.sam-shell .library-toolstrip .search-input {
+  background: #0d161f;
+  border-color: #2a4054;
+  border-radius: 2px;
+  box-shadow: none;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.sam-shell .library-controls,
+.sam-shell .library-page .library-controls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 150px;
+  justify-content: stretch;
+}
+
+.sam-shell .segmented-control,
+.sam-shell .library-page .segmented-control {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 0;
+  width: 100%;
+}
+
+.sam-shell .segmented-control button {
+  background: #172635;
+  border: 1px solid #2a4054;
+  border-radius: 2px;
+  color: #a7b8c7;
+  font-size: 11px;
+  min-height: 28px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.sam-shell .segmented-control button:hover,
+.sam-shell .segmented-control button.active {
+  background: #294c67;
+  border-color: #4b7fa1;
+  box-shadow: none;
+  color: #ffffff;
+  transform: none;
+}
+
+.sam-shell .sort-control select,
+.sam-shell .library-page .sort-control select {
+  min-height: 28px;
+  min-width: 0;
+  width: 100%;
+}
+
+.sam-shell .library-trust-panel {
+  animation: none;
+  background: #142231;
+  border: 0;
+  border-bottom: 1px solid #263848;
+  border-radius: 0;
+  box-shadow: none;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 8px 10px;
+}
+
+.sam-shell .library-trust-copy strong,
+.sam-shell .library-trust-meta strong {
+  color: #dfeefa;
+}
+
+.sam-shell .library-trust-copy span,
+.sam-shell .library-trust-expanded p,
+.sam-shell .library-trust-toggle,
+.sam-shell .library-trust-meta span,
+.sam-shell .library-trust-details summary {
+  color: #91a7ba;
+}
+
+.sam-shell .library-trust-meta span {
+  background: #101b25;
+  border-color: #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .search-results {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.sam-shell .library-hero {
+  align-items: stretch;
+  animation: none;
+  background: #162433;
+  border: 1px solid #2b4054;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 92px minmax(0, 1fr);
+  min-height: 0;
+  padding: 12px;
+  z-index: 1;
+}
+
+.sam-shell .library-hero::before {
+  display: none;
+}
+
+.sam-shell .library-hero-cover {
+  background: #0e1822;
+  border-color: #2b4054;
+  border-radius: 2px;
+  box-shadow: none;
+  height: 92px;
+  width: 92px;
+}
+
+.sam-shell .library-hero-main {
+  align-self: start;
+}
+
+.sam-shell .library-hero h2 {
+  color: #edf6ff;
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.sam-shell .library-hero-repo,
+.sam-shell .library-hero-description,
+.sam-shell .library-hero-meta {
+  color: #9fb4c6;
+}
+
+.sam-shell .library-hero-description {
+  font-size: 13px;
+  max-width: none;
+}
+
+.sam-shell .library-hero-meta span {
+  border-left: 2px solid #4ba3df;
+}
+
+.sam-shell .library-hero-actions {
+  flex-direction: row;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  max-width: none;
+}
+
+.sam-shell .hero-primary-btn {
+  background: #4ba3df;
+  border-color: #83c8f2;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #07131c !important;
+  font-size: 13px;
+  font-weight: 800;
+  min-height: 32px;
+  padding: 0 16px;
+}
+
+.sam-shell .hero-primary-btn:hover {
+  background: #75bee9;
+  color: #07131c !important;
+  transform: none;
+}
+
+.sam-shell .repo-status {
+  border-radius: 2px;
+  font-size: 10px;
+  padding: 3px 6px;
+}
+
+.sam-shell .updates-center,
+.sam-shell .empty-state,
+.sam-shell .settings-section,
+.sam-shell .danger-zone,
+.sam-shell .about-panel,
+.sam-shell .about-hero,
+.sam-shell .about-release-link {
+  background: #142231;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .updates-center {
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.sam-shell .settings-form {
+  background: #121d27;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .settings-nav {
+  background: #101821;
+  border-right-color: #263848;
+}
+
+.sam-shell .settings-nav button {
+  border-radius: 2px;
+}
+
+.sam-shell .project-actions-popover {
+  background: #111b25;
+  border-color: #30495f;
+  border-radius: 2px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.38);
+}
+
+.sam-shell .project-actions-popover button {
+  border-radius: 0;
+}
+
+@media (max-width: 1180px) {
+  .library-sam-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .library-sam-list-pane,
+  .library-sam-details-pane {
+    max-height: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .sam-shell .page {
+    padding: 10px;
+  }
+
+  .sam-shell .library-controls,
+  .sam-shell .library-page .library-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .segmented-control,
+  .sam-shell .library-page .segmented-control {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sam-shell .library-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .library-hero-actions {
+    justify-content: stretch;
+  }
+}

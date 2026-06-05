@@ -265,3 +265,250 @@
     padding: 32px 18px 24px;
   }
 }
+
+.sam-shell.layout {
+  background: #0d141b;
+  color: #e7eef6;
+}
+
+.sam-background {
+  background-position: center;
+  background-size: cover;
+  inset: 44px 0 0 360px;
+  opacity: 0;
+  position: absolute;
+  transition: opacity var(--motion-slow);
+  z-index: 0;
+}
+
+.sam-background.is-visible {
+  opacity: 0.16;
+}
+
+.sam-backdrop {
+  background:
+    linear-gradient(90deg, rgba(13, 20, 27, 0.98) 0%, rgba(13, 20, 27, 0.92) 42%, rgba(13, 20, 27, 0.82) 100%),
+    radial-gradient(circle at 76% 14%, rgba(75, 163, 223, 0.1), transparent 34%);
+  inset: 44px 0 0 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.sam-titlebar {
+  align-items: center;
+  background: #0a1118;
+  border-bottom: 1px solid #263848;
+  display: grid;
+  flex: 0 0 44px;
+  grid-template-columns: 360px minmax(0, 1fr) auto;
+  min-height: 44px;
+  padding: 0 14px 0 0;
+  position: relative;
+  z-index: 3;
+}
+
+.sam-window-brand {
+  align-items: center;
+  color: #dceaf6;
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 9px;
+  letter-spacing: 0.08em;
+  padding-left: 16px;
+}
+
+.sam-window-mark {
+  align-items: center;
+  background: #1d8ccf;
+  border: 1px solid #55b8eb;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 13px;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.sam-window-title {
+  color: #eef6ff;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-window-status {
+  color: #7d94a8;
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.sam-shell .layout-container {
+  grid-template-columns: 360px minmax(0, 1fr);
+  z-index: 2;
+}
+
+.sam-shell .sidebar {
+  background: #101821;
+  border-right: 1px solid #263848;
+  gap: 12px;
+  padding: 14px;
+}
+
+.sam-sidebar-header {
+  align-items: center;
+  border-bottom: 1px solid #263848;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0 13px;
+}
+
+.sam-sidebar-header strong {
+  color: #eef6ff;
+  display: block;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+
+.sam-sidebar-kicker,
+.sam-sidebar-label {
+  color: #6f8799;
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sam-sidebar-sync {
+  background: #64c878;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  height: 10px;
+  width: 10px;
+}
+
+.sam-sidebar-control {
+  background: #141f2a;
+  border: 1px solid #263848;
+  padding: 9px 10px;
+}
+
+.sam-sidebar-value {
+  color: #d6e4ef;
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.sam-shell .sidebar-nav {
+  gap: 4px;
+}
+
+.sam-shell .nav-item,
+.sam-shell .nav-item:hover,
+.sam-shell .nav-item.active {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+  color: #aab9c6;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  min-height: 34px;
+  padding: 0 8px;
+  transform: none;
+  width: 100%;
+}
+
+.sam-shell .nav-item:hover {
+  background: #172635;
+  border-color: #263848;
+  color: #eef6ff;
+}
+
+.sam-shell .nav-item.active {
+  background: #294c67;
+  border-color: #4b7fa1;
+  color: #ffffff;
+}
+
+.sam-shell .nav-item.active::before {
+  background: #79c8f2;
+  border-radius: 0;
+  box-shadow: none;
+  height: auto;
+  inset: 0 auto 0 0;
+  width: 3px;
+}
+
+.sam-shell .nav-icon {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  height: 28px;
+  width: 24px;
+}
+
+.sam-shell .nav-icon-svg {
+  height: 17px;
+  width: 17px;
+}
+
+.sam-shell .nav-text {
+  display: block;
+  opacity: 1;
+  transform: none;
+}
+
+.sam-shell .nav-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sam-shell .layout-content {
+  align-items: stretch;
+  background: #0d141b;
+  padding: 0;
+}
+
+@media (max-width: 1100px) {
+  .sam-titlebar {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .sam-window-status {
+    display: none;
+  }
+
+  .sam-shell .layout-container {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .sam-titlebar {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+  }
+
+  .sam-window-title {
+    display: none;
+  }
+
+  .sam-shell .layout-container {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .sidebar {
+    border-bottom: 1px solid #263848;
+    border-right: 0;
+    flex: 0 0 auto;
+    max-height: 220px;
+  }
+}
