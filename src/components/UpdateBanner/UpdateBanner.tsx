@@ -30,9 +30,14 @@ function UpdateBanner({ updates, onDismiss, onInstall }: UpdateBannerProps) {
       <div className="update-list">
         {updates.map((update) => (
           <div key={`${update.owner}/${update.repo}`} className="update-row">
-            <span className="update-name">{update.appName}</span>
+            <span className="update-name-block">
+              <span className="update-name">{update.appName}</span>
+              <span className="update-source">{update.owner}/{update.repo}</span>
+            </span>
             <span className="update-versions">
-              {update.currentVersion} {'->'} <strong>{update.latestVersion}</strong>
+              <span>{update.currentVersion}</span>
+              <span aria-hidden="true">{'->'}</span>
+              <strong>{update.latestVersion}</strong>
             </span>
             <div className="update-actions">
               <button type="button" className="update-install-btn" onClick={() => onInstall(update)}>

@@ -159,7 +159,7 @@
 
 .sam-shell .modal-overlay,
 .modal-overlay {
-  background: rgba(5, 9, 13, 0.76);
+  background: rgba(5, 9, 13, 0.84);
   backdrop-filter: none;
 }
 
@@ -195,11 +195,13 @@
 .sam-shell .modal-content,
 .modal-content {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  scrollbar-color: #4ba3df #0d161f;
 }
 
 .sam-shell .modal-header,
 .modal-header {
   background: #101a24;
+  box-shadow: inset 3px 0 0 #4ba3df;
   padding: 16px 18px 12px;
 }
 
@@ -223,6 +225,13 @@
   padding: 12px 18px;
 }
 
+.sam-shell .modal-actions button,
+.modal-actions button {
+  border-radius: 2px;
+  box-shadow: none;
+  min-height: 34px;
+}
+
 .sam-shell .path-input-group,
 .path-input-group {
   background: #111b25;
@@ -234,4 +243,17 @@
 .sam-shell .path-input-group input,
 .path-input-group input {
   background: #0d161f;
+}
+
+.sam-shell .error-message,
+.error-message {
+  box-shadow: inset 3px 0 0 #ff7d86;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.sam-shell .form-group label,
+.form-group label {
+  color: #d9e8f4;
+  font-size: 13px;
 }

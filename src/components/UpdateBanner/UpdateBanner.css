@@ -67,6 +67,21 @@
   overflow-wrap: anywhere;
 }
 
+.update-name-block {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.update-source {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .update-versions {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -246,13 +261,16 @@
 }
 
 .sam-shell .update-banner {
+  align-items: stretch;
   animation: none;
   background: #121d27;
   border: 1px solid #263848;
   border-left: 0;
   border-radius: 2px;
   box-shadow: inset 3px 0 0 #e7bd45;
-  gap: 8px;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 42px minmax(0, 1fr);
   padding: 10px 12px;
 }
 
@@ -265,7 +283,9 @@
   border-color: #2a4054;
   border-radius: 2px;
   display: flex;
+  grid-row: 1 / span 2;
   height: 38px;
+  margin-right: 10px;
   width: 38px;
 }
 
@@ -275,18 +295,73 @@
 }
 
 .sam-shell .update-list {
+  border: 1px solid #263848;
   gap: 6px;
+  grid-column: 2;
+  margin-top: 9px;
+  overflow: hidden;
 }
 
 .sam-shell .update-row {
+  align-items: center;
   background: #111b25;
-  border-color: #263848;
-  border-radius: 2px;
-  padding: 7px 9px;
+  border: 0;
+  border-bottom: 1px solid #263848;
+  border-radius: 0;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(160px, 1fr) auto auto;
+  min-height: 42px;
+  padding: 7px 8px;
+}
+
+.sam-shell .update-row:last-child {
+  border-bottom: 0;
+}
+
+.sam-shell .update-name-block {
+  min-width: 0;
+}
+
+.sam-shell .update-name {
+  color: #edf6ff;
+  font-size: 13px;
+  font-weight: 850;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .update-source {
+  color: #7e96aa;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .sam-shell .update-versions {
+  align-items: center;
   color: #8fa6b9;
+  display: flex;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.sam-shell .update-versions span,
+.sam-shell .update-versions strong {
+  background: #0d161f;
+  border: 1px solid #263848;
+  color: #9fb4c6;
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  font-size: 11px;
+  padding: 4px 6px;
+}
+
+.sam-shell .update-versions strong {
+  border-color: rgba(231, 189, 69, 0.5);
+  color: #e7bd45;
 }
 
 .sam-shell .update-install-btn {
@@ -308,4 +383,32 @@
   border-color: #2a4054;
   border-radius: 2px;
   color: #9fb4c6;
+}
+
+@media (max-width: 760px) {
+  .sam-shell .update-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .update-banner-mark,
+  .sam-shell .update-list {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .sam-shell .update-banner-mark {
+    margin: 0 0 8px;
+  }
+
+  .sam-shell .update-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .update-actions {
+    justify-content: stretch;
+  }
+
+  .sam-shell .update-actions button {
+    flex: 1 1 auto;
+  }
 }

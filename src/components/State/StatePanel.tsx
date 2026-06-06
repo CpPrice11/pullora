@@ -54,7 +54,7 @@ function StatePanel({
         )}
       </div>
       {actionLabel && onAction && (
-        <button type="button" className="secondary-btn" onClick={onAction}>
+        <button type="button" className="secondary-btn state-panel-action" onClick={onAction}>
           {actionLabel}
         </button>
       )}

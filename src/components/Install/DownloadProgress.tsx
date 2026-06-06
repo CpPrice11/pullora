@@ -87,7 +87,10 @@ function DownloadProgressPanel({
 
   return (
     <div className="download-panel">
-      <h3 className="download-panel-title">{t('download.title')}</h3>
+      <div className="download-panel-head">
+        <h3 className="download-panel-title">{t('download.title')}</h3>
+        <span className="download-panel-count">{downloads.length}</span>
+      </div>
       <div className="download-list">
         {downloads.map((download) => {
           const stage = currentStage(download)
