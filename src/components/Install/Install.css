@@ -15,6 +15,29 @@
   letter-spacing: 0.05em;
 }
 
+.download-panel-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.download-panel-head .download-panel-title {
+  margin: 0;
+}
+
+.download-panel-count {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 850;
+  min-width: 28px;
+  padding: 3px 8px;
+  text-align: center;
+}
+
 .download-list {
   display: flex;
   flex-direction: column;
@@ -388,13 +411,34 @@
   padding: 12px;
 }
 
+.sam-shell .download-panel-head {
+  background: #0f1922;
+  border: 1px solid #263848;
+  margin: -2px -2px 10px;
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
 .sam-shell .download-panel::before {
   display: none;
 }
 
 .sam-shell .download-panel-title {
-  color: #8fa6b9;
-  font-size: 12px;
+  color: #4ba3df;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.sam-shell .download-panel-count {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  color: #d9e8f4;
+  font-size: 11px;
+  min-width: 26px;
+  padding: 4px 7px;
 }
 
 .sam-shell .download-item {
@@ -402,6 +446,17 @@
   border-color: #263848;
   border-radius: 2px;
   box-shadow: none;
+  position: relative;
+}
+
+.sam-shell .download-item::before {
+  background: #52687b;
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 3px;
 }
 
 .sam-shell .download-stage-mark {
@@ -413,6 +468,40 @@
 .sam-shell .download-stage-mark span,
 .sam-shell .download-name {
   color: #e7eef6;
+}
+
+.sam-shell .download-header {
+  background: #101a24;
+  border: 1px solid #263848;
+  min-height: 42px;
+  padding: 6px 8px;
+}
+
+.sam-shell .download-status {
+  color: #4ba3df;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sam-shell .download-name {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sam-shell .cancel-btn {
+  background: #172635;
+  border: 1px solid #2a4054;
+  border-radius: 2px;
+  color: #9fb4c6;
+  min-height: 28px;
+}
+
+.sam-shell .cancel-btn:hover {
+  background: rgba(255, 125, 134, 0.12);
+  border-color: rgba(255, 125, 134, 0.35);
+  color: #ff9da5;
 }
 
 .sam-shell .progress-bar-wrap {
@@ -438,6 +527,7 @@
 .sam-shell .download-step.current {
   background: #294c67;
   border-color: #4ba3df;
+  color: #ffffff;
 }
 
 .sam-shell .download-panel {
@@ -481,12 +571,41 @@
   box-shadow: inset 3px 0 0 #66c06f;
 }
 
+.sam-shell .download-item--completed::before {
+  background: #66c06f;
+}
+
 .sam-shell .download-item--failed {
   box-shadow: inset 3px 0 0 #ff7d86;
 }
 
+.sam-shell .download-item--failed::before {
+  background: #ff7d86;
+}
+
 .sam-shell .download-recovery {
   box-shadow: inset 3px 0 0 #ff7d86;
+  padding: 10px 10px 10px 13px;
+}
+
+.sam-shell .download-error-details pre {
+  background: #0d161f;
+  border-color: #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .download-action-btn {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  color: #d9e8f4;
+  min-height: 32px;
+}
+
+.sam-shell .download-action-btn.primary {
+  background: #4ba3df;
+  border-color: #83c8f2;
+  color: #07131c;
 }
 
 .sam-shell .download-actions button {
