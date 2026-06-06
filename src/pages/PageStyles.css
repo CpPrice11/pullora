@@ -4298,6 +4298,135 @@
   border-right: 0;
 }
 
+.sam-shell .library-ops-panel {
+  background: #121d27;
+  border: 1px solid #263848;
+  box-shadow: inset 3px 0 0 #66c06f;
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.sam-shell .library-ops-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.sam-shell .library-ops-kicker {
+  color: #4ba3df;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-ops-header h3 {
+  color: #edf6ff;
+  font-size: 16px;
+  line-height: 1.15;
+  margin: 2px 0 0;
+}
+
+.sam-shell .library-ops-state {
+  border: 1px solid #30495f;
+  border-radius: 2px;
+  color: #a9bdcc;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 5px 7px;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-ops-state.installed {
+  border-color: rgba(102, 192, 111, 0.5);
+  color: #8fe09a;
+}
+
+.sam-shell .library-ops-state.update {
+  border-color: rgba(75, 163, 223, 0.6);
+  color: #9ed5f7;
+}
+
+.sam-shell .library-ops-grid {
+  border: 1px solid #263848;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sam-shell .library-ops-grid > div {
+  background: #101a24;
+  border-bottom: 1px solid #263848;
+  border-right: 1px solid #263848;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 9px;
+}
+
+.sam-shell .library-ops-grid > div:nth-child(3n) {
+  border-right: 0;
+}
+
+.sam-shell .library-ops-grid > div:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.sam-shell .library-ops-grid span,
+.sam-shell .library-ops-rail span {
+  color: #7e96aa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-ops-grid strong {
+  color: #d9e8f4;
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .library-ops-rail {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sam-shell .library-ops-rail span {
+  background: #101a24;
+  border: 1px solid #263848;
+  color: #7e96aa;
+  min-width: 0;
+  overflow: hidden;
+  padding: 7px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .library-ops-rail span.ready {
+  border-color: rgba(102, 192, 111, 0.35);
+  color: #8fe09a;
+}
+
+.sam-shell .library-ops-rail span.warning {
+  border-color: rgba(231, 189, 69, 0.42);
+  color: #e7bd45;
+}
+
+.sam-shell .library-ops-rail span.muted {
+  color: #52687b;
+}
+
 .sam-shell .repo-status.available,
 .sam-shell .repo-status.installed,
 .sam-shell .repo-status.update {
@@ -4545,5 +4674,24 @@
   .sam-shell .about-version-filters,
   .sam-shell .about-version-filters.segmented-control {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .sam-shell .library-ops-grid,
+  .sam-shell .library-ops-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .library-ops-grid > div {
+    border-right: 0;
+  }
+
+  .sam-shell .library-ops-grid > div:nth-last-child(-n + 3) {
+    border-bottom: 1px solid #263848;
+  }
+
+  .sam-shell .library-ops-grid > div:last-child {
+    border-bottom: 0;
   }
 }

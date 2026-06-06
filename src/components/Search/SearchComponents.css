@@ -2256,6 +2256,23 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
 }
 
+.sam-shell .search-results::before {
+  background: #0f1922;
+  border-bottom: 1px solid #263848;
+  color: #7e96aa;
+  content: 'APP  /  SOURCE  /  STATUS  /  ACTION';
+  display: block;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 7px 10px 7px 12px;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 2;
+}
+
 .sam-shell .repo-card::after {
   color: #52687b;
   content: 'RELEASE';
@@ -2291,6 +2308,24 @@
   top: auto;
 }
 
+.sam-shell .repo-card--available .install-btn {
+  background: #203346;
+  border-color: #395a72;
+  color: #d9e8f4;
+}
+
+.sam-shell .repo-card--installed .install-btn {
+  background: #1f3d2b;
+  border-color: rgba(102, 192, 111, 0.52);
+  color: #8fe09a;
+}
+
+.sam-shell .repo-card--update .install-btn {
+  background: #4ba3df;
+  border-color: #83c8f2;
+  color: #07131c;
+}
+
 .sam-shell .repo-meta span {
   border-right: 1px solid #263848;
   padding-right: 8px;
@@ -2305,6 +2340,45 @@
   border-radius: 2px;
   max-width: 1120px;
   width: min(96vw, 1120px);
+}
+
+.sam-shell .release-modal--wizard {
+  max-width: 1120px;
+  width: min(96vw, 1120px);
+}
+
+.sam-shell .release-wizard-steps {
+  background: #0d141b;
+  border-bottom: 1px solid #263848;
+  gap: 4px;
+  padding: 10px 16px;
+}
+
+.sam-shell .release-step-pill {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  color: #8fa6b9;
+  min-height: 30px;
+}
+
+.sam-shell .release-step-pill.active {
+  background: #294c67;
+  border-color: #4ba3df;
+  color: #ffffff;
+}
+
+.sam-shell .release-step-pill.done {
+  border-color: rgba(102, 192, 111, 0.5);
+  color: #8fe09a;
+}
+
+.sam-shell .release-wizard-context {
+  background: #101a24;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  margin: 10px 16px 0;
+  padding: 9px 10px;
 }
 
 .sam-shell .release-modal .modal-header {
@@ -2335,6 +2409,37 @@
   gap: 10px;
   grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr);
   padding: 12px 16px 16px;
+}
+
+.sam-shell .release-modal--wizard .release-body {
+  display: block;
+  max-height: min(650px, calc(100vh - 205px));
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sam-shell .release-wizard-panel,
+.sam-shell .release-confirm-card,
+.sam-shell .release-result-card,
+.sam-shell .release-blocked-note {
+  background: #101a24;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .release-confirm-grid > div,
+.sam-shell .release-install-path,
+.sam-shell .release-nav-actions {
+  background: #111b25;
+  border-color: #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .release-nav-actions {
+  border-top: 1px solid #263848;
+  margin: 8px -16px 0;
+  padding: 12px 16px 14px;
 }
 
 .sam-shell .release-picker {
@@ -2428,14 +2533,75 @@
 
 .sam-shell .app-details-modal {
   border-radius: 2px;
+  max-width: 1220px;
+  width: min(96vw, 1220px);
 }
 
-.sam-shell .details-header,
-.sam-shell .details-section,
-.sam-shell .details-version-row,
-.sam-shell .details-action-card {
+.sam-shell .app-details-header {
+  background: #101a24;
+  border-bottom: 1px solid #263848;
+  padding: 14px 16px;
+}
+
+.sam-shell .app-details-body {
+  background: #0d141b;
+  gap: 10px;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(460px, 1.22fr);
+  padding: 12px;
+}
+
+.sam-shell .app-details-summary,
+.sam-shell .app-details-panel,
+.sam-shell .app-details-facts > div,
+.sam-shell .app-details-paths > div,
+.sam-shell .app-details-version-row,
+.sam-shell .version-switch-facts > div,
+.sam-shell .uninstall-confirm-facts > div,
+.sam-shell .uninstall-confirm-warning {
   background: #111b25;
   border-color: #263848;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .app-details-summary {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .app-details-panel-title {
+  background: #0f1922;
+  border: 1px solid #263848;
+  margin: -4px -4px 0;
+  padding: 8px 9px;
+}
+
+.sam-shell .app-details-panel-title span,
+.sam-shell .app-details-kicker,
+.sam-shell .app-action-kicker,
+.sam-shell .uninstall-confirm-kicker {
+  color: #4ba3df;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.sam-shell .app-details-version-row.active {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .app-details-version-row.missing {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .version-switch-header,
+.sam-shell .uninstall-confirm-header {
+  background: #101a24;
+  border-bottom-color: #263848;
+}
+
+.sam-shell .version-switch-modal,
+.sam-shell .uninstall-confirm-modal,
+.sam-shell .uninstall-danger-btn {
   border-radius: 2px;
 }
 

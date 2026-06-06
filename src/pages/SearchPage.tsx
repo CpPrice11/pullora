@@ -1023,6 +1023,69 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     )
   }
 
+  const renderOperationsPanel = () => {
+    if (!featuredRepo) return null
+
+    const installedApp = getInstalledApp(featuredRepo)
+    const latestVersion = getLatestVersion(featuredRepo)
+    const hasUpdate = Boolean(
+      installedApp &&
+      latestVersion &&
+      latestVersion !== installedApp.activeVersion,
+    )
+    const isFavorite = favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))
+    const updatedDate = new Date(featuredRepo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+    const localVersionCount = installedApp?.versions.length ?? 0
+
+    return (
+      <section className="library-ops-panel" aria-label={t('library.ops.title')}>
+        <div className="library-ops-header">
+          <div>
+            <span className="library-ops-kicker">{t('library.ops.kicker')}</span>
+            <h3>{t('library.ops.title')}</h3>
+          </div>
+          <span className={`library-ops-state ${hasUpdate ? 'update' : installedApp ? 'installed' : 'available'}`}>
+            {hasUpdate ? t('repo.update') : installedApp ? t('repo.installed') : t('repo.available')}
+          </span>
+        </div>
+
+        <div className="library-ops-grid">
+          <div>
+            <span>{t('library.ops.owner')}</span>
+            <strong>{featuredRepo.owner.login}</strong>
+          </div>
+          <div>
+            <span>{t('library.ops.updated')}</span>
+            <strong>{updatedDate}</strong>
+          </div>
+          <div>
+            <span>{t('library.ops.language')}</span>
+            <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
+          </div>
+          <div>
+            <span>{t('library.ops.localVersions')}</span>
+            <strong>{localVersionCount.toLocaleString()}</strong>
+          </div>
+          <div>
+            <span>{t('library.ops.active')}</span>
+            <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
+          </div>
+          <div>
+            <span>{t('library.ops.latest')}</span>
+            <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
+          </div>
+        </div>
+
+        <div className="library-ops-rail">
+          <span className={featuredRepo.has_releases ? 'ready' : 'muted'}>{t('library.ops.releases')}</span>
+          <span className={isFavorite ? 'ready' : 'muted'}>{t('library.ops.favorite')}</span>
+          <span className={featuredRepo.archived ? 'warning' : 'ready'}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
+          <span className={featuredRepo.fork ? 'muted' : 'ready'}>{featuredRepo.fork ? t('library.ops.fork') : t('library.ops.sourceRepo')}</span>
+        </div>
+      </section>
+    )
+  }
+
   const showLoadingState = owner && state.loading && state.repositories.length === 0
 
   return (
@@ -1225,6 +1288,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
               )}
             </div>
             {renderHero()}
+            {renderOperationsPanel()}
             {renderUpdatesCenter()}
           </aside>
         </div>
