@@ -45,7 +45,7 @@ function Layout({
           <span>AIR LAUNCHER</span>
         </div>
         <div className="sam-window-title">{activeLabel}</div>
-        <div className="sam-window-status">GitHub Release Manager</div>
+        <div className="sam-window-status">{t('nav.windowStatus')}</div>
       </header>
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
