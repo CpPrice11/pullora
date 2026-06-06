@@ -73,19 +73,19 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
     <aside className="sidebar">
       <div className="sam-sidebar-header">
         <div>
-          <span className="sam-sidebar-kicker">Workspace</span>
+          <span className="sam-sidebar-kicker">{t('nav.workspace')}</span>
           <strong>AIR LAUNCHER</strong>
         </div>
-        <span className="sam-sidebar-sync" aria-label="Online" title="Online" />
+        <span className="sam-sidebar-sync" aria-label={t('nav.online')} title={t('nav.online')} />
       </div>
 
       <div className="sam-sidebar-control">
-        <span className="sam-sidebar-label">Source</span>
-        <span className="sam-sidebar-value">GitHub Releases</span>
+        <span className="sam-sidebar-label">{t('nav.source')}</span>
+        <span className="sam-sidebar-value">{t('nav.githubReleases')}</span>
       </div>
 
       <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
-        <span className="sam-sidebar-label">Navigation</span>
+        <span className="sam-sidebar-label">{t('nav.navigation')}</span>
         {navItems.map((item) => {
           const label = t(item.labelKey)
 

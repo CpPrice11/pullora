@@ -927,12 +927,22 @@ Object.assign(dictionaries.en, {
 
 Object.assign(dictionaries.uk, {
   'nav.navigation': 'Навігація',
+  'nav.workspace': 'Робоча область',
+  'nav.source': 'Джерело',
+  'nav.githubReleases': 'GitHub Releases',
+  'nav.online': 'Онлайн',
+  'nav.windowStatus': 'Менеджер GitHub релізів',
   'library.searchLabel': 'Пошук у бібліотеці',
   'library.availableFilter': 'Не встановлені',
 })
 
 Object.assign(dictionaries.en, {
   'nav.navigation': 'Navigation',
+  'nav.workspace': 'Workspace',
+  'nav.source': 'Source',
+  'nav.githubReleases': 'GitHub Releases',
+  'nav.online': 'Online',
+  'nav.windowStatus': 'GitHub Release Manager',
   'library.searchLabel': 'Search library',
   'library.availableFilter': 'Not installed',
 })
