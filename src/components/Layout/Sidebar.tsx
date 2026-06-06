@@ -82,6 +82,10 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       <div className="sam-sidebar-control">
         <span className="sam-sidebar-label">{t('nav.source')}</span>
         <span className="sam-sidebar-value">{t('nav.githubReleases')}</span>
+        <div className="sam-sidebar-chips" aria-label={t('nav.sourceModes')}>
+          <span>{t('nav.portablePolicyShort')}</span>
+          <span>{t('nav.cacheReady')}</span>
+        </div>
       </div>
 
       <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
@@ -108,6 +112,21 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           )
         })}
       </nav>
+
+      <div className="sam-sidebar-status" aria-label={t('nav.sessionStatus')}>
+        <div>
+          <span className="sam-sidebar-label">{t('nav.releasePolicy')}</span>
+          <strong>{t('nav.twoAssets')}</strong>
+        </div>
+        <div>
+          <span className="sam-sidebar-label">{t('nav.platform')}</span>
+          <strong>{t('nav.windowsOnly')}</strong>
+        </div>
+        <div>
+          <span className="sam-sidebar-label">{t('nav.visualMode')}</span>
+          <strong>{t('nav.mySamMode')}</strong>
+        </div>
+      </div>
     </aside>
   )
 }

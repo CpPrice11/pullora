@@ -191,3 +191,47 @@
   border-radius: 2px;
   color: #ff9da5;
 }
+
+.sam-shell .modal-content,
+.modal-content {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.sam-shell .modal-header,
+.modal-header {
+  background: #101a24;
+  padding: 16px 18px 12px;
+}
+
+.sam-shell .modal-header h2,
+.modal-header h2 {
+  color: #edf6ff;
+  font-size: 18px;
+}
+
+.sam-shell .modal-form,
+.modal-form {
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.sam-shell .modal-actions,
+.modal-actions {
+  background: #101a24;
+  border-top: 1px solid #263848;
+  margin: 0 -18px -18px;
+  padding: 12px 18px;
+}
+
+.sam-shell .path-input-group,
+.path-input-group {
+  background: #111b25;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  padding: 8px;
+}
+
+.sam-shell .path-input-group input,
+.path-input-group input {
+  background: #0d161f;
+}

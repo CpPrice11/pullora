@@ -439,3 +439,56 @@
   background: #294c67;
   border-color: #4ba3df;
 }
+
+.sam-shell .download-panel {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .download-list {
+  gap: 8px;
+}
+
+.sam-shell .download-item {
+  gap: 8px 10px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  padding: 10px;
+}
+
+.sam-shell .download-stage-mark {
+  height: 42px;
+  width: 42px;
+}
+
+.sam-shell .download-status,
+.sam-shell .download-meta,
+.sam-shell .download-stage-note,
+.sam-shell .download-error-details,
+.sam-shell .download-recovery p,
+.sam-shell .download-recovery-steps {
+  color: #8fa6b9;
+}
+
+.sam-shell .download-timeline {
+  gap: 4px;
+}
+
+.sam-shell .download-step {
+  font-size: 10px;
+  padding: 4px 5px;
+}
+
+.sam-shell .download-item--completed {
+  box-shadow: inset 3px 0 0 #66c06f;
+}
+
+.sam-shell .download-item--failed {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .download-recovery {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .download-actions button {
+  min-height: 28px;
+}

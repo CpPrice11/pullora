@@ -6,11 +6,20 @@ Air Launcher now follows the MY SAM visual direction: a dense dark workstation s
 
 - Keep the main Library split between a compact repository list and a focused details/action pane.
 - Prefer flat dark panels, thin separators, compact rows, and blue active selection over glass, cinematic blur, or large card layouts.
+- Treat the shell as a workstation: titlebar status chips, sidebar telemetry, compact tables, and clear status rails are preferred over decorative hero surfaces.
 - Use project art as optional supporting content. The UI must stay readable and functional without art.
 - Keep destructive actions behind explicit confirmation.
 - Preserve Ukrainian and English layouts; avoid hardcoded UI text outside `i18n.tsx`.
 - Respect reduced motion, keyboard focus states, and the 1000x700 minimum window.
 - Do not add extra platform release UX or packaging paths unless the release policy changes explicitly.
+
+## SAM Workstation Layer
+
+- Use left-edge status rails to communicate state: blue for active/current, green for ready/completed, yellow for pending/update, red for failure/destructive.
+- Prefer table-like rows for repositories, launcher versions, updates, downloads, and AI activity.
+- Keep controls rectangular with 2px radius unless an existing platform control requires otherwise.
+- Avoid introducing new large gradients, glassmorphism, cinematic backdrop behavior, or oversized cards.
+- AI Workspace should read like an operations console: dense panes, terminal-like chat area, and compact inspector/activity rows.
 
 ## Release UI
 

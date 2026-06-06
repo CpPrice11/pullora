@@ -4149,3 +4149,401 @@
     justify-content: stretch;
   }
 }
+
+/* v4.2 SAM workstation layer: dense management UI across all pages. */
+.sam-shell .page::before {
+  background:
+    linear-gradient(90deg, rgba(75, 163, 223, 0.1), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent);
+  border-bottom: 1px solid #1f3243;
+  content: '';
+  height: 3px;
+  left: 14px;
+  pointer-events: none;
+  position: absolute;
+  right: 14px;
+  top: 0;
+}
+
+.sam-shell .page {
+  position: relative;
+}
+
+.sam-shell .page-header {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .page-header h2::after {
+  color: #678197;
+  content: ' / AIR';
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-left: 8px;
+}
+
+.sam-shell .library-sam-workspace {
+  grid-template-columns: minmax(470px, 0.9fr) minmax(420px, 1.1fr);
+}
+
+.sam-shell .library-sam-list-pane,
+.sam-shell .library-sam-details-pane,
+.sam-shell .settings-form,
+.sam-shell .about-grid,
+.sam-shell .ai-workbench {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.sam-shell .library-sam-pane-head {
+  background: #101a24;
+  min-height: 50px;
+}
+
+.sam-shell .library-sam-pane-head h3::before,
+.sam-shell .library-sam-details-toolbar span::before {
+  color: #4ba3df;
+  content: '// ';
+}
+
+.sam-shell .library-sam-pane-head .results-count {
+  background: #0d161f;
+  border: 1px solid #263848;
+  padding: 5px 7px;
+}
+
+.sam-shell .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(75, 163, 223, 0.05), transparent 220px),
+    #101a24;
+}
+
+.sam-shell .library-sam-details-toolbar {
+  background: #0f1922;
+  margin: -10px -10px 10px;
+}
+
+.sam-shell .library-toolstrip {
+  background: #111d28;
+}
+
+.sam-shell .library-toolstrip .search-form::before {
+  align-items: center;
+  background: #172635;
+  border: 1px solid #2a4054;
+  border-right: 0;
+  color: #7e96aa;
+  content: 'FILTER';
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0 9px;
+}
+
+.sam-shell .library-toolstrip .search-input {
+  border-left: 0;
+}
+
+.sam-shell .library-trust-panel {
+  background: #101a24;
+}
+
+.sam-shell .library-trust-mark {
+  border-radius: 0;
+  box-shadow: none;
+  height: 14px;
+  width: 4px;
+}
+
+.sam-shell .library-trust-kicker {
+  color: #4ba3df;
+}
+
+.sam-shell .library-trust-inline-actions {
+  white-space: nowrap;
+}
+
+.sam-shell .library-hero {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .library-hero-cover img,
+.sam-shell .owner-avatar,
+.sam-shell .about-release-orb,
+.sam-shell .about-hero-mark {
+  image-rendering: auto;
+}
+
+.sam-shell .library-hero h2,
+.sam-shell .about-hero-main h3,
+.sam-shell .ai-page-header h1 {
+  letter-spacing: -0.02em;
+}
+
+.sam-shell .library-hero-meta {
+  background: #111d28;
+  border: 1px solid #263848;
+  gap: 0;
+  margin-top: 10px;
+  width: fit-content;
+}
+
+.sam-shell .library-hero-meta span {
+  border-left: 0;
+  border-right: 1px solid #263848;
+  padding: 5px 8px;
+}
+
+.sam-shell .library-hero-meta span:last-child {
+  border-right: 0;
+}
+
+.sam-shell .repo-status.available,
+.sam-shell .repo-status.installed,
+.sam-shell .repo-status.update {
+  border-radius: 2px;
+}
+
+.sam-shell .repo-status.available {
+  background: #172635;
+}
+
+.sam-shell .repo-status.installed {
+  background: rgba(102, 192, 111, 0.12);
+}
+
+.sam-shell .repo-status.update {
+  background: rgba(75, 163, 223, 0.14);
+}
+
+.sam-shell .updates-center {
+  box-shadow: inset 3px 0 0 #e7bd45;
+}
+
+.sam-shell .updates-center-main,
+.sam-shell .updates-center-stats,
+.sam-shell .updates-center-row {
+  background: #111b25;
+  border: 1px solid #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .updates-center-main,
+.sam-shell .updates-center-row {
+  padding: 10px;
+}
+
+.sam-shell .updates-center-stats {
+  overflow: hidden;
+}
+
+.sam-shell .updates-center-stats div {
+  border-right: 1px solid #263848;
+  padding: 8px 10px;
+}
+
+.sam-shell .updates-center-stats div:last-child {
+  border-right: 0;
+}
+
+.sam-shell .settings-page {
+  align-items: stretch;
+}
+
+.sam-shell .settings-page-header {
+  max-width: none;
+}
+
+.sam-shell .settings-form {
+  grid-template-columns: 260px minmax(0, 1fr);
+  max-width: none;
+  min-height: calc(100vh - 126px);
+}
+
+.sam-shell .settings-nav {
+  gap: 4px;
+  padding: 12px;
+}
+
+.sam-shell .settings-nav button {
+  min-height: 34px;
+}
+
+.sam-shell .settings-nav button::before {
+  background: #4ba3df;
+  border-radius: 0;
+  height: auto;
+  inset: 6px auto 6px 6px;
+  top: auto;
+  transform: none;
+}
+
+.sam-shell .settings-section,
+.sam-shell .danger-zone {
+  padding: 18px 22px;
+}
+
+.sam-shell .settings-section h3,
+.sam-shell .danger-zone h3 {
+  color: #7e96aa;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.sam-shell .form-group label {
+  color: #d9e8f4;
+  font-size: 13px;
+}
+
+.sam-shell .help-text,
+.sam-shell .page-subtitle {
+  color: #8fa6b9;
+}
+
+.sam-shell .path-input-row,
+.sam-shell .settings-theme-actions,
+.sam-shell .appearance-preset-grid,
+.sam-shell .settings-diagnostics-grid,
+.sam-shell .codex-capability-grid {
+  background: #101a24;
+  border: 1px solid #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .appearance-preset-card,
+.sam-shell .settings-diagnostic-card,
+.sam-shell .codex-capability-card {
+  background: #111b25;
+  border-color: #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .appearance-preset-card.active,
+.sam-shell .settings-diagnostic-card.active,
+.sam-shell .codex-capability-card.available {
+  border-color: #4ba3df;
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .about-page {
+  min-height: 100%;
+}
+
+.sam-shell .about-hero {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .about-release-list::before {
+  background: #0f1922;
+  border-bottom: 1px solid #263848;
+  color: #7e96aa;
+  content: 'VERSION  /  CHANNEL  /  STATUS';
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+}
+
+.sam-shell .about-release-link--newer {
+  box-shadow: inset 3px 0 0 #66c06f;
+}
+
+.sam-shell .about-release-link--current {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .about-release-link--missing {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .about-release-link--older {
+  box-shadow: inset 3px 0 0 #52687b;
+}
+
+.sam-shell .about-notes-modal,
+.sam-shell .confirm-modal {
+  border-radius: 2px;
+}
+
+.sam-shell .confirm-modal-header,
+.sam-shell .about-notes-header {
+  background: #101a24;
+  border-bottom-color: #263848;
+}
+
+.sam-shell .confirm-facts {
+  background: #101a24;
+  border: 1px solid #263848;
+  border-radius: 2px;
+}
+
+.sam-shell .confirm-list {
+  background: #111b25;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  padding: 10px 10px 10px 28px;
+}
+
+.sam-shell .empty-state,
+.sam-shell .error-banner,
+.sam-shell .state-panel {
+  border-radius: 2px;
+}
+
+.sam-shell .error-banner {
+  background: rgba(255, 125, 134, 0.08);
+  border-color: rgba(255, 125, 134, 0.28);
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .load-more-btn {
+  align-self: stretch;
+  border-radius: 0;
+  margin: 0;
+  min-height: 34px;
+}
+
+.sam-shell .about-toast,
+.sam-shell .library-toast {
+  backdrop-filter: none;
+  border-radius: 2px;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.36);
+}
+
+@media (max-width: 1280px) {
+  .sam-shell .library-sam-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .library-sam-list-pane,
+  .sam-shell .library-sam-details-pane {
+    max-height: none;
+  }
+
+  .sam-shell .settings-form {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .sam-shell .settings-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .settings-nav {
+    border-bottom: 1px solid #263848;
+    border-right: 0;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .sam-shell .settings-nav button {
+    flex: 0 0 auto;
+  }
+
+  .sam-shell .about-version-filters,
+  .sam-shell .about-version-filters.segmented-control {
+    grid-template-columns: 1fr;
+  }
+}

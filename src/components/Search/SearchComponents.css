@@ -2251,3 +2251,203 @@
     justify-content: flex-end;
   }
 }
+
+.sam-shell .repo-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
+}
+
+.sam-shell .repo-card::after {
+  color: #52687b;
+  content: 'RELEASE';
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  position: absolute;
+  right: 12px;
+  top: 6px;
+  transition: opacity var(--motion-fast);
+}
+
+.sam-shell .repo-card:hover::after,
+.sam-shell .repo-card.selected::after {
+  opacity: 1;
+}
+
+.sam-shell .repo-card-actions {
+  padding-right: 0;
+}
+
+.sam-shell .repo-card-actions button {
+  box-shadow: none !important;
+}
+
+.sam-shell .repo-card-actions .project-actions-menu {
+  z-index: 8;
+}
+
+.sam-shell .repo-card-actions .project-actions-popover {
+  bottom: calc(100% + 5px);
+  top: auto;
+}
+
+.sam-shell .repo-meta span {
+  border-right: 1px solid #263848;
+  padding-right: 8px;
+}
+
+.sam-shell .repo-meta span:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.sam-shell .release-modal {
+  border-radius: 2px;
+  max-width: 1120px;
+  width: min(96vw, 1120px);
+}
+
+.sam-shell .release-modal .modal-header {
+  align-items: center;
+  background: #101a24;
+  border-bottom: 1px solid #263848;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
+.sam-shell .release-modal .modal-header h2 {
+  color: #edf6ff;
+  font-size: 18px;
+}
+
+.sam-shell .modal-subtitle,
+.sam-shell .release-modal-meta,
+.sam-shell .release-strategy-note,
+.sam-shell .release-version-main span,
+.sam-shell .release-asset-main span,
+.sam-shell .asset-summary p {
+  color: #8fa6b9;
+}
+
+.sam-shell .release-body {
+  background: #0d141b;
+  gap: 10px;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr);
+  padding: 12px 16px 16px;
+}
+
+.sam-shell .release-picker {
+  background: #101a24;
+  border: 1px solid #263848;
+  border-radius: 2px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.sam-shell .release-section-label {
+  background: #0f1922;
+  border-bottom: 1px solid #263848;
+  color: #7e96aa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 7px 9px;
+  text-transform: uppercase;
+}
+
+.sam-shell .release-version-list,
+.sam-shell .release-asset-list {
+  gap: 0;
+}
+
+.sam-shell .release-version-card,
+.sam-shell .release-asset-card {
+  border: 0;
+  border-bottom: 1px solid #263848;
+  border-radius: 0;
+  min-height: 48px;
+}
+
+.sam-shell .release-version-card:last-child,
+.sam-shell .release-asset-card:last-child {
+  border-bottom: 0;
+}
+
+.sam-shell .release-version-card:hover,
+.sam-shell .release-asset-card:hover {
+  background: #1d3447;
+  transform: none;
+}
+
+.sam-shell .release-version-card.active,
+.sam-shell .release-asset-card.active {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .release-status-pill,
+.sam-shell .asset-kind,
+.sam-shell .asset-recommended {
+  border-radius: 2px;
+  font-size: 10px;
+  padding: 4px 7px;
+}
+
+.sam-shell .release-selection-summary,
+.sam-shell .asset-summary,
+.sam-shell .release-actions,
+.sam-shell .download-panel {
+  border-radius: 2px;
+}
+
+.sam-shell .release-selection-summary {
+  box-shadow: inset 3px 0 0 #4ba3df;
+}
+
+.sam-shell .asset-summary--installer {
+  box-shadow: inset 3px 0 0 #e7bd45;
+}
+
+.sam-shell .asset-summary--unsupported {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .release-actions {
+  background: #101a24;
+  border: 1px solid #263848;
+  padding: 10px;
+}
+
+.sam-shell .download-btn {
+  min-height: 40px;
+}
+
+.sam-shell .release-github-link {
+  border-radius: 2px;
+}
+
+.sam-shell .app-details-modal {
+  border-radius: 2px;
+}
+
+.sam-shell .details-header,
+.sam-shell .details-section,
+.sam-shell .details-version-row,
+.sam-shell .details-action-card {
+  background: #111b25;
+  border-color: #263848;
+  border-radius: 2px;
+}
+
+@media (max-width: 920px) {
+  .sam-shell .release-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .release-selection-summary,
+  .sam-shell .asset-summary,
+  .sam-shell .release-actions,
+  .sam-shell .download-panel {
+    grid-column: 1;
+  }
+}

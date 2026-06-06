@@ -44,8 +44,18 @@ function Layout({
           <span className="sam-window-mark" aria-hidden="true">A</span>
           <span>AIR LAUNCHER</span>
         </div>
-        <div className="sam-window-title">{activeLabel}</div>
-        <div className="sam-window-status">{t('nav.windowStatus')}</div>
+        <div className="sam-window-center">
+          <div className="sam-window-title">{activeLabel}</div>
+          <div className="sam-window-trail" aria-label={t('nav.shellStatus')}>
+            <span>{t('nav.portablePolicy')}</span>
+            <span>{t('nav.windowsOnly')}</span>
+            <span>{t('nav.aiReady')}</span>
+          </div>
+        </div>
+        <div className="sam-window-status">
+          <span>{t('nav.windowStatus')}</span>
+          <i aria-hidden="true" />
+        </div>
       </header>
       <div className="layout-container">
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />

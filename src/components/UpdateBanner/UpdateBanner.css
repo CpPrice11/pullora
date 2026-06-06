@@ -244,3 +244,68 @@
     width: 100%;
   }
 }
+
+.sam-shell .update-banner {
+  animation: none;
+  background: #121d27;
+  border: 1px solid #263848;
+  border-left: 0;
+  border-radius: 2px;
+  box-shadow: inset 3px 0 0 #e7bd45;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.sam-shell .update-banner::before {
+  display: none;
+}
+
+.sam-shell .update-banner-mark {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  display: flex;
+  height: 38px;
+  width: 38px;
+}
+
+.sam-shell .update-banner-mark span,
+.sam-shell .update-banner-header {
+  color: #edf6ff;
+}
+
+.sam-shell .update-list {
+  gap: 6px;
+}
+
+.sam-shell .update-row {
+  background: #111b25;
+  border-color: #263848;
+  border-radius: 2px;
+  padding: 7px 9px;
+}
+
+.sam-shell .update-versions {
+  color: #8fa6b9;
+}
+
+.sam-shell .update-install-btn {
+  background: #4ba3df;
+  border: 1px solid #83c8f2;
+  border-radius: 2px;
+  color: #07131c;
+  font-weight: 800;
+  min-height: 28px;
+}
+
+.sam-shell .update-install-btn:hover {
+  background: #75bee9;
+  transform: none;
+}
+
+.sam-shell .update-dismiss-btn {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  color: #9fb4c6;
+}
