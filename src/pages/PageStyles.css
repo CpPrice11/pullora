@@ -3880,6 +3880,227 @@
   border-radius: 0;
 }
 
+.sam-shell .about-page {
+  gap: 12px;
+}
+
+.sam-shell .about-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.sam-shell .about-hero {
+  align-items: center;
+  background: #121d27;
+  border-color: #263848;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  max-width: none;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.sam-shell .about-hero-mark,
+.sam-shell .about-release-orb {
+  background: #172635;
+  border-color: #30495f;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.sam-shell .about-hero-mark {
+  height: 40px;
+  width: 40px;
+}
+
+.sam-shell .about-hero-main h3 {
+  color: #edf6ff;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.sam-shell .about-hero-main p,
+.sam-shell .about-panel-meta,
+.sam-shell .about-release-date,
+.sam-shell .about-release-link span {
+  color: #9fb4c6;
+}
+
+.sam-shell .about-hero-meta span {
+  background: #172635;
+  border-color: #2a4054;
+  border-radius: 2px;
+  color: #b9cad8;
+}
+
+.sam-shell .about-hero-meta .about-current-version-chip {
+  border-color: rgba(102, 192, 111, 0.55);
+  color: #8fe09a;
+}
+
+.sam-shell .about-panel {
+  min-width: 0;
+  padding: 12px;
+}
+
+.sam-shell .about-version-heading {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 480px);
+  margin-bottom: 10px;
+  min-width: 0;
+}
+
+.sam-shell .about-version-title {
+  align-items: start;
+  display: grid;
+  flex: none;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sam-shell .about-version-title h3 {
+  color: #edf6ff;
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: normal;
+  white-space: normal;
+  word-break: normal;
+}
+
+.sam-shell .about-panel-meta {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: normal;
+  white-space: normal;
+  word-break: normal;
+}
+
+.sam-shell .about-version-filters,
+.sam-shell .about-version-filters.segmented-control {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-self: stretch;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.sam-shell .about-panel-toolbar {
+  border-bottom: 1px solid #263848;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+}
+
+.sam-shell .about-release-list {
+  border: 1px solid #263848;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sam-shell .about-release-link {
+  align-items: center;
+  background: #111b25;
+  border: 0;
+  border-bottom: 1px solid #263848;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  min-height: 64px;
+  overflow: visible;
+  padding: 8px 10px;
+}
+
+.sam-shell .about-release-link:last-child {
+  border-bottom: 0;
+}
+
+.sam-shell .about-release-link:hover,
+.sam-shell .about-release-link.active {
+  background: #1d3447;
+  border-color: #263848;
+  transform: none;
+}
+
+.sam-shell .about-release-link::before {
+  display: none;
+}
+
+.sam-shell .about-release-orb {
+  height: 36px;
+  width: 36px;
+}
+
+.sam-shell .about-release-title {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+  min-width: 0;
+}
+
+.sam-shell .about-release-title span:first-child {
+  color: #edf6ff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.sam-shell .about-release-date {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .about-release-status,
+.sam-shell .about-release-portable-badge,
+.sam-shell .about-release-active-badge {
+  border-radius: 2px;
+  font-size: 10px;
+  min-height: 24px;
+  padding: 4px 7px;
+}
+
+.sam-shell .about-release-actions {
+  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  gap: 5px !important;
+  justify-content: flex-end;
+  max-width: none;
+}
+
+.sam-shell .about-release-actions .secondary-btn {
+  font-size: 12px;
+  min-height: 28px;
+  min-width: 78px;
+}
+
+.sam-shell .about-release-menu .project-actions-trigger {
+  height: 28px;
+  min-width: 34px;
+}
+
+.sam-shell .about-release-menu .project-actions-popover {
+  bottom: calc(100% + 4px);
+  top: auto;
+}
+
 @media (max-width: 1180px) {
   .library-sam-workspace {
     grid-template-columns: 1fr;
@@ -3888,6 +4109,10 @@
   .library-sam-list-pane,
   .library-sam-details-pane {
     max-height: none;
+  }
+
+  .sam-shell .about-version-heading {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3911,6 +4136,16 @@
   }
 
   .sam-shell .library-hero-actions {
+    justify-content: stretch;
+  }
+
+  .sam-shell .about-hero,
+  .sam-shell .about-release-link {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .about-hero-actions,
+  .sam-shell .about-release-actions {
     justify-content: stretch;
   }
 }
