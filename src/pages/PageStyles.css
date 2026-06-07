@@ -4282,7 +4282,7 @@
 }
 
 .sam-shell .library-sam-workspace {
-  grid-template-columns: minmax(470px, 0.9fr) minmax(420px, 1.1fr);
+  grid-template-columns: minmax(520px, 1.08fr) minmax(380px, 0.92fr);
 }
 
 .sam-shell .library-sam-list-pane,
@@ -4312,13 +4312,14 @@
 
 .sam-shell .library-sam-details-pane {
   background:
-    linear-gradient(180deg, rgba(75, 163, 223, 0.05), transparent 220px),
+    linear-gradient(180deg, rgba(75, 163, 223, 0.035), transparent 170px),
     #101a24;
 }
 
 .sam-shell .library-sam-details-toolbar {
   background: #0f1922;
   margin: -10px -10px 10px;
+  min-height: 40px;
 }
 
 .sam-shell .library-toolstrip {
@@ -4331,12 +4332,13 @@
   border: 1px solid #2a4054;
   border-right: 0;
   color: #7e96aa;
-  content: 'FILTER';
+  content: '';
   display: inline-flex;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 0 9px;
+  padding: 0 3px;
+  width: 4px;
 }
 
 .sam-shell .library-toolstrip .search-input {
@@ -4364,6 +4366,8 @@
 
 .sam-shell .library-hero {
   box-shadow: inset 3px 0 0 #4ba3df;
+  grid-template-columns: 58px minmax(0, 1fr);
+  padding: 9px;
 }
 
 .sam-shell .library-hero-cover img,
@@ -4377,6 +4381,41 @@
 .sam-shell .about-hero-main h3,
 .sam-shell .ai-page-header h1 {
   letter-spacing: -0.02em;
+}
+
+.sam-shell .library-steam-header .library-hero-cover {
+  height: 58px;
+  width: 58px;
+}
+
+.sam-shell .library-steam-header .repo-status-row {
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.sam-shell .library-steam-header h2 {
+  font-size: 20px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.sam-shell .library-steam-header .library-hero-repo {
+  font-size: 11px;
+  margin: 2px 0 0;
+}
+
+.sam-shell .library-steam-header .library-hero-description {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 6px 0 0;
+  overflow: hidden;
+}
+
+.sam-shell .library-steam-actions {
+  display: none;
 }
 
 .sam-shell .library-hero-meta {
@@ -4400,11 +4439,19 @@
 .sam-shell .library-ops-panel {
   background: #121d27;
   border: 1px solid #263848;
-  box-shadow: inset 3px 0 0 #66c06f;
+  box-shadow: inset 3px 0 0 #52687b;
   display: grid;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
   padding: 10px;
+}
+
+.sam-shell .library-ops-panel.installed {
+  box-shadow: inset 3px 0 0 #66c06f;
+}
+
+.sam-shell .library-ops-panel.update {
+  box-shadow: inset 3px 0 0 #4ba3df;
 }
 
 .sam-shell .library-ops-header {
@@ -4456,7 +4503,7 @@
 .sam-shell .library-ops-grid {
   border: 1px solid #263848;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sam-shell .library-ops-grid > div {
@@ -4469,12 +4516,34 @@
   padding: 8px 9px;
 }
 
-.sam-shell .library-ops-grid > div:nth-child(3n) {
+.sam-shell .library-ops-grid > div:nth-child(2n) {
   border-right: 0;
 }
 
-.sam-shell .library-ops-grid > div:nth-last-child(-n + 3) {
+.sam-shell .library-ops-grid > div:nth-last-child(-n + 2) {
   border-bottom: 0;
+}
+
+.sam-shell .library-ops-action-row {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sam-shell .library-ops-action-row .hero-primary-btn,
+.sam-shell .library-ops-action-row .secondary-btn {
+  border-radius: 2px;
+  box-shadow: none;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.sam-shell .library-ops-action-row .hero-primary-btn {
+  background: #4ba3df;
+  border: 1px solid #83c8f2;
+  color: #07131c;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .sam-shell .library-ops-grid span,
@@ -4498,7 +4567,7 @@
 .sam-shell .library-ops-rail {
   display: grid;
   gap: 4px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sam-shell .library-ops-rail span {
@@ -4665,8 +4734,8 @@
   background: #0f1922;
   border-bottom: 1px solid #263848;
   color: #7e96aa;
-  content: 'VERSION  /  CHANNEL  /  STATUS';
-  display: block;
+  content: '';
+  display: none;
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -4778,7 +4847,8 @@
 
 @media (max-width: 760px) {
   .sam-shell .library-ops-grid,
-  .sam-shell .library-ops-rail {
+  .sam-shell .library-ops-rail,
+  .sam-shell .library-ops-action-row {
     grid-template-columns: 1fr;
   }
 
@@ -4786,7 +4856,7 @@
     border-right: 0;
   }
 
-  .sam-shell .library-ops-grid > div:nth-last-child(-n + 3) {
+  .sam-shell .library-ops-grid > div:nth-last-child(-n + 2) {
     border-bottom: 1px solid #263848;
   }
 

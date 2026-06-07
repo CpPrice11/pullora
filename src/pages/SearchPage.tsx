@@ -899,7 +899,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     }
 
     return (
-      <section className="library-hero" aria-label={featuredRepo.name}>
+      <section className="library-hero library-steam-header" aria-label={featuredRepo.name}>
         <div className="library-hero-cover">
           {featuredCover ? (
             <img src={featuredCover} alt="" />
@@ -940,7 +940,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           {artError && <p className="library-hero-error">{artError}</p>}
         </div>
 
-        <div className="library-hero-actions">
+        <div className="library-hero-actions library-steam-actions">
           <button type="button" className="hero-primary-btn" onClick={primaryAction}>
             {primaryLabel}
           </button>
@@ -1038,7 +1038,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     const localVersionCount = installedApp?.versions.length ?? 0
 
     return (
-      <section className="library-ops-panel" aria-label={t('library.ops.title')}>
+      <section className={`library-ops-panel ${hasUpdate ? 'update' : installedApp ? 'installed' : 'available'}`} aria-label={t('library.ops.title')}>
         <div className="library-ops-header">
           <div>
             <span className="library-ops-kicker">{t('library.ops.kicker')}</span>
@@ -1074,6 +1074,23 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
             <span>{t('library.ops.latest')}</span>
             <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
           </div>
+        </div>
+
+        <div className="library-ops-action-row" aria-label={t('library.action')}>
+          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
+            {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
+          </button>
+          <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
+            {t('repo.versions')}
+          </button>
+          {installedApp && (
+            <button type="button" className="secondary-btn" onClick={() => setDetailsRepo(featuredRepo)}>
+              {t('details.open')}
+            </button>
+          )}
+          <button type="button" className="secondary-btn" onClick={() => onOpenAiWorkspace?.(featuredRepo)}>
+            {t('ai.openInWorkspace')}
+          </button>
         </div>
 
         <div className="library-ops-rail">
@@ -1218,6 +1235,13 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
             )}
 
             <div className="search-results">
+              <div className="library-results-header" aria-hidden="true">
+                <span>{t('library.name')}</span>
+                <span>{t('nav.source')}</span>
+                <span>{t('library.status')}</span>
+                <span>{t('library.action')}</span>
+              </div>
+
               {showLoadingState && (
                 <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />
               )}
