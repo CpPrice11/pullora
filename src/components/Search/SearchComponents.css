@@ -2625,3 +2625,191 @@
     grid-column: 1;
   }
 }
+
+/* v5 cohesive workstation pass */
+.sam-shell .release-modal,
+.sam-shell .release-modal--wizard,
+.sam-shell .app-details-modal,
+.sam-shell .version-switch-modal,
+.sam-shell .uninstall-confirm-modal {
+  background: #16202d;
+  border: 1px solid #2a475e;
+  border-radius: 0;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+}
+
+.sam-shell .release-modal .modal-header,
+.sam-shell .app-details-header,
+.sam-shell .version-switch-header,
+.sam-shell .uninstall-confirm-header {
+  background: #101821;
+  border-bottom: 1px solid #2a475e;
+  box-shadow: inset 3px 0 0 #66c0f4;
+  padding: 12px 14px;
+}
+
+.sam-shell .uninstall-confirm-header {
+  box-shadow: inset 3px 0 0 #ff7d86;
+}
+
+.sam-shell .release-modal .modal-header h2,
+.sam-shell .app-details-header h2,
+.sam-shell .version-switch-header h2,
+.sam-shell .uninstall-confirm-header h2 {
+  color: #edf6ff;
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.sam-shell .release-modal-meta span,
+.sam-shell .release-step-pill,
+.sam-shell .release-status-pill,
+.sam-shell .asset-kind,
+.sam-shell .asset-recommended,
+.sam-shell .app-details-version-heading em {
+  border-radius: 0;
+}
+
+.sam-shell .release-wizard-steps {
+  background: #0d141b;
+  border-bottom: 1px solid #263848;
+  padding: 8px 12px;
+}
+
+.sam-shell .release-step-pill {
+  min-height: 28px;
+}
+
+.sam-shell .release-wizard-context {
+  background: #111b25;
+  border: 1px solid #263848;
+  margin: 8px 12px 0;
+  padding: 8px 9px;
+}
+
+.sam-shell .release-modal--wizard .release-body {
+  padding: 10px 12px 0;
+}
+
+.sam-shell .release-blocked-note,
+.sam-shell .release-confirm-card,
+.sam-shell .release-result-card,
+.sam-shell .release-cleanup-note,
+.sam-shell .updates-center,
+.sam-shell .updates-center-stats > div,
+.sam-shell .updates-center-row,
+.sam-shell .updates-center-empty {
+  background: #111b25;
+  border: 1px solid #263848;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sam-shell .release-blocked-note {
+  box-shadow: inset 3px 0 0 #e7bd45;
+}
+
+.sam-shell .release-confirm-card,
+.sam-shell .release-result-card,
+.sam-shell .release-cleanup-note {
+  box-shadow: inset 3px 0 0 #66c0f4;
+}
+
+.sam-shell .release-confirm-grid > div,
+.sam-shell .release-install-path,
+.sam-shell .version-switch-facts > div,
+.sam-shell .uninstall-confirm-facts > div,
+.sam-shell .app-details-facts > div,
+.sam-shell .app-details-paths > div,
+.sam-shell .app-details-version-summary > div {
+  background: #0f1922;
+  border: 1px solid #263848;
+  border-radius: 0;
+}
+
+.sam-shell .release-nav-actions,
+.sam-shell .version-switch-actions,
+.sam-shell .uninstall-confirm-actions {
+  background: #101821;
+  border-top: 1px solid #263848;
+  margin-left: -12px;
+  margin-right: -12px;
+}
+
+.sam-shell .release-secondary-btn,
+.sam-shell .download-action-btn,
+.sam-shell .version-switch-actions button,
+.sam-shell .uninstall-confirm-actions button,
+.sam-shell .app-details-actions button,
+.sam-shell .app-details-version-actions button {
+  border-radius: 0;
+  min-height: 32px;
+}
+
+.sam-shell .release-asset-list {
+  grid-template-columns: 1fr;
+}
+
+.sam-shell .release-version-card,
+.sam-shell .release-asset-card,
+.sam-shell .app-details-version-row {
+  background: #111b25;
+  border: 0;
+  border-bottom: 1px solid #263848;
+  border-radius: 0;
+  min-height: 44px;
+}
+
+.sam-shell .app-details-body {
+  max-height: min(690px, calc(100vh - 118px));
+  padding: 10px;
+}
+
+.sam-shell .app-details-summary,
+.sam-shell .app-details-panel {
+  padding: 12px;
+}
+
+.sam-shell .app-details-actions,
+.sam-shell .app-details-version-actions,
+.sam-shell .updates-center-actions,
+.sam-shell .updates-center-row-actions {
+  gap: 5px;
+}
+
+.sam-shell .updates-center {
+  box-shadow: inset 3px 0 0 #66c0f4;
+  gap: 9px;
+  padding: 10px;
+}
+
+.sam-shell .updates-center h3 {
+  font-size: 16px;
+}
+
+.sam-shell .updates-center-main,
+.sam-shell .updates-center-row {
+  gap: 8px;
+}
+
+.sam-shell .updates-center-stats {
+  gap: 4px;
+}
+
+@media (max-width: 820px) {
+  .sam-shell .release-nav-actions,
+  .sam-shell .version-switch-actions,
+  .sam-shell .uninstall-confirm-actions,
+  .sam-shell .updates-center-main,
+  .sam-shell .updates-center-row {
+    align-items: stretch;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .updates-center-stats,
+  .sam-shell .uninstall-confirm-facts,
+  .sam-shell .version-switch-facts {
+    grid-template-columns: 1fr;
+  }
+}

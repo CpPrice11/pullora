@@ -200,6 +200,8 @@ Air Launcher має бути простим, швидким і не перева
 
 ### v4.7.0 - Visual Token Cleanup
 
+Статус: закрито одним combined patch у `v5.0.0`.
+
 - Перевести основні кольори на Steam-inspired базу:
   - shell: `#171a21`, `#1b2838`
   - panel: `#16202d`, `#2a475e`
@@ -211,6 +213,8 @@ Air Launcher має бути простим, швидким і не перева
 
 ### v4.8.0 - Modals And Release Flow UI
 
+Статус: закрито одним combined patch у `v5.0.0`.
+
 - Переробити ReleaseSelector у Steam/SAM wizard: clear steps, assets table, summary pane.
 - Переробити App Details modal або перевести його у side panel, якщо це краще для Steam-like UX.
 - Уніфікувати confirmation dialogs, uninstall/switch version modals.
@@ -218,6 +222,8 @@ Air Launcher має бути простим, швидким і не перева
 - Перевірити keyboard focus, Escape close, scroll lock і long file/version names.
 
 ### v4.9.0 - AI Workspace Polish
+
+Статус: закрито одним combined patch у `v5.0.0`.
 
 - Привести AI Workspace до тієї ж Steam/SAM системи.
 - Ущільнити chat/activity/inspector panels.
@@ -228,12 +234,23 @@ Air Launcher має бути простим, швидким і не перева
 
 ### v5.0.0 - Cohesive Workstation Release
 
+Статус: фінальний roadmap-closing patch.
+
 - Фінальний pass по Library, Settings, About, AI Workspace, modals і shared states.
 - Повна language consistency перевірка.
 - Повна responsive перевірка desktop/mobile/narrow window.
 - Accessibility pass: focus states, keyboard navigation, aria labels, reduced motion.
 - Видалити мертвий або неактивний legacy CSS, якщо це безпечно.
 - Оновити `docs/DESIGN_GUIDELINES.md` під фінальну Steam + MY SAM систему.
+
+Фінальний combined patch `v5.0.0`:
+
+- Закриває `v4.7.0`, `v4.8.0`, `v4.9.0` і `v5.0.0` одним релізом.
+- Вирівнює active dark tokens на Steam base: `#171a21`, `#1b2838`, `#16202d`, `#2a475e`, `#66c0f4`.
+- Ізолює legacy cinematic CSS через active `.sam-shell` overrides замість ризикованого видалення старих блоків.
+- Уніфікує release wizard, App Details, confirmations, Updates Center, AI Workspace і shared modals у flat SAM geometry.
+- Ущільнює AI Workspace до operations-console вигляду з фактичними class names, а не декоративними неактивними selectors.
+- Зберігає Windows-only release policy і два assets: portable EXE + setup EXE.
 
 Постійні правила для цих design releases:
 

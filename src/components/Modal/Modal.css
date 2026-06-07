@@ -257,3 +257,35 @@
   color: #d9e8f4;
   font-size: 13px;
 }
+
+/* v5 cohesive workstation pass */
+.sam-shell .modal-overlay,
+.modal-overlay {
+  background: rgba(5, 9, 13, 0.88);
+}
+
+.sam-shell .modal-content,
+.modal-content {
+  background: #16202d;
+  border-color: #2a475e;
+  border-radius: 0;
+}
+
+.sam-shell .modal-header,
+.modal-header {
+  background: #101821;
+  border-bottom-color: #2a475e;
+}
+
+.sam-shell .modal-actions,
+.modal-actions {
+  background: #101821;
+  border-top-color: #263848;
+}
+
+.sam-shell .path-input-group,
+.path-input-group,
+.sam-shell .error-message,
+.error-message {
+  border-radius: 0;
+}

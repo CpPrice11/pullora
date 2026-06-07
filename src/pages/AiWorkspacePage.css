@@ -1217,3 +1217,151 @@
     flex-direction: column;
   }
 }
+
+/* v5 cohesive workstation pass */
+.sam-shell .ai-workspace-page {
+  background: #171a21;
+}
+
+.sam-shell .ai-page-header,
+.sam-shell .ai-runtime-card,
+.sam-shell .ai-workbench,
+.sam-shell .ai-onboarding-panel {
+  border-color: #2a475e;
+}
+
+.sam-shell .ai-workbench {
+  grid-template-columns: 300px minmax(460px, 1fr) 340px;
+}
+
+.sam-shell .ai-workspaces,
+.sam-shell .ai-inspector,
+.sam-shell .ai-chat {
+  background: #101821;
+}
+
+.sam-shell .ai-chat {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    #0d141b;
+  background-size: 28px 28px;
+}
+
+.sam-shell .ai-chat-heading {
+  background: #16202d;
+  border-bottom: 1px solid #263848;
+  min-height: 50px;
+  padding: 9px 12px;
+}
+
+.sam-shell .ai-chat-heading strong {
+  color: #edf6ff;
+  font-size: 15px;
+}
+
+.sam-shell .ai-chat-heading span {
+  color: #8fa6b9;
+  margin-top: 3px;
+}
+
+.sam-shell .ai-messages {
+  gap: 8px;
+  padding: 12px;
+}
+
+.sam-shell .ai-message,
+.sam-shell .ai-auth-card,
+.sam-shell .ai-activity-entry,
+.sam-shell .ai-terminal-panel,
+.sam-shell .ai-attachments span,
+.sam-shell .ai-workspace-list > button,
+.sam-shell .ai-thread-list > button {
+  background: #111b25;
+  border: 1px solid #263848;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sam-shell .ai-message.user {
+  background: #19324a;
+  border-color: #3e6f90;
+  box-shadow: inset 3px 0 0 #66c0f4;
+}
+
+.sam-shell .ai-message.assistant {
+  background: #121f2b;
+  box-shadow: inset 3px 0 0 #52687b;
+}
+
+.sam-shell .ai-workspace-list > button,
+.sam-shell .ai-thread-list > button {
+  min-height: 42px;
+  padding: 7px 8px;
+}
+
+.sam-shell .ai-workspace-list > button.active,
+.sam-shell .ai-thread-list > button.active {
+  background: #1d3447;
+  border-color: #4b7fa1;
+  box-shadow: inset 3px 0 0 #66c0f4;
+}
+
+.sam-shell .ai-workspace-avatar {
+  background: #2a475e;
+  border: 1px solid #66c0f4;
+  border-radius: 0;
+  color: #edf6ff;
+  height: 30px;
+  width: 30px;
+}
+
+.sam-shell .ai-runtime-facts div {
+  background: #0f1922;
+  border-color: #263848;
+  border-radius: 0;
+}
+
+.sam-shell .ai-clone-form input,
+.sam-shell .ai-thread-search,
+.sam-shell .ai-composer textarea,
+.sam-shell .ai-composer-actions select,
+.sam-shell .ai-composer-actions button,
+.sam-shell .ai-activity-entry button {
+  background: #0d161f;
+  border: 1px solid #2a4054;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sam-shell .ai-activity-entry {
+  border-left-width: 3px;
+}
+
+.sam-shell .ai-activity-entry-head span,
+.sam-shell .ai-inspector-tabs button,
+.sam-shell .ai-title-row span,
+.sam-shell .ai-runtime-status {
+  border-radius: 0;
+}
+
+.sam-shell .ai-composer {
+  background: #101821;
+  border-top-color: #263848;
+  padding: 9px 10px;
+}
+
+.sam-shell .ai-composer textarea {
+  height: 64px;
+}
+
+.sam-shell .ai-onboarding-panel {
+  box-shadow: inset 3px 0 0 #66c0f4;
+  padding: 24px;
+}
+
+@media (max-width: 1320px) {
+  .sam-shell .ai-workbench {
+    grid-template-columns: 280px minmax(380px, 1fr);
+  }
+}

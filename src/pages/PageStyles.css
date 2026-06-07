@@ -3686,7 +3686,7 @@
 
 .library-sam-list-pane,
 .library-sam-details-pane {
-  background: #121d27;
+  background: #16202d;
   border: 1px solid #263848;
   display: flex;
   flex-direction: column;
@@ -4312,8 +4312,8 @@
 
 .sam-shell .library-sam-details-pane {
   background:
-    linear-gradient(180deg, rgba(75, 163, 223, 0.035), transparent 170px),
-    #101a24;
+    linear-gradient(180deg, rgba(102, 192, 244, 0.035), transparent 170px),
+    #16202d;
 }
 
 .sam-shell .library-sam-details-toolbar {
