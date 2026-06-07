@@ -107,7 +107,6 @@ function SettingsPage({
   const [codexChecking, setCodexChecking] = useState(false)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
-  const modalRef = useRef<HTMLElement | null>(null)
   const resetModalRef = useRef<HTMLElement | null>(null)
   const themeImportRef = useRef<HTMLInputElement | null>(null)
 
@@ -133,7 +132,6 @@ function SettingsPage({
     setRecentGithubOwners(readRecentGithubOwners())
   }, [])
 
-  useModalFocus(modalRef, { active: !resetPending, onEscape: onClose })
   useModalFocus(resetModalRef, {
     active: resetPending,
     onEscape: saving ? undefined : () => setResetPending(false),
@@ -518,27 +516,9 @@ function SettingsPage({
 
   if (loading || !settings) {
     return (
-      <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
-        <section
-          ref={modalRef}
-          className="settings-modal settings-modal-loading"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('settings.title')}
-          tabIndex={-1}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="close-btn settings-modal-close"
-            onClick={onClose}
-            aria-label={t('settings.close')}
-          >
-            {'\u00d7'}
-          </button>
-          <StatePanel kind="loading" title={t('settings.loading')} skeletonCount={2} />
-        </section>
-      </div>
+      <section className="page settings-page settings-page-loading" aria-label={t('settings.title')}>
+        <StatePanel kind="loading" title={t('settings.loading')} skeletonCount={2} />
+      </section>
     )
   }
 
@@ -1096,34 +1076,31 @@ function SettingsPage({
 
   return (
     <>
-    <div className="settings-modal-overlay" role="presentation" onClick={onClose}>
-      <section
-        ref={modalRef}
-        className="settings-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="settings-modal-header">
+      <section className="page settings-page" aria-labelledby="settings-title">
+        <div className="settings-page-header">
           <div>
-            <span className="settings-modal-kicker">Air Launcher</span>
+            <span className="settings-page-kicker">{t('settings.workspaceKicker')}</span>
             <h2 id="settings-title">{t('settings.title')}</h2>
+            <p>{t('settings.workspaceSubtitle')}</p>
           </div>
-          <div className="settings-modal-header-actions">
+          <div className="settings-page-header-actions">
+            <div className="settings-autosave-status" aria-live="polite">
+              {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
+              {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
+              {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
+            </div>
             <button
               type="button"
-              className="close-btn settings-modal-close"
+              className="secondary-btn settings-done-btn"
               onClick={onClose}
               aria-label={t('settings.close')}
             >
-              {'\u00d7'}
+              {t('settings.done')}
             </button>
           </div>
         </div>
 
-        <div className="settings-form">
+        <div className="settings-form settings-workspace">
           <nav className="settings-nav" aria-label={t('settings.title')}>
             {sections.map((section) => (
               <button
@@ -1151,7 +1128,7 @@ function SettingsPage({
             {renderActiveSection()}
           </div>
         </div>
-        <footer className="settings-modal-footer">
+        <footer className="settings-page-footer">
           <div className="settings-autosave-status" aria-live="polite">
             {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
             {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
@@ -1162,7 +1139,6 @@ function SettingsPage({
           </button>
         </footer>
       </section>
-    </div>
     {resetPending && (
       <div
         className="settings-reset-overlay"

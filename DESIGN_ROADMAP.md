@@ -161,6 +161,89 @@ Air Launcher має бути простим, швидким і не перева
 - Project-art фон, custom background, presets і custom CSS лишаються сумісними.
 - Roadmap milestones до `v4.0.0` закриті; backlog лишається для future optional enhancements.
 
+## Steam + MY SAM Roadmap
+
+Ціль: довести Air Launcher до цілісного `Steam + MY SAM` інтерфейсу. Steam задає структуру, простоту, Library/Settings UX і темну палітру; MY SAM задає workstation-щільність, плоскі панелі, тонкі borders, статусні rails і таблиці. Старий cinematic/glass feeling більше не є ціллю.
+
+Поточні проблеми за скрінами:
+
+- Settings все ще виглядає як floating glass/modal поверх застосунку, а не як повноцінний workspace.
+- Є змішання мов у visible labels: `SOURCE SUMMARY`, `CODEX CAPABILITIES`, `FAVORITE`, `ACTIVE REPO`, `SOURCE REPO`, `PORTABLE + SETUP`, `WINDOWS ONLY` поруч з українським UI.
+- Частина Settings контенту обрізається або ховається в незручному scroll, особливо `Вигляд`, `AI Workspace`, `Обслуговування`.
+- Ліва навігація Settings займає багато місця, а права content-area місцями виглядає порожньою або стиснутою.
+- Library стала ближчою до MY SAM, але right details panel все ще занадто hero/marketing-oriented; Steam Library більше схожа на compact app header + action row + facts/status grid.
+- У UI одночасно присутні SAM tables, Steam colors, старі modal cards, blur/glow і великі rounded panels.
+- Checkbox/range/select місцями мають browser/default look і вибиваються з системи.
+- На великих екранах лишається зайвий порожній простір, особливо в Library нижче списку.
+
+### v4.5.0 - Settings Steam/SAM Redesign
+
+Перший пріоритет: Settings.
+
+- Переробити Settings з floating/glass modal у повноцінний Steam-like settings workspace.
+- Зробити компактну ліву навігацію секцій і широку праву content-area.
+- Прибрати надмірні blur, rounding, glow і modal shadows.
+- Виправити обрізання контенту в `Вигляд`, `AI Workspace`, `Обслуговування`.
+- Зробити нормальний внутрішній scroll тільки для правої content-area.
+- Уніфікувати controls: checkbox, range, select, input, buttons.
+- Привести labels до української або послідовного technical English.
+- Зберегти Theme Editor, install path, AI Workspace і maintenance logic без зміни поведінки.
+
+### v4.6.0 - Library Steam-Like Layout
+
+- Зменшити hero-feeling у правій details panel.
+- Зробити Steam Library-like structure: compact app header, action row, facts table, status/activity blocks.
+- Вирівняти list/details panes по висоті й щільності.
+- Прибрати зайвий порожній простір знизу.
+- Зробити repo rows ще ближчими до Steam list: app/source/status/version/actions без перевантаження.
+- Перевірити 1000x700, 1280x720, 1920x1080 і narrow fallback.
+
+### v4.7.0 - Visual Token Cleanup
+
+- Перевести основні кольори на Steam-inspired базу:
+  - shell: `#171a21`, `#1b2838`
+  - panel: `#16202d`, `#2a475e`
+  - active blue: `#66c0f4`
+  - muted text: сіро-синій Steam tone
+- Залишити MY SAM geometry: flat panels, thin borders, dense tables, square-ish controls.
+- Прибрати або ізолювати legacy `cinematic-shell` CSS, який більше не використовується активним shell.
+- Уніфікувати buttons, pills, status chips, badges, cards і shared panels.
+
+### v4.8.0 - Modals And Release Flow UI
+
+- Переробити ReleaseSelector у Steam/SAM wizard: clear steps, assets table, summary pane.
+- Переробити App Details modal або перевести його у side panel, якщо це краще для Steam-like UX.
+- Уніфікувати confirmation dialogs, uninstall/switch version modals.
+- Зробити portable/setup/unsupported warnings компактними й зрозумілими.
+- Перевірити keyboard focus, Escape close, scroll lock і long file/version names.
+
+### v4.9.0 - AI Workspace Polish
+
+- Привести AI Workspace до тієї ж Steam/SAM системи.
+- Ущільнити chat/activity/inspector panels.
+- Покращити Settings AI Workspace section: Codex status, capabilities, workspace root, actions.
+- Прибрати обрізання capability cards.
+- Зробити technical states чіткими: installed, unavailable, not checked, connected.
+- Не зберігати Codex/OpenAI secrets у Air Launcher.
+
+### v5.0.0 - Cohesive Workstation Release
+
+- Фінальний pass по Library, Settings, About, AI Workspace, modals і shared states.
+- Повна language consistency перевірка.
+- Повна responsive перевірка desktop/mobile/narrow window.
+- Accessibility pass: focus states, keyboard navigation, aria labels, reduced motion.
+- Видалити мертвий або неактивний legacy CSS, якщо це безпечно.
+- Оновити `docs/DESIGN_GUIDELINES.md` під фінальну Steam + MY SAM систему.
+
+Постійні правила для цих design releases:
+
+- Windows-only.
+- GitHub Release має містити тільки portable EXE і setup EXE.
+- Linux/Arch напрям не повертати.
+- Base launcher metadata не змішується з AI Workspace metadata.
+- Air Launcher не зберігає OpenAI/Codex secrets.
+- Після кожного release patch: bump version, build/checks, Tauri artifacts, GitHub Release, Actions verification, стислий опис змін українською.
+
 ## Backlog
 
 - Card view / list view перемикач.

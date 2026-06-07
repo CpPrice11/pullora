@@ -197,7 +197,7 @@ function App() {
     <LanguageProvider initialLanguage={settings.language}>
       <Layout
         activeTab={settingsOpen ? 'settings' : activeTab}
-        contentKey={activeTab}
+        contentKey={settingsOpen ? 'settings' : activeTab}
         onTabChange={handleTabChange}
         backgroundImage={visibleBackground}
         settingsOpen={settingsOpen}
@@ -211,16 +211,14 @@ function App() {
           />
         )}
 
-        {renderContent()}
-
-        {settingsOpen && (
+        {settingsOpen ? (
           <SettingsPage
             hasLauncherBackground={hasLauncherBackground}
             onChangeLauncherBackground={handleChangeLauncherBackground}
             onClearLauncherBackground={handleClearLauncherBackground}
             onClose={() => setSettingsOpen(false)}
           />
-        )}
+        ) : renderContent()}
 
         {showPathModal && (
           <InstallationPathModal onPathSelected={handlePathSelected} />
