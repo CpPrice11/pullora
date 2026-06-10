@@ -899,7 +899,10 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     }
 
     return (
-      <section className="library-hero library-steam-header" aria-label={featuredRepo.name}>
+      <section
+        className={`library-hero library-steam-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
+        aria-label={featuredRepo.name}
+      >
         <div className="library-hero-cover">
           {featuredCover ? (
             <img src={featuredCover} alt="" />
