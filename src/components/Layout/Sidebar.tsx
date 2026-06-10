@@ -70,26 +70,16 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { t } = useI18n()
 
   return (
-    <aside className="sidebar">
-      <div className="sam-sidebar-header">
+    <div className="sam-header-sidebar">
+      <div className="sam-header-brand">
+        <span className="sam-window-mark" aria-hidden="true">A</span>
         <div>
-          <span className="sam-sidebar-kicker">{t('nav.workspace')}</span>
           <strong>AIR LAUNCHER</strong>
-        </div>
-        <span className="sam-sidebar-sync" aria-label={t('nav.online')} title={t('nav.online')} />
-      </div>
-
-      <div className="sam-sidebar-control">
-        <span className="sam-sidebar-label">{t('nav.source')}</span>
-        <span className="sam-sidebar-value">{t('nav.githubReleases')}</span>
-        <div className="sam-sidebar-chips" aria-label={t('nav.sourceModes')}>
-          <span>{t('nav.portablePolicyShort')}</span>
-          <span>{t('nav.cacheReady')}</span>
+          <span>{t('nav.workspace')}</span>
         </div>
       </div>
 
-      <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
-        <span className="sam-sidebar-label">{t('nav.navigation')}</span>
+      <nav className="sam-header-nav sidebar-nav" aria-label={t('nav.navigation')}>
         {navItems.map((item) => {
           const label = t(item.labelKey)
 
@@ -113,21 +103,16 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         })}
       </nav>
 
-      <div className="sam-sidebar-status" aria-label={t('nav.sessionStatus')}>
-        <div>
-          <span className="sam-sidebar-label">{t('nav.releasePolicy')}</span>
-          <strong>{t('nav.twoAssets')}</strong>
-        </div>
-        <div>
-          <span className="sam-sidebar-label">{t('nav.platform')}</span>
-          <strong>{t('nav.windowsOnly')}</strong>
-        </div>
-        <div>
-          <span className="sam-sidebar-label">{t('nav.visualMode')}</span>
-          <strong>{t('nav.mySamMode')}</strong>
-        </div>
+      <div className="sam-header-meta" aria-label={t('nav.sessionStatus')}>
+        <span className="sam-header-meta-item">
+          <small>{t('nav.source')}</small>
+          <strong>{t('nav.githubReleases')}</strong>
+        </span>
+        <span className="sam-header-chip">{t('nav.portablePolicyShort')}</span>
+        <span className="sam-header-chip">{t('nav.windowsOnly')}</span>
+        <span className="sam-header-sync" aria-label={t('nav.online')} title={t('nav.online')} />
       </div>
-    </aside>
+    </div>
   )
 }
 

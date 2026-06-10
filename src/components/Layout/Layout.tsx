@@ -1,6 +1,5 @@
 import React from 'react'
 import Sidebar from './Sidebar'
-import { useI18n } from '../../i18n'
 import './Layout.css'
 
 type Tab = 'search' | 'aiWorkspace' | 'settings' | 'about'
@@ -26,9 +25,6 @@ function Layout({
   backgroundImage,
   settingsOpen = false,
 }: LayoutProps) {
-  const { t } = useI18n()
-  const activeLabel = activeTab === 'settings' ? t('nav.settings') : t(`nav.${activeTab === 'search' ? 'library' : activeTab}`)
-
   return (
     <div
       className={`layout sam-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
@@ -40,25 +36,9 @@ function Layout({
       />
       <div className="sam-backdrop" aria-hidden="true" />
       <header className="sam-titlebar">
-        <div className="sam-window-brand">
-          <span className="sam-window-mark" aria-hidden="true">A</span>
-          <span>AIR LAUNCHER</span>
-        </div>
-        <div className="sam-window-center">
-          <div className="sam-window-title">{activeLabel}</div>
-          <div className="sam-window-trail" aria-label={t('nav.shellStatus')}>
-            <span>{t('nav.portablePolicy')}</span>
-            <span>{t('nav.windowsOnly')}</span>
-            <span>{t('nav.aiReady')}</span>
-          </div>
-        </div>
-        <div className="sam-window-status">
-          <span>{t('nav.windowStatus')}</span>
-          <i aria-hidden="true" />
-        </div>
+        <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
       </header>
       <div className="layout-container">
-        <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
         <main className="layout-content" key={contentKey ?? activeTab}>
           {children}
         </main>
