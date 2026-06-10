@@ -71,14 +71,6 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
   return (
     <div className="sam-header-sidebar">
-      <div className="sam-header-brand">
-        <span className="sam-window-mark" aria-hidden="true">A</span>
-        <div>
-          <strong>AIR LAUNCHER</strong>
-          <span>{t('nav.workspace')}</span>
-        </div>
-      </div>
-
       <nav className="sam-header-nav sidebar-nav" aria-label={t('nav.navigation')}>
         {navItems.map((item) => {
           const label = t(item.labelKey)
@@ -102,16 +94,6 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           )
         })}
       </nav>
-
-      <div className="sam-header-meta" aria-label={t('nav.sessionStatus')}>
-        <span className="sam-header-meta-item">
-          <small>{t('nav.source')}</small>
-          <strong>{t('nav.githubReleases')}</strong>
-        </span>
-        <span className="sam-header-chip">{t('nav.portablePolicyShort')}</span>
-        <span className="sam-header-chip">{t('nav.windowsOnly')}</span>
-        <span className="sam-header-sync" aria-label={t('nav.online')} title={t('nav.online')} />
-      </div>
     </div>
   )
 }

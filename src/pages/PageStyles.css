@@ -4864,3 +4864,221 @@
     border-bottom: 0;
   }
 }
+
+/* Steam direction: flatter library panes, compact list, game-page detail action area. */
+.sam-shell .page::before,
+.sam-shell .page-header h2::after,
+.sam-shell .library-sam-pane-head h3::before,
+.sam-shell .library-sam-details-toolbar span::before {
+  display: none;
+}
+
+.sam-shell .page {
+  background:
+    linear-gradient(180deg, rgba(42, 71, 94, 0.28), transparent 260px),
+    #0d141b;
+}
+
+.sam-shell .page-header {
+  background: #0f1922;
+  border-bottom: 1px solid #1e2c39;
+  box-shadow: none;
+  min-height: 42px;
+  padding: 0 14px;
+}
+
+.sam-shell .page-header h2 {
+  color: #dfe3e6;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.sam-shell .library-sam-workspace {
+  gap: 0;
+  grid-template-columns: minmax(340px, 0.56fr) minmax(520px, 1.44fr);
+}
+
+.sam-shell .library-sam-list-pane,
+.sam-shell .library-sam-details-pane {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  max-height: calc(100vh - 90px);
+}
+
+.sam-shell .library-sam-list-pane {
+  background: linear-gradient(180deg, #18212d, #101820);
+  border-right: 1px solid #263848;
+}
+
+.sam-shell .library-sam-pane-head {
+  background: #1b2838;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.sam-shell .library-sam-pane-head h3 {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.sam-shell .library-sam-kicker,
+.sam-shell .library-sam-details-toolbar span,
+.sam-shell .library-trust-kicker,
+.sam-shell .library-ops-kicker,
+.sam-shell .library-ops-grid span,
+.sam-shell .library-ops-rail span,
+.sam-shell .library-results-header {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sam-shell .library-sam-pane-head .results-count {
+  background: transparent;
+  border: 0;
+  color: #7f98ac;
+  padding: 0;
+}
+
+.sam-shell .library-toolstrip {
+  background: #111923;
+  border-bottom-color: #223242;
+  padding: 8px;
+}
+
+.sam-shell .library-toolstrip .search-form::before {
+  display: none;
+}
+
+.sam-shell .library-toolstrip .search-input {
+  border: 1px solid #0d141b;
+  border-radius: 0;
+}
+
+.sam-shell .segmented-control button {
+  background: #162331;
+  border-color: #223242;
+  color: #9aa9b5;
+}
+
+.sam-shell .segmented-control button.active {
+  background: #2a475e;
+  border-color: #2a475e;
+  color: #ffffff;
+}
+
+.sam-shell .library-trust-panel {
+  background: #111923;
+  border-bottom-color: #223242;
+  padding: 7px 10px;
+}
+
+.sam-shell .library-results-header {
+  background: #111923;
+  border-bottom-color: #223242;
+  color: #6f8799;
+  font-weight: 650;
+  padding-block: 6px;
+}
+
+.sam-shell .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 72% 0%, rgba(26, 159, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, #1b2838 0%, #121a24 210px, #0d141b 100%);
+  padding: 0 14px 14px;
+}
+
+.sam-shell .library-sam-details-toolbar {
+  background: transparent;
+  border-bottom: 0;
+  margin: 0;
+  min-height: 46px;
+  padding: 10px 0;
+}
+
+.sam-shell .library-hero {
+  background:
+    linear-gradient(90deg, rgba(26, 159, 255, 0.2), rgba(26, 159, 255, 0.04) 40%, rgba(0, 0, 0, 0.22)),
+    #1b2838;
+  border: 0;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  grid-template-columns: 84px minmax(0, 1fr);
+  min-height: 170px;
+  padding: 18px;
+}
+
+.sam-shell .library-steam-header .library-hero-cover {
+  height: 84px;
+  width: 84px;
+}
+
+.sam-shell .library-steam-header h2 {
+  color: #ffffff;
+  font-size: clamp(25px, 2.4vw, 36px);
+  font-weight: 650;
+}
+
+.sam-shell .library-steam-header .library-hero-description {
+  color: #c7d5e0;
+  font-size: 13px;
+  max-width: 760px;
+}
+
+.sam-shell .library-hero-meta {
+  background: rgba(0, 0, 0, 0.24);
+  border: 0;
+}
+
+.sam-shell .library-ops-panel {
+  background: rgba(17, 25, 35, 0.86);
+  border: 0;
+  box-shadow: none;
+  margin-top: 10px;
+}
+
+.sam-shell .library-ops-state,
+.sam-shell .repo-status {
+  border-radius: 0;
+  letter-spacing: 0;
+}
+
+.sam-shell .library-ops-grid {
+  border-color: #223242;
+}
+
+.sam-shell .library-ops-grid > div {
+  background: rgba(13, 20, 27, 0.72);
+  border-color: #223242;
+}
+
+.sam-shell .library-ops-action-row {
+  grid-template-columns: minmax(160px, 0.9fr) repeat(3, minmax(120px, 1fr));
+}
+
+.sam-shell .library-ops-action-row .hero-primary-btn {
+  background: linear-gradient(90deg, #75c83d, #35a72f);
+  border: 0;
+  color: #ffffff !important;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.sam-shell .library-ops-action-row .hero-primary-btn:hover {
+  background: linear-gradient(90deg, #8ee24c, #43bf38);
+}
+
+.sam-shell .library-ops-action-row .secondary-btn {
+  background: rgba(42, 71, 94, 0.7);
+  border: 0;
+  min-height: 40px;
+}
+
+@media (max-width: 1280px) {
+  .sam-shell .library-sam-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .library-sam-list-pane {
+    border-right: 0;
+  }
+}
