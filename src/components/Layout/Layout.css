@@ -651,3 +651,102 @@
     display: none;
   }
 }
+
+/* v5.0.3: closer Steam top chrome. */
+.sam-shell.layout {
+  background: #171a21;
+}
+
+.sam-background,
+.sam-backdrop {
+  inset: 42px 0 0 0;
+}
+
+.sam-titlebar {
+  background: #171a21;
+  border-bottom: 1px solid #0e141b;
+  flex-basis: 42px;
+  min-height: 42px;
+}
+
+.sam-header-sidebar {
+  padding: 0 20px 0 30px;
+}
+
+.sam-shell .sam-header-nav {
+  gap: 28px;
+}
+
+.sam-shell .nav-item,
+.sam-shell .nav-item:hover,
+.sam-shell .nav-item.active {
+  align-items: center;
+  color: #dcdedf;
+  gap: 6px;
+  opacity: 0.82;
+}
+
+.sam-shell .nav-item:hover,
+.sam-shell .nav-item.active {
+  opacity: 1;
+}
+
+.sam-shell .nav-item.active {
+  color: #1a9fff;
+}
+
+.sam-shell .nav-item.active::before {
+  height: 2px;
+}
+
+.sam-shell .nav-icon {
+  display: none;
+}
+
+.sam-shell .nav-item,
+.sam-shell .nav-item:hover,
+.sam-shell .nav-item.active {
+  grid-template-columns: minmax(0, max-content);
+}
+
+.sam-shell .nav-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sam-shell .layout-content {
+  background:
+    radial-gradient(circle at 74% 12%, rgba(102, 192, 244, 0.12), transparent 34%),
+    linear-gradient(180deg, #1b2838 0%, #0e141b 72%);
+}
+
+@media (max-width: 760px) {
+  .sam-titlebar {
+    min-height: 42px;
+  }
+
+  .sam-background,
+  .sam-backdrop {
+    top: 42px;
+  }
+
+  .sam-header-sidebar {
+    padding: 0 12px;
+  }
+
+  .sam-shell .sam-header-nav {
+    gap: 20px;
+  }
+
+  .sam-shell .nav-icon {
+    display: flex;
+  }
+
+  .sam-shell .nav-item,
+  .sam-shell .nav-item:hover,
+  .sam-shell .nav-item.active {
+    grid-template-columns: 18px;
+  }
+}

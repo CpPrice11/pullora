@@ -2881,3 +2881,158 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* v5.0.3: Steam-like compact game list. */
+.sam-shell .repo-card {
+  background: transparent;
+  border: 0;
+  color: #c7d5e0;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 34px;
+  padding: 3px 8px;
+}
+
+.sam-shell .repo-card:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.sam-shell .repo-card.selected {
+  background: linear-gradient(90deg, #4f6b8a, #344966);
+}
+
+.sam-shell .repo-card-media,
+.sam-shell .owner-avatar {
+  height: 24px;
+  width: 24px;
+}
+
+.sam-shell .owner-avatar {
+  background: #151c24;
+  border: 0;
+  border-radius: 2px;
+}
+
+.sam-shell .repo-title-line {
+  align-items: center;
+  gap: 5px;
+}
+
+.sam-shell .repo-name {
+  color: #dfe3e6;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sam-shell .repo-card.selected .repo-name {
+  color: #ffffff;
+}
+
+.sam-shell .repo-owner {
+  display: none;
+}
+
+.sam-shell .repo-meta {
+  color: #7f8b96;
+  font-size: 10px;
+  gap: 5px;
+  margin-top: 0;
+  opacity: 0.9;
+}
+
+.sam-shell .repo-meta span {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.sam-shell .repo-meta span:not(.repo-installed-version):not(.repo-update-version):first-child {
+  display: none;
+}
+
+.sam-shell .repo-meta span:last-child {
+  display: none;
+}
+
+.sam-shell .repo-lang {
+  background: transparent;
+  color: #66c0f4;
+  font-size: 10px;
+  padding: 0;
+}
+
+.sam-shell .repo-status {
+  background: transparent !important;
+  border: 0;
+  color: #8f98a0;
+  font-size: 10px;
+  padding: 0;
+}
+
+.sam-shell .repo-status.installed {
+  color: #8bc53f;
+}
+
+.sam-shell .repo-status.update {
+  color: #66c0f4;
+}
+
+.sam-shell .repo-card-actions {
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast);
+}
+
+.sam-shell .repo-card:hover .repo-card-actions,
+.sam-shell .repo-card:focus-within .repo-card-actions,
+.sam-shell .repo-card.selected .repo-card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sam-shell .fav-btn,
+.sam-shell .repo-actions-menu .project-actions-trigger {
+  background: rgba(0, 0, 0, 0.18);
+  color: #c7d5e0;
+  height: 24px;
+  min-height: 24px;
+  width: 24px;
+}
+
+.sam-shell .fav-btn.active {
+  color: #ffffff;
+}
+
+.sam-shell .install-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #dfe3e6;
+  font-size: 11px;
+  min-height: 24px;
+  min-width: 66px;
+  padding: 0 7px;
+}
+
+.sam-shell .repo-card--installed .install-btn {
+  background: rgba(117, 200, 61, 0.84);
+  color: #ffffff;
+}
+
+.sam-shell .repo-card--update .install-btn {
+  background: #66c0f4;
+  color: #101822;
+}
+
+.sam-shell .repo-installed-version {
+  color: #8bc53f;
+}
+
+.sam-shell .repo-update-version {
+  color: #66c0f4;
+}
+
+@media (max-width: 860px) {
+  .sam-shell .repo-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
