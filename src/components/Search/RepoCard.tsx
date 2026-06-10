@@ -17,6 +17,7 @@ interface RepoCardProps {
   onPickArt?: () => void
   onClearArt?: () => void
   onDetails?: () => void
+  onVersions?: () => void
   onAiWorkspace?: () => void
   onUninstall?: () => void
   onSelect: () => void
@@ -35,6 +36,7 @@ function RepoCard({
   onPickArt,
   onClearArt,
   onDetails,
+  onVersions,
   onAiWorkspace,
   onUninstall,
   onSelect,
@@ -122,6 +124,16 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onSelect()
+  }
+
+  const handleVersions = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    if (onVersions) {
+      onVersions()
+    } else {
+      onSelect()
+    }
   }
 
   const handlePickArt = (event: React.MouseEvent) => {
@@ -270,7 +282,7 @@ function RepoCard({
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={handleSelect}
+                    onClick={handleVersions}
                   >
                     {t('repo.versions')}
                   </button>

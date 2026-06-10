@@ -317,10 +317,10 @@ function ReleaseSelector({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay app-window-overlay" onClick={onClose}>
       <div
         ref={modalRef}
-        className="modal-content release-modal release-modal--wizard"
+        className="modal-content app-window release-modal release-modal--wizard"
         role="dialog"
         aria-modal="true"
         aria-labelledby="release-selector-title"

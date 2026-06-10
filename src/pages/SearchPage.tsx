@@ -250,6 +250,16 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     setSort('updated')
   }
 
+  const openVersionsWindow = useCallback((repo: GitHubSearchResult) => {
+    setHeroActionsOpen(false)
+    setSelectedRepo(repo)
+  }, [])
+
+  const openDetailsWindow = useCallback((repo: GitHubSearchResult) => {
+    setHeroActionsOpen(false)
+    setDetailsRepo(repo)
+  }, [])
+
   const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
     const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
     setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
@@ -733,10 +743,10 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     </span>
                   </div>
                   <div className="updates-center-row-actions">
-                    <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(repo)}>
+                    <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(repo)}>
                       {t('repo.updateAction')}
                     </button>
-                    <button type="button" className="secondary-btn" onClick={() => setDetailsRepo(repo)}>
+                    <button type="button" className="secondary-btn" onClick={() => openDetailsWindow(repo)}>
                       {t('details.open')}
                     </button>
                     <button type="button" className="secondary-btn" onClick={() => handleSkipUpdate(repo)}>
@@ -762,7 +772,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           }}
           onOpenFolder={handleBatchOpenFolder}
           onRetry={handleBatchRetry}
-          onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
+          onChooseAnother={() => chooseAnotherRepo && openVersionsWindow(chooseAnotherRepo)}
           onCleanup={handleBatchCleanup}
         />
       </section>
@@ -890,7 +900,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
         : t('repo.install')
     const primaryAction = isInstalled && !hasUpdate
       ? () => handleLaunch(featuredRepo)
-      : () => setSelectedRepo(featuredRepo)
+      : () => openVersionsWindow(featuredRepo)
     const handleOpenFolder = () => {
       openInstalledAppDir(featuredRepo.owner.login, featuredRepo.name)
         .catch((err) => setLaunchError(
@@ -947,7 +957,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           <button type="button" className="hero-primary-btn" onClick={primaryAction}>
             {primaryLabel}
           </button>
-          <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
+          <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(featuredRepo)}>
             {t('repo.versions')}
           </button>
           <div
@@ -972,7 +982,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     role="menuitem"
                     onClick={() => {
                       setHeroActionsOpen(false)
-                      setDetailsRepo(featuredRepo)
+                      openDetailsWindow(featuredRepo)
                     }}
                   >
                     {t('details.open')}
@@ -1080,14 +1090,14 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
         </div>
 
         <div className="library-ops-action-row" aria-label={t('library.action')}>
-          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
+          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => openVersionsWindow(featuredRepo)}>
             {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
           </button>
-          <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
+          <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(featuredRepo)}>
             {t('repo.versions')}
           </button>
           {installedApp && (
-            <button type="button" className="secondary-btn" onClick={() => setDetailsRepo(featuredRepo)}>
+            <button type="button" className="secondary-btn" onClick={() => openDetailsWindow(featuredRepo)}>
               {t('details.open')}
             </button>
           )}
@@ -1283,10 +1293,11 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                     onPickArt={() => handlePickArt('cover', repo)}
                     onClearArt={() => handleClearArt(repo)}
-                    onDetails={() => setDetailsRepo(repo)}
+                    onDetails={() => openDetailsWindow(repo)}
+                    onVersions={() => openVersionsWindow(repo)}
                     onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
                     onUninstall={() => handleRequestUninstall(repo)}
-                    onSelect={() => setSelectedRepo(repo)}
+                    onSelect={() => openVersionsWindow(repo)}
                     onLaunch={() => handleLaunch(repo)}
                   />
                 )
@@ -1355,7 +1366,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           }}
           onInstallVersion={() => {
             setDetailsRepo(null)
-            setSelectedRepo(detailsRepo)
+            openVersionsWindow(detailsRepo)
           }}
         />
       )}

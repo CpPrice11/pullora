@@ -3036,3 +3036,82 @@
     pointer-events: auto;
   }
 }
+
+/* v5.0.5: Steam-style app windows for versions/details. */
+.sam-shell .app-window-overlay {
+  align-items: flex-start;
+  background:
+    linear-gradient(180deg, rgba(7, 10, 14, 0.72), rgba(7, 10, 14, 0.92)),
+    rgba(0, 0, 0, 0.84);
+  padding: clamp(44px, 7vh, 78px) clamp(18px, 4vw, 56px) 28px;
+}
+
+.sam-shell .app-window {
+  border: 1px solid #3b5369;
+  box-shadow:
+    0 34px 120px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(102, 192, 244, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  max-height: calc(100vh - clamp(82px, 12vh, 120px));
+  position: relative;
+}
+
+.sam-shell .app-window::before {
+  background: linear-gradient(90deg, #66c0f4, rgba(102, 192, 244, 0.12), transparent);
+  content: '';
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.sam-shell .app-window .modal-header {
+  background:
+    linear-gradient(180deg, #1c2a38, #111a24),
+    #111a24;
+  box-shadow: none;
+  min-height: 46px;
+  padding: 13px 14px 11px;
+}
+
+.sam-shell .app-window .modal-header h2 {
+  font-size: 18px;
+  font-weight: 780;
+}
+
+.sam-shell .app-window .close-btn {
+  background: #1b2b3b;
+  border: 1px solid #33495e;
+  border-radius: 0;
+  color: #c7d5e0;
+  height: 30px;
+  width: 34px;
+}
+
+.sam-shell .app-window .close-btn:hover {
+  background: #c74242;
+  border-color: #e06a6a;
+  color: #ffffff;
+  transform: none;
+}
+
+.sam-shell .app-window.release-modal--wizard {
+  width: min(1180px, calc(100vw - clamp(36px, 8vw, 112px)));
+}
+
+.sam-shell .app-window.app-details-modal {
+  width: min(1240px, calc(100vw - clamp(36px, 8vw, 112px)));
+}
+
+@media (max-width: 820px) {
+  .sam-shell .app-window-overlay {
+    padding: 18px 10px;
+  }
+
+  .sam-shell .app-window {
+    max-height: calc(100vh - 36px);
+    width: calc(100vw - 20px);
+  }
+}
