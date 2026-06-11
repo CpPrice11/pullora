@@ -1202,14 +1202,14 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           </button>
         </div>
 
-        {renderInlinePanel()}
-
         <div className="library-ops-rail">
           <span className={featuredRepo.has_releases ? 'ready' : 'muted'}>{t('library.ops.releases')}</span>
           <span className={isFavorite ? 'ready' : 'muted'}>{t('library.ops.favorite')}</span>
           <span className={featuredRepo.archived ? 'warning' : 'ready'}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
           <span className={featuredRepo.fork ? 'muted' : 'ready'}>{featuredRepo.fork ? t('library.ops.fork') : t('library.ops.sourceRepo')}</span>
         </div>
+
+        {renderInlinePanel()}
       </section>
     )
   }
