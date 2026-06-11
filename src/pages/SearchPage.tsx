@@ -1190,6 +1190,21 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
             <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
               {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
             </button>
+            <div className="library-play-status">
+              <span>{t('library.ops.updated')}</span>
+              <strong>{updatedDate}</strong>
+            </div>
+            <div className="library-play-status">
+              <span>{t('library.ops.active')}</span>
+              <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
+            </div>
+            <div className="library-play-status">
+              <span>{t('library.ops.language')}</span>
+              <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
+            </div>
+          </div>
+
+          <div className="library-ops-tabs" aria-label={t('details.open')}>
             <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
               {t('repo.versions')}
             </button>

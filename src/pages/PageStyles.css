@@ -6146,7 +6146,7 @@
   }
 }
 
-  @media (max-width: 860px) {
+@media (max-width: 860px) {
   .sam-shell .library-sam-workspace {
     display: flex;
   }
@@ -6176,5 +6176,82 @@
   .sam-shell .library-ops-action-row,
   .sam-shell .library-ops-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* v5.0.10: split Steam playbar statuses from lower navigation tabs. */
+.sam-shell .library-ops-action-row {
+  background:
+    linear-gradient(90deg, rgba(53, 63, 75, 0.98), rgba(36, 45, 56, 0.96)),
+    #27313d;
+  grid-template-columns: minmax(190px, 260px) repeat(3, minmax(150px, 1fr));
+  padding: 10px 12px;
+}
+
+.sam-shell .library-play-status {
+  align-items: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 2px;
+  min-height: 46px;
+  padding: 0 18px;
+}
+
+.sam-shell .library-play-status span {
+  color: #9aa8b5;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-play-status strong {
+  color: #dfe3e6;
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .library-ops-tabs {
+  background: rgba(0, 0, 0, 0.14);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  order: 2;
+  padding: 0;
+}
+
+.sam-shell .library-ops-tabs .secondary-btn {
+  background: rgba(255, 255, 255, 0.045);
+  border: 0;
+  border-radius: 0;
+  color: #aeb9c2;
+  min-height: 36px;
+}
+
+.sam-shell .library-ops-tabs .secondary-btn:hover,
+.sam-shell .library-ops-tabs .secondary-btn.active-soft {
+  background: rgba(102, 192, 244, 0.16);
+  color: #ffffff;
+}
+
+.sam-shell .library-ops-rail {
+  order: 3;
+}
+
+.sam-shell .library-ops-grid {
+  order: 4;
+}
+
+@media (max-width: 860px) {
+  .sam-shell .library-ops-action-row,
+  .sam-shell .library-ops-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .sam-shell .library-play-status {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
