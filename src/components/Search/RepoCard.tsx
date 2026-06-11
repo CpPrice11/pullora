@@ -46,6 +46,7 @@ function RepoCard({
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
   const isInstalled = Boolean(installedApp)
   const hasUpdate = Boolean(
@@ -91,6 +92,7 @@ function RepoCard({
 
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation()
+    setActionsOpen(false)
     setFavLoading(true)
     try {
       if (isFav) {
@@ -162,9 +164,11 @@ function RepoCard({
     onAiWorkspace?.()
   }
 
-  const handleActionsToggle = (event: React.MouseEvent) => {
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault()
     event.stopPropagation()
-    setActionsOpen((current) => !current)
+    setMenuPosition({ x: event.clientX, y: event.clientY })
+    setActionsOpen(true)
   }
 
   const handlePreview = () => {
@@ -183,6 +187,7 @@ function RepoCard({
     <article
       className={`repo-card repo-card--${statusClass} ${isSelected ? 'selected' : ''}`}
       onClick={handlePreview}
+      onContextMenu={handleContextMenu}
       tabIndex={0}
       role="button"
       aria-label={`${repo.name}, ${statusLabel}`}
@@ -190,6 +195,14 @@ function RepoCard({
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           handlePreview()
+          return
+        }
+
+        if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+          event.preventDefault()
+          const bounds = event.currentTarget.getBoundingClientRect()
+          setMenuPosition({ x: bounds.left + 24, y: bounds.top + 24 })
+          setActionsOpen(true)
         }
       }}
     >
@@ -234,102 +247,88 @@ function RepoCard({
         </div>
       </div>
 
-      <div className="repo-card-actions">
-        <button
-          type="button"
-          className={`fav-btn ${isFav ? 'active' : ''}`}
-          onClick={toggleFavorite}
-          disabled={favLoading}
-          title={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
-          aria-label={isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
+      {actionsOpen && menuPosition && (
+        <div
+          className="project-actions-menu repo-actions-menu repo-context-menu open"
+          ref={actionsRef}
+          style={{ left: menuPosition.x, top: menuPosition.y }}
+          onClick={(event) => event.stopPropagation()}
         >
-          {isFav ? '\u2605' : '\u2606'}
-        </button>
-        {onPickArt && (
-          <div
-            className={`project-actions-menu repo-actions-menu ${actionsOpen ? 'open' : ''}`}
-            ref={actionsRef}
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
             <button
               type="button"
-              className="project-actions-trigger"
-              aria-haspopup="menu"
-              aria-expanded={actionsOpen}
-              aria-label={t('projectActions.open')}
-              onClick={handleActionsToggle}
+              role="menuitem"
+              onClick={primaryAction}
             >
-              ...
+              {primaryLabel}
             </button>
-            {actionsOpen && (
-              <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
-                {isInstalled && hasUpdate && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleLaunch}
-                  >
-                    {t('repo.launch')}
-                  </button>
-                )}
-                {isInstalled && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleVersions}
-                  >
-                    {t('repo.versions')}
-                  </button>
-                )}
-                {isInstalled && onDetails && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleDetails}
-                  >
-                    {t('details.open')}
-                  </button>
-                )}
-                {onAiWorkspace && (
-                  <button type="button" role="menuitem" onClick={handleAiWorkspace}>
-                    {t('ai.openInWorkspace')}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={handlePickArt}
-                >
-                  {t('art.changeCover')}
-                </button>
-                {art?.coverPath && onClearArt && (
-                  <button type="button" role="menuitem" onClick={handleClearArt}>
-                    {t('art.resetCover')}
-                  </button>
-                )}
-                {isInstalled && onUninstall && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="danger-menu-item"
-                    onClick={handleUninstall}
-                  >
-                    {t('installed.uninstallApp')}
-                  </button>
-                )}
-              </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={toggleFavorite}
+              disabled={favLoading}
+            >
+              {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
+            </button>
+            {isInstalled && hasUpdate && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleLaunch}
+              >
+                {t('repo.launch')}
+              </button>
+            )}
+            {isInstalled && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleVersions}
+              >
+                {t('repo.versions')}
+              </button>
+            )}
+            {isInstalled && onDetails && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleDetails}
+              >
+                {t('details.open')}
+              </button>
+            )}
+            {onAiWorkspace && (
+              <button type="button" role="menuitem" onClick={handleAiWorkspace}>
+                {t('ai.openInWorkspace')}
+              </button>
+            )}
+            {onPickArt && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handlePickArt}
+              >
+                {t('art.changeCover')}
+              </button>
+            )}
+            {art?.coverPath && onClearArt && (
+              <button type="button" role="menuitem" onClick={handleClearArt}>
+                {t('art.resetCover')}
+              </button>
+            )}
+            {isInstalled && onUninstall && (
+              <button
+                type="button"
+                role="menuitem"
+                className="danger-menu-item"
+                onClick={handleUninstall}
+              >
+                {t('installed.uninstallApp')}
+              </button>
             )}
           </div>
-        )}
-        <button
-          type="button"
-          className="install-btn"
-          onClick={primaryAction}
-          aria-label={`${primaryLabel}: ${repo.name}`}
-        >
-          {primaryLabel}
-        </button>
-      </div>
+        </div>
+      )}
     </article>
   )
 }

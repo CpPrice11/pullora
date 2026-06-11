@@ -3121,6 +3121,17 @@
   min-width: 38px;
 }
 
+.repo-context-menu {
+  position: fixed;
+  z-index: 80;
+}
+
+.repo-context-menu .project-actions-popover {
+  position: static;
+  right: auto;
+  top: auto;
+}
+
 .hero-actions-menu {
   justify-self: stretch;
   position: relative;
