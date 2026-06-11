@@ -16,8 +16,6 @@ interface RepoCardProps {
   onFavoriteChange?: (isFavorite: boolean) => void
   onPickArt?: () => void
   onClearArt?: () => void
-  onDetails?: () => void
-  onVersions?: () => void
   onAiWorkspace?: () => void
   onUninstall?: () => void
   onInstall?: () => void
@@ -35,8 +33,6 @@ function RepoCard({
   onFavoriteChange,
   onPickArt,
   onClearArt,
-  onDetails,
-  onVersions,
   onAiWorkspace,
   onUninstall,
   onInstall,
@@ -128,12 +124,6 @@ function RepoCard({
     onInstall?.()
   }
 
-  const handleVersions = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    setActionsOpen(false)
-    onVersions?.()
-  }
-
   const handlePickArt = (event: React.MouseEvent) => {
     event.stopPropagation()
     setActionsOpen(false)
@@ -144,12 +134,6 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onClearArt?.()
-  }
-
-  const handleDetails = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    setActionsOpen(false)
-    onDetails?.()
   }
 
   const handleUninstall = (event: React.MouseEvent) => {
@@ -277,24 +261,6 @@ function RepoCard({
                 onClick={handleLaunch}
               >
                 {t('repo.launch')}
-              </button>
-            )}
-            {isInstalled && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleVersions}
-              >
-                {t('repo.versions')}
-              </button>
-            )}
-            {isInstalled && onDetails && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleDetails}
-              >
-                {t('details.open')}
               </button>
             )}
             {onAiWorkspace && (
