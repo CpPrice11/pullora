@@ -5,7 +5,6 @@ import { useLibraryStatus } from '../hooks/useLibraryStatus'
 import { useDownload } from '../hooks/useDownload'
 import RepoCard from '../components/Search/RepoCard'
 import ReleaseSelector from '../components/Search/ReleaseSelector'
-import AppDetailsModal from '../components/Search/AppDetailsModal'
 import UninstallConfirmModal from '../components/Search/UninstallConfirmModal'
 import DownloadProgressPanel from '../components/Install/DownloadProgress'
 import StatePanel from '../components/State/StatePanel'
@@ -29,6 +28,7 @@ type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
+type HeroPanel = 'overview' | 'versions' | 'details'
 type BatchUpdateJob = {
   url: string
   fileName: string
@@ -126,8 +126,8 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
-  const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
+  const [heroPanel, setHeroPanel] = useState<HeroPanel>('overview')
   const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
@@ -218,9 +218,6 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     try {
       await uninstallApp(uninstallTarget.installedApp.owner, uninstallTarget.installedApp.repo)
       setLibraryActionMessage(t('installed.uninstallDone', { name: uninstallTarget.repo.name }))
-      if (detailsRepo?.id === uninstallTarget.repo.id) {
-        setDetailsRepo(null)
-      }
       setUninstallTarget(null)
       await refreshLocalStatus()
     } catch (err) {
@@ -250,14 +247,10 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     setSort('updated')
   }
 
-  const openVersionsWindow = useCallback((repo: GitHubSearchResult) => {
+  const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
     setHeroActionsOpen(false)
-    setSelectedRepo(repo)
-  }, [])
-
-  const openDetailsWindow = useCallback((repo: GitHubSearchResult) => {
-    setHeroActionsOpen(false)
-    setDetailsRepo(repo)
+    setFeaturedRepo(repo)
+    setHeroPanel(panel)
   }, [])
 
   const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
@@ -530,6 +523,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
       setFeaturedRepo(null)
+      setHeroPanel('overview')
       return
     }
 
@@ -538,6 +532,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
       !visibleRepositories.some((repo) => repo.id === featuredRepo.id)
     ) {
       setFeaturedRepo(visibleRepositories[0])
+      setHeroPanel('overview')
     }
   }, [featuredRepo, visibleRepositories])
 
@@ -743,10 +738,10 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     </span>
                   </div>
                   <div className="updates-center-row-actions">
-                    <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(repo)}>
+                    <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(repo)}>
                       {t('repo.updateAction')}
                     </button>
-                    <button type="button" className="secondary-btn" onClick={() => openDetailsWindow(repo)}>
+                    <button type="button" className="secondary-btn" onClick={() => selectFeaturedRepo(repo, 'details')}>
                       {t('details.open')}
                     </button>
                     <button type="button" className="secondary-btn" onClick={() => handleSkipUpdate(repo)}>
@@ -772,7 +767,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           }}
           onOpenFolder={handleBatchOpenFolder}
           onRetry={handleBatchRetry}
-          onChooseAnother={() => chooseAnotherRepo && openVersionsWindow(chooseAnotherRepo)}
+          onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
           onCleanup={handleBatchCleanup}
         />
       </section>
@@ -900,7 +895,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
         : t('repo.install')
     const primaryAction = isInstalled && !hasUpdate
       ? () => handleLaunch(featuredRepo)
-      : () => openVersionsWindow(featuredRepo)
+      : () => setSelectedRepo(featuredRepo)
     const handleOpenFolder = () => {
       openInstalledAppDir(featuredRepo.owner.login, featuredRepo.name)
         .catch((err) => setLaunchError(
@@ -957,8 +952,11 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           <button type="button" className="hero-primary-btn" onClick={primaryAction}>
             {primaryLabel}
           </button>
-          <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(featuredRepo)}>
+          <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
             {t('repo.versions')}
+          </button>
+          <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
+            {t('details.open')}
           </button>
           <div
             className={`project-actions-menu hero-actions-menu ${heroActionsOpen ? 'open' : ''}`}
@@ -982,7 +980,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     role="menuitem"
                     onClick={() => {
                       setHeroActionsOpen(false)
-                      openDetailsWindow(featuredRepo)
+                      setHeroPanel('details')
                     }}
                   >
                     {t('details.open')}
@@ -1049,6 +1047,104 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     const isFavorite = favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))
     const updatedDate = new Date(featuredRepo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
     const localVersionCount = installedApp?.versions.length ?? 0
+    const installPath = settings.installationPath && installedApp
+      ? `${settings.installationPath}\\${installedApp.owner}-${installedApp.repo}`
+      : null
+    const localVersions = installedApp?.versions ?? []
+
+    const renderInlinePanel = () => {
+      if (heroPanel === 'overview') return null
+
+      if (heroPanel === 'versions') {
+        return (
+          <section className="library-inline-panel library-inline-panel--versions" aria-label={t('repo.versions')}>
+            <div className="library-inline-panel-head">
+              <div>
+                <span>{t('repo.versions')}</span>
+                <strong>{featuredRepo.name}</strong>
+              </div>
+              <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
+                {t('library.trust.collapse')}
+              </button>
+            </div>
+            <div className="library-inline-summary">
+              <div>
+                <span>{t('details.activeVersion')}</span>
+                <strong>{installedApp?.activeVersion ?? t('release.notInstalled')}</strong>
+              </div>
+              <div>
+                <span>{t('details.latestVersion')}</span>
+                <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
+              </div>
+              <div>
+                <span>{t('details.localVersions')}</span>
+                <strong>{localVersionCount.toLocaleString()}</strong>
+              </div>
+              <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
+                {hasUpdate ? t('repo.updateAction') : t('repo.versions')}
+              </button>
+            </div>
+            <div className="library-inline-version-list">
+              {localVersions.length > 0 ? localVersions.map((version) => {
+                const isActive = version.tag === installedApp?.activeVersion
+                const versionDate = new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+                return (
+                  <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
+                    <div>
+                      <strong>{version.tag}</strong>
+                      <span>{versionDate}</span>
+                    </div>
+                    <span>{isActive ? t('installed.active') : t('details.versionStateOlder')}</span>
+                  </div>
+                )
+              }) : (
+                <p className="library-inline-empty">{t('release.notInstalled')}</p>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      return (
+        <section className="library-inline-panel library-inline-panel--details" aria-label={t('details.open')}>
+          <div className="library-inline-panel-head">
+            <div>
+              <span>{t('details.kicker')}</span>
+              <strong>{featuredRepo.full_name}</strong>
+            </div>
+            <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
+              {t('library.trust.collapse')}
+            </button>
+          </div>
+          <div className="library-inline-summary library-inline-summary--details">
+            <div>
+              <span>{t('library.ops.owner')}</span>
+              <strong>{featuredRepo.owner.login}</strong>
+            </div>
+            <div>
+              <span>{t('library.ops.updated')}</span>
+              <strong>{updatedDate}</strong>
+            </div>
+            <div>
+              <span>{t('library.ops.language')}</span>
+              <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
+            </div>
+            <div>
+              <span>{t('library.ops.stars')}</span>
+              <strong>{featuredRepo.stargazers_count.toLocaleString()}</strong>
+            </div>
+            <div>
+              <span>{t('release.installPath')}</span>
+              <strong>{installPath ?? t('details.unknown')}</strong>
+            </div>
+            <div>
+              <span>{t('library.ops.latest')}</span>
+              <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
+            </div>
+          </div>
+        </section>
+      )
+    }
 
     return (
       <section className={`library-ops-panel ${hasUpdate ? 'update' : installedApp ? 'installed' : 'available'}`} aria-label={t('library.ops.title')}>
@@ -1090,14 +1186,14 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
         </div>
 
         <div className="library-ops-action-row" aria-label={t('library.action')}>
-          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => openVersionsWindow(featuredRepo)}>
+          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
             {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
           </button>
-          <button type="button" className="secondary-btn" onClick={() => openVersionsWindow(featuredRepo)}>
+          <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
             {t('repo.versions')}
           </button>
           {installedApp && (
-            <button type="button" className="secondary-btn" onClick={() => openDetailsWindow(featuredRepo)}>
+            <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
               {t('details.open')}
             </button>
           )}
@@ -1105,6 +1201,8 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
             {t('ai.openInWorkspace')}
           </button>
         </div>
+
+        {renderInlinePanel()}
 
         <div className="library-ops-rail">
           <span className={featuredRepo.has_releases ? 'ready' : 'muted'}>{t('library.ops.releases')}</span>
@@ -1289,15 +1387,15 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                     art={projectArt[key]}
                     isFavorite={favoriteKeys.has(key)}
                     isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                    onPreview={() => setFeaturedRepo(repo)}
+                    onPreview={() => selectFeaturedRepo(repo)}
                     onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                     onPickArt={() => handlePickArt('cover', repo)}
                     onClearArt={() => handleClearArt(repo)}
-                    onDetails={() => openDetailsWindow(repo)}
-                    onVersions={() => openVersionsWindow(repo)}
+                    onDetails={() => selectFeaturedRepo(repo, 'details')}
+                    onVersions={() => selectFeaturedRepo(repo, 'versions')}
                     onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
                     onUninstall={() => handleRequestUninstall(repo)}
-                    onSelect={() => openVersionsWindow(repo)}
+                    onInstall={() => setSelectedRepo(repo)}
                     onLaunch={() => handleLaunch(repo)}
                   />
                 )
@@ -1341,33 +1439,6 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
           onClose={() => setSelectedRepo(null)}
           onInstalled={handleInstalledFromRelease}
-        />
-      )}
-
-      {detailsRepo && getInstalledApp(detailsRepo) && (
-        <AppDetailsModal
-          repo={detailsRepo}
-          installedApp={getInstalledApp(detailsRepo)!}
-          latestVersion={getLatestVersion(detailsRepo)}
-          onClose={() => setDetailsRepo(null)}
-          onChanged={async () => {
-            const freshInstalledApps = await refreshInstalledApps()
-            await refreshLatestVersions(freshInstalledApps, state.repositories)
-          }}
-          onUninstalled={(scope, tag) => {
-            setLibraryActionMessage(
-              scope === 'app'
-                ? t('installed.uninstallDone', { name: detailsRepo.name })
-                : t('installed.uninstallVersionDone', { version: tag ?? '' }),
-            )
-            if (scope === 'app') {
-              setDetailsRepo(null)
-            }
-          }}
-          onInstallVersion={() => {
-            setDetailsRepo(null)
-            openVersionsWindow(detailsRepo)
-          }}
         />
       )}
 

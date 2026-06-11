@@ -276,10 +276,10 @@ function AppDetailsModal({
 
   return (
     <>
-    <div className="modal-overlay app-window-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div
         ref={modalRef}
-        className="modal-content app-window app-details-modal"
+        className="modal-content app-details-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="app-details-title"

@@ -20,7 +20,7 @@ interface RepoCardProps {
   onVersions?: () => void
   onAiWorkspace?: () => void
   onUninstall?: () => void
-  onSelect: () => void
+  onInstall?: () => void
   onLaunch?: () => void
 }
 
@@ -39,7 +39,7 @@ function RepoCard({
   onVersions,
   onAiWorkspace,
   onUninstall,
-  onSelect,
+  onInstall,
   onLaunch,
 }: RepoCardProps) {
   const { language, t } = useI18n()
@@ -120,20 +120,16 @@ function RepoCard({
     onLaunch?.()
   }
 
-  const handleSelect = (event: React.MouseEvent) => {
+  const handleInstall = (event: React.MouseEvent) => {
     event.stopPropagation()
     setActionsOpen(false)
-    onSelect()
+    onInstall?.()
   }
 
   const handleVersions = (event: React.MouseEvent) => {
     event.stopPropagation()
     setActionsOpen(false)
-    if (onVersions) {
-      onVersions()
-    } else {
-      onSelect()
-    }
+    onVersions?.()
   }
 
   const handlePickArt = (event: React.MouseEvent) => {
@@ -179,7 +175,7 @@ function RepoCard({
   const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
   const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.available')
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
-  const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleSelect
+  const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleInstall
 
   const coverUrl = projectArtCoverUrl(art)
 
@@ -187,8 +183,6 @@ function RepoCard({
     <article
       className={`repo-card repo-card--${statusClass} ${isSelected ? 'selected' : ''}`}
       onClick={handlePreview}
-      onFocus={handlePreview}
-      onMouseEnter={handlePreview}
       tabIndex={0}
       role="button"
       aria-label={`${repo.name}, ${statusLabel}`}
