@@ -18,7 +18,7 @@ interface OwnerRepositoriesState {
   isStale: boolean
 }
 
-export function useOwnerRepositories(owner: string | undefined) {
+export function useOwnerRepositories(owner: string | undefined, releasesOnly = false) {
   const [state, setState] = useState<OwnerRepositoriesState>({
     repositories: [],
     loading: false,
@@ -55,7 +55,7 @@ export function useOwnerRepositories(owner: string | undefined) {
         if (forceRefresh) {
           await clearGithubCache()
         }
-        const data = await listOwnerRepositories(normalizedOwner, page, true)
+        const data = await listOwnerRepositories(normalizedOwner, page, releasesOnly)
         const loadedAt = new Date()
         setState((prev) => ({
           repositories:
@@ -86,7 +86,7 @@ export function useOwnerRepositories(owner: string | undefined) {
         return null
       }
     },
-    [owner],
+    [owner, releasesOnly],
   )
 
   const refreshRepositories = useCallback(() => {

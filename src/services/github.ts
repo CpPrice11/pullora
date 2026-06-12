@@ -7,7 +7,7 @@ import type {
 export async function listOwnerRepositories(
   owner: string,
   page = 1,
-  releasesOnly = true,
+  releasesOnly = false,
 ): Promise<OwnerRepositoriesResponse> {
   return callTauri<OwnerRepositoriesResponse>('list_owner_repositories', {
     owner,
