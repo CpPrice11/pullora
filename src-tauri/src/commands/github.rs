@@ -20,11 +20,20 @@ pub async fn list_owner_repositories(
 pub async fn search_public_repositories(
     query: Option<String>,
     page: Option<u32>,
+    sort: Option<String>,
+    language: Option<String>,
+    topic: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<OwnerRepositoriesResponse, String> {
     let client = state.github_client.lock().await;
     client
-        .search_public_repositories(query.as_deref().unwrap_or(""), page.unwrap_or(1))
+        .search_public_repositories(
+            query.as_deref().unwrap_or(""),
+            page.unwrap_or(1),
+            sort.as_deref(),
+            language.as_deref(),
+            topic.as_deref(),
+        )
         .await
 }
 

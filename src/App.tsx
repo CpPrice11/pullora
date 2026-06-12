@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import Layout from './components/Layout/Layout'
-import { LibraryPage, ReleaseSelector } from './features/library'
+import ReleaseSelector from './components/Install/ReleaseSelector'
+import { LibraryPage } from './features/library'
+import { StorePage } from './features/store'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import AiWorkspacePage from './pages/AiWorkspacePage'
@@ -172,9 +174,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'store':    return (
-        <LibraryPage
-          mode="store"
-          onOpenSettings={() => setSettingsOpen(true)}
+        <StorePage
           onOpenAiWorkspace={(repo) => {
             setAiWorkspaceRepo(repo)
             setActiveTab('aiWorkspace')
@@ -201,7 +201,7 @@ function App() {
         />
       )
       case 'about':     return <AboutPage />
-      default:          return <LibraryPage mode="store" />
+      default:          return <StorePage />
     }
   }
 

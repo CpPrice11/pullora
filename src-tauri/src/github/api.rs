@@ -130,14 +130,42 @@ impl GitHubClient {
         &self,
         query: &str,
         page: u32,
+        sort: Option<&str>,
+        language: Option<&str>,
+        topic: Option<&str>,
     ) -> Result<OwnerRepositoriesResponse, String> {
         let normalized_query = query.trim();
-        let search_query = if normalized_query.is_empty() {
-            "stars:>=0 fork:false archived:false".to_string()
+        let normalized_language = language.unwrap_or("").trim();
+        let normalized_topic = topic.unwrap_or("").trim();
+        let mut query_parts = Vec::new();
+
+        if normalized_query.is_empty() {
+            query_parts.push("stars:>=0".to_string());
         } else {
-            format!("{} fork:false archived:false", normalized_query)
+            query_parts.push(normalized_query.to_string());
+        }
+        if !normalized_language.is_empty() {
+            query_parts.push(format!("language:{}", normalized_language));
+        }
+        if !normalized_topic.is_empty() {
+            query_parts.push(format!("topic:{}", normalized_topic));
+        }
+        query_parts.push("fork:false".to_string());
+        query_parts.push("archived:false".to_string());
+
+        let search_query = query_parts.join(" ");
+        let normalized_sort = match sort.unwrap_or("updated") {
+            "stars" => "stars",
+            "forks" => "forks",
+            "updated" => "updated",
+            _ => "updated",
         };
-        let cache_key = format!("search:{}:{}", search_query.to_lowercase(), page);
+        let cache_key = format!(
+            "search:{}:{}:{}",
+            normalized_sort,
+            search_query.to_lowercase(),
+            page
+        );
 
         {
             let cache = self.cache.lock().unwrap();
@@ -148,8 +176,9 @@ impl GitHubClient {
 
         let per_page = 30;
         let url = format!(
-            "https://api.github.com/search/repositories?q={}&sort=updated&order=desc&per_page={}&page={}",
+            "https://api.github.com/search/repositories?q={}&sort={}&order=desc&per_page={}&page={}",
             urlencoding::encode(&search_query),
+            normalized_sort,
             per_page,
             page
         );

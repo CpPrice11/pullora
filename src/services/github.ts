@@ -19,10 +19,18 @@ export async function listOwnerRepositories(
 export async function searchPublicRepositories(
   query = '',
   page = 1,
+  options: {
+    sort?: 'updated' | 'stars' | 'forks'
+    language?: string
+    topic?: string
+  } = {},
 ): Promise<OwnerRepositoriesResponse> {
   return callTauri<OwnerRepositoriesResponse>('search_public_repositories', {
     query,
     page,
+    sort: options.sort,
+    language: options.language,
+    topic: options.topic,
   })
 }
 
