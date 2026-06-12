@@ -2,7 +2,7 @@ import React from 'react'
 import Sidebar from './Sidebar'
 import './Layout.css'
 
-type Tab = 'search' | 'aiWorkspace' | 'settings' | 'about'
+type Tab = 'store' | 'library' | 'aiWorkspace' | 'settings' | 'about'
 
 interface LayoutProps {
   children: React.ReactNode

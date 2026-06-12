@@ -22,7 +22,7 @@ import {
   setLauncherBackgroundArt,
 } from './services/projectArt'
 
-type ContentTab = 'search' | 'aiWorkspace' | 'about'
+type ContentTab = 'store' | 'library' | 'aiWorkspace' | 'about'
 type NavigationTab = ContentTab | 'settings'
 
 function AiWorkspaceNotifications() {
@@ -64,7 +64,7 @@ function AiWorkspaceNotifications() {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<ContentTab>('search')
+  const [activeTab, setActiveTab] = useState<ContentTab>('store')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
@@ -166,15 +166,28 @@ function App() {
     setActiveTab(tab)
   }
 
-  const visibleBackground = activeTab === 'search' && searchPreviewBackground
+  const visibleBackground = (activeTab === 'store' || activeTab === 'library') && searchPreviewBackground
     ? searchPreviewBackground
     : launcherBackground
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'search':    return (
+      case 'store':    return (
         <SearchPage
+          mode="store"
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenAiWorkspace={(repo) => {
+            setAiWorkspaceRepo(repo)
+            setActiveTab('aiWorkspace')
+          }}
+          onPreviewBackground={setSearchPreviewBackground}
+        />
+      )
+      case 'library':    return (
+        <SearchPage
+          mode="library"
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenStore={() => setActiveTab('store')}
           onOpenAiWorkspace={(repo) => {
             setAiWorkspaceRepo(repo)
             setActiveTab('aiWorkspace')
@@ -189,7 +202,7 @@ function App() {
         />
       )
       case 'about':     return <AboutPage />
-      default:          return <SearchPage />
+      default:          return <SearchPage mode="store" />
     }
   }
 
