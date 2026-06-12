@@ -21,6 +21,8 @@ export interface StoreSectionConfig {
 export interface StoreCategory {
   id: string
   title: string
+  icon: string
+  estimate: string
   language?: string
   topic?: string
 }
@@ -55,14 +57,14 @@ export const storeHomeSections: StoreSectionConfig[] = [
 ]
 
 export const storeCategories: StoreCategory[] = [
-  { id: 'javascript', title: 'JavaScript', language: 'JavaScript' },
-  { id: 'typescript', title: 'TypeScript', language: 'TypeScript' },
-  { id: 'rust', title: 'Rust', language: 'Rust' },
-  { id: 'python', title: 'Python', language: 'Python' },
-  { id: 'game', title: 'Game', topic: 'game' },
-  { id: 'tool', title: 'Tool', topic: 'tool' },
-  { id: 'ai', title: 'AI', topic: 'ai' },
-  { id: 'desktop', title: 'Desktop', topic: 'desktop-application' },
+  { id: 'javascript', title: 'JavaScript', icon: 'JS', estimate: '31.4k', language: 'JavaScript' },
+  { id: 'typescript', title: 'TypeScript', icon: 'TS', estimate: '18.7k', language: 'TypeScript' },
+  { id: 'rust', title: 'Rust', icon: 'RS', estimate: '7.2k', language: 'Rust' },
+  { id: 'python', title: 'Python', icon: 'PY', estimate: '26.1k', language: 'Python' },
+  { id: 'game', title: 'Game', icon: 'GP', estimate: '6.8k', topic: 'game' },
+  { id: 'tool', title: 'Tool', icon: 'TL', estimate: '27.9k', topic: 'tool' },
+  { id: 'ai', title: 'AI', icon: 'AI', estimate: '15.6k', topic: 'ai' },
+  { id: 'desktop', title: 'Desktop', icon: 'PC', estimate: '9.3k', topic: 'desktop-application' },
 ]
 
 export function repoKey(repo: GitHubSearchResult) {

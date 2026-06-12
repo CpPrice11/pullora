@@ -37,6 +37,7 @@ function StoreProjectCard({
   const [imageUrl, setImageUrl] = useState(socialPreviewUrl(repo))
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const accent = languageAccent(repo.language)
+  const topics = (repo.topics ?? []).slice(0, 2)
   const isInstallable = Boolean(installability?.installable)
   const isChecking = Boolean(installability?.checking)
   const statusKey = installedApp
@@ -57,6 +58,40 @@ function StoreProjectCard({
     setImageUrl(socialPreviewUrl(repo))
   }, [repo])
 
+  if (variant === 'row') {
+    return (
+      <article
+        className={`store-project-card store-project-card--row ${selected ? 'selected' : ''}`}
+        style={{ '--store-card-accent': accent } as CSSProperties}
+        onClick={() => onSelect?.(repo)}
+      >
+        <div className="store-row-main">
+          <div className="store-project-media">
+            <img src={imageUrl} alt="" onError={() => setImageUrl(fallbackCover)} />
+          </div>
+          <div className="store-row-title">
+            <h3 title={repo.name}>{repo.name}</h3>
+            <p>{repo.description ?? `${repo.owner.login}/${repo.name}`}</p>
+          </div>
+        </div>
+        <div className="store-row-owner">
+          <span className="store-github-dot" aria-hidden="true" />
+          <span>{repo.owner.login}</span>
+        </div>
+        <div className="store-row-tags">
+          {repo.language && <span>{repo.language}</span>}
+          {topics.map((topic) => <span key={topic}>{topic}</span>)}
+        </div>
+        <span className="store-row-date">{updatedDate}</span>
+        <span className="store-row-stars">{repo.stargazers_count.toLocaleString()}</span>
+        <span className={`store-row-status ${isInstallable || installedApp ? 'ready' : ''}`} title={t(statusKey)}>
+          {isInstallable || installedApp ? '✓' : '○'}
+        </span>
+        <span className="store-project-key">{repoKey(repo)}</span>
+      </article>
+    )
+  }
+
   return (
     <article
       className={`store-project-card store-project-card--${variant} ${selected ? 'selected' : ''}`}
@@ -64,11 +99,7 @@ function StoreProjectCard({
       onClick={() => onSelect?.(repo)}
     >
       <div className="store-project-media">
-        <img
-          src={imageUrl}
-          alt=""
-          onError={() => setImageUrl(fallbackCover)}
-        />
+        <img src={imageUrl} alt="" onError={() => setImageUrl(fallbackCover)} />
         <span className="store-project-status">{t(statusKey)}</span>
       </div>
 
@@ -89,13 +120,10 @@ function StoreProjectCard({
           </button>
         </div>
         <p className="store-project-owner">{repo.owner.login}/{repo.name}</p>
-        {variant !== 'row' && repo.description && (
-          <p className="store-project-description">{repo.description}</p>
-        )}
+        {repo.description && <p className="store-project-description">{repo.description}</p>}
         <div className="store-project-meta">
-          <span>{repo.language ?? t('details.unknown')}</span>
+          {repo.language && <span>{repo.language}</span>}
           <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
-          <span>{t('repo.updated', { date: updatedDate })}</span>
         </div>
         <div className="store-project-actions">
           <button

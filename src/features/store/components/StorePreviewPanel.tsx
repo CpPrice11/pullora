@@ -49,34 +49,32 @@ function StorePreviewPanel({
       className="store-preview-panel"
       style={{ '--store-preview-accent': accent } as CSSProperties}
     >
-      <div className="store-preview-media">
-        <img src={imageUrl} alt="" />
-      </div>
       <div className="store-preview-copy">
         <h3>{repo.name}</h3>
         <p className="store-preview-owner">{repo.owner.login}/{repo.name}</p>
-        {repo.description && <p>{repo.description}</p>}
         <div className="store-preview-tags">
           {repo.language && <span>{repo.language}</span>}
           {keyTopics.map((topic) => <span key={topic}>{topic}</span>)}
         </div>
+        <div className="store-preview-media">
+          <div className="store-preview-main-shot">
+            <img src={imageUrl} alt="" />
+          </div>
+          <div className="store-preview-shots" aria-hidden="true">
+            <div className="store-preview-shot"><img src={socialPreviewUrl(repo)} alt="" /></div>
+            <div className="store-preview-shot"><img src={repo.owner.avatar_url} alt="" /></div>
+            <div className="store-preview-shot"><img src={imageUrl} alt="" /></div>
+            <div className="store-preview-more">+{Math.max((repo.topics ?? []).length, 3)}</div>
+          </div>
+        </div>
+        {repo.description && <p>{repo.description}</p>}
         <div className="store-preview-facts">
-          <div>
-            <span>{t('library.ops.updated')}</span>
-            <strong>{updatedDate}</strong>
-          </div>
-          <div>
-            <span>{t('library.ops.stars')}</span>
-            <strong>{repo.stargazers_count.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>{t('library.ops.active')}</span>
-            <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
-          </div>
-          <div>
-            <span>{t('library.ops.releases')}</span>
-            <strong>{installability?.checking ? t('store.status.checking') : isInstallable ? t('store.status.installable') : t('store.status.source')}</strong>
-          </div>
+          <span>{t('repo.updated', { date: updatedDate })}</span>
+          <span>{repo.language ?? t('details.unknown')}</span>
+          <span>{repo.html_url}</span>
+          <span>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</span>
+          <span>{installability?.checking ? t('store.status.checking') : isInstallable ? t('store.status.installable') : t('store.status.source')}</span>
+          <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
         </div>
         <div className="store-preview-actions">
           <button

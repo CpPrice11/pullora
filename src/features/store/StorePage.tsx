@@ -35,10 +35,15 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
   const heroRepo = selectedRepo ?? catalog.homeSections[0]?.items[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
-
   const recommendedItems = useMemo(() => {
-    return catalog.homeSections.flatMap((section) => section.items).slice(0, 8)
+    return catalog.homeSections.flatMap((section) => section.items).slice(0, 6)
   }, [catalog.homeSections])
+  const showBlockingError = Boolean(catalog.error) &&
+    catalog.homeSections.every((section) => section.items.length === 0) &&
+    catalog.browseItems.length === 0
+  const errorText = catalog.error?.startsWith('store.')
+    ? t(catalog.error)
+    : catalog.error
 
   useEffect(() => {
     const timer = window.setTimeout(() => setStoreSearchQuery(query.trim()), 350)
@@ -48,9 +53,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   useEffect(() => {
     if (selectedRepo) return
     const first = catalog.browseItems[0] ?? catalog.homeSections[0]?.items[0]
-    if (first) {
-      setSelectedRepo(first)
-    }
+    if (first) setSelectedRepo(first)
   }, [catalog.browseItems, catalog.homeSections, selectedRepo])
 
   useEffect(() => {
@@ -92,10 +95,48 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     setView('browse')
   }
 
+  const renderBrowse = (embedded = false) => (
+    <StoreBrowse
+      embedded={embedded}
+      items={embedded ? catalog.browseItems.slice(0, 6) : catalog.browseItems}
+      selectedRepo={selectedRepo}
+      tabs={catalog.browseTabs}
+      activeTab={browseTab}
+      installableFilter={installableFilter}
+      loading={catalog.loadingBrowse}
+      loadingInstallability={catalog.loadingInstallability}
+      hasMore={embedded ? false : catalog.hasMoreBrowse}
+      favoriteKeys={catalog.favoriteKeys}
+      installedByRepo={catalog.installedByRepo}
+      installability={catalog.installability}
+      projectArt={catalog.projectArt}
+      onTabChange={(tab) => {
+        setBrowseTab(tab)
+        if (embedded) setView('browse')
+      }}
+      onFilterChange={(filter) => {
+        setInstallableFilter(filter)
+        if (embedded) setView('browse')
+      }}
+      onSelect={handleSelect}
+      onFavorite={catalog.toggleFavorite}
+      onInstall={handleInstall}
+      onOpenSource={handleOpenSource}
+      onLoadMore={catalog.loadMoreBrowse}
+      onAiWorkspace={onOpenAiWorkspace}
+    />
+  )
+
   return (
     <div className="page store-page">
       <div className="store-topbar">
         <div className="store-nav-tabs" role="tablist" aria-label={t('store.nav.label')}>
+          <button type="button" className={`store-home-icon ${view === 'home' ? 'active' : ''}`} onClick={() => setView('home')} aria-label={t('store.nav.home')}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 11.5 12 5l8 6.5" />
+              <path d="M6.5 10.5V20h11v-9.5" />
+            </svg>
+          </button>
           <button type="button" className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>
             {t('store.nav.home')}
           </button>
@@ -121,30 +162,46 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
             {t('store.nav.installable')}
           </button>
         </div>
-        <label className="store-search" htmlFor="store-search-input">
-          <span className="visually-hidden">{t('store.searchLabel')}</span>
-          <input
-            id="store-search-input"
-            type="text"
-            value={query}
-            placeholder={t('store.searchPlaceholder')}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setView('browse')
-            }}
-          />
-          <button type="button" onClick={() => setView('browse')} aria-label={t('store.searchLabel')}>
-            ⌕
+
+        <div className="store-topbar-actions">
+          <label className="store-search" htmlFor="store-search-input">
+            <span className="visually-hidden">{t('store.searchLabel')}</span>
+            <input
+              id="store-search-input"
+              type="text"
+              value={query}
+              placeholder={t('store.searchPlaceholder')}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setView('browse')
+              }}
+            />
+            <button type="button" onClick={() => setView('browse')} aria-label={t('store.searchLabel')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6" />
+                <path d="m16 16 4 4" />
+              </svg>
+            </button>
+          </label>
+          <button type="button" className="store-wishlist-btn" onClick={() => {
+            setBrowseTab('favorites')
+            setView('browse')
+          }}>
+            <span aria-hidden="true">♡</span>
+            {t('store.browse.favorites')}
           </button>
-        </label>
-        <button type="button" className="store-refresh-btn" onClick={() => catalog.refreshAll()}>
-          {catalog.loadingHome || catalog.loadingBrowse ? t('store.refreshing') : t('store.refresh')}
-        </button>
+          <button type="button" className="store-refresh-btn" onClick={() => catalog.refreshAll()} aria-label={t('store.refresh')}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 12a8 8 0 1 1-2.35-5.65" />
+              <path d="M20 4v6h-6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {catalog.error && (
+      {showBlockingError && (
         <div className="store-error" role="alert">
-          {catalog.error}
+          {errorText}
         </div>
       )}
 
@@ -162,30 +219,8 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
             onBrowse={() => setView('browse')}
           />
 
-          <section className="store-section store-categories-section">
-            <div className="store-section-head">
-              <div>
-                <h2>{t('store.section.categories')}</h2>
-                <p>{t('store.section.categoriesText')}</p>
-              </div>
-            </div>
-            <div className="store-category-grid">
-              {storeCategories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  className={`store-category-tile store-category-tile--${category.id}`}
-                  onClick={() => handleCategory(category.language ?? category.topic ?? category.title)}
-                >
-                  <span>{category.title}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
           <StoreCarousel
             titleKey="store.section.spotlight"
-            subtitleKey="store.section.spotlightText"
             items={recommendedItems}
             favoriteKeys={catalog.favoriteKeys}
             installedByRepo={catalog.installedByRepo}
@@ -197,7 +232,29 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
             onOpenSource={handleOpenSource}
           />
 
-          {catalog.homeSections.map((section) => (
+          <section className="store-section store-categories-section">
+            <div className="store-section-head">
+              <h2>{t('store.section.categories')}</h2>
+            </div>
+            <div className="store-category-grid">
+              {storeCategories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  className={`store-category-tile store-category-tile--${category.id}`}
+                  onClick={() => handleCategory(category.language ?? category.topic ?? category.title)}
+                >
+                  <span className="store-category-icon" aria-hidden="true">{category.icon}</span>
+                  <span>{category.title}</span>
+                  <small>{t('store.category.projects', { count: category.estimate })}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {renderBrowse(true)}
+
+          {catalog.homeSections.slice(1, 3).map((section) => (
             <StoreCarousel
               key={section.id}
               titleKey={section.titleKey}
@@ -216,30 +273,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         </>
       )}
 
-      {view === 'browse' && (
-        <StoreBrowse
-          items={catalog.browseItems}
-          selectedRepo={selectedRepo}
-          tabs={catalog.browseTabs}
-          activeTab={browseTab}
-          installableFilter={installableFilter}
-          loading={catalog.loadingBrowse}
-          loadingInstallability={catalog.loadingInstallability}
-          hasMore={catalog.hasMoreBrowse}
-          favoriteKeys={catalog.favoriteKeys}
-          installedByRepo={catalog.installedByRepo}
-          installability={catalog.installability}
-          projectArt={catalog.projectArt}
-          onTabChange={setBrowseTab}
-          onFilterChange={setInstallableFilter}
-          onSelect={handleSelect}
-          onFavorite={catalog.toggleFavorite}
-          onInstall={handleInstall}
-          onOpenSource={handleOpenSource}
-          onLoadMore={catalog.loadMoreBrowse}
-          onAiWorkspace={onOpenAiWorkspace}
-        />
-      )}
+      {view === 'browse' && renderBrowse(false)}
 
       {installTarget && (
         <ReleaseSelector

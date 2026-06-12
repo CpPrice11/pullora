@@ -27,6 +27,7 @@ interface StoreBrowseProps {
   onOpenSource: (repo: GitHubSearchResult) => void
   onLoadMore: () => void
   onAiWorkspace?: (repo: GitHubSearchResult) => void
+  embedded?: boolean
 }
 
 function StoreBrowse({
@@ -50,12 +51,16 @@ function StoreBrowse({
   onOpenSource,
   onLoadMore,
   onAiWorkspace,
+  embedded = false,
 }: StoreBrowseProps) {
   const { t } = useI18n()
   const selectedKey = selectedRepo ? repoKey(selectedRepo) : null
 
   return (
-    <section className="store-browse" aria-label={t('store.nav.browse')}>
+    <section className={`store-browse ${embedded ? 'store-browse--embedded' : ''}`} aria-label={t('store.nav.browse')}>
+      <div className="store-browse-title">
+        <h2>{t('store.catalog.title')}</h2>
+      </div>
       <div className="store-browse-head">
         <div className="store-tabs" role="tablist" aria-label={t('store.browse.tabs')}>
           {tabs.map((tab) => (
@@ -91,6 +96,14 @@ function StoreBrowse({
 
       <div className="store-browse-grid">
         <div className="store-browse-list">
+          <div className="store-row-header" aria-hidden="true">
+            <span>{t('store.catalog.name')}</span>
+            <span>{t('store.catalog.owner')}</span>
+            <span>{t('store.catalog.tags')}</span>
+            <span>{t('store.catalog.updated')}</span>
+            <span>{t('store.catalog.stars')}</span>
+            <span />
+          </div>
           {loading && items.length === 0 && <div className="store-loading">{t('store.loading')}</div>}
           {!loading && !loadingInstallability && items.length === 0 && (
             <div className="store-empty">{t('store.emptyText')}</div>

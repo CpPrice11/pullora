@@ -113,7 +113,7 @@ export function useStoreCatalog(
     setLoadingHome(true)
     setError(null)
     try {
-      const sections = await Promise.all(storeHomeSections.map(async (section) => {
+      const settled = await Promise.allSettled(storeHomeSections.map(async (section) => {
         const result = await searchPublicRepositories(section.options.query ?? '', 1, {
           sort: section.options.sort,
           language: section.options.language,
@@ -126,9 +126,15 @@ export function useStoreCatalog(
           items: result.items.slice(0, 12),
         }
       }))
+      const sections = settled
+        .filter((item): item is PromiseFulfilledResult<StoreSection> => item.status === 'fulfilled')
+        .map((item) => item.value)
       setHomeSections(sections)
+      if (sections.length === 0 && settled.some((item) => item.status === 'rejected')) {
+        setError('store.error.load')
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load store')
+      setError(err instanceof Error ? err.message : 'store.error.load')
     } finally {
       setLoadingHome(false)
     }
@@ -155,7 +161,7 @@ export function useStoreCatalog(
       setBrowsePage(result.page)
       setHasMoreBrowse(result.has_more)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load store catalog')
+      setError(err instanceof Error ? err.message : 'store.error.load')
     } finally {
       setLoadingBrowse(false)
     }
