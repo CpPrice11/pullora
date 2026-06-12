@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { GitHubRelease, GitHubSearchResult, InstalledApp, InstalledAppHealth, VersionInfo } from '../../types'
-import { getReleases } from '../../services/github'
+import type { GitHubRelease, GitHubSearchResult, InstalledApp, InstalledAppHealth, VersionInfo } from '../../../types'
+import { getReleases } from '../../../services/github'
 import {
   launchApp,
   openInstalledAppDir,
@@ -8,14 +8,14 @@ import {
   uninstallApp,
   uninstallVersion,
   validateInstalledApp,
-} from '../../services/installed'
-import { useSettings } from '../../hooks/useSettings'
-import { useI18n } from '../../i18n'
-import { useModalFocus } from '../../hooks/useModalFocus'
+} from '../../../services/installed'
+import { useSettings } from '../../../hooks/useSettings'
+import { useI18n } from '../../../i18n'
+import { useModalFocus } from '../../../hooks/useModalFocus'
 import UninstallConfirmModal from './UninstallConfirmModal'
 import SwitchVersionConfirmModal from './SwitchVersionConfirmModal'
 import './SearchComponents.css'
-import '../Modal/Modal.css'
+import '../../../components/Modal/Modal.css'
 
 interface AppDetailsModalProps {
   repo: GitHubSearchResult

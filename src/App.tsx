@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import Layout from './components/Layout/Layout'
-import SearchPage from './pages/SearchPage'
+import { LibraryPage, ReleaseSelector } from './features/library'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import AiWorkspacePage from './pages/AiWorkspacePage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import UpdateBanner from './components/UpdateBanner/UpdateBanner'
-import ReleaseSelector from './components/Search/ReleaseSelector'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyAppearanceSettings, applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
@@ -173,7 +172,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'store':    return (
-        <SearchPage
+        <LibraryPage
           mode="store"
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenAiWorkspace={(repo) => {
@@ -184,7 +183,7 @@ function App() {
         />
       )
       case 'library':    return (
-        <SearchPage
+        <LibraryPage
           mode="library"
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenStore={() => setActiveTab('store')}
@@ -202,7 +201,7 @@ function App() {
         />
       )
       case 'about':     return <AboutPage />
-      default:          return <SearchPage mode="store" />
+      default:          return <LibraryPage mode="store" />
     }
   }
 

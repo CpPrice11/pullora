@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useOwnerRepositories, usePublicRepositories } from '../hooks/useGitHub'
-import { useSettings } from '../hooks/useSettings'
-import { useLibraryStatus } from '../hooks/useLibraryStatus'
-import { useDownload } from '../hooks/useDownload'
-import RepoCard from '../components/Search/RepoCard'
-import ReleaseSelector from '../components/Search/ReleaseSelector'
-import UninstallConfirmModal from '../components/Search/UninstallConfirmModal'
-import DownloadProgressPanel from '../components/Install/DownloadProgress'
-import StatePanel from '../components/State/StatePanel'
-import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir, uninstallApp } from '../services/installed'
-import { getReleases } from '../services/github'
-import { addToFavorites, getFavorites, removeFromFavorites } from '../services/favorites'
-import { pickImageFile } from '../services/dialog'
+import { useOwnerRepositories, usePublicRepositories } from './hooks/useGitHub'
+import { useSettings } from '../../hooks/useSettings'
+import { useLibraryStatus } from './hooks/useLibraryStatus'
+import { useDownload } from '../../hooks/useDownload'
+import RepoCard from './components/RepoCard'
+import ReleaseSelector from './components/ReleaseSelector'
+import UninstallConfirmModal from './components/UninstallConfirmModal'
+import DownloadProgressPanel from '../../components/Install/DownloadProgress'
+import StatePanel from '../../components/State/StatePanel'
+import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir, uninstallApp } from '../../services/installed'
+import { getReleases } from '../../services/github'
+import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
+import { pickImageFile } from '../../services/dialog'
 import {
   clearProjectArt,
   listProjectArt,
@@ -19,14 +19,14 @@ import {
   projectArtBackgroundUrl,
   projectArtKey,
   setProjectArt,
-} from '../services/projectArt'
-import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../types'
-import { useI18n } from '../i18n'
-import './PageStyles.css'
+} from '../../services/projectArt'
+import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
+import { useI18n } from '../../i18n'
+import '../../pages/PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
-type SearchPageMode = 'store' | 'library'
+type LibraryPageMode = 'store' | 'library'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type HeroPanel = 'overview' | 'versions' | 'details'
@@ -116,21 +116,21 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
     .find(assetIsPortableInstall) ?? null
 }
 
-interface SearchPageProps {
-  mode?: SearchPageMode
+interface LibraryPageProps {
+  mode?: LibraryPageMode
   onOpenSettings?: () => void
   onOpenStore?: () => void
   onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
   onPreviewBackground?: (url: string | null) => void
 }
 
-function SearchPage({
+function LibraryPage({
   mode = 'store',
   onOpenSettings,
   onOpenStore,
   onOpenAiWorkspace,
   onPreviewBackground,
-}: SearchPageProps) {
+}: LibraryPageProps) {
   const { language, t } = useI18n()
   const isLibraryMode = mode === 'library'
   const pageKey = isLibraryMode ? 'library' : 'store'
@@ -1546,4 +1546,4 @@ function SearchPage({
   )
 }
 
-export default SearchPage
+export default LibraryPage

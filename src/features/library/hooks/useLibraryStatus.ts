@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { GitHubSearchResult, InstalledApp } from '../types'
-import { getReleases } from '../services/github'
-import { getInstalledApps } from '../services/installed'
+import type { GitHubSearchResult, InstalledApp } from '../../../types'
+import { getReleases } from '../../../services/github'
+import { getInstalledApps } from '../../../services/installed'
 
 interface LibraryStatusState {
   installedApps: InstalledApp[]

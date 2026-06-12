@@ -1,8 +1,8 @@
 import { useRef } from 'react'
-import type { InstalledApp } from '../../types'
-import { useI18n } from '../../i18n'
-import { useModalFocus } from '../../hooks/useModalFocus'
-import '../Modal/Modal.css'
+import type { InstalledApp } from '../../../types'
+import { useI18n } from '../../../i18n'
+import { useModalFocus } from '../../../hooks/useModalFocus'
+import '../../../components/Modal/Modal.css'
 import './SearchComponents.css'
 
 interface UninstallConfirmModalProps {

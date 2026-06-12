@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
-import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../services/favorites'
-import { projectArtCoverUrl } from '../../services/projectArt'
-import { useI18n } from '../../i18n'
+import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
+import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
+import { projectArtCoverUrl } from '../../../services/projectArt'
+import { useI18n } from '../../../i18n'
 import './SearchComponents.css'
 
 interface RepoCardProps {

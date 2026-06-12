@@ -1,7 +1,7 @@
 import { useRef } from 'react'
-import { useI18n } from '../../i18n'
-import { useModalFocus } from '../../hooks/useModalFocus'
-import '../Modal/Modal.css'
+import { useI18n } from '../../../i18n'
+import { useModalFocus } from '../../../hooks/useModalFocus'
+import '../../../components/Modal/Modal.css'
 import './SearchComponents.css'
 
 interface SwitchVersionConfirmModalProps {

@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react'
-import type { GitHubSearchResult, GitHubRelease } from '../types'
+import type { GitHubSearchResult, GitHubRelease } from '../../../types'
 import {
   clearGithubCache,
   listOwnerRepositories,
   getReleases,
   searchPublicRepositories,
-} from '../services/github'
+} from '../../../services/github'
 
 interface OwnerRepositoriesState {
   repositories: GitHubSearchResult[]
