@@ -26,6 +26,7 @@ import './PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
+type SearchPageMode = 'store' | 'library'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type HeroPanel = 'overview' | 'versions' | 'details'
@@ -41,7 +42,8 @@ type UninstallTarget = {
   installedApp: InstalledApp
 }
 
-const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
+const storeFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
+const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates']
 
 function libraryFilterLabelKey(filter: LibraryFilter) {
   return filter === 'available' ? 'library.availableFilter' : `library.${filter}`
@@ -115,13 +117,24 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
 }
 
 interface SearchPageProps {
+  mode?: SearchPageMode
   onOpenSettings?: () => void
+  onOpenStore?: () => void
   onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
   onPreviewBackground?: (url: string | null) => void
 }
 
-function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: SearchPageProps) {
+function SearchPage({
+  mode = 'store',
+  onOpenSettings,
+  onOpenStore,
+  onOpenAiWorkspace,
+  onPreviewBackground,
+}: SearchPageProps) {
   const { language, t } = useI18n()
+  const isLibraryMode = mode === 'library'
+  const pageKey = isLibraryMode ? 'library' : 'store'
+  const activeFilters = isLibraryMode ? libraryFilters : storeFilters
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
@@ -246,6 +259,12 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
     setFilter('all')
     setSort('updated')
   }
+
+  useEffect(() => {
+    if (!activeFilters.includes(filter)) {
+      setFilter('all')
+    }
+  }, [activeFilters, filter])
 
   const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
     setHeroActionsOpen(false)
@@ -464,6 +483,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
       const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
+      const belongsToLibrary = Boolean(installedApp) || isFavorite
       const hasUpdate = Boolean(
         installedApp &&
         latestVersion &&
@@ -473,6 +493,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
         latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
       )
 
+      if (isLibraryMode && !belongsToLibrary) return false
       if (filter === 'installed' && !installedApp) return false
       if (filter === 'favorites' && !isFavorite) return false
       if (filter === 'updates' && (!hasUpdate || updateDismissed)) return false
@@ -518,7 +539,17 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, query, sort, state.repositories])
+  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, isLibraryMode, query, sort, state.repositories])
+
+  const modeRepositoryCount = useMemo(() => {
+    if (!isLibraryMode) return state.repositories.length
+
+    return state.repositories.filter((repo) => {
+      const installedApp = getInstalledApp(repo)
+      const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
+      return Boolean(installedApp) || isFavorite
+    }).length
+  }, [favoriteKeys, getInstalledApp, isLibraryMode, state.repositories])
 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
@@ -791,9 +822,9 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
           <div className="library-trust-copy">
             <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
             <span>
-              {t('library.trust.visible')}: {t('library.count', {
+              {t('library.trust.visible')}: {t(`${pageKey}.count`, {
                 visible: visibleRepositories.length.toLocaleString(),
-                total: state.repositories.length.toLocaleString(),
+                total: modeRepositoryCount.toLocaleString(),
               })}
             </span>
             {formattedLatestVersionsTime && (
@@ -1232,11 +1263,27 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
   }
 
   const showLoadingState = owner && state.loading && state.repositories.length === 0
+  const emptyTitleKey = modeRepositoryCount === 0
+    ? `${pageKey}.emptyTitle`
+    : `${pageKey}.noMatchesTitle`
+  const emptyTextKey = modeRepositoryCount === 0
+    ? `${pageKey}.emptyText`
+    : `${pageKey}.noMatchesText`
+  const emptyActionLabel = modeRepositoryCount === 0
+    ? isLibraryMode && onOpenStore
+      ? t('store.open')
+      : t(`${pageKey}.refresh`)
+    : t(`${pageKey}.resetFilters`)
+  const emptyAction = modeRepositoryCount === 0
+    ? isLibraryMode && onOpenStore
+      ? onOpenStore
+      : handleRefresh
+    : handleResetLibraryFilters
 
   return (
     <div className="page library-page">
       <div className="page-header">
-        <h2>{t('library.title')}</h2>
+        <h2>{t(`${pageKey}.title`)}</h2>
         {owner && (
           <div className="page-actions">
             {refreshState === 'error' && (
@@ -1248,7 +1295,7 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
               onClick={handleRefresh}
               disabled={state.loading || checkingUpdates}
             >
-              {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
+              {state.loading || checkingUpdates ? t(`${pageKey}.refreshing`) : t(`${pageKey}.refresh`)}
             </button>
           </div>
         )}
@@ -1257,48 +1304,48 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
       {!owner && !settingsLoading && (
         <StatePanel
           kind="empty"
-          title={t('library.noOwnerTitle')}
-          message={t('library.noOwnerText')}
-          actionLabel={onOpenSettings ? t('library.openSettings') : undefined}
+          title={t(`${pageKey}.noOwnerTitle`)}
+          message={t(`${pageKey}.noOwnerText`)}
+          actionLabel={onOpenSettings ? t(`${pageKey}.openSettings`) : undefined}
           onAction={onOpenSettings}
         />
       )}
 
       {owner && (
         <div className="library-sam-workspace">
-          <section className="library-sam-list-pane" aria-label={t('library.title')}>
+          <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <div className="library-sam-pane-head">
               <div>
                 <span className="library-sam-kicker">{owner}</span>
-                <h3>{t('library.title')}</h3>
+                <h3>{t(`${pageKey}.title`)}</h3>
               </div>
               <p className="results-count">
-                {t('library.count', {
+                {t(`${pageKey}.count`, {
                   visible: visibleRepositories.length.toLocaleString(),
-                  total: state.repositories.length.toLocaleString(),
+                  total: modeRepositoryCount.toLocaleString(),
                 })}
               </p>
             </div>
 
-            <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
+            <section className="library-toolstrip" aria-label={t(`${pageKey}.filterLabel`)}>
               <div className="search-form">
                 <label className="visually-hidden" htmlFor="library-search">
-                  {t('library.searchLabel')}
+                  {t(`${pageKey}.searchLabel`)}
                 </label>
                 <input
                   id="library-search"
                   type="text"
-                  placeholder={t('library.searchPlaceholder')}
+                  placeholder={t(`${pageKey}.searchPlaceholder`)}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   className="search-input"
-                  aria-label={t('library.searchLabel')}
+                  aria-label={t(`${pageKey}.searchLabel`)}
                 />
               </div>
 
               <div className="library-controls">
-                <div className="segmented-control" aria-label={t('library.filterLabel')}>
-                  {libraryFilters.map((item) => (
+                <div className="segmented-control" aria-label={t(`${pageKey}.filterLabel`)}>
+                  {activeFilters.map((item) => (
                     <button
                       key={item}
                       type="button"
@@ -1312,13 +1359,13 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
                   ))}
                 </div>
 
-                <label className="sort-control" htmlFor="library-sort" aria-label={t('library.sortLabel')}>
-                  <span className="visually-hidden">{t('library.sortLabel')}</span>
+                <label className="sort-control" htmlFor="library-sort" aria-label={t(`${pageKey}.sortLabel`)}>
+                  <span className="visually-hidden">{t(`${pageKey}.sortLabel`)}</span>
                   <select
                     id="library-sort"
                     value={sort}
                     onChange={(event) => setSort(event.target.value as LibrarySort)}
-                    aria-label={t('library.sortLabel')}
+                    aria-label={t(`${pageKey}.sortLabel`)}
                   >
                     <option value="updated">{t('library.recentlyUpdated')}</option>
                     <option value="status">{t('library.status')}</option>
@@ -1371,24 +1418,16 @@ function SearchPage({ onOpenSettings, onOpenAiWorkspace, onPreviewBackground }: 
               </div>
 
               {showLoadingState && (
-                <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />
+                <StatePanel kind="loading" title={t(`${pageKey}.loading`)} skeletonCount={3} />
               )}
 
               {visibleRepositories.length === 0 && !state.loading && (
                 <StatePanel
                   kind="empty"
-                  title={state.repositories.length === 0
-                    ? t('library.emptyTitle')
-                    : t('library.noMatchesTitle')}
-                  message={state.repositories.length === 0
-                    ? t('library.emptyText')
-                    : t('library.noMatchesText')}
-                  actionLabel={state.repositories.length === 0
-                    ? t('library.refresh')
-                    : t('library.resetFilters')}
-                  onAction={state.repositories.length === 0
-                    ? handleRefresh
-                    : handleResetLibraryFilters}
+                  title={t(emptyTitleKey)}
+                  message={t(emptyTextKey)}
+                  actionLabel={emptyActionLabel}
+                  onAction={emptyAction}
                 />
               )}
 
