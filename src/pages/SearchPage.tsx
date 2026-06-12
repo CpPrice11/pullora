@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useOwnerRepositories } from '../hooks/useGitHub'
+import { useOwnerRepositories, usePublicRepositories } from '../hooks/useGitHub'
 import { useSettings } from '../hooks/useSettings'
 import { useLibraryStatus } from '../hooks/useLibraryStatus'
 import { useDownload } from '../hooks/useDownload'
@@ -136,6 +136,7 @@ function SearchPage({
   const pageKey = isLibraryMode ? 'library' : 'store'
   const activeFilters = isLibraryMode ? libraryFilters : storeFilters
   const [query, setQuery] = useState('')
+  const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
@@ -169,7 +170,14 @@ function SearchPage({
   } = useDownload()
   const heroActionsRef = useRef<HTMLDivElement | null>(null)
   const owner = settings.githubOwner?.trim()
-  const { state, loadRepositories, refreshRepositories, loadMore } = useOwnerRepositories(owner)
+  const ownerRepositories = useOwnerRepositories(owner)
+  const publicRepositories = usePublicRepositories(isLibraryMode ? '' : storeSearchQuery)
+  const {
+    state,
+    loadRepositories,
+    refreshRepositories,
+    loadMore,
+  } = isLibraryMode ? ownerRepositories : publicRepositories
   const {
     checkingUpdates,
     latestVersionErrorCount,
@@ -393,7 +401,20 @@ function SearchPage({
       ? 'checking'
       : latestVersionErrorCount > 0
         ? 'partial'
-        : 'fresh'
+      : 'fresh'
+
+  useEffect(() => {
+    if (isLibraryMode) {
+      setStoreSearchQuery('')
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setStoreSearchQuery(query.trim())
+    }, 350)
+
+    return () => window.clearTimeout(timer)
+  }, [isLibraryMode, query])
 
   useEffect(() => {
     if (!settingsLoading) {
@@ -1262,7 +1283,8 @@ function SearchPage({
     )
   }
 
-  const showLoadingState = owner && state.loading && state.repositories.length === 0
+  const requiresOwner = isLibraryMode && !owner
+  const showLoadingState = !requiresOwner && state.loading && state.repositories.length === 0
   const emptyTitleKey = modeRepositoryCount === 0
     ? `${pageKey}.emptyTitle`
     : `${pageKey}.noMatchesTitle`
@@ -1284,7 +1306,7 @@ function SearchPage({
     <div className="page library-page">
       <div className="page-header">
         <h2>{t(`${pageKey}.title`)}</h2>
-        {owner && (
+        {!requiresOwner && (
           <div className="page-actions">
             {refreshState === 'error' && (
               <span className="refresh-status error">{t('refresh.error')}</span>
@@ -1301,7 +1323,7 @@ function SearchPage({
         )}
       </div>
 
-      {!owner && !settingsLoading && (
+      {requiresOwner && !settingsLoading && (
         <StatePanel
           kind="empty"
           title={t(`${pageKey}.noOwnerTitle`)}
@@ -1311,12 +1333,12 @@ function SearchPage({
         />
       )}
 
-      {owner && (
+      {!requiresOwner && (
         <div className="library-sam-workspace">
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <div className="library-sam-pane-head">
               <div>
-                <span className="library-sam-kicker">{owner}</span>
+                <span className="library-sam-kicker">{isLibraryMode ? owner : t('store.globalSource')}</span>
                 <h3>{t(`${pageKey}.title`)}</h3>
               </div>
               <p className="results-count">
@@ -1466,7 +1488,7 @@ function SearchPage({
           <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
             <div className="library-sam-details-toolbar">
               <span>{t('details.open')}</span>
-              {owner && (
+              {!requiresOwner && (
                 <button
                   type="button"
                   className="secondary-btn"

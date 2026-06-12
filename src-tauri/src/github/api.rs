@@ -2,7 +2,7 @@ use reqwest::Client;
 use std::sync::{Arc, Mutex};
 
 use super::cache::ApiCache;
-use super::models::{OwnerRepositoriesResponse, Release, Repository};
+use super::models::{OwnerRepositoriesResponse, Release, Repository, SearchRepositoriesResponse};
 
 pub struct GitHubClient {
     client: Client,
@@ -111,6 +111,75 @@ impl GitHubClient {
 
             items.push(repo);
         }
+
+        let data = OwnerRepositoriesResponse {
+            items,
+            page,
+            has_more,
+        };
+
+        {
+            let mut cache = self.cache.lock().unwrap();
+            cache.set_owner_repositories(cache_key, data.clone());
+        }
+
+        Ok(data)
+    }
+
+    pub async fn search_public_repositories(
+        &self,
+        query: &str,
+        page: u32,
+    ) -> Result<OwnerRepositoriesResponse, String> {
+        let normalized_query = query.trim();
+        let search_query = if normalized_query.is_empty() {
+            "stars:>=0 fork:false archived:false".to_string()
+        } else {
+            format!("{} fork:false archived:false", normalized_query)
+        };
+        let cache_key = format!("search:{}:{}", search_query.to_lowercase(), page);
+
+        {
+            let cache = self.cache.lock().unwrap();
+            if let Some(cached) = cache.get_owner_repositories(&cache_key) {
+                return Ok(cached.clone());
+            }
+        }
+
+        let per_page = 30;
+        let url = format!(
+            "https://api.github.com/search/repositories?q={}&sort=updated&order=desc&per_page={}&page={}",
+            urlencoding::encode(&search_query),
+            per_page,
+            page
+        );
+
+        let mut req = self.client.get(&url);
+        if let Some(auth) = self.auth_header() {
+            req = req.header(reqwest::header::AUTHORIZATION, auth);
+        }
+
+        let response = req.send().await.map_err(|e| e.to_string())?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            if status.as_u16() == 403 {
+                return Err("GitHub API rate limit exceeded. Try again later.".to_string());
+            }
+            return Err(format!("GitHub API error {}: {}", status, body));
+        }
+
+        let raw: SearchRepositoriesResponse = response.json().await.map_err(|e| e.to_string())?;
+        let items = raw
+            .items
+            .into_iter()
+            .filter(|repo| !repo.private && !repo.fork && !repo.archived)
+            .collect::<Vec<_>>();
+        let max_search_results = 1000_u64;
+        let loaded_count = u64::from(page) * per_page as u64;
+        let has_more = items.len() == per_page as usize
+            && loaded_count < raw.total_count.min(max_search_results);
 
         let data = OwnerRepositoriesResponse {
             items,

@@ -16,6 +16,16 @@ export async function listOwnerRepositories(
   })
 }
 
+export async function searchPublicRepositories(
+  query = '',
+  page = 1,
+): Promise<OwnerRepositoriesResponse> {
+  return callTauri<OwnerRepositoriesResponse>('search_public_repositories', {
+    query,
+    page,
+  })
+}
+
 export async function getReleases(
   owner: string,
   repo: string,

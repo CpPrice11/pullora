@@ -17,6 +17,18 @@ pub async fn list_owner_repositories(
 }
 
 #[tauri::command]
+pub async fn search_public_repositories(
+    query: Option<String>,
+    page: Option<u32>,
+    state: State<'_, AppState>,
+) -> Result<OwnerRepositoriesResponse, String> {
+    let client = state.github_client.lock().await;
+    client
+        .search_public_repositories(query.as_deref().unwrap_or(""), page.unwrap_or(1))
+        .await
+}
+
+#[tauri::command]
 pub async fn get_releases(
     owner: String,
     repo: String,

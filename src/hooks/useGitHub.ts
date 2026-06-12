@@ -4,6 +4,7 @@ import {
   clearGithubCache,
   listOwnerRepositories,
   getReleases,
+  searchPublicRepositories,
 } from '../services/github'
 
 interface OwnerRepositoriesState {
@@ -87,6 +88,72 @@ export function useOwnerRepositories(owner: string | undefined, releasesOnly = f
       }
     },
     [owner, releasesOnly],
+  )
+
+  const refreshRepositories = useCallback(() => {
+    return loadRepositories(1, true)
+  }, [loadRepositories])
+
+  const loadMore = useCallback(() => {
+    if (!state.hasMore || state.loading) return
+    loadRepositories(state.page + 1)
+  }, [state.hasMore, state.loading, state.page, loadRepositories])
+
+  return { state, loadRepositories, refreshRepositories, loadMore }
+}
+
+export function usePublicRepositories(searchQuery = '') {
+  const [state, setState] = useState<OwnerRepositoriesState>({
+    repositories: [],
+    loading: false,
+    error: null,
+    page: 1,
+    hasMore: false,
+    lastLoadedAt: null,
+    lastRefreshAt: null,
+    lastErrorAt: null,
+    isStale: false,
+  })
+
+  const loadRepositories = useCallback(
+    async (page = 1, forceRefresh = false): Promise<GitHubSearchResult[] | null> => {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      try {
+        if (forceRefresh) {
+          await clearGithubCache()
+        }
+        const data = await searchPublicRepositories(searchQuery, page)
+        const loadedAt = new Date()
+        setState((prev) => ({
+          repositories:
+            page === 1
+              ? data.items
+              : [...prev.repositories, ...data.items],
+          loading: false,
+          error: null,
+          page: data.page,
+          hasMore: data.has_more,
+          lastLoadedAt: loadedAt,
+          lastRefreshAt: forceRefresh ? loadedAt : prev.lastRefreshAt,
+          lastErrorAt: null,
+          isStale: false,
+        }))
+        return data.items
+      } catch (err) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error:
+            err instanceof Error
+              ? err.message
+              : 'Failed to load repositories',
+          lastErrorAt: new Date(),
+          isStale: prev.repositories.length > 0,
+        }))
+        return null
+      }
+    },
+    [searchQuery],
   )
 
   const refreshRepositories = useCallback(() => {
