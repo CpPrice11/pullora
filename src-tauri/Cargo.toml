@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "5.0.20"
+version = "5.0.21"
 description = "Air Launcher - GitHub program launcher"
 authors = ["you"]
 license = ""

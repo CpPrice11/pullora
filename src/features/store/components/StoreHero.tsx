@@ -117,9 +117,9 @@ function StoreHero({
             <button
               key={`${item.owner.login}/${item.name}`}
               type="button"
+              aria-label={`${item.owner.login}/${item.name}`}
               className={index === normalizedIndex ? 'active' : ''}
               onClick={() => onActiveIndexChange(index)}
-              tabIndex={-1}
             />
           ))}
         </div>

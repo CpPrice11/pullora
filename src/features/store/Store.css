@@ -173,8 +173,8 @@
   box-shadow: var(--store-shadow);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 520px;
-  height: clamp(250px, 30vh, 300px);
-  min-height: 250px;
+  height: clamp(330px, 36vh, 380px);
+  min-height: 330px;
   overflow: hidden;
   padding: 28px 92px 28px 72px;
   position: relative;
@@ -196,11 +196,14 @@
 }
 
 .store-hero-copy {
+  align-content: center;
+  display: grid;
+  min-height: 100%;
   position: absolute;
   left: auto;
   right: 92px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
   width: min(520px, 42%);
   max-width: 520px;
   z-index: 2;
@@ -241,6 +244,11 @@
   margin: 10px 0 0;
   max-width: min(680px, 100%);
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .store-hero-meta,
@@ -253,7 +261,7 @@
 }
 
 .store-hero-meta {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .store-hero-meta span,
@@ -275,7 +283,7 @@
   flex-wrap: wrap;
   font-size: 14px;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .store-hero-stats span:first-child {
@@ -293,6 +301,10 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 20px;
+}
+
+.store-hero .store-hero-actions {
+  margin-top: 14px;
 }
 
 .store-primary-btn,
@@ -357,8 +369,10 @@
 
 .store-hero-dots {
   display: flex;
+  flex-wrap: wrap;
   gap: 7px;
-  margin-top: 16px;
+  margin-top: 12px;
+  max-width: 340px;
 }
 
 .store-hero-dots button {
@@ -368,7 +382,7 @@
   cursor: pointer;
   height: 6px;
   padding: 0;
-  width: 18px;
+  width: 16px;
 }
 
 .store-hero-dots button.active {
@@ -939,7 +953,7 @@
       linear-gradient(180deg, rgba(6, 17, 29, 0.08) 0%, rgba(6, 17, 29, 0.5) 42%, rgba(6, 17, 29, 0.98) 100%),
       var(--store-hero-image);
     grid-template-columns: 1fr;
-    min-height: 320px;
+    min-height: 350px;
     padding: 34px 74px 28px;
   }
 
@@ -947,7 +961,9 @@
     align-self: end;
     grid-column: 1;
     max-width: 680px;
+    min-height: auto;
     position: relative;
+    bottom: auto;
     right: auto;
     top: auto;
     transform: none;
@@ -982,7 +998,7 @@
 
   .store-hero {
     grid-template-columns: 1fr;
-    min-height: 320px;
+    min-height: 360px;
     padding: 28px 22px;
   }
 
