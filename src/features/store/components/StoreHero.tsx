@@ -7,9 +7,12 @@ import heroBackdrop from '../assets/store-hero-scene.png'
 
 interface StoreHeroProps {
   repo?: GitHubSearchResult
+  items: GitHubSearchResult[]
+  activeIndex: number
   personalized?: boolean
   installedApp?: InstalledApp
   installability?: StoreInstallability
+  onActiveIndexChange: (index: number) => void
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
   onBrowse: () => void
@@ -17,14 +20,18 @@ interface StoreHeroProps {
 
 function StoreHero({
   repo,
+  items,
+  activeIndex,
   personalized = false,
   installedApp,
   installability,
+  onActiveIndexChange,
   onInstall,
   onOpenSource,
   onBrowse,
 }: StoreHeroProps) {
   const { language, t } = useI18n()
+  const itemCount = items.length
 
   if (!repo) {
     return (
@@ -54,6 +61,18 @@ function StoreHero({
         ? 'store.status.checking'
         : 'store.status.source'
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+  const canNavigate = itemCount > 1
+  const normalizedIndex = Math.min(activeIndex, Math.max(itemCount - 1, 0))
+
+  const showPrevious = () => {
+    if (!canNavigate) return
+    onActiveIndexChange((normalizedIndex - 1 + itemCount) % itemCount)
+  }
+
+  const showNext = () => {
+    if (!canNavigate) return
+    onActiveIndexChange((normalizedIndex + 1) % itemCount)
+  }
 
   return (
     <section
@@ -63,7 +82,13 @@ function StoreHero({
         '--store-hero-accent': accent,
       } as CSSProperties}
     >
-      <button type="button" className="store-hero-arrow store-hero-arrow--left" aria-label={t('carousel.previous')}>
+      <button
+        type="button"
+        className="store-hero-arrow store-hero-arrow--left"
+        aria-label={t('carousel.previous')}
+        disabled={!canNavigate}
+        onClick={showPrevious}
+      >
         <span aria-hidden="true">‹</span>
       </button>
 
@@ -87,6 +112,18 @@ function StoreHero({
           {isInstallable && <span>{t('store.status.installable')}</span>}
         </div>
 
+        <div className="store-hero-dots">
+          {items.map((item, index) => (
+            <button
+              key={`${item.owner.login}/${item.name}`}
+              type="button"
+              className={index === normalizedIndex ? 'active' : ''}
+              onClick={() => onActiveIndexChange(index)}
+              tabIndex={-1}
+            />
+          ))}
+        </div>
+
         <div className="store-hero-actions">
           <button
             type="button"
@@ -99,16 +136,15 @@ function StoreHero({
             {t('store.action.details')}
           </button>
         </div>
-
-        <div className="store-hero-dots" aria-hidden="true">
-          <span className="active" />
-          <span />
-          <span />
-          <span />
-        </div>
       </div>
 
-      <button type="button" className="store-hero-arrow store-hero-arrow--right" aria-label={t('carousel.next')}>
+      <button
+        type="button"
+        className="store-hero-arrow store-hero-arrow--right"
+        aria-label={t('carousel.next')}
+        disabled={!canNavigate}
+        onClick={showNext}
+      >
         <span aria-hidden="true">›</span>
       </button>
     </section>

@@ -342,6 +342,11 @@
   z-index: 3;
 }
 
+.store-hero-arrow:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .store-hero-arrow--left {
   left: 18px;
 }
@@ -356,14 +361,17 @@
   margin-top: 16px;
 }
 
-.store-hero-dots span {
+.store-hero-dots button {
   background: rgba(177, 205, 235, 0.34);
+  border: 0;
   border-radius: 999px;
+  cursor: pointer;
   height: 6px;
+  padding: 0;
   width: 18px;
 }
 
-.store-hero-dots .active {
+.store-hero-dots button.active {
   background: var(--store-blue);
 }
 
