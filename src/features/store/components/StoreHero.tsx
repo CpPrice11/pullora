@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
+import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { languageAccent } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
 import { useI18n } from '../../../i18n'
@@ -7,13 +7,10 @@ import heroBackdrop from '../assets/store-hero-scene.png'
 
 interface StoreHeroProps {
   repo?: GitHubSearchResult
-  art?: ProjectArt
   installedApp?: InstalledApp
   installability?: StoreInstallability
-  favorite?: boolean
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
-  onFavorite: (repo: GitHubSearchResult) => void
   onBrowse: () => void
 }
 

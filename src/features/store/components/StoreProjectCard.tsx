@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { projectArtCoverUrl } from '../../../services/projectArt'
-import { languageAccent, repoKey, socialPreviewUrl } from '../storeCatalog'
+import { languageAccent, repoKey } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
 import { useI18n } from '../../../i18n'
 
@@ -33,8 +33,8 @@ function StoreProjectCard({
   onOpenSource,
 }: StoreProjectCardProps) {
   const { language, t } = useI18n()
-  const fallbackCover = projectArtCoverUrl(art) ?? repo.owner.avatar_url
-  const [imageUrl, setImageUrl] = useState(socialPreviewUrl(repo))
+  const appIcon = projectArtCoverUrl(art) ?? repo.owner.avatar_url
+  const [imageUrl, setImageUrl] = useState(appIcon)
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 2)
@@ -55,8 +55,8 @@ function StoreProjectCard({
   const primaryAction = isInstallable ? onInstall : onOpenSource
 
   useEffect(() => {
-    setImageUrl(socialPreviewUrl(repo))
-  }, [repo])
+    setImageUrl(appIcon)
+  }, [appIcon])
 
   if (variant === 'row') {
     return (
@@ -67,7 +67,7 @@ function StoreProjectCard({
       >
         <div className="store-row-main">
           <div className="store-project-media">
-            <img src={imageUrl} alt="" onError={() => setImageUrl(fallbackCover)} />
+            <img src={imageUrl} alt="" onError={() => setImageUrl(repo.owner.avatar_url)} />
           </div>
           <div className="store-row-title">
             <h3 title={repo.name}>{repo.name}</h3>
@@ -99,7 +99,7 @@ function StoreProjectCard({
       onClick={() => onSelect?.(repo)}
     >
       <div className="store-project-media">
-        <img src={imageUrl} alt="" onError={() => setImageUrl(fallbackCover)} />
+        <img src={imageUrl} alt="" onError={() => setImageUrl(repo.owner.avatar_url)} />
         <span className="store-project-status">{t(statusKey)}</span>
       </div>
 
