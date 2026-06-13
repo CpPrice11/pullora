@@ -6,6 +6,7 @@ import { getInstalledApps } from '../../../services/installed'
 import { listProjectArt, projectArtKey } from '../../../services/projectArt'
 import {
   browseOptions,
+  fallbackStoreRepos,
   matchesLocalQuery,
   repoKey,
   storeBrowseTabs,
@@ -13,7 +14,6 @@ import {
   uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
-  type StoreQueryOptions,
 } from '../storeCatalog'
 
 export interface StoreInstallability {
@@ -59,56 +59,82 @@ function pickLatestInstallableRelease(releases: GitHubRelease[]) {
   ) ?? null
 }
 
-function incrementScore(scores: Map<string, number>, value?: string | null, weight = 1) {
-  const normalized = value?.trim().toLowerCase()
-  if (!normalized) return
-  scores.set(normalized, (scores.get(normalized) ?? 0) + weight)
-}
-
-function topScores(scores: Map<string, number>, limit: number) {
-  return [...scores.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, limit)
-    .map(([value]) => value)
-}
-
-function inferBroadTopics(repo: GitHubSearchResult) {
-  const text = [
-    repo.name,
-    repo.full_name,
-    repo.description ?? '',
-    ...(repo.topics ?? []),
-  ].join(' ').toLowerCase()
+function inferBroadTopicsFromText(text: string) {
+  const normalized = text.toLowerCase()
   const topics: string[] = []
 
-  if (/\b(ai|llm|gpt|openai|chatbot|agent)\b/.test(text)) topics.push('ai')
-  if (/\b(game|gaming|game-engine|unity|unreal)\b/.test(text)) topics.push('game')
-  if (/\b(desktop|electron|tauri|native-app|windows-app)\b/.test(text)) topics.push('desktop-application')
-  if (/\b(tool|cli|utility|productivity|developer-tool|devtool)\b/.test(text)) topics.push('tool')
+  if (/\b(ai|llm|gpt|openai|chatbot|agent)\b/.test(normalized)) topics.push('ai')
+  if (/\b(game|gaming|game-engine|unity|unreal)\b/.test(normalized)) topics.push('game')
+  if (/\b(desktop|electron|tauri|native-app|windows-app)\b/.test(normalized)) topics.push('desktop-application')
+  if (/\b(tool|tools|cli|utility|productivity|developer-tool|devtool|manager|translator)\b/.test(normalized)) topics.push('tool')
 
   return topics
 }
 
-function buildRecommendationQueries(profileRepos: GitHubSearchResult[]): StoreQueryOptions[] {
-  const languages = new Map<string, number>()
-  const topics = new Map<string, number>()
+function repoSearchBody(repo: GitHubSearchResult) {
+  return [
+    repo.name,
+    repo.full_name,
+    repo.description ?? '',
+    repo.language ?? '',
+    ...(repo.topics ?? []),
+  ].join(' ').toLowerCase()
+}
 
-  profileRepos.forEach((repo) => {
-    incrementScore(languages, repo.language, 3)
-    repo.topics?.forEach((topic) => incrementScore(topics, topic, 2))
-    inferBroadTopics(repo).forEach((topic) => incrementScore(topics, topic, 3))
+function inferBroadTopics(repo: GitHubSearchResult) {
+  return inferBroadTopicsFromText(repoSearchBody(repo))
+}
+
+function libraryRefText(ref: LibraryRepoRef) {
+  return [ref.owner, ref.repo, ref.description ?? ''].join(' ').toLowerCase()
+}
+
+const ignoredTerms = new Set(['github', 'desktop', 'application', 'manager', 'project', 'source'])
+
+function keywordTerms(text: string) {
+  return text
+    .split(/[^a-z0-9+#.-]+/i)
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length >= 3 && !ignoredTerms.has(term))
+    .slice(0, 10)
+}
+
+function scorePersonalizedRepo(repo: GitHubSearchResult, refs: LibraryRepoRef[]) {
+  const repoText = repoSearchBody(repo)
+  const repoTopics = new Set([
+    ...(repo.topics ?? []).map((topic) => topic.toLowerCase()),
+    ...inferBroadTopics(repo),
+  ])
+
+  let score = Math.log10(repo.stargazers_count + 1) / 10
+  refs.forEach((ref) => {
+    const refText = libraryRefText(ref)
+    keywordTerms(refText).forEach((term) => {
+      if (repoText.includes(term)) score += 2
+    })
+    inferBroadTopicsFromText(refText).forEach((topic) => {
+      if (repoTopics.has(topic)) score += 5
+    })
   })
 
-  const topicQueries = topScores(topics, 3).map((topic) => ({
-    sort: 'stars' as const,
-    topic,
-  }))
-  const languageQueries = topScores(languages, 3).map((language) => ({
-    sort: 'stars' as const,
-    language,
-  }))
+  return score
+}
 
-  return [...topicQueries, ...languageQueries].slice(0, 5)
+function fallbackHomeSections(): StoreSection[] {
+  return [
+    {
+      id: 'recommended',
+      titleKey: 'store.section.recommended',
+      subtitleKey: 'store.section.recommendedText',
+      items: fallbackStoreRepos.slice(0, 6),
+    },
+    {
+      id: 'popular',
+      titleKey: 'store.section.popular',
+      subtitleKey: 'store.section.popularText',
+      items: fallbackStoreRepos,
+    },
+  ]
 }
 
 export function useStoreCatalog(
@@ -126,7 +152,6 @@ export function useStoreCatalog(
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favoriteApps, setFavoriteApps] = useState<FavoriteApp[]>([])
   const [installedApps, setInstalledApps] = useState<InstalledApp[]>([])
-  const [personalizedItems, setPersonalizedItems] = useState<GitHubSearchResult[]>([])
   const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
   const [installability, setInstallability] = useState<Record<string, StoreInstallability>>({})
 
@@ -136,6 +161,39 @@ export function useStoreCatalog(
       ...favoriteApps.map(favoriteKey),
     ])
   }, [favoriteApps, installedApps])
+
+  const libraryRefs = useMemo(() => {
+    const seenRefs = new Set<string>()
+    return [
+      ...installedApps.map((app): LibraryRepoRef => ({ owner: app.owner, repo: app.repo })),
+      ...favoriteApps.map((app): LibraryRepoRef => ({
+        owner: app.owner,
+        repo: app.repo,
+        description: app.description,
+      })),
+    ].filter((ref) => {
+      const key = refKey(ref)
+      if (seenRefs.has(key)) return false
+      seenRefs.add(key)
+      return true
+    })
+  }, [favoriteApps, installedApps])
+
+  const personalizedItems = useMemo(() => {
+    if (libraryRefs.length === 0) return []
+
+    const candidates = uniqueRepos([
+      ...homeSections.flatMap((section) => section.items),
+      ...browseItemsRaw,
+      ...fallbackStoreRepos,
+    ]).filter((repo) => !libraryKeys.has(repoKey(repo)))
+
+    return candidates
+      .map((repo) => ({ repo, score: scorePersonalizedRepo(repo, libraryRefs) }))
+      .sort((left, right) => right.score - left.score || right.repo.stargazers_count - left.repo.stargazers_count)
+      .slice(0, 12)
+      .map((item) => item.repo)
+  }, [browseItemsRaw, homeSections, libraryKeys, libraryRefs])
 
   const personalized = personalizedItems.length > 0
 
@@ -202,61 +260,6 @@ export function useStoreCatalog(
     ))
   }, [])
 
-  const loadPersonalizedRecommendations = useCallback(async () => {
-    const seenRefs = new Set<string>()
-    const refs = [
-      ...installedApps.map((app): LibraryRepoRef => ({ owner: app.owner, repo: app.repo })),
-      ...favoriteApps.map((app): LibraryRepoRef => ({
-        owner: app.owner,
-        repo: app.repo,
-        description: app.description,
-      })),
-    ].filter((ref) => {
-      const key = refKey(ref)
-      if (seenRefs.has(key)) return false
-      seenRefs.add(key)
-      return true
-    })
-
-    if (refs.length === 0) {
-      setPersonalizedItems([])
-      return
-    }
-
-    try {
-      const profileSettled = await Promise.allSettled(refs.slice(0, 8).map(async (ref) => {
-        let result
-        try {
-          result = await searchPublicRepositories(`repo:${ref.owner}/${ref.repo}`, 1, { sort: 'stars' })
-        } catch {
-          result = await searchPublicRepositories(`${ref.owner} ${ref.repo}`, 1, { sort: 'stars' })
-        }
-        return result.items.find((repo) => repoKey(repo) === refKey(ref)) ?? result.items[0]
-      }))
-      const profileRepos = profileSettled
-        .flatMap((item) => item.status === 'fulfilled' && item.value ? [item.value] : [])
-
-      const queries = buildRecommendationQueries(profileRepos)
-      if (queries.length === 0) {
-        setPersonalizedItems([])
-        return
-      }
-
-      const settled = await Promise.allSettled(queries.map(async (options) => {
-        const result = await searchPublicRepositories('', 1, options)
-        return result.items
-      }))
-      const candidates = uniqueRepos(settled
-        .filter((item): item is PromiseFulfilledResult<GitHubSearchResult[]> => item.status === 'fulfilled')
-        .flatMap((item) => item.value)
-        .filter((repo) => !libraryKeys.has(repoKey(repo))))
-
-      setPersonalizedItems(candidates.slice(0, 12))
-    } catch {
-      setPersonalizedItems([])
-    }
-  }, [favoriteApps, installedApps, libraryKeys])
-
   const loadHome = useCallback(async () => {
     setLoadingHome(true)
     setError(null)
@@ -277,12 +280,13 @@ export function useStoreCatalog(
       const sections = settled
         .filter((item): item is PromiseFulfilledResult<StoreSection> => item.status === 'fulfilled')
         .map((item) => item.value)
-      setHomeSections(sections)
+      setHomeSections(sections.length > 0 ? sections : fallbackHomeSections())
       if (sections.length === 0 && settled.some((item) => item.status === 'rejected')) {
-        setError('store.error.load')
+        setError(null)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'store.error.load')
+    } catch {
+      setHomeSections(fallbackHomeSections())
+      setError(null)
     } finally {
       setLoadingHome(false)
     }
@@ -308,8 +312,13 @@ export function useStoreCatalog(
       setBrowseItemsRaw((current) => page === 1 ? result.items : [...current, ...result.items])
       setBrowsePage(result.page)
       setHasMoreBrowse(result.has_more)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'store.error.load')
+    } catch {
+      if (page === 1) {
+        setBrowseItemsRaw(fallbackStoreRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
+        setBrowsePage(1)
+        setHasMoreBrowse(false)
+      }
+      setError(null)
     } finally {
       setLoadingBrowse(false)
     }
@@ -401,10 +410,6 @@ export function useStoreCatalog(
     void refreshLocalState()
     void loadHome()
   }, [loadHome, refreshLocalState])
-
-  useEffect(() => {
-    void loadPersonalizedRecommendations()
-  }, [loadPersonalizedRecommendations])
 
   useEffect(() => {
     void loadBrowse(1)
