@@ -58,12 +58,6 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   }, [query])
 
   useEffect(() => {
-    if (selectedRepo) return
-    const first = catalog.browseItems[0] ?? catalog.homeSections[0]?.items[0]
-    if (first) setSelectedRepo(first)
-  }, [catalog.browseItems, catalog.homeSections, selectedRepo])
-
-  useEffect(() => {
     if (!heroRepo) return
     void catalog.checkInstallability(heroRepo)
   }, [catalog, heroRepo])
@@ -140,6 +134,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
 
       <StoreHero
         repo={heroRepo}
+        personalized={!selectedRepo && catalog.personalized}
         installedApp={heroKey ? catalog.installedByRepo.get(heroKey) : undefined}
         installability={heroKey ? catalog.installability[heroKey] : undefined}
         onInstall={handleInstall}

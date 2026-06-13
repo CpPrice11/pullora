@@ -7,6 +7,7 @@ import heroBackdrop from '../assets/store-hero-scene.png'
 
 interface StoreHeroProps {
   repo?: GitHubSearchResult
+  personalized?: boolean
   installedApp?: InstalledApp
   installability?: StoreInstallability
   onInstall: (repo: GitHubSearchResult) => void
@@ -16,6 +17,7 @@ interface StoreHeroProps {
 
 function StoreHero({
   repo,
+  personalized = false,
   installedApp,
   installability,
   onInstall,
@@ -66,7 +68,9 @@ function StoreHero({
       </button>
 
       <div className="store-hero-copy">
-        <span className="store-hero-kicker">{t('store.section.recommended')}</span>
+        <span className="store-hero-kicker">
+          {t(personalized ? 'store.hero.personalized' : 'store.section.recommended')}
+        </span>
         <h2>{repo.name}</h2>
         <p className="store-hero-owner">{repo.owner.login}/{repo.name}</p>
         {repo.description && <p className="store-hero-description">{repo.description}</p>}
