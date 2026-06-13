@@ -8,9 +8,11 @@ import StoreCarousel from './components/StoreCarousel'
 import StoreBrowse from './components/StoreBrowse'
 import { useStoreCatalog } from './hooks/useStoreCatalog'
 import {
+  fallbackStoreRepos,
   repoKey,
   socialPreviewUrl,
   storeCategories,
+  uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
 } from './storeCatalog'
@@ -28,16 +30,28 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [browseTab, setBrowseTab] = useState<StoreBrowseTab>('popular')
   const [installableFilter, setInstallableFilter] = useState<StoreInstallableFilter>('all')
+  const [heroIndex, setHeroIndex] = useState(0)
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
   const [installTarget, setInstallTarget] = useState<GitHubSearchResult | null>(null)
 
   const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
-  const heroRepo = selectedRepo ?? catalog.homeSections[0]?.items[0] ?? catalog.browseItems[0]
+  const heroItems = useMemo(() => {
+    const recommended = catalog.homeSections[0]?.items ?? []
+    return uniqueRepos([
+      ...recommended,
+      ...catalog.homeSections.flatMap((section) => section.items),
+      ...catalog.browseItems,
+      ...fallbackStoreRepos,
+    ]).slice(0, 12)
+  }, [catalog.browseItems, catalog.homeSections])
+  const heroRepo = heroItems[heroIndex] ?? heroItems[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
-  const recommendedItems = useMemo(
-    () => catalog.homeSections.flatMap((section) => section.items).slice(0, 6),
-    [catalog.homeSections],
-  )
+  const spotlightItems = useMemo(() => {
+    const popular = catalog.homeSections.find((section) => section.id === 'popular')?.items ?? []
+    return uniqueRepos([...popular, ...fallbackStoreRepos])
+      .sort((left, right) => right.stargazers_count - left.stargazers_count)
+      .slice(0, 6)
+  }, [catalog.homeSections])
   const browseSelectedRepo = useMemo(() => {
     if (catalog.browseItems.length === 0) return undefined
     if (selectedRepo && catalog.browseItems.some((repo) => repoKey(repo) === repoKey(selectedRepo))) {
@@ -56,6 +70,11 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     const timer = window.setTimeout(() => setStoreSearchQuery(query.trim()), 350)
     return () => window.clearTimeout(timer)
   }, [query])
+
+  useEffect(() => {
+    if (heroIndex < heroItems.length) return
+    setHeroIndex(0)
+  }, [heroIndex, heroItems.length])
 
   useEffect(() => {
     if (!heroRepo) return
@@ -134,9 +153,12 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
 
       <StoreHero
         repo={heroRepo}
-        personalized={!selectedRepo && catalog.personalized}
+        items={heroItems}
+        activeIndex={heroIndex}
+        personalized={catalog.personalized}
         installedApp={heroKey ? catalog.installedByRepo.get(heroKey) : undefined}
         installability={heroKey ? catalog.installability[heroKey] : undefined}
+        onActiveIndexChange={setHeroIndex}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
         onBrowse={() => {
@@ -146,7 +168,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
 
       <StoreCarousel
         titleKey="store.section.spotlight"
-        items={recommendedItems}
+        items={spotlightItems}
         favoriteKeys={catalog.favoriteKeys}
         installedByRepo={catalog.installedByRepo}
         installability={catalog.installability}
