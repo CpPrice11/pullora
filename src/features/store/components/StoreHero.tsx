@@ -98,7 +98,7 @@ function StoreHero({
         </span>
         <h2>{repo.name}</h2>
         <p className="store-hero-owner">{repo.owner.login}/{repo.name}</p>
-        {repo.description && <p className="store-hero-description">{repo.description}</p>}
+        <p className="store-hero-description">{repo.description ?? ''}</p>
 
         <div className="store-hero-meta">
           {repo.language && <span>{repo.language}</span>}

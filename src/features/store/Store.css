@@ -196,6 +196,7 @@
 }
 
 .store-hero--empty .store-hero-copy {
+  display: block;
   grid-column: 1;
   justify-self: end;
   width: min(520px, 42%);
@@ -203,14 +204,16 @@
 
 .store-hero-copy {
   align-self: stretch;
-  display: flex;
-  flex-direction: column;
+  align-content: center;
+  display: grid;
   grid-column: 2;
-  justify-content: center;
+  grid-template-rows: 24px 52px 18px 44px 52px 22px 8px 42px;
+  justify-items: start;
   max-width: 520px;
   min-width: 0;
-  padding: 30px 0;
+  padding: 0;
   position: relative;
+  row-gap: 6px;
   width: 100%;
   z-index: 2;
 }
@@ -229,15 +232,22 @@
 
 .store-hero h2 {
   display: -webkit-box;
-  font-size: clamp(30px, 3vw, 46px);
+  font-size: clamp(30px, 3vw, 44px);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
   line-clamp: 1;
   letter-spacing: 0;
   line-height: 1.05;
-  margin: 10px 0 6px;
+  margin: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
+  width: 100%;
+}
+
+.store-hero-owner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 
@@ -251,10 +261,11 @@
 }
 
 .store-hero-description {
+  align-self: start;
   color: #d9e6f4;
   font-size: 15px;
   line-height: 1.45;
-  margin: 10px 0 0;
+  margin: 0;
   max-width: min(680px, 100%);
   overflow-wrap: anywhere;
   width: 100%;
@@ -275,7 +286,8 @@
 }
 
 .store-hero-meta {
-  margin-top: 12px;
+  align-content: start;
+  margin-top: 0;
   max-height: 58px;
   overflow: hidden;
 }
@@ -294,12 +306,14 @@
 
 .store-hero-stats {
   align-items: center;
+  align-self: center;
   color: #bacadd;
   display: flex;
   flex-wrap: wrap;
   font-size: 14px;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 0;
+  min-height: 24px;
 }
 
 .store-hero-stats span:first-child {
@@ -320,10 +334,11 @@
 }
 
 .store-hero .store-hero-actions {
+  align-self: end;
   flex-wrap: nowrap;
-  margin-top: auto;
+  margin-top: 0;
   min-height: 42px;
-  padding-top: 14px;
+  padding-top: 0;
 }
 
 .store-hero .store-primary-btn,
@@ -398,10 +413,11 @@
 }
 
 .store-hero-dots {
+  align-self: center;
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  margin-top: 12px;
+  margin-top: 0;
   max-width: 340px;
   min-height: 6px;
 }
