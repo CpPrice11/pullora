@@ -3,6 +3,7 @@ import type { GitHubSearchResult } from '../../types'
 export type StoreBrowseTab = 'popular' | 'updated' | 'new' | 'releases' | 'favorites'
 export type StoreInstallableFilter = 'all' | 'installable'
 export type StoreSort = 'updated' | 'stars' | 'forks'
+export type StorePlatform = 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'other' | null
 
 export interface StoreQueryOptions {
   query?: string
@@ -241,6 +242,74 @@ export function repoSearchText(repo: GitHubSearchResult) {
     repo.language ?? '',
     ...(repo.topics ?? []),
   ].join(' ').toLowerCase()
+}
+
+const crossPlatformSignals = [
+  'cross-platform',
+  'cross platform',
+  'multiplatform',
+  'multi-platform',
+  'electron',
+  'tauri',
+  'wails',
+  'qt',
+  'flutter',
+  'webview',
+  'desktop-application',
+]
+
+const platformSignals: Record<Exclude<StorePlatform, null>, string[]> = {
+  windows: ['windows', 'windows-app', 'windows-desktop', 'win32', 'win64', 'winui', 'wpf', 'uwp', 'msix', 'powershell'],
+  macos: ['macos', 'mac-os', 'osx', 'os-x', 'darwin', 'apple-silicon', 'swiftui'],
+  linux: ['linux', 'appimage', 'flatpak', 'snapcraft', 'gnome', 'kde', 'gtk', 'wayland', 'x11', 'xorg', 'ubuntu', 'debian'],
+  ios: ['ios', 'iphone', 'ipad'],
+  android: ['android'],
+  other: [],
+}
+
+function hasSignal(text: string, signals: string[]) {
+  return signals.some((signal) => {
+    const escaped = signal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(text)
+  })
+}
+
+function repoPlatformText(repo: GitHubSearchResult) {
+  return repoSearchText(repo).replace(/[_/]+/g, ' ')
+}
+
+function explicitlySupportsPlatform(repo: GitHubSearchResult, platform: Exclude<StorePlatform, null>) {
+  const text = repoPlatformText(repo)
+  return hasSignal(text, platformSignals[platform])
+}
+
+function explicitlyCrossPlatform(repo: GitHubSearchResult) {
+  return hasSignal(repoPlatformText(repo), crossPlatformSignals)
+}
+
+function platformOnly(repo: GitHubSearchResult, platform: Exclude<StorePlatform, null>) {
+  if (explicitlyCrossPlatform(repo)) return false
+
+  const text = repoPlatformText(repo)
+  if (!hasSignal(text, platformSignals[platform])) return false
+
+  const otherPlatforms = (Object.keys(platformSignals) as Exclude<StorePlatform, null>[])
+    .filter((candidate) => candidate !== platform && candidate !== 'other')
+
+  return otherPlatforms.every((candidate) => !explicitlySupportsPlatform(repo, candidate))
+}
+
+export function supportsStorePlatform(repo: GitHubSearchResult, currentPlatform: StorePlatform) {
+  if (!currentPlatform || currentPlatform === 'other') return true
+
+  const exclusivePlatforms = (Object.keys(platformSignals) as Exclude<StorePlatform, null>[])
+    .filter((platform) => platform !== currentPlatform && platform !== 'other')
+
+  return exclusivePlatforms.every((platform) => !platformOnly(repo, platform))
+}
+
+export function filterReposForStorePlatform(repos: GitHubSearchResult[], currentPlatform: StorePlatform) {
+  return repos.filter((repo) => supportsStorePlatform(repo, currentPlatform))
 }
 
 export function matchesLocalQuery(repo: GitHubSearchResult, query: string) {
