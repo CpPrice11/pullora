@@ -202,12 +202,14 @@
 }
 
 .store-hero-copy {
-  align-self: center;
-  display: grid;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
   grid-column: 2;
-  justify-items: start;
+  justify-content: center;
   max-width: 520px;
   min-width: 0;
+  padding: 30px 0;
   position: relative;
   width: 100%;
   z-index: 2;
@@ -226,10 +228,17 @@
 }
 
 .store-hero h2 {
+  display: -webkit-box;
   font-size: clamp(30px, 3vw, 46px);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
   letter-spacing: 0;
   line-height: 1.05;
   margin: 10px 0 6px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  width: 100%;
 }
 
 .store-hero-owner,
@@ -267,6 +276,8 @@
 
 .store-hero-meta {
   margin-top: 12px;
+  max-height: 58px;
+  overflow: hidden;
 }
 
 .store-hero-meta span,
@@ -309,7 +320,21 @@
 }
 
 .store-hero .store-hero-actions {
-  margin-top: 14px;
+  flex-wrap: nowrap;
+  margin-top: auto;
+  min-height: 42px;
+  padding-top: 14px;
+}
+
+.store-hero .store-primary-btn,
+.store-hero .store-secondary-btn {
+  min-width: 150px;
+  width: 150px;
+}
+
+.store-hero .store-ghost-btn {
+  min-width: 118px;
+  width: 118px;
 }
 
 .store-primary-btn,
@@ -378,6 +403,7 @@
   gap: 7px;
   margin-top: 12px;
   max-width: 340px;
+  min-height: 6px;
 }
 
 .store-hero-dots button {
