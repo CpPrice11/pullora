@@ -260,7 +260,7 @@ const crossPlatformSignals = [
 
 const platformSignals: Record<Exclude<StorePlatform, null>, string[]> = {
   windows: ['windows', 'windows-app', 'windows-desktop', 'win32', 'win64', 'winui', 'wpf', 'uwp', 'msix', 'powershell'],
-  macos: ['macos', 'mac-os', 'osx', 'os-x', 'darwin', 'apple-silicon', 'swiftui'],
+  macos: ['mac', 'macos', 'mac-os', 'osx', 'os-x', 'darwin', 'apple-silicon', 'swiftui'],
   linux: ['linux', 'appimage', 'flatpak', 'snapcraft', 'gnome', 'kde', 'gtk', 'wayland', 'x11', 'xorg', 'ubuntu', 'debian'],
   ios: ['ios', 'iphone', 'ipad'],
   android: ['android'],
