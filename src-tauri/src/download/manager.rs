@@ -3,8 +3,9 @@ use reqwest::Client;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
@@ -45,6 +46,7 @@ pub enum DownloadStage {
     Downloading,
     Verifying,
     Extracting,
+    RunningInstaller,
     DetectingExecutable,
     Registering,
     Completed,
@@ -302,6 +304,91 @@ async fn download_task(
     let partial_dir = app_dir.join(format!("{}.partial-{}", tag, id));
     let backup_dir = app_dir.join(format!("{}.backup-{}", tag, id));
 
+    if install_kind == "installer" {
+        cleanup_path(&backup_dir)?;
+        if version_dir.exists() {
+            fs::rename(&version_dir, &backup_dir).map_err(|e| e.to_string())?;
+        }
+
+        emit_progress(&app, &active, &id, |p| {
+            p.status = DownloadStatus::Extracting;
+            p.stage = DownloadStage::RunningInstaller;
+            p.progress = 100.0;
+        })
+        .await;
+
+        let installer_tmp_path = tmp_path.clone();
+        let installer_owner = owner.clone();
+        let installer_repo = repo.clone();
+        let installer_file_name = file_name.clone();
+        let installer_dest_dir = dest_dir.clone();
+        let installer_version_dir = version_dir.clone();
+
+        let installer_result = tokio::task::spawn_blocking(move || {
+            install_with_external_installer(
+                &installer_tmp_path,
+                &installer_dest_dir,
+                &installer_version_dir,
+                &installer_owner,
+                &installer_repo,
+                &installer_file_name,
+            )
+        })
+        .await;
+
+        let executable_path = match installer_result {
+            Ok(Ok(path)) => path,
+            Ok(Err(error)) => {
+                let _ = fs::remove_file(&tmp_path);
+                let _ = cleanup_path(&version_dir);
+                let _ = restore_backup_dir(&backup_dir, &version_dir);
+                return Err(error);
+            }
+            Err(error) => {
+                let _ = fs::remove_file(&tmp_path);
+                let _ = cleanup_path(&version_dir);
+                let _ = restore_backup_dir(&backup_dir, &version_dir);
+                return Err(error.to_string());
+            }
+        };
+
+        emit_progress(&app, &active, &id, |p| {
+            p.stage = DownloadStage::Registering;
+            p.executable_path = Some(executable_path.display().to_string());
+            p.progress = 100.0;
+        })
+        .await;
+
+        let install_record_result = record_installed_version(
+            &owner,
+            &repo,
+            &tag,
+            executable_path.display().to_string(),
+            downloaded,
+            file_name,
+            install_kind,
+        );
+
+        if let Err(error) = install_record_result {
+            let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&version_dir);
+            let _ = restore_backup_dir(&backup_dir, &version_dir);
+            return Err(error);
+        }
+
+        cleanup_path(&backup_dir)?;
+        let _ = fs::remove_file(&tmp_path);
+
+        emit_progress(&app, &active, &id, |p| {
+            p.status = DownloadStatus::Completed;
+            p.stage = DownloadStage::Completed;
+            p.progress = 100.0;
+        })
+        .await;
+
+        return Ok(());
+    }
+
     cleanup_path(&partial_dir)?;
 
     let extract_tmp_path = tmp_path.clone();
@@ -475,10 +562,7 @@ fn install_kind_for_asset(file_name: &str) -> Result<String, String> {
     let is_installer =
         name.contains("setup") || name.contains("installer") || name.ends_with(".msi");
     if is_installer {
-        return Err(
-            "Setup/MSI assets не встановлюються як portable-версії. Обери portable EXE або архів."
-                .to_string(),
-        );
+        return Ok("installer".to_string());
     }
 
     if name.ends_with(".zip")
@@ -495,6 +579,278 @@ fn install_kind_for_asset(file_name: &str) -> Result<String, String> {
     }
 
     Err("Цей asset не підтримується для автоматичного встановлення.".to_string())
+}
+
+fn install_with_external_installer(
+    installer_path: &Path,
+    dest_dir: &Path,
+    version_dir: &Path,
+    owner: &str,
+    repo: &str,
+    file_name: &str,
+) -> Result<PathBuf, String> {
+    let started_at = SystemTime::now()
+        .checked_sub(Duration::from_secs(5))
+        .unwrap_or(SystemTime::UNIX_EPOCH);
+
+    fs::create_dir_all(version_dir).map_err(|e| e.to_string())?;
+
+    let installer_dir = version_dir.join(".installer");
+    fs::create_dir_all(&installer_dir).map_err(|e| e.to_string())?;
+    let cached_installer = installer_dir.join(safe_file_name(file_name));
+    fs::copy(installer_path, &cached_installer).map_err(|e| e.to_string())?;
+
+    run_installer_process(&cached_installer)?;
+
+    find_installed_executable(dest_dir, version_dir, owner, repo, started_at).ok_or_else(|| {
+        "Інсталятор завершився, але Pullora не знайшла встановлений EXE. Запусти програму вручну або обери portable/архівний asset."
+            .to_string()
+    })
+}
+
+fn run_installer_process(installer_path: &Path) -> Result<(), String> {
+    let extension = installer_path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_lowercase();
+
+    let mut command = if extension == "msi" {
+        let mut command = std::process::Command::new("msiexec");
+        command.arg("/i").arg(installer_path);
+        command
+    } else {
+        std::process::Command::new(installer_path)
+    };
+
+    let status = command
+        .status()
+        .map_err(|error| format!("Не вдалося запустити інсталятор: {}", error))?;
+
+    if status.success() || status.code() == Some(3010) {
+        Ok(())
+    } else {
+        Err(format!(
+            "Інсталятор завершився з кодом {}.",
+            status
+                .code()
+                .map(|code| code.to_string())
+                .unwrap_or_else(|| "невідомо".to_string())
+        ))
+    }
+}
+
+fn find_installed_executable(
+    dest_dir: &Path,
+    version_dir: &Path,
+    owner: &str,
+    repo: &str,
+    installed_after: SystemTime,
+) -> Option<PathBuf> {
+    let tokens = app_tokens(owner, repo);
+    let mut candidates = Vec::new();
+
+    for root in installer_search_roots(dest_dir, version_dir, owner, repo) {
+        let allow_recent_only = root == dest_dir || root == version_dir;
+        scan_installed_executables(
+            &root,
+            0,
+            7,
+            &tokens,
+            installed_after,
+            allow_recent_only,
+            &mut candidates,
+        );
+    }
+
+    candidates.sort_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| {
+                left.1
+                    .components()
+                    .count()
+                    .cmp(&right.1.components().count())
+            })
+            .then_with(|| left.1.cmp(&right.1))
+    });
+
+    candidates.into_iter().map(|(_, path)| path).next()
+}
+
+fn installer_search_roots(
+    dest_dir: &Path,
+    version_dir: &Path,
+    owner: &str,
+    repo: &str,
+) -> Vec<PathBuf> {
+    let mut roots = vec![version_dir.to_path_buf(), dest_dir.to_path_buf()];
+
+    let repo_dir = repo_path_name(repo);
+    for variable in [
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "LOCALAPPDATA",
+        "APPDATA",
+    ] {
+        if let Ok(value) = std::env::var(variable) {
+            let root = PathBuf::from(value);
+            if variable == "ProgramFiles" || variable == "ProgramFiles(x86)" {
+                roots.push(root.clone());
+            }
+            roots.push(root.join(&repo_dir));
+            roots.push(root.join(repo));
+            if variable == "LOCALAPPDATA" {
+                roots.push(root.join("Programs"));
+                roots.push(root.join("Programs").join(&repo_dir));
+                roots.push(root.join("Programs").join(repo));
+            }
+        }
+    }
+
+    if let Ok(value) = std::env::var("ProgramFiles") {
+        roots.push(PathBuf::from(value).join(owner).join(repo));
+    }
+
+    roots.sort();
+    roots.dedup();
+    roots
+}
+
+fn scan_installed_executables(
+    dir: &Path,
+    depth: usize,
+    max_depth: usize,
+    tokens: &[String],
+    installed_after: SystemTime,
+    allow_recent_only: bool,
+    candidates: &mut Vec<(i32, PathBuf)>,
+) {
+    if depth > max_depth || !dir.exists() {
+        return;
+    }
+
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            scan_installed_executables(
+                &path,
+                depth + 1,
+                max_depth,
+                tokens,
+                installed_after,
+                allow_recent_only,
+                candidates,
+            );
+            continue;
+        }
+
+        if !is_launchable_exe(&path) {
+            continue;
+        }
+
+        let score = installer_candidate_score(&path, tokens, installed_after, allow_recent_only);
+        if score > 0 {
+            candidates.push((score, path));
+        }
+    }
+}
+
+fn is_launchable_exe(path: &Path) -> bool {
+    let Some(extension) = path.extension().and_then(|value| value.to_str()) else {
+        return false;
+    };
+    if !extension.eq_ignore_ascii_case("exe") {
+        return false;
+    }
+
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_lowercase();
+
+    ![
+        "setup",
+        "install",
+        "installer",
+        "uninstall",
+        "unins",
+        "updater",
+        "update",
+        "crashhandler",
+    ]
+    .iter()
+    .any(|blocked| name.contains(blocked))
+}
+
+fn installer_candidate_score(
+    path: &Path,
+    tokens: &[String],
+    installed_after: SystemTime,
+    allow_recent_only: bool,
+) -> i32 {
+    let path_text = path.to_string_lossy().to_lowercase();
+    let file_stem = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_lowercase();
+
+    let mut score = 0;
+    for token in tokens {
+        if token.len() < 3 {
+            continue;
+        }
+        if file_stem.contains(token) {
+            score += 80;
+        }
+        if path_text.contains(token) {
+            score += 30;
+        }
+    }
+
+    if score == 0 && !allow_recent_only {
+        return 0;
+    }
+
+    if fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .map(|modified| modified >= installed_after)
+        .unwrap_or(false)
+    {
+        score += 40;
+    }
+
+    score
+}
+
+fn app_tokens(owner: &str, repo: &str) -> Vec<String> {
+    let mut tokens = vec![
+        owner.to_lowercase(),
+        repo.to_lowercase(),
+        repo_path_name(repo),
+    ];
+    tokens.extend(
+        repo.split(|character: char| !character.is_ascii_alphanumeric())
+            .filter(|part| part.len() >= 3)
+            .map(|part| part.to_lowercase()),
+    );
+    tokens.sort();
+    tokens.dedup();
+    tokens
+}
+
+fn repo_path_name(repo: &str) -> String {
+    repo.chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_lowercase()
 }
 
 async fn emit_progress<F>(

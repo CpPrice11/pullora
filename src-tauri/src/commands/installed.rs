@@ -30,6 +30,7 @@ fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
                 .and_then(|e| e.to_str())
                 .map(|e| e.eq_ignore_ascii_case("exe"))
                 .unwrap_or(false)
+                && is_launchable_exe(&path)
             {
                 // Prefer shorter paths (fewer directory levels = closer to root)
                 let is_better = best.as_ref().is_none_or(|b: &std::path::PathBuf| {
@@ -57,6 +58,36 @@ fn active_version_dir(
     tag: &str,
 ) -> std::path::PathBuf {
     installed_app_dir(install_path, owner, repo).join(tag)
+}
+
+fn version_executable_path(version_dir: &std::path::Path, executable: &str) -> std::path::PathBuf {
+    let path = std::path::PathBuf::from(executable);
+    if path.is_absolute() {
+        path
+    } else {
+        version_dir.join(path)
+    }
+}
+
+fn is_launchable_exe(path: &std::path::Path) -> bool {
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_lowercase();
+
+    ![
+        "setup",
+        "install",
+        "installer",
+        "uninstall",
+        "unins",
+        "updater",
+        "update",
+        "crashhandler",
+    ]
+    .iter()
+    .any(|blocked| name.contains(blocked))
 }
 
 fn resolve_active_app(
@@ -167,7 +198,7 @@ pub async fn validate_installed_app(
         .find(|v| v.tag == app.active_version)
         .ok_or("Активну версію не знайдено")?;
 
-    let expected_exe = version_dir.join(&version.executable);
+    let expected_exe = version_executable_path(&version_dir, &version.executable);
     if expected_exe.exists() {
         return Ok(InstalledAppHealth {
             ok: true,
@@ -209,9 +240,26 @@ pub async fn open_installed_app_dir(
         .as_ref()
         .ok_or("Папку встановлення не налаштовано")?;
     let app_dir = installed_app_dir(install_path, &owner, &repo);
+    let external_executable_dir = resolve_active_app(&owner, &repo, install_path)
+        .ok()
+        .and_then(|(app, version_dir)| {
+            let version = app.versions.iter().find(|v| v.tag == app.active_version)?;
+            let executable = version_executable_path(&version_dir, &version.executable);
+            if std::path::PathBuf::from(&version.executable).is_absolute() {
+                executable.parent().map(|parent| parent.to_path_buf())
+            } else {
+                None
+            }
+        });
     drop(settings);
 
-    crate::commands::updates::open_dir(app_dir.display().to_string()).await
+    crate::commands::updates::open_dir(
+        external_executable_dir
+            .unwrap_or(app_dir)
+            .display()
+            .to_string(),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -289,7 +337,7 @@ pub async fn launch_app(
         .find(|v| v.tag == app.active_version)
         .ok_or("Активну версію не знайдено")?;
 
-    let exe_path = version_dir.join(&version.executable);
+    let exe_path = version_executable_path(&version_dir, &version.executable);
 
     let resolved = if exe_path.exists() {
         exe_path
