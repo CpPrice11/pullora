@@ -255,7 +255,6 @@ const crossPlatformSignals = [
   'qt',
   'flutter',
   'webview',
-  'desktop-application',
 ]
 
 const platformSignals: Record<Exclude<StorePlatform, null>, string[]> = {
