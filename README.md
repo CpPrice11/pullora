@@ -1,37 +1,39 @@
-# Air Launcher
+# Pullora
 
-Air Launcher - desktop launcher для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у GitHub Releases, встановлює portable-версії, керує оновленнями та має beta-середовище `AI Workspace` для роботи з кодом через офіційний Codex.
+Pullora - desktop-лаунчер для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у публічних GitHub Releases, встановлює portable-версії, керує оновленнями та має beta-розділ `AI Workspace` для роботи з кодом через офіційний Codex.
 
-Інтерфейс за замовчуванням українською; англійська підтримується для всіх екранів і повідомлень.
+Інтерфейс за замовчуванням українською. Англійська мова також підтримується для всіх основних екранів і повідомлень.
 
 ## Можливості
 
-- `Library` з фільтрами, hero-карткою, деталями застосунку та install wizard.
-- Portable-first встановлення: portable EXE та архіви з EXE рекомендовані; setup/MSI лишаються ручним варіантом.
-- Локальні версії, запуск, rollback, видалення, self-update і очищення старих версій лаунчера.
-- `AI Workspace` beta: локальні папки, clone GitHub-репозиторію, спільні Codex sessions, streaming chat, зображення, activity/approvals/review і handoff у Codex Desktop.
-- Теми, глобальний фон лаунчера й українська/англійська мови.
+- `Store` для глобального пошуку публічних GitHub-проєктів.
+- `Library` з фільтрами, деталями застосунку, локальними версіями та install wizard.
+- Portable-first встановлення: portable EXE та архіви з EXE рекомендовані; setup/MSI залишаються ручним варіантом.
+- Запуск, rollback, видалення, перевірка оновлень і self-update самого лаунчера.
+- `AI Workspace` beta: локальні папки, клонування GitHub-репозиторіїв, Codex sessions, streaming chat, зображення, activity, approvals, review і handoff у Codex Desktop.
+- Теми, глобальний фон лаунчера, українська й англійська мови.
 
 ## AI Workspace Beta
 
-`v3.0.0` додає opt-in розділ `AI Workspace` у sidebar. Він використовує вже встановлений офіційний `codex.exe` та experimental `codex app-server --listen stdio://`.
+`AI Workspace` використовує вже встановлений офіційний `codex.exe` та experimental `codex app-server --listen stdio://`.
 
-- Air Launcher не вбудовує Codex і не записує OpenAI API key у власні налаштування.
-- Авторизацією та історією сесій керує Codex; у Settings можна перевірити runtime, передати ключ без збереження або відкрити Codex Desktop.
-- Workspaces мають окремий реєстр від Library-застосунків. Типовий каталог clone змінюється в Settings.
-- Видалення workspace за замовчуванням лише відв'язує папку. Видалити файли можна окремо лише для clone, створеного лаунчером, із підтвердженням.
+- Pullora не вбудовує Codex і не зберігає OpenAI API key у власних налаштуваннях.
+- Авторизацією та історією сесій керує Codex.
+- У Settings можна перевірити runtime, передати ключ у Codex без збереження або відкрити Codex Desktop.
+- Workspaces мають окремий реєстр від застосунків у Library.
+- Видалення workspace за замовчуванням лише відв'язує папку. Файли можна видалити окремо тільки для clone, створеного лаунчером, із підтвердженням.
 - Приватні GitHub clone покладаються на системний Git і Git Credential Manager.
 
-Через experimental протокол окремі можливості можуть залежати від установленої версії Codex. При несумісності роботу можна продовжити в офіційному Codex Desktop.
+Через experimental протокол окремі можливості можуть залежати від встановленої версії Codex. Якщо щось несумісне, роботу можна продовжити в офіційному Codex Desktop.
 
 ## Файли Релізу
 
-Кожен GitHub release Air Launcher містить лише два завантажувані assets:
+Кожен GitHub release Pullora має містити тільки два завантажувані assets:
 
-- `Air.Launcher_<version>_portable_x64.exe` - portable-версія і шлях self-update.
-- `Air.Launcher_<version>_x64-setup.exe` - один setup installer.
+- `Pullora_<version>_portable_x64.exe` - portable-версія та шлях self-update.
+- `Pullora_<version>_x64-setup.exe` - setup installer.
 
-MSI і portable ZIP assets не публікуються без окремого рішення.
+MSI та portable ZIP assets не публікуються без окремого рішення.
 
 ## Розробка
 
@@ -48,15 +50,15 @@ npm run tauri-build
 Перевірка metadata та release-readiness:
 
 ```powershell
-npm run check:release -- -Version 3.0.0 -RcReadiness -SkipArtifacts
+npm run check:release -- -Version 5.0.21 -RcReadiness -SkipArtifacts
 ```
 
 ## Release Policy
 
 - Build artifacts не зберігаються в Git.
-- Релізні файли зберігаються у `C:\Users\sasha\OneDrive\Документи\Projects\Air Launcher Builds\<version>`.
+- Релізні файли зберігаються у `C:\Users\sasha\OneDrive\Документи\Projects\Pullora Builds\<version>`.
 - Перед user-facing release виконуються `npm run build`, `cargo check`, `npm run tauri-build`, release-check і smoke-test portable EXE.
-- GitHub release після публікації перевіряється на наявність лише portable EXE і setup EXE.
+- GitHub release після публікації перевіряється на наявність тільки portable EXE і setup EXE.
 
 Поточний напрям розвитку описаний у [ROADMAP.md](ROADMAP.md).
 
