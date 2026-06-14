@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { platform as getPlatform, type Platform } from '@tauri-apps/plugin-os'
 import type { FavoriteApp, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { getReleases, searchPublicRepositories } from '../../../services/github'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../../services/favorites'
@@ -7,6 +8,7 @@ import { listProjectArt, projectArtKey } from '../../../services/projectArt'
 import {
   browseOptions,
   fallbackStoreRepos,
+  filterReposForStorePlatform,
   matchesLocalQuery,
   repoKey,
   storeBrowseTabs,
@@ -14,6 +16,7 @@ import {
   uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
+  type StorePlatform,
 } from '../storeCatalog'
 
 export interface StoreInstallability {
@@ -57,6 +60,27 @@ function pickLatestInstallableRelease(releases: GitHubRelease[]) {
     !release.draft &&
     release.assets.length > 0,
   ) ?? null
+}
+
+function normalizeStorePlatform(value: Platform | null | undefined): StorePlatform {
+  switch (value) {
+    case 'windows':
+    case 'macos':
+    case 'linux':
+    case 'ios':
+    case 'android':
+      return value
+    default:
+      return 'other'
+  }
+}
+
+function readCurrentPlatform(): StorePlatform {
+  try {
+    return normalizeStorePlatform(getPlatform())
+  } catch {
+    return null
+  }
 }
 
 function inferBroadTopicsFromText(text: string) {
@@ -120,19 +144,21 @@ function scorePersonalizedRepo(repo: GitHubSearchResult, refs: LibraryRepoRef[])
   return score
 }
 
-function fallbackHomeSections(): StoreSection[] {
+function fallbackHomeSections(currentPlatform: StorePlatform): StoreSection[] {
+  const fallbackRepos = filterReposForStorePlatform(fallbackStoreRepos, currentPlatform)
+
   return [
     {
       id: 'recommended',
       titleKey: 'store.section.recommended',
       subtitleKey: 'store.section.recommendedText',
-      items: fallbackStoreRepos.slice(0, 6),
+      items: fallbackRepos.slice(0, 6),
     },
     {
       id: 'popular',
       titleKey: 'store.section.popular',
       subtitleKey: 'store.section.popularText',
-      items: fallbackStoreRepos,
+      items: fallbackRepos,
     },
   ]
 }
@@ -154,6 +180,11 @@ export function useStoreCatalog(
   const [installedApps, setInstalledApps] = useState<InstalledApp[]>([])
   const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
   const [installability, setInstallability] = useState<Record<string, StoreInstallability>>({})
+  const [currentPlatform] = useState<StorePlatform>(() => readCurrentPlatform())
+
+  const platformFallbackRepos = useMemo(() => {
+    return filterReposForStorePlatform(fallbackStoreRepos, currentPlatform)
+  }, [currentPlatform])
 
   const libraryKeys = useMemo(() => {
     return new Set([
@@ -185,15 +216,17 @@ export function useStoreCatalog(
     const candidates = uniqueRepos([
       ...homeSections.flatMap((section) => section.items),
       ...browseItemsRaw,
-      ...fallbackStoreRepos,
-    ]).filter((repo) => !libraryKeys.has(repoKey(repo)))
+      ...platformFallbackRepos,
+    ])
+      .filter((repo) => !libraryKeys.has(repoKey(repo)))
+      .filter((repo) => filterReposForStorePlatform([repo], currentPlatform).length > 0)
 
     return candidates
       .map((repo) => ({ repo, score: scorePersonalizedRepo(repo, libraryRefs) }))
       .sort((left, right) => right.score - left.score || right.repo.stargazers_count - left.repo.stargazers_count)
       .slice(0, 12)
       .map((item) => item.repo)
-  }, [browseItemsRaw, homeSections, libraryKeys, libraryRefs])
+  }, [browseItemsRaw, currentPlatform, homeSections, libraryKeys, libraryRefs, platformFallbackRepos])
 
   const personalized = personalizedItems.length > 0
 
@@ -274,23 +307,23 @@ export function useStoreCatalog(
           id: section.id,
           titleKey: section.titleKey,
           subtitleKey: section.subtitleKey,
-          items: result.items.slice(0, 12),
+          items: filterReposForStorePlatform(result.items, currentPlatform).slice(0, 12),
         }
       }))
       const sections = settled
         .filter((item): item is PromiseFulfilledResult<StoreSection> => item.status === 'fulfilled')
         .map((item) => item.value)
-      setHomeSections(sections.length > 0 ? sections : fallbackHomeSections())
+      setHomeSections(sections.length > 0 ? sections : fallbackHomeSections(currentPlatform))
       if (sections.length === 0 && settled.some((item) => item.status === 'rejected')) {
         setError(null)
       }
     } catch {
-      setHomeSections(fallbackHomeSections())
+      setHomeSections(fallbackHomeSections(currentPlatform))
       setError(null)
     } finally {
       setLoadingHome(false)
     }
-  }, [])
+  }, [currentPlatform])
 
   const loadBrowse = useCallback(async (page = 1) => {
     if (browseTab === 'favorites') {
@@ -309,12 +342,13 @@ export function useStoreCatalog(
         language: options.language,
         topic: options.topic,
       })
-      setBrowseItemsRaw((current) => page === 1 ? result.items : [...current, ...result.items])
+      const platformItems = filterReposForStorePlatform(result.items, currentPlatform)
+      setBrowseItemsRaw((current) => page === 1 ? platformItems : [...current, ...platformItems])
       setBrowsePage(result.page)
       setHasMoreBrowse(result.has_more)
     } catch {
       if (page === 1) {
-        setBrowseItemsRaw(fallbackStoreRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
+        setBrowseItemsRaw(platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
         setBrowsePage(1)
         setHasMoreBrowse(false)
       }
@@ -322,7 +356,7 @@ export function useStoreCatalog(
     } finally {
       setLoadingBrowse(false)
     }
-  }, [browseTab, searchQuery])
+  }, [browseTab, currentPlatform, platformFallbackRepos, searchQuery])
 
   const checkInstallability = useCallback(async (repo: GitHubSearchResult) => {
     const key = repoKey(repo)
@@ -429,6 +463,7 @@ export function useStoreCatalog(
     error,
     favoriteKeys,
     favoriteRepos,
+    fallbackRepos: platformFallbackRepos,
     hasMoreBrowse,
     homeSections: visibleHomeSections,
     installability,

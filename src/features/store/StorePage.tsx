@@ -8,7 +8,6 @@ import StoreCarousel from './components/StoreCarousel'
 import StoreBrowse from './components/StoreBrowse'
 import { useStoreCatalog } from './hooks/useStoreCatalog'
 import {
-  fallbackStoreRepos,
   repoKey,
   socialPreviewUrl,
   storeCategories,
@@ -41,17 +40,17 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
       ...recommended,
       ...catalog.homeSections.flatMap((section) => section.items),
       ...catalog.browseItems,
-      ...fallbackStoreRepos,
+      ...catalog.fallbackRepos,
     ]).slice(0, 12)
-  }, [catalog.browseItems, catalog.homeSections])
+  }, [catalog.browseItems, catalog.fallbackRepos, catalog.homeSections])
   const heroRepo = heroItems[heroIndex] ?? heroItems[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
   const spotlightItems = useMemo(() => {
     const popular = catalog.homeSections.find((section) => section.id === 'popular')?.items ?? []
-    return uniqueRepos([...popular, ...fallbackStoreRepos])
+    return uniqueRepos([...popular, ...catalog.fallbackRepos])
       .sort((left, right) => right.stargazers_count - left.stargazers_count)
       .slice(0, 6)
-  }, [catalog.homeSections])
+  }, [catalog.fallbackRepos, catalog.homeSections])
   const browseSelectedRepo = useMemo(() => {
     if (catalog.browseItems.length === 0) return undefined
     if (selectedRepo && catalog.browseItems.some((repo) => repoKey(repo) === repoKey(selectedRepo))) {
