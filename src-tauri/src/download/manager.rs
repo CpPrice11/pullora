@@ -5,11 +5,14 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use super::extractor;
+
+const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
+const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -602,7 +605,7 @@ fn install_with_external_installer(
 
     run_installer_process(&cached_installer)?;
 
-    find_installed_executable(dest_dir, version_dir, owner, repo, started_at).ok_or_else(|| {
+    wait_for_installed_executable(dest_dir, version_dir, owner, repo, started_at).ok_or_else(|| {
         "Інсталятор завершився, але Pullora не знайшла встановлений EXE. Запусти програму вручну або обери portable/архівний asset."
             .to_string()
     })
@@ -637,6 +640,30 @@ fn run_installer_process(installer_path: &Path) -> Result<(), String> {
                 .map(|code| code.to_string())
                 .unwrap_or_else(|| "невідомо".to_string())
         ))
+    }
+}
+
+fn wait_for_installed_executable(
+    dest_dir: &Path,
+    version_dir: &Path,
+    owner: &str,
+    repo: &str,
+    installed_after: SystemTime,
+) -> Option<PathBuf> {
+    let deadline = Instant::now() + INSTALLER_DETECTION_TIMEOUT;
+
+    loop {
+        if let Some(path) =
+            find_installed_executable(dest_dir, version_dir, owner, repo, installed_after)
+        {
+            return Some(path);
+        }
+
+        if Instant::now() >= deadline {
+            return None;
+        }
+
+        std::thread::sleep(INSTALLER_DETECTION_INTERVAL);
     }
 }
 
