@@ -48,7 +48,8 @@ const CODEX_CAPABILITY_PROBES: Array<Omit<CodexCapabilityProbe, 'status' | 'deta
   { id: 'mcp', labelKey: 'ai.capabilityMcp', method: 'mcp/list' },
 ]
 
-const RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
+const RECENT_GITHUB_OWNERS_KEY = 'pullora.recentGithubOwners.v1'
+const LEGACY_RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
@@ -58,7 +59,10 @@ function formatBytes(bytes: number) {
 
 function readRecentGithubOwners() {
   try {
-    const value = JSON.parse(window.localStorage.getItem(RECENT_GITHUB_OWNERS_KEY) || '[]')
+    const storedValue = window.localStorage.getItem(RECENT_GITHUB_OWNERS_KEY) ??
+      window.localStorage.getItem(LEGACY_RECENT_GITHUB_OWNERS_KEY) ??
+      '[]'
+    const value = JSON.parse(storedValue)
     return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
   } catch {
     return []
@@ -225,7 +229,7 @@ function SettingsPage({
     const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = 'air-launcher-theme.json'
+    link.download = 'pullora-theme.json'
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -323,7 +327,7 @@ function SettingsPage({
     if (!settings) return
 
     const lines = [
-      'Air Launcher maintenance diagnostics',
+      'Pullora maintenance diagnostics',
       `githubOwner: ${settings.githubOwner || 'not set'}`,
       `installationPath: ${settings.installationPath || 'not set'}`,
       `assetStrategy: ${settings.assetStrategy}`,
@@ -982,8 +986,8 @@ function SettingsPage({
                   value={appearance.preset}
                   onChange={(event) => handleAppearancePresetChange(event.target.value as NonNullable<AppSettings['appearance']>['preset'])}
                 >
-                  <option value="steam">{t('settings.presetSteam')}</option>
-                  <option value="steamLight">{t('settings.presetSteamLight')}</option>
+                  <option value="github">{t('settings.presetGithub')}</option>
+                  <option value="githubLight">{t('settings.presetGithubLight')}</option>
                   <option value="midnight">{t('settings.presetMidnight')}</option>
                   <option value="custom">{t('settings.presetCustom')}</option>
                 </select>

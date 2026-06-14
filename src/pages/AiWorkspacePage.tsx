@@ -59,12 +59,17 @@ type ComposerDraft = {
   updatedAt: number
 }
 
-const AI_COMPOSER_DRAFTS_KEY = 'airLauncher.aiWorkspace.composerDrafts.v1'
-const AI_LAST_WORKSPACE_KEY = 'airLauncher.aiWorkspace.lastWorkspaceId'
+const AI_COMPOSER_DRAFTS_KEY = 'pullora.aiWorkspace.composerDrafts.v1'
+const AI_LAST_WORKSPACE_KEY = 'pullora.aiWorkspace.lastWorkspaceId'
+const LEGACY_AI_COMPOSER_DRAFTS_KEY = 'airLauncher.aiWorkspace.composerDrafts.v1'
+const LEGACY_AI_LAST_WORKSPACE_KEY = 'airLauncher.aiWorkspace.lastWorkspaceId'
 
 function readComposerDrafts(): Record<string, ComposerDraft> {
   try {
-    return JSON.parse(window.localStorage.getItem(AI_COMPOSER_DRAFTS_KEY) || '{}') as Record<string, ComposerDraft>
+    const storedValue = window.localStorage.getItem(AI_COMPOSER_DRAFTS_KEY) ??
+      window.localStorage.getItem(LEGACY_AI_COMPOSER_DRAFTS_KEY) ??
+      '{}'
+    return JSON.parse(storedValue) as Record<string, ComposerDraft>
   } catch {
     return {}
   }
@@ -80,7 +85,8 @@ function writeComposerDrafts(drafts: Record<string, ComposerDraft>) {
 
 function readLastWorkspaceId(): string | null {
   try {
-    return window.localStorage.getItem(AI_LAST_WORKSPACE_KEY)
+    return window.localStorage.getItem(AI_LAST_WORKSPACE_KEY) ??
+      window.localStorage.getItem(LEGACY_AI_LAST_WORKSPACE_KEY)
   } catch {
     return null
   }

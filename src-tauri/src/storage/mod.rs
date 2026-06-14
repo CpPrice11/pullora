@@ -37,5 +37,5 @@ impl From<serde_json::Error> for StorageError {
 pub fn get_config_dir() -> std::path::PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("air-launcher")
+        .join("pullora")
 }

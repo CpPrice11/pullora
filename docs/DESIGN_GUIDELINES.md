@@ -1,20 +1,20 @@
-# Air Launcher Design Guidelines
+# Pullora Design Guidelines
 
-Air Launcher follows the final Steam + MY SAM visual system: Steam provides the dark Library/Settings structure and directness; MY SAM provides workstation density, flat panels, thin borders, status rails, and table-like surfaces.
+Pullora follows the final GitHub + Pullora visual system: GitHub provides the dark Library/Settings structure and directness; GitHub provides workstation density, flat panels, thin borders, status rails, and table-like surfaces.
 
 ## Rules
 
 - Keep the main Library split between a compact repository list and a focused details/action pane.
 - Prefer flat dark panels, thin separators, compact rows, and blue active selection over glass, cinematic blur, or large card layouts.
 - Treat the shell as a workstation: titlebar status chips, sidebar telemetry, compact tables, and clear status rails are preferred over decorative hero surfaces.
-- Use Steam-inspired tokens as the baseline: shell `#171a21`, library/surface `#1b2838` and `#16202d`, table borders `#2a475e`, active blue `#66c0f4`.
+- Use GitHub-inspired tokens as the baseline: shell `#171a21`, library/surface `#1b2838` and `#16202d`, table borders `#2a475e`, active blue `#66c0f4`.
 - Use project art as optional supporting content. The UI must stay readable and functional without art.
 - Keep destructive actions behind explicit confirmation.
 - Preserve Ukrainian and English layouts; avoid hardcoded UI text outside `i18n.tsx`.
 - Respect reduced motion, keyboard focus states, and the 1000x700 minimum window.
 - Do not add extra platform release UX or packaging paths unless the release policy changes explicitly.
 
-## SAM Workstation Layer
+## GitHub Workstation Layer
 
 - Use left-edge status rails to communicate state: blue for active/current, green for ready/completed, yellow for pending/update, red for failure/destructive.
 - Prefer table-like rows for repositories, launcher versions, updates, downloads, and AI activity.
@@ -32,12 +32,12 @@ Air Launcher follows the final Steam + MY SAM visual system: Steam provides the 
 
 ## Theme Editor
 
-- Presets are safe defaults, but the MY SAM shell should remain the baseline visual language.
+- Presets are safe defaults, but the GitHub shell should remain the baseline visual language.
 - Custom colors, font, radius, density, and CSS are user-controlled advanced settings.
 - Theme import/export must not change GitHub owner, install folders, AI Workspace settings, or installed apps.
 
 ## Roadmap Closure
 
-- `v5.0.0` closes the Steam + MY SAM roadmap as one cohesive workstation release.
+- `v5.0.0` closes the GitHub + Pullora roadmap as one cohesive workstation release.
 - Legacy cinematic selectors may remain only as inactive compatibility CSS; active UI styling should be expressed through `.sam-shell` and shared component selectors.
 - Future design work should be incremental polish, not a return to glass, glow, or platform expansion.

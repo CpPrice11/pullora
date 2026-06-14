@@ -6,7 +6,7 @@ use super::StorageError;
 
 pub fn append_log(config_dir: &PathBuf, message: &str) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
-    let path = config_dir.join("air-launcher.log");
+    let path = config_dir.join("pullora.log");
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)

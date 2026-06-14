@@ -19,7 +19,7 @@ impl GitHubClient {
         );
         headers.insert(
             reqwest::header::USER_AGENT,
-            "Air-Launcher/0.1.0".parse().unwrap(),
+            "Pullora/0.1.0".parse().unwrap(),
         );
 
         let client = Client::builder()
@@ -98,7 +98,7 @@ impl GitHubClient {
             .filter(|repo| !repo.private && !repo.fork && !repo.archived)
             .filter(|repo| {
                 !(normalized_owner.eq_ignore_ascii_case("cpprice11")
-                    && repo.name.eq_ignore_ascii_case("air-launcher"))
+                    && repo.name.eq_ignore_ascii_case("pullora"))
             })
         {
             if releases_only

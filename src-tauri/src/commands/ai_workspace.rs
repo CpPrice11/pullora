@@ -6,7 +6,7 @@ use tokio::process::Command;
 use uuid::Uuid;
 
 use crate::codex::CodexRuntimeStatus;
-use crate::storage::ai_workspace::{self, AiWorkspace};
+use crate::storage::ai_workspace::{self, AiWorkspace, SaveWorkspaceInput};
 use crate::storage::get_config_dir;
 use crate::AppState;
 
@@ -56,13 +56,15 @@ pub async fn add_ai_workspace(
     }
     ai_workspace::save_workspace(
         &get_config_dir(),
-        folder_name(&folder),
-        folder.to_string_lossy().to_string(),
-        None,
-        None,
-        None,
-        linked_library_repo,
-        false,
+        SaveWorkspaceInput {
+            name: folder_name(&folder),
+            path: folder.to_string_lossy().to_string(),
+            github_url: None,
+            owner: None,
+            repo: None,
+            linked_library_repo,
+            cloned_by_launcher: false,
+        },
     )
     .map_err(|error| error.to_string())
 }
@@ -88,7 +90,7 @@ pub async fn save_codex_pasted_image(
     }
 
     let directory = std::env::temp_dir()
-        .join("Air Launcher")
+        .join("Pullora")
         .join("ai-workspace-paste");
     std::fs::create_dir_all(&directory)
         .map_err(|error| format!("Не вдалося створити тимчасову папку: {}", error))?;
@@ -133,13 +135,15 @@ pub async fn clone_ai_workspace(
 
     ai_workspace::save_workspace(
         &get_config_dir(),
-        repo.clone(),
-        destination.to_string_lossy().to_string(),
-        Some(github_url),
-        Some(owner),
-        Some(repo),
-        linked_library_repo,
-        true,
+        SaveWorkspaceInput {
+            name: repo.clone(),
+            path: destination.to_string_lossy().to_string(),
+            github_url: Some(github_url),
+            owner: Some(owner),
+            repo: Some(repo),
+            linked_library_repo,
+            cloned_by_launcher: true,
+        },
     )
     .map_err(|error| error.to_string())
 }

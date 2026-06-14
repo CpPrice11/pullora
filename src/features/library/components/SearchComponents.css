@@ -2350,7 +2350,7 @@
   width: min(96vw, 1120px);
 }
 
-/* Steam direction: compact library list rows. */
+/* GitHub direction: compact library list rows. */
 .sam-shell .repo-card {
   background: transparent;
   border-bottom: 0;
@@ -2882,7 +2882,7 @@
   }
 }
 
-/* v5.0.3: Steam-like compact game list. */
+/* v5.0.3: GitHub-like compact game list. */
 .sam-shell .repo-card {
   background: transparent;
   border: 0;

@@ -1,4 +1,4 @@
-# Air Launcher Regression Matrix
+# Pullora Regression Matrix
 
 Use this matrix before user-facing releases and after large roadmap patches.
 

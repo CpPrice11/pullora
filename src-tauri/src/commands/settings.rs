@@ -93,7 +93,7 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
         });
     }
 
-    let test_file = folder.join(".air-launcher-write-test.tmp");
+    let test_file = folder.join(".pullora-write-test.tmp");
     match std::fs::write(&test_file, b"ok") {
         Ok(_) => {
             let _ = std::fs::remove_file(&test_file);

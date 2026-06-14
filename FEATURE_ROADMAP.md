@@ -1,8 +1,8 @@
-# Feature Roadmap Air Launcher
+# Feature Roadmap Pullora
 
 ## Напрям
 
-Base Features roadmap описує розвиток Air Launcher як GitHub Releases launcher без AI-залежностей. Цей напрям відповідає за Library, встановлення, оновлення, локальні версії, favorites, налаштування, maintenance і надійний release flow.
+Base Features roadmap описує розвиток Pullora як GitHub Releases launcher без AI-залежностей. Цей напрям відповідає за Library, встановлення, оновлення, локальні версії, favorites, налаштування, maintenance і надійний release flow.
 
 Принципи:
 

@@ -1,6 +1,6 @@
 {
-  "name": "air-launcher",
-  "version": "5.0.21",
+  "name": "pullora",
+  "version": "5.0.22",
   "description": "GitHub program launcher - download and run applications from GitHub releases",
   "type": "module",
   "scripts": {

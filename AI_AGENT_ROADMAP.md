@@ -1,13 +1,13 @@
-# AI Agent Roadmap Air Launcher
+# AI Agent Roadmap Pullora
 
 ## Напрям
 
-AI Agent roadmap описує opt-in beta `AI Workspace`: робоче середовище для коду і задач через встановлений офіційний Codex. Base launcher має працювати незалежно від AI Workspace, а Air Launcher не зберігає OpenAI API key або інші Codex secrets.
+AI Agent roadmap описує opt-in beta `AI Workspace`: робоче середовище для коду і задач через встановлений офіційний Codex. Base launcher має працювати незалежно від AI Workspace, а Pullora не зберігає OpenAI API key або інші Codex secrets.
 
 Незмінні правила:
 
 - Codex runtime і авторизація належать Codex.
-- Air Launcher працює як shell/orchestrator поверх доступного Codex app-server.
+- Pullora працює як shell/orchestrator поверх доступного Codex app-server.
 - Library/install metadata не змішується з AI Workspace registry.
 - Якщо Codex protocol або метод недоступний, UI показує unavailable/unsupported без ламання базового chat-flow.
 - Git commit/push/PR виконуються через чат або Codex Desktop, а не окремими небезпечними кнопками лаунчера.

@@ -65,7 +65,7 @@ export interface AppSettings {
 }
 
 export interface AppAppearanceSettings {
-  preset: 'steam' | 'steamLight' | 'midnight' | 'custom'
+  preset: 'github' | 'githubLight' | 'midnight' | 'custom'
   accent: string
   accentHover: string
   background: string

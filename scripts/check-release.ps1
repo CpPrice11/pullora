@@ -5,7 +5,7 @@ param(
   [switch]$SkipSmokeTest,
   [switch]$RcReadiness,
   [switch]$CheckGitHubRelease,
-  [string]$Repository = "CpPrice11/air-launcher"
+  [string]$Repository = "CpPrice11/pullora"
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,7 +37,7 @@ function Assert-Equal($Name, $Actual, $Expected) {
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrWhiteSpace($BuildRoot)) {
-  $BuildRoot = Join-Path (Split-Path $root -Parent) "Air Launcher Builds"
+  $BuildRoot = Join-Path (Split-Path $root -Parent) "Pullora Builds"
 }
 
 Push-Location $root
@@ -52,7 +52,7 @@ try {
   }
 
   $tag = "v$Version"
-  Write-Host "[release-check] Checking Air Launcher $tag"
+  Write-Host "[release-check] Checking Pullora $tag"
 
   Assert-Equal "package.json version" ([string]$package.version) $Version
 
@@ -149,8 +149,8 @@ try {
       Fail "Build artifacts folder not found: $buildDir"
     }
 
-    $portableName = "Air.Launcher_${Version}_portable_x64.exe"
-    $setupName = "Air.Launcher_${Version}_x64-setup.exe"
+    $portableName = "Pullora_${Version}_portable_x64.exe"
+    $setupName = "Pullora_${Version}_x64-setup.exe"
     $portablePath = Join-Path $buildDir $portableName
     $setupPath = Join-Path $buildDir $setupName
 
@@ -199,8 +199,8 @@ try {
 
     $releaseAssets = @($json.assets | ForEach-Object { $_.name })
     $expectedReleaseAssets = @(
-      "Air.Launcher_${Version}_portable_x64.exe",
-      "Air.Launcher_${Version}_x64-setup.exe"
+      "Pullora_${Version}_portable_x64.exe",
+      "Pullora_${Version}_x64-setup.exe"
     )
     $unexpectedReleaseAssets = @($releaseAssets | Where-Object { $_ -notin $expectedReleaseAssets })
     if ($releaseAssets.Count -ne 2 -or $unexpectedReleaseAssets.Count -gt 0) {

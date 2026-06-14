@@ -230,7 +230,7 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     }
 
     let mut removed = 0;
-    let download_dir = root.join(".air-launcher-downloads");
+    let download_dir = root.join(".pullora-downloads");
     if download_dir.exists() {
         for entry in std::fs::read_dir(&download_dir)
             .map_err(|e| e.to_string())?

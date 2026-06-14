@@ -55,7 +55,7 @@ fn default_asset_strategy() -> String {
 pub fn default_ai_workspace_root() -> String {
     dirs::document_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("Air Launcher Workspaces")
+        .join("Pullora Workspaces")
         .to_string_lossy()
         .to_string()
 }

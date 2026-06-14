@@ -21,6 +21,16 @@ pub struct AiWorkspace {
     pub cloned_by_launcher: bool,
 }
 
+pub struct SaveWorkspaceInput {
+    pub name: String,
+    pub path: String,
+    pub github_url: Option<String>,
+    pub owner: Option<String>,
+    pub repo: Option<String>,
+    pub linked_library_repo: Option<String>,
+    pub cloned_by_launcher: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct AiWorkspaceStore {
     version: u32,
@@ -67,16 +77,10 @@ pub fn find(config_dir: &Path, id: &str) -> Result<AiWorkspace, StorageError> {
 
 pub fn save_workspace(
     config_dir: &Path,
-    name: String,
-    path: String,
-    github_url: Option<String>,
-    owner: Option<String>,
-    repo: Option<String>,
-    linked_library_repo: Option<String>,
-    cloned_by_launcher: bool,
+    input: SaveWorkspaceInput,
 ) -> Result<AiWorkspace, StorageError> {
     let mut store = load_store(config_dir)?;
-    let normalized_path = path.to_lowercase();
+    let normalized_path = input.path.to_lowercase();
 
     if let Some(existing) = store
         .workspaces
@@ -84,8 +88,8 @@ pub fn save_workspace(
         .find(|workspace| workspace.path.to_lowercase() == normalized_path)
     {
         existing.last_opened_at = Utc::now();
-        if linked_library_repo.is_some() {
-            existing.linked_library_repo = linked_library_repo;
+        if input.linked_library_repo.is_some() {
+            existing.linked_library_repo = input.linked_library_repo;
         }
         let result = existing.clone();
         save_store(config_dir, &store)?;
@@ -95,15 +99,15 @@ pub fn save_workspace(
     let now = Utc::now();
     let workspace = AiWorkspace {
         id: Uuid::new_v4().to_string(),
-        name,
-        path,
-        github_url,
-        owner,
-        repo,
-        linked_library_repo,
+        name: input.name,
+        path: input.path,
+        github_url: input.github_url,
+        owner: input.owner,
+        repo: input.repo,
+        linked_library_repo: input.linked_library_repo,
         created_at: now,
         last_opened_at: now,
-        cloned_by_launcher,
+        cloned_by_launcher: input.cloned_by_launcher,
     };
     store.workspaces.push(workspace.clone());
     save_store(config_dir, &store)?;

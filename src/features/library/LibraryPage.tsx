@@ -957,7 +957,7 @@ function LibraryPage({
 
     return (
       <section
-        className={`library-hero library-steam-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
+        className={`library-hero library-github-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
         aria-label={featuredRepo.name}
       >
         <div className="library-hero-cover">
@@ -1000,7 +1000,7 @@ function LibraryPage({
           {artError && <p className="library-hero-error">{artError}</p>}
         </div>
 
-        <div className="library-hero-actions library-steam-actions">
+        <div className="library-hero-actions library-github-actions">
           <button type="button" className="hero-primary-btn" onClick={primaryAction}>
             {primaryLabel}
           </button>

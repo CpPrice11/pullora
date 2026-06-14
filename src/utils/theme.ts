@@ -4,7 +4,7 @@ import { normalizeAppearance } from './settingsDefaults'
 export type ThemePreference = AppSettings['theme']
 type ResolvedTheme = 'light' | 'dark'
 
-export const THEME_CHANGE_EVENT = 'air-launcher-theme-change'
+export const THEME_CHANGE_EVENT = 'pullora-theme-change'
 
 export function resolveThemePreference(theme: ThemePreference): ResolvedTheme {
   if (theme === 'auto') {
@@ -35,7 +35,7 @@ export function notifyThemePreference(theme: ThemePreference) {
   )
 }
 
-const CUSTOM_THEME_STYLE_ID = 'air-launcher-custom-theme'
+const CUSTOM_THEME_STYLE_ID = 'pullora-custom-theme'
 
 export function appearanceCssVariables(appearance: AppSettings['appearance'] | undefined) {
   const normalized = normalizeAppearance(appearance)

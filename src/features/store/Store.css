@@ -172,7 +172,7 @@
   border-radius: 8px;
   box-shadow: var(--store-shadow);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 520px;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 520px);
   height: clamp(330px, 36vh, 380px);
   min-height: 330px;
   overflow: hidden;
@@ -195,17 +195,20 @@
   grid-template-columns: 1fr;
 }
 
-.store-hero-copy {
-  align-content: center;
-  display: grid;
-  min-height: 100%;
-  position: absolute;
-  left: auto;
-  right: 92px;
-  top: 0;
-  bottom: 0;
+.store-hero--empty .store-hero-copy {
+  grid-column: 1;
+  justify-self: end;
   width: min(520px, 42%);
+}
+
+.store-hero-copy {
+  align-self: center;
+  display: grid;
+  grid-column: 2;
   max-width: 520px;
+  min-width: 0;
+  position: relative;
+  width: 100%;
   z-index: 2;
 }
 

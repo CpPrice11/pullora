@@ -4394,28 +4394,28 @@
   letter-spacing: -0.02em;
 }
 
-.sam-shell .library-steam-header .library-hero-cover {
+.sam-shell .library-github-header .library-hero-cover {
   height: 58px;
   width: 58px;
 }
 
-.sam-shell .library-steam-header .repo-status-row {
+.sam-shell .library-github-header .repo-status-row {
   gap: 5px;
   margin-bottom: 5px;
 }
 
-.sam-shell .library-steam-header h2 {
+.sam-shell .library-github-header h2 {
   font-size: 20px;
   line-height: 1.1;
   margin: 0;
 }
 
-.sam-shell .library-steam-header .library-hero-repo {
+.sam-shell .library-github-header .library-hero-repo {
   font-size: 11px;
   margin: 2px 0 0;
 }
 
-.sam-shell .library-steam-header .library-hero-description {
+.sam-shell .library-github-header .library-hero-description {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   display: -webkit-box;
@@ -4425,7 +4425,7 @@
   overflow: hidden;
 }
 
-.sam-shell .library-steam-actions {
+.sam-shell .library-github-actions {
   display: none;
 }
 
@@ -4876,7 +4876,7 @@
   }
 }
 
-/* Steam direction: flatter library panes, compact list, game-page detail action area. */
+/* GitHub direction: flatter library panes, compact list, game-page detail action area. */
 .sam-shell .page::before,
 .sam-shell .page-header h2::after,
 .sam-shell .library-sam-pane-head h3::before,
@@ -5018,18 +5018,18 @@
   padding: 18px;
 }
 
-.sam-shell .library-steam-header .library-hero-cover {
+.sam-shell .library-github-header .library-hero-cover {
   height: 84px;
   width: 84px;
 }
 
-.sam-shell .library-steam-header h2 {
+.sam-shell .library-github-header h2 {
   color: #ffffff;
   font-size: clamp(25px, 2.4vw, 36px);
   font-weight: 650;
 }
 
-.sam-shell .library-steam-header .library-hero-description {
+.sam-shell .library-github-header .library-hero-description {
   color: #c7d5e0;
   font-size: 13px;
   max-width: 760px;
@@ -5094,7 +5094,7 @@
   }
 }
 
-/* v5.0.3: stronger Steam Library shell. */
+/* v5.0.3: stronger GitHub Library shell. */
 .sam-shell .library-page {
   background:
     radial-gradient(circle at 62% 0%, rgba(102, 192, 244, 0.14), transparent 26%),
@@ -5293,7 +5293,7 @@
   z-index: 1;
 }
 
-.sam-shell .library-steam-header .library-hero-cover {
+.sam-shell .library-github-header .library-hero-cover {
   height: auto;
   inset: 0;
   opacity: 0.28;
@@ -5302,7 +5302,7 @@
   z-index: 0;
 }
 
-.sam-shell .library-steam-header .library-hero-cover img {
+.sam-shell .library-github-header .library-hero-cover img {
   filter: saturate(1.18) contrast(1.04);
   height: 100%;
   object-fit: cover;
@@ -5315,7 +5315,7 @@
   z-index: 2;
 }
 
-.sam-shell .library-steam-header h2 {
+.sam-shell .library-github-header h2 {
   color: #ffffff;
   font-size: clamp(34px, 4.2vw, 56px);
   font-weight: 700;
@@ -5324,14 +5324,14 @@
   text-shadow: 0 3px 22px rgba(0, 0, 0, 0.56);
 }
 
-.sam-shell .library-steam-header .library-hero-repo,
-.sam-shell .library-steam-header .library-hero-description {
+.sam-shell .library-github-header .library-hero-repo,
+.sam-shell .library-github-header .library-hero-description {
   color: #c7d5e0;
   font-size: 14px;
   max-width: 720px;
 }
 
-.sam-shell .library-steam-header .library-hero-description {
+.sam-shell .library-github-header .library-hero-description {
   -webkit-line-clamp: 3;
   line-height: 1.45;
 }
@@ -5511,7 +5511,7 @@
   }
 }
 
-/* v5.0.4: Steam polish for fallback artwork and left library rail. */
+/* v5.0.4: GitHub polish for fallback artwork and left library rail. */
 .sam-shell .library-sam-workspace {
   grid-template-columns: 372px minmax(0, 1fr);
 }
@@ -5621,7 +5621,7 @@
   max-width: min(820px, 64%);
 }
 
-.sam-shell .library-steam-header h2 {
+.sam-shell .library-github-header h2 {
   max-width: 15ch;
 }
 
@@ -5677,7 +5677,7 @@
     max-width: 100%;
   }
 
-  .sam-shell .library-steam-header h2 {
+  .sam-shell .library-github-header h2 {
     max-width: none;
   }
 
@@ -5825,7 +5825,7 @@
   }
 }
 
-/* v5.0.9: Steam reference pass for the library detail surface. */
+/* v5.0.9: GitHub reference pass for the library detail surface. */
 .sam-shell .library-sam-workspace {
   grid-template-columns: 348px minmax(0, 1fr);
 }
@@ -5942,7 +5942,7 @@
   max-width: min(880px, 58%);
 }
 
-.sam-shell .library-steam-header h2 {
+.sam-shell .library-github-header h2 {
   font-size: 46px;
   line-height: 0.98;
   margin: 8px 0 0;
@@ -5951,13 +5951,13 @@
   text-shadow: 0 3px 24px rgba(0, 0, 0, 0.55);
 }
 
-.sam-shell .library-steam-header .library-hero-repo {
+.sam-shell .library-github-header .library-hero-repo {
   color: #c7d5e0;
   font-size: 14px;
   margin-top: 8px;
 }
 
-.sam-shell .library-steam-header .library-hero-description {
+.sam-shell .library-github-header .library-hero-description {
   color: #c7d5e0;
   font-size: 14px;
   line-height: 1.45;
@@ -6164,7 +6164,7 @@
     max-width: 100%;
   }
 
-  .sam-shell .library-steam-header h2 {
+  .sam-shell .library-github-header h2 {
     font-size: 34px;
   }
 
@@ -6179,7 +6179,7 @@
   }
 }
 
-/* v5.0.10: split Steam playbar statuses from lower navigation tabs. */
+/* v5.0.10: split GitHub playbar statuses from lower navigation tabs. */
 .sam-shell .library-ops-action-row {
   background:
     linear-gradient(90deg, rgba(53, 63, 75, 0.98), rgba(36, 45, 56, 0.96)),

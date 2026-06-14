@@ -1,7 +1,7 @@
 import { callTauri } from './tauri'
 import type { AppSettings, InstallPathValidation } from '../types'
 
-export const SETTINGS_CHANGE_EVENT = 'air-launcher-settings-change'
+export const SETTINGS_CHANGE_EVENT = 'pullora-settings-change'
 
 function notifySettingsChange(settings: Partial<AppSettings>) {
   window.dispatchEvent(new CustomEvent<Partial<AppSettings>>(SETTINGS_CHANGE_EVENT, {

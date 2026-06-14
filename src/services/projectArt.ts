@@ -3,7 +3,8 @@ import type { ProjectArt } from '../types'
 import { callTauri } from './tauri'
 
 export type ProjectArtKind = 'cover' | 'background' | 'all'
-const LAUNCHER_ART_OWNER = '__air_launcher__'
+const LAUNCHER_ART_OWNER = '__pullora__'
+const LEGACY_LAUNCHER_ART_OWNER = '__air_launcher__'
 const LAUNCHER_ART_REPO = 'global'
 
 export async function listProjectArt(): Promise<ProjectArt[]> {
@@ -71,7 +72,8 @@ export function projectArtBackgroundUrl(
 }
 
 export async function getLauncherBackgroundArt(): Promise<ProjectArt | null> {
-  return getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
+  return await getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO) ??
+    getProjectArt(LEGACY_LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
 }
 
 export async function setLauncherBackgroundArt(sourcePath: string): Promise<ProjectArt> {
@@ -79,5 +81,7 @@ export async function setLauncherBackgroundArt(sourcePath: string): Promise<Proj
 }
 
 export async function clearLauncherBackgroundArt(): Promise<ProjectArt> {
-  return clearProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background')
+  const result = await clearProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background')
+  await clearProjectArt(LEGACY_LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background').catch(() => null)
+  return result
 }

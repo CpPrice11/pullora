@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Air Launcher",
-  "version": "5.0.21",
-  "identifier": "com.airlauncher.app",
+  "productName": "Pullora",
+  "version": "5.0.22",
+  "identifier": "com.cpprice11.pullora",
   "build": {
     "frontendDist": "../dist",
     "beforeDevCommand": "npm run dev",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Air Launcher",
+        "title": "Pullora",
         "width": 1000,
         "height": 700,
         "minWidth": 1000,

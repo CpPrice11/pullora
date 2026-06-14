@@ -189,7 +189,7 @@ export function repoKey(repo: GitHubSearchResult) {
 }
 
 export function socialPreviewUrl(repo: GitHubSearchResult) {
-  return `https://opengraph.githubassets.com/air-launcher-store/${repo.owner.login}/${repo.name}`
+  return `https://opengraph.githubassets.com/pullora-store/${repo.owner.login}/${repo.name}`
 }
 
 export function languageAccent(language?: string | null) {

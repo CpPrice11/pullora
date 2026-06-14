@@ -1,8 +1,8 @@
 import type { AppAppearanceSettings, AppSettings } from '../types'
 
 export const APPEARANCE_PRESETS: Record<AppAppearanceSettings['preset'], AppAppearanceSettings> = {
-  steam: {
-    preset: 'steam',
+  github: {
+    preset: 'github',
     accent: '#66c0f4',
     accentHover: '#8fd3ff',
     background: '#1b2838',
@@ -18,8 +18,8 @@ export const APPEARANCE_PRESETS: Record<AppAppearanceSettings['preset'], AppAppe
     density: 'compact',
     customCss: '',
   },
-  steamLight: {
-    preset: 'steamLight',
+  githubLight: {
+    preset: 'githubLight',
     accent: '#1677b8',
     accentHover: '#0b8ed8',
     background: '#dfe3e6',
@@ -71,7 +71,7 @@ export const APPEARANCE_PRESETS: Record<AppAppearanceSettings['preset'], AppAppe
   },
 }
 
-const DEFAULT_APPEARANCE = APPEARANCE_PRESETS.steam
+const DEFAULT_APPEARANCE = APPEARANCE_PRESETS.github
 
 function normalizeColor(value: unknown, fallback: string) {
   if (typeof value !== 'string') return fallback
@@ -85,8 +85,16 @@ function normalizeNumber(value: unknown, fallback: number, min: number, max: num
   return Math.max(min, Math.min(max, Math.round(numeric)))
 }
 
+function normalizePreset(value: unknown): AppAppearanceSettings['preset'] {
+  if (value === 'steam') return 'github'
+  if (value === 'steamLight') return 'githubLight'
+  return typeof value === 'string' && value in APPEARANCE_PRESETS
+    ? value as AppAppearanceSettings['preset']
+    : DEFAULT_APPEARANCE.preset
+}
+
 export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null | undefined): AppAppearanceSettings {
-  const presetKey = value?.preset && value.preset in APPEARANCE_PRESETS ? value.preset : DEFAULT_APPEARANCE.preset
+  const presetKey = normalizePreset(value?.preset)
   const base = APPEARANCE_PRESETS[presetKey]
 
   return {

@@ -207,7 +207,7 @@ async fn download_task(
     } = task;
 
     let client = Client::builder()
-        .user_agent("Air-Launcher/0.1.0")
+        .user_agent("Pullora/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -230,7 +230,7 @@ async fn download_task(
     .await;
 
     std::fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
-    let download_dir = dest_dir.join(".air-launcher-downloads");
+    let download_dir = dest_dir.join(".pullora-downloads");
     std::fs::create_dir_all(&download_dir).map_err(|e| e.to_string())?;
     let tmp_path = download_dir.join(format!("{}-{}", id, safe_file_name(&file_name)));
 

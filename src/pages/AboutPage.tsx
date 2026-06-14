@@ -16,8 +16,8 @@ import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
-const LAUNCHER_REPO = 'air-launcher'
-const FALLBACK_CURRENT_VERSION = 'v5.0.21'
+const LAUNCHER_REPO = 'pullora'
+const FALLBACK_CURRENT_VERSION = 'v5.0.22'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -56,11 +56,11 @@ function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const portable = candidates.find((asset) => asset.name.toLowerCase().includes('portable'))
   if (portable) return portable
 
-  const airLauncherExe = candidates.find((asset) => {
+  const pulloraExe = candidates.find((asset) => {
     const name = asset.name.toLowerCase()
-    return name.endsWith('.exe') && name.includes('air.launcher')
+    return name.endsWith('.exe') && (name.includes('pullora') || name.includes('air.launcher'))
   })
-  if (airLauncherExe) return airLauncherExe
+  if (pulloraExe) return pulloraExe
 
   return candidates.find((asset) => asset.name.toLowerCase().endsWith('.zip')) ??
     candidates.find((asset) => asset.name.toLowerCase().endsWith('.exe')) ??
@@ -313,7 +313,7 @@ function AboutPage() {
           <span />
         </div>
         <div className="about-hero-main">
-          <h3>Air Launcher</h3>
+          <h3>Pullora</h3>
           <p>{t('about.updateCenter')}</p>
           <div className="about-hero-meta">
             <span className="about-current-version-chip">{t('about.currentVersion')}: {currentVersion.replace(/^v/, '')}</span>

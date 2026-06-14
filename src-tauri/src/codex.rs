@@ -20,10 +20,13 @@ pub struct CodexRuntimeStatus {
     pub error: Option<String>,
 }
 
+type CodexResponseSender = oneshot::Sender<Result<Value, String>>;
+type PendingCodexRequests = Arc<Mutex<HashMap<u64, CodexResponseSender>>>;
+
 pub struct CodexRuntime {
     child: Mutex<Option<Child>>,
     stdin: Arc<Mutex<Option<ChildStdin>>>,
-    pending: Arc<Mutex<HashMap<u64, oneshot::Sender<Result<Value, String>>>>>,
+    pending: PendingCodexRequests,
     next_id: AtomicU64,
     running: Arc<AtomicBool>,
     initialized: AtomicBool,
@@ -182,7 +185,7 @@ impl CodexRuntime {
             self.request_raw(
                 "initialize",
                 json!({
-                    "clientInfo": { "name": "air-launcher", "version": "3.0.0" },
+                    "clientInfo": { "name": "pullora", "version": "3.0.0" },
                     "capabilities": { "experimentalApi": true }
                 }),
             )

@@ -119,7 +119,7 @@ pub async fn install_launcher_release(
     std::fs::create_dir_all(&update_dir).map_err(|e| e.to_string())?;
 
     let downloaded_asset = update_dir.join(sanitize_asset_name(&asset_name));
-    let downloaded_exe = update_dir.join("Air Launcher.exe");
+    let downloaded_exe = update_dir.join("Pullora.exe");
     let script_path = update_dir.join("apply-launcher-update.ps1");
     download_launcher_asset(&asset_url, &downloaded_asset).await?;
     prepare_portable_launcher_asset(&downloaded_asset, &downloaded_exe, &update_dir)?;
@@ -221,7 +221,7 @@ fn find_portable_launcher_exe(dir: &std::path::Path) -> Option<std::path::PathBu
             continue;
         }
 
-        if name.contains("air") && name.contains("launcher") {
+        if name.contains("pullora") || (name.contains("air") && name.contains("launcher")) {
             return Some(path);
         }
 
@@ -233,7 +233,7 @@ fn find_portable_launcher_exe(dir: &std::path::Path) -> Option<std::path::PathBu
 
 async fn download_launcher_asset(url: &str, destination: &std::path::Path) -> Result<(), String> {
     let client = reqwest::Client::builder()
-        .user_agent("Air-Launcher/0.1.0")
+        .user_agent("Pullora/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
     let response = client.get(url).send().await.map_err(|e| e.to_string())?;
@@ -255,10 +255,10 @@ fn write_launcher_update_script(
     let backup_dir = target_exe
         .parent()
         .ok_or("Cannot resolve launcher directory")?
-        .join(".air-launcher-backups");
+        .join(".pullora-backups");
     std::fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
     let backup_exe = backup_dir.join(format!(
-        "Air Launcher backup {}.exe",
+        "Pullora backup {}.exe",
         chrono::Utc::now().format("%Y%m%d%H%M%S")
     ));
 
@@ -322,7 +322,7 @@ fn launcher_backup_dir() -> Result<std::path::PathBuf, String> {
         .map_err(|e| e.to_string())?
         .parent()
         .ok_or("Cannot resolve launcher directory")?
-        .join(".air-launcher-backups"))
+        .join(".pullora-backups"))
 }
 
 fn child_count(path: &std::path::Path) -> Result<usize, String> {
