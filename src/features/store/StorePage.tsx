@@ -23,6 +23,8 @@ interface StorePageProps {
   onPreviewBackground?: (url: string | null) => void
 }
 
+const HERO_RECOMMENDATION_COUNT = 6
+
 function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const { t } = useI18n()
   const [query, setQuery] = useState('')
@@ -36,13 +38,13 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
   const heroItems = useMemo(() => {
     const recommended = catalog.homeSections[0]?.items ?? []
+    const supplemental = catalog.homeSections.slice(1).flatMap((section) => section.items)
     return uniqueRepos([
       ...recommended,
-      ...catalog.homeSections.flatMap((section) => section.items),
-      ...catalog.browseItems,
+      ...supplemental,
       ...catalog.fallbackRepos,
-    ]).slice(0, 12)
-  }, [catalog.browseItems, catalog.fallbackRepos, catalog.homeSections])
+    ]).slice(0, HERO_RECOMMENDATION_COUNT)
+  }, [catalog.fallbackRepos, catalog.homeSections])
   const heroRepo = heroItems[heroIndex] ?? heroItems[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
   const spotlightItems = useMemo(() => {
