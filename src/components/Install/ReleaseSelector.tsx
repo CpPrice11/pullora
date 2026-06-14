@@ -96,7 +96,7 @@ function intentKey(intent: InstallIntent) {
 }
 
 function isAutoInstallable(kind: AssetKind | null) {
-  return kind === 'portable' || kind === 'archive'
+  return kind === 'portable' || kind === 'archive' || kind === 'installer'
 }
 
 function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
@@ -513,7 +513,7 @@ function ReleaseSelector({
                         )}
                       </div>
                       <span>{selectedAsset.name}</span>
-                      {selectedAssetKind === 'installer' && <p>{t('release.installerBlockedText')}</p>}
+                      {selectedAssetKind === 'installer' && <p>{t('release.installerSupportedText')}</p>}
                       {selectedAssetKind === 'unsupported' && <p>{t('release.unsupportedWarning')}</p>}
                       {selectedAssetAutoInstallable && (
                         <p>{t('release.installSummary', { version: selectedRelease.tag_name, file: selectedAsset.name })}</p>
@@ -522,9 +522,9 @@ function ReleaseSelector({
                   )}
 
                   {selectedAssetKind === 'installer' && (
-                    <div className="release-blocked-note">
-                      <strong>{t('release.installerBlockedTitle')}</strong>
-                      <p>{t('release.choosePortable')}</p>
+                    <div className="release-blocked-note release-installer-note">
+                      <strong>{t('release.installerSupportedTitle')}</strong>
+                      <p>{t('release.installerSupportedHelp')}</p>
                     </div>
                   )}
 
@@ -595,7 +595,11 @@ function ReleaseSelector({
                       disabled={!selectedAssetAutoInstallable || downloading}
                       className="download-btn release-action-primary"
                     >
-                      {downloading ? t('release.starting') : t('release.confirmInstall')}
+                      {downloading
+                        ? t('release.starting')
+                        : selectedAssetKind === 'installer'
+                          ? t('release.runInstaller')
+                          : t('release.confirmInstall')}
                     </button>
                   </div>
                 </>

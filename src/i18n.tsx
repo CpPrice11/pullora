@@ -1727,6 +1727,32 @@ Object.assign(dictionaries.en, {
   'ai.capabilityStatus.notChecked': 'Not checked',
 })
 
+Object.assign(dictionaries.uk, {
+  'release.stepFileHelp': 'Обери portable EXE, архів з EXE всередині або setup/MSI інсталятор.',
+  'release.stepProgressHelp': 'Стеж за завантаженням, розпакуванням або зовнішнім майстром інсталяції, пошуком EXE та реєстрацією версії.',
+  'release.autoInstallOnly': 'Pullora підтримує portable EXE, архіви з EXE та setup/MSI інсталятори. Інсталятор може відкрити окремий майстер Windows.',
+  'release.installerSupportedTitle': 'Інсталятор підтримується',
+  'release.installerSupportedText': 'Pullora завантажить інсталятор, запустить майстер і після завершення спробує знайти встановлений EXE для бібліотеки.',
+  'release.installerSupportedHelp': 'Заверши майстер інсталяції у відкритому вікні. Якщо майстер просить шлях, краще обери папку застосунку або стандартний Program Files шлях.',
+  'download.stageRunningInstaller': 'Запуск інсталятора',
+  'download.stageRunningInstallerText': 'Відкрито зовнішній майстер. Заверши інсталяцію, після цього Pullora знайде виконуваний файл.',
+  'download.stageExtractingText': 'Розпаковуємо архів або переносимо portable EXE у папку застосунку.',
+  'download.stageCompletedText': 'Версію встановлено. Можна запустити застосунок або відкрити його папку.',
+})
+
+Object.assign(dictionaries.en, {
+  'release.stepFileHelp': 'Choose a portable EXE, an archive containing an EXE, or a setup/MSI installer.',
+  'release.stepProgressHelp': 'Follow download, extraction or the external installer wizard, EXE detection, and version registration.',
+  'release.autoInstallOnly': 'Pullora supports portable EXE files, archives with an EXE, and setup/MSI installers. An installer may open a separate Windows wizard.',
+  'release.installerSupportedTitle': 'Installer supported',
+  'release.installerSupportedText': 'Pullora will download the installer, run its wizard, then try to find the installed EXE for the library.',
+  'release.installerSupportedHelp': 'Finish the installer wizard in the opened window. If it asks for a path, prefer the app folder or the standard Program Files location.',
+  'download.stageRunningInstaller': 'Running installer',
+  'download.stageRunningInstallerText': 'An external wizard is open. Finish the installation, then Pullora will locate the executable.',
+  'download.stageExtractingText': 'Extracting the archive or moving the portable EXE into the app folder.',
+  'download.stageCompletedText': 'The version is installed. You can launch the app or open its folder.',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

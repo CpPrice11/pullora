@@ -18,6 +18,7 @@ const installStages: DownloadStage[] = [
   'downloading',
   'verifying',
   'extracting',
+  'runningInstaller',
   'detectingExecutable',
   'registering',
   'completed',
@@ -35,6 +36,7 @@ function stageLabel(stage: DownloadStage | undefined, t: (key: string) => string
     case 'downloading': return t('download.stageDownloading')
     case 'verifying': return t('download.stageVerifying')
     case 'extracting': return t('download.stageExtracting')
+    case 'runningInstaller': return t('download.stageRunningInstaller')
     case 'detectingExecutable': return t('download.stageDetectingExecutable')
     case 'registering': return t('download.stageRegistering')
     case 'completed': return t('download.stageCompleted')
@@ -49,6 +51,7 @@ function stageDescription(stage: DownloadStage | undefined, t: (key: string) => 
     case 'downloading': return t('download.stageDownloadingText')
     case 'verifying': return t('download.stageVerifyingText')
     case 'extracting': return t('download.stageExtractingText')
+    case 'runningInstaller': return t('download.stageRunningInstallerText')
     case 'detectingExecutable': return t('download.stageDetectingExecutableText')
     case 'registering': return t('download.stageRegisteringText')
     case 'completed': return t('download.stageCompletedText')
