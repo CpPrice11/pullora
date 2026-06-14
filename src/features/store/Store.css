@@ -103,6 +103,7 @@
   min-height: 42px;
   min-width: 0;
   flex: 0 1 720px;
+  margin: 0;
   width: min(100%, 720px);
 }
 
@@ -404,6 +405,12 @@
   opacity: 0.45;
 }
 
+.store-hero-arrow:active {
+  animation: store-hero-arrow-blink 180ms ease-out;
+  filter: brightness(1.28);
+  transform: translateY(-50%);
+}
+
 .store-hero-arrow--left {
   left: 18px;
 }
@@ -434,6 +441,18 @@
 
 .store-hero-dots button.active {
   background: var(--store-blue);
+}
+
+@keyframes store-hero-arrow-blink {
+  0% {
+    background: rgba(36, 139, 247, 0.98);
+    box-shadow: 0 0 0 0 rgba(36, 157, 255, 0.5);
+  }
+
+  100% {
+    background: rgba(12, 28, 48, 0.82);
+    box-shadow: 0 0 0 10px rgba(36, 157, 255, 0);
+  }
 }
 
 .store-section {

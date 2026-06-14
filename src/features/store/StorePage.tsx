@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { GitHubSearchResult } from '../../types'
 import { openExternalUrl } from '../../services/updates'
 import { projectArtBackgroundUrl } from '../../services/projectArt'
@@ -110,30 +110,56 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     void openExternalUrl(repo.html_url).catch(() => {})
   }
 
+  const submitSearch = (nextQuery = query) => {
+    const trimmedQuery = nextQuery.trim()
+    setStoreSearchQuery(trimmedQuery)
+    if (browseTab === 'favorites') {
+      setBrowseTab('popular')
+    }
+    setInstallableFilter('all')
+    setSelectedRepo(undefined)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value)
+    if (browseTab === 'favorites') {
+      setBrowseTab('popular')
+    }
+    setInstallableFilter('all')
+  }
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    submitSearch()
+  }
+
   const handleCategory = (label: string) => {
     setQuery(label)
     setBrowseTab('popular')
+    setInstallableFilter('all')
+    setSelectedRepo(undefined)
   }
 
   return (
     <div className="page store-page">
       <div className="store-toolbar">
-        <label className="store-search" htmlFor="store-search-input">
+        <form className="store-search" onSubmit={handleSearchSubmit}>
           <span className="visually-hidden">{t('store.searchLabel')}</span>
           <input
             id="store-search-input"
             type="text"
             value={query}
+            aria-label={t('store.searchLabel')}
             placeholder={t('store.searchPlaceholder')}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => handleSearchChange(event.target.value)}
           />
-          <button type="button" aria-label={t('store.searchLabel')}>
+          <button type="submit" aria-label={t('store.searchLabel')}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="6" />
               <path d="m16 16 4 4" />
             </svg>
           </button>
-        </label>
+        </form>
         <button type="button" className="store-wishlist-btn" onClick={() => setBrowseTab('favorites')}>
           <span aria-hidden="true">♡</span>
           {t('store.browse.favorites')}
