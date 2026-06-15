@@ -676,10 +676,24 @@ fn run_installer_process(installer_path: &Path) -> Result<(), String> {
         std::process::Command::new(installer_path)
     };
 
-    let status = command
-        .status()
-        .map_err(|error| format!("Не вдалося запустити інсталятор: {}", error))?;
+    let status = match command.status() {
+        Ok(status) => status,
+        Err(error) => {
+            #[cfg(target_os = "windows")]
+            {
+                if error.raw_os_error() == Some(740) {
+                    return run_elevated_installer_process(installer_path, &extension);
+                }
+            }
 
+            return Err(format!("Не вдалося запустити інсталятор: {}", error));
+        }
+    };
+
+    installer_exit_result(status)
+}
+
+fn installer_exit_result(status: std::process::ExitStatus) -> Result<(), String> {
     if status.success() || status.code() == Some(3010) {
         Ok(())
     } else {
@@ -691,6 +705,45 @@ fn run_installer_process(installer_path: &Path) -> Result<(), String> {
                 .unwrap_or_else(|| "невідомо".to_string())
         ))
     }
+}
+
+#[cfg(target_os = "windows")]
+fn run_elevated_installer_process(installer_path: &Path, extension: &str) -> Result<(), String> {
+    let script = r#"
+$ErrorActionPreference = 'Stop'
+$path = $env:PULLORA_INSTALLER_PATH
+if ([string]::IsNullOrWhiteSpace($path)) {
+  throw 'Missing installer path.'
+}
+
+if ($env:PULLORA_INSTALLER_KIND -eq 'msi') {
+  $process = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $path) -Verb RunAs -Wait -PassThru
+} else {
+  $process = Start-Process -FilePath $path -Verb RunAs -Wait -PassThru
+}
+
+if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
+  exit $process.ExitCode
+}
+"#;
+
+    let status = std::process::Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-Command")
+        .arg(script)
+        .env("PULLORA_INSTALLER_PATH", installer_path)
+        .env("PULLORA_INSTALLER_KIND", extension)
+        .status()
+        .map_err(|error| {
+            format!(
+                "Не вдалося запустити інсталятор з правами адміністратора: {}",
+                error
+            )
+        })?;
+
+    installer_exit_result(status)
 }
 
 fn wait_for_installed_executable(
