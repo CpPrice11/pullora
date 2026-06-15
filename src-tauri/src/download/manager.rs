@@ -196,11 +196,15 @@ fn installer_cache_root() -> PathBuf {
     crate::storage::get_config_dir().join("installer-cache")
 }
 
-fn install_workspace_dir(install_kind: &str, dest_dir: &Path) -> PathBuf {
+fn package_cache_root() -> PathBuf {
+    crate::storage::get_config_dir().join("package-cache")
+}
+
+fn install_workspace_dir(install_kind: &str) -> PathBuf {
     if install_kind == "installer" {
         installer_cache_root()
     } else {
-        dest_dir.to_path_buf()
+        package_cache_root()
     }
 }
 
@@ -229,7 +233,7 @@ fn ensure_writable_dir(dir: &Path, install_kind: &str) -> Result<(), String> {
             )
         } else {
             format!(
-                "Папка встановлення {} недоступна для запису. Обери іншу папку в Налаштуваннях, наприклад Documents\\Pullora Apps: {}",
+                "Pullora не може записати кеш встановлення {}. Перевір права доступу або запусти програму ще раз: {}",
                 dir.display(),
                 error
             )
@@ -283,7 +287,7 @@ async fn download_task(
     })
     .await;
 
-    let workspace_dir = install_workspace_dir(&install_kind, &dest_dir);
+    let workspace_dir = install_workspace_dir(&install_kind);
     ensure_writable_dir(&workspace_dir, &install_kind)?;
     let download_dir = workspace_dir.join(".pullora-downloads");
     std::fs::create_dir_all(&download_dir)
@@ -353,9 +357,15 @@ async fn download_task(
     })
     .await;
 
-    let app_dir = workspace_dir.join(format!("{}-{}", owner, repo));
+    let staging_app_dir = workspace_dir.join(format!("{}-{}", owner, repo));
+    let final_app_dir = dest_dir.join(format!("{}-{}", owner, repo));
+    let app_dir = if install_kind == "installer" {
+        staging_app_dir.clone()
+    } else {
+        final_app_dir
+    };
     let version_dir = app_dir.join(&tag);
-    let partial_dir = app_dir.join(format!("{}.partial-{}", tag, id));
+    let partial_dir = staging_app_dir.join(format!("{}.partial-{}", tag, id));
     let backup_dir = app_dir.join(format!("{}.backup-{}", tag, id));
 
     if install_kind == "installer" {
@@ -527,7 +537,7 @@ async fn download_task(
         executable.clone()
     };
 
-    if let Err(error) = replace_version_dir(&partial_dir, &version_dir, &backup_dir) {
+    if let Err(error) = install_version_dir(&partial_dir, &version_dir, &backup_dir) {
         let _ = fs::remove_file(&tmp_path);
         let _ = cleanup_path(&partial_dir);
         return Err(error);
@@ -567,11 +577,13 @@ async fn download_task(
 
         if let Err(error) = install_record_result {
             let _ = fs::remove_file(&tmp_path);
+            let _ = cleanup_path(&partial_dir);
             let _ = cleanup_path(&version_dir);
             let _ = restore_backup_dir(&backup_dir, &version_dir);
             return Err(error);
         }
 
+        let _ = cleanup_path(&partial_dir);
         cleanup_path(&backup_dir)?;
         let _ = fs::remove_file(&tmp_path);
 
@@ -604,11 +616,13 @@ async fn download_task(
 
     if let Err(error) = install_record_result {
         let _ = fs::remove_file(&tmp_path);
+        let _ = cleanup_path(&partial_dir);
         let _ = cleanup_path(&version_dir);
         let _ = restore_backup_dir(&backup_dir, &version_dir);
         return Err(error);
     }
 
+    let _ = cleanup_path(&partial_dir);
     cleanup_path(&backup_dir)?;
     let _ = fs::remove_file(&tmp_path);
 
@@ -1083,10 +1097,126 @@ fn replace_version_dir(
         fs::rename(version_dir, backup_dir).map_err(|e| e.to_string())?;
     }
 
+    if let Some(parent) = version_dir.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
     fs::rename(partial_dir, version_dir).map_err(|e| {
         let _ = restore_backup_dir(backup_dir, version_dir);
         e.to_string()
     })
+}
+
+fn install_version_dir(
+    partial_dir: &std::path::Path,
+    version_dir: &std::path::Path,
+    backup_dir: &std::path::Path,
+) -> Result<(), String> {
+    match replace_version_dir(partial_dir, version_dir, backup_dir) {
+        Ok(()) => Ok(()),
+        Err(error) => {
+            #[cfg(target_os = "windows")]
+            {
+                elevated_replace_version_dir(partial_dir, version_dir, backup_dir).map_err(
+                    |elevated_error| {
+                        format!(
+                            "{} Elevated install також не вдався: {}",
+                            error, elevated_error
+                        )
+                    },
+                )
+            }
+
+            #[cfg(not(target_os = "windows"))]
+            {
+                Err(error)
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn elevated_replace_version_dir(
+    partial_dir: &std::path::Path,
+    version_dir: &std::path::Path,
+    backup_dir: &std::path::Path,
+) -> Result<(), String> {
+    let script_dir = package_cache_root();
+    fs::create_dir_all(&script_dir).map_err(|e| e.to_string())?;
+    let script_path = script_dir.join(format!("elevated-install-{}.ps1", uuid::Uuid::new_v4()));
+    let script = r#"
+$ErrorActionPreference = 'Stop'
+$Source = $env:PULLORA_SOURCE_DIR
+$Target = $env:PULLORA_TARGET_DIR
+$Backup = $env:PULLORA_BACKUP_DIR
+
+if ([string]::IsNullOrWhiteSpace($Source) -or [string]::IsNullOrWhiteSpace($Target) -or [string]::IsNullOrWhiteSpace($Backup)) {
+  throw 'Missing install paths.'
+}
+if (-not (Test-Path -LiteralPath $Source)) {
+  throw "Source does not exist: $Source"
+}
+
+if (Test-Path -LiteralPath $Backup) {
+  Remove-Item -LiteralPath $Backup -Recurse -Force
+}
+if (Test-Path -LiteralPath $Target) {
+  Move-Item -LiteralPath $Target -Destination $Backup -Force
+}
+
+try {
+  New-Item -ItemType Directory -Force -Path $Target | Out-Null
+  Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $Target -Recurse -Force
+  if (Test-Path -LiteralPath $Backup) {
+    Remove-Item -LiteralPath $Backup -Recurse -Force
+  }
+} catch {
+  if (Test-Path -LiteralPath $Target) {
+    Remove-Item -LiteralPath $Target -Recurse -Force
+  }
+  if (Test-Path -LiteralPath $Backup) {
+    Move-Item -LiteralPath $Backup -Destination $Target -Force
+  }
+  throw
+}
+"#;
+
+    fs::write(&script_path, script).map_err(|e| e.to_string())?;
+
+    let launcher = r#"
+$ErrorActionPreference = 'Stop'
+$script = $env:PULLORA_ELEVATED_SCRIPT
+$escapedScript = $script.Replace('"', '\"')
+$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$escapedScript`""
+
+$process = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -Verb RunAs -Wait -PassThru
+
+if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
+  exit $process.ExitCode
+}
+"#;
+
+    let status = std::process::Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-ExecutionPolicy")
+        .arg("Bypass")
+        .arg("-Command")
+        .arg(launcher)
+        .env("PULLORA_ELEVATED_SCRIPT", &script_path)
+        .env("PULLORA_SOURCE_DIR", partial_dir)
+        .env("PULLORA_TARGET_DIR", version_dir)
+        .env("PULLORA_BACKUP_DIR", backup_dir)
+        .status()
+        .map_err(|error| {
+            format!(
+                "Не вдалося запустити elevated встановлення у вибрану папку: {}",
+                error
+            )
+        })?;
+
+    let result = installer_exit_result(status);
+    let _ = fs::remove_file(script_path);
+    result
 }
 
 fn restore_backup_dir(
