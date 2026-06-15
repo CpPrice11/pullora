@@ -6,6 +6,12 @@ import { addToFavorites, getFavorites, removeFromFavorites } from '../../../serv
 import { getInstalledApps } from '../../../services/installed'
 import { listProjectArt, projectArtKey } from '../../../services/projectArt'
 import {
+  classifyReleaseAsset,
+  hasInstallableReleaseAsset,
+  installableAssetsForRelease,
+  type ReleaseAssetKind,
+} from '../assetClassifier'
+import {
   browseOptions,
   fallbackStoreRepos,
   filterReposForStorePlatform,
@@ -24,6 +30,8 @@ export interface StoreInstallability {
   checking: boolean
   installable: boolean
   latestTag?: string | null
+  assetKinds?: ReleaseAssetKind[]
+  installableAssetCount?: number
 }
 
 export interface StoreSection {
@@ -55,11 +63,23 @@ function pickLatestInstallableRelease(releases: GitHubRelease[]) {
   return releases.find((release) =>
     !release.draft &&
     !release.prerelease &&
-    release.assets.length > 0,
+    hasInstallableReleaseAsset(release),
   ) ?? releases.find((release) =>
     !release.draft &&
-    release.assets.length > 0,
+    hasInstallableReleaseAsset(release),
   ) ?? null
+}
+
+function installabilityFromRelease(release: GitHubRelease | null): StoreInstallability {
+  const assets = release ? installableAssetsForRelease(release) : []
+  return {
+    checked: true,
+    checking: false,
+    installable: assets.length > 0,
+    latestTag: release?.tag_name ?? null,
+    assetKinds: [...new Set(assets.map(classifyReleaseAsset))],
+    installableAssetCount: assets.length,
+  }
 }
 
 function normalizeStorePlatform(value: Platform | null | undefined): StorePlatform {
@@ -375,12 +395,7 @@ export function useStoreCatalog(
     try {
       const releases = await getReleases(repo.owner.login, repo.name)
       const release = pickLatestInstallableRelease(releases)
-      const status = {
-        checked: true,
-        checking: false,
-        installable: Boolean(release),
-        latestTag: release?.tag_name ?? null,
-      }
+      const status = installabilityFromRelease(release)
       setInstallability((state) => ({ ...state, [key]: status }))
       return status
     } catch {

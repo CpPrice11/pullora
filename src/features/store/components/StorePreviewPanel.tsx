@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { languageAccent, socialPreviewUrl } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import { releaseAssetKindLabelKey } from '../assetClassifier'
 import { useI18n } from '../../../i18n'
 
 interface StorePreviewPanelProps {
@@ -42,6 +43,7 @@ function StorePreviewPanel({
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const imageUrl = projectArtCoverUrl(art) ?? socialPreviewUrl(repo)
   const isInstallable = Boolean(installability?.installable)
+  const assetKinds = installability?.assetKinds ?? []
   const accent = languageAccent(repo.language)
 
   return (
@@ -54,6 +56,7 @@ function StorePreviewPanel({
         <p className="store-preview-owner">{repo.owner.login}/{repo.name}</p>
         <div className="store-preview-tags">
           {repo.language && <span>{repo.language}</span>}
+          {assetKinds.map((kind) => <span key={kind}>{t(releaseAssetKindLabelKey(kind))}</span>)}
           {keyTopics.map((topic) => <span key={topic}>{topic}</span>)}
         </div>
         <div className="store-preview-media">
@@ -74,6 +77,9 @@ function StorePreviewPanel({
           <span>{repo.html_url}</span>
           <span>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</span>
           <span>{installability?.checking ? t('store.status.checking') : isInstallable ? t('store.status.installable') : t('store.status.source')}</span>
+          {installability?.installableAssetCount ? (
+            <span>{t('store.installableAssets', { count: installability.installableAssetCount })}</span>
+          ) : null}
           <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
         </div>
         <div className="store-preview-actions">
@@ -82,7 +88,7 @@ function StorePreviewPanel({
             className={isInstallable ? 'store-primary-btn' : 'store-secondary-btn'}
             onClick={() => isInstallable ? onInstall(repo) : onOpenSource(repo)}
           >
-            {t(isInstallable ? 'store.action.install' : 'store.action.source')}
+            {t(isInstallable ? 'store.action.installLatest' : 'store.action.source')}
           </button>
           <button type="button" className="store-secondary-btn" onClick={() => onFavorite(repo)}>
             {favorite ? t('repo.removeFavorite') : t('repo.addFavorite')}

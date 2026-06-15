@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { languageAccent } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import { releaseAssetKindLabelKey } from '../assetClassifier'
 import { useI18n } from '../../../i18n'
 import heroBackdrop from '../assets/store-hero-scene.png'
 
@@ -53,6 +54,7 @@ function StoreHero({
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 4)
   const isInstallable = Boolean(installability?.installable)
+  const assetKinds = installability?.assetKinds ?? []
   const statusKey = installedApp
     ? 'store.status.installed'
     : isInstallable
@@ -102,6 +104,7 @@ function StoreHero({
 
         <div className="store-hero-meta">
           {repo.language && <span>{repo.language}</span>}
+          {assetKinds.map((kind) => <span key={kind}>{t(releaseAssetKindLabelKey(kind))}</span>)}
           {topics.map((topic) => <span key={topic}>{topic}</span>)}
           <span>{t(statusKey)}</span>
         </div>
@@ -130,7 +133,7 @@ function StoreHero({
             className={isInstallable ? 'store-primary-btn' : 'store-secondary-btn'}
             onClick={() => isInstallable ? onInstall(repo) : onOpenSource(repo)}
           >
-            {t(isInstallable ? 'store.action.install' : 'store.action.source')}
+            {t(isInstallable ? 'store.action.installLatest' : 'store.action.source')}
           </button>
           <button type="button" className="store-ghost-btn" onClick={onBrowse}>
             {t('store.action.details')}

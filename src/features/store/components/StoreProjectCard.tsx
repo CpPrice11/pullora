@@ -3,6 +3,7 @@ import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../type
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { languageAccent, repoKey } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import { releaseAssetKindLabelKey } from '../assetClassifier'
 import { useI18n } from '../../../i18n'
 
 interface StoreProjectCardProps {
@@ -40,6 +41,7 @@ function StoreProjectCard({
   const topics = (repo.topics ?? []).slice(0, 2)
   const isInstallable = Boolean(installability?.installable)
   const isChecking = Boolean(installability?.checking)
+  const assetKinds = installability?.assetKinds ?? []
   const statusKey = installedApp
     ? 'store.status.installed'
     : isInstallable
@@ -50,7 +52,7 @@ function StoreProjectCard({
   const primaryLabel = installedApp
     ? 'store.action.installed'
     : isInstallable
-      ? 'store.action.install'
+      ? 'store.action.installLatest'
       : 'store.action.source'
   const primaryAction = isInstallable ? onInstall : onOpenSource
 
@@ -80,6 +82,7 @@ function StoreProjectCard({
         </div>
         <div className="store-row-tags">
           {repo.language && <span>{repo.language}</span>}
+          {assetKinds.map((kind) => <span key={kind}>{t(releaseAssetKindLabelKey(kind))}</span>)}
           {topics.map((topic) => <span key={topic}>{topic}</span>)}
         </div>
         <span className="store-row-date">{updatedDate}</span>
@@ -123,6 +126,7 @@ function StoreProjectCard({
         {repo.description && <p className="store-project-description">{repo.description}</p>}
         <div className="store-project-meta">
           {repo.language && <span>{repo.language}</span>}
+          {assetKinds.map((kind) => <span key={kind}>{t(releaseAssetKindLabelKey(kind))}</span>)}
           <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
         </div>
         <div className="store-project-actions">
