@@ -132,13 +132,13 @@ function strategyHelpKey(strategy: AssetStrategy) {
   }
 }
 
-function stepLabel(step: WizardStep, t: (key: string) => string) {
+function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = false) {
   switch (step) {
     case 'version': return t('release.stepVersion')
     case 'file': return t('release.stepFile')
     case 'confirm': return t('release.stepConfirm')
     case 'progress': return t('release.stepProgress')
-    case 'result': return t('release.stepResult')
+    case 'result': return failedResult ? t('release.stepResultFailed') : t('release.stepResult')
   }
 }
 
@@ -200,6 +200,7 @@ function ReleaseSelector({
     ? downloads.find((item) => item.id === activeDownloadId)
     : null
   const shownDownloads = activeDownload ? [activeDownload] : downloads
+  const failedResult = Boolean(downloadError || activeDownload?.status === 'failed')
 
   const latestStableTag = useMemo(() => {
     const latest = visibleReleases.find((release) => !release.draft && !release.prerelease)
@@ -353,17 +354,17 @@ function ReleaseSelector({
                 onClick={() => itemIndex <= currentIndex && setStep(item)}
                 disabled={itemIndex > currentIndex || downloading}
                 aria-current={item === step ? 'step' : undefined}
-                aria-label={`${stepLabel(item, t)}. ${t(stepHelpKey(item))}`}
+                aria-label={`${stepLabel(item, t, failedResult)}. ${t(stepHelpKey(item))}`}
                 data-autofocus={item === step ? 'true' : undefined}
               >
-                {stepLabel(item, t)}
+                {stepLabel(item, t, failedResult)}
               </button>
             )
           })}
         </div>
 
         <div className="release-wizard-context">
-          <span>{stepLabel(step, t)}</span>
+          <span>{stepLabel(step, t, failedResult)}</span>
           <p>{t(stepHelpKey(step))}</p>
         </div>
 
