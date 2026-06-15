@@ -233,7 +233,10 @@ function App() {
         ) : renderContent()}
 
         {showPathModal && (
-          <InstallationPathModal onPathSelected={handlePathSelected} />
+          <InstallationPathModal
+            onPathSelected={handlePathSelected}
+            onSkip={() => setShowPathModal(false)}
+          />
         )}
 
         {updateTarget && (

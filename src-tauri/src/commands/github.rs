@@ -23,6 +23,7 @@ pub async fn search_public_repositories(
     sort: Option<String>,
     language: Option<String>,
     topic: Option<String>,
+    releases_only: Option<bool>,
     state: State<'_, AppState>,
 ) -> Result<OwnerRepositoriesResponse, String> {
     let client = state.github_client.lock().await;
@@ -33,6 +34,7 @@ pub async fn search_public_repositories(
             sort.as_deref(),
             language.as_deref(),
             topic.as_deref(),
+            releases_only.unwrap_or(false),
         )
         .await
 }

@@ -13,6 +13,10 @@ export async function getSettings(): Promise<AppSettings> {
   return callTauri<AppSettings>('get_settings')
 }
 
+export async function isPortableMode(): Promise<boolean> {
+  return callTauri<boolean>('is_portable_mode')
+}
+
 export async function updateSettings(settings: AppSettings): Promise<void> {
   await callTauri('update_settings', { newSettings: settings })
   notifySettingsChange(settings)

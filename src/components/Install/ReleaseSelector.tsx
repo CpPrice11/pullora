@@ -6,6 +6,7 @@ import { useModalFocus } from '../../hooks/useModalFocus'
 import type { AppSettings, DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
 import DownloadProgressPanel from './DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
+import { pickDirectory } from '../../services/dialog'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
@@ -23,6 +24,7 @@ interface ReleaseSelectorProps {
   displayName: string
   description?: string
   currentVersion?: string
+  initialReleaseTag?: string | null
   onClose: () => void
   onInstalled?: () => void
 }
@@ -159,6 +161,7 @@ function ReleaseSelector({
   displayName,
   description,
   currentVersion,
+  initialReleaseTag,
   onClose,
   onInstalled,
 }: ReleaseSelectorProps) {
@@ -173,6 +176,7 @@ function ReleaseSelector({
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null)
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
+  const [installPath, setInstallPath] = useState(settings.installationPath ?? '')
   const modalRef = useRef<HTMLDivElement | null>(null)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
   const assetStrategy = settings.assetStrategy ?? 'portableFirst'
@@ -219,11 +223,18 @@ function ReleaseSelector({
     fetchReleases(true)
   }, [fetchReleases])
 
+  useEffect(() => {
+    if (!installPath.trim() && settings.installationPath) {
+      setInstallPath(settings.installationPath)
+    }
+  }, [installPath, settings.installationPath])
+
   useModalFocus(modalRef, { onEscape: downloading ? undefined : onClose })
 
   useEffect(() => {
     if (visibleReleases.length > 0 && !selectedRelease) {
-      const first = visibleReleases[0]
+      const first = visibleReleases.find((release) => release.tag_name === initialReleaseTag)
+        ?? visibleReleases[0]
       setSelectedRelease(first)
       setSelectedAsset(
         pickRecommendedAsset(first.assets, assetStrategy)
@@ -231,7 +242,7 @@ function ReleaseSelector({
           ?? null,
       )
     }
-  }, [assetStrategy, selectedRelease, visibleReleases])
+  }, [assetStrategy, initialReleaseTag, selectedRelease, visibleReleases])
 
   useEffect(() => {
     if (!activeDownload) return
@@ -262,6 +273,13 @@ function ReleaseSelector({
 
   const handleDownload = async () => {
     if (!selectedAsset || !selectedRelease || !selectedAssetAutoInstallable) return
+    const targetInstallPath = installPath.trim()
+    if (!targetInstallPath) {
+      setDownloadError(t('release.installPathRequired'))
+      setStep('confirm')
+      return
+    }
+
     setDownloading(true)
     setDownloadError(null)
     setStep('progress')
@@ -272,6 +290,7 @@ function ReleaseSelector({
         owner,
         repo,
         selectedRelease.tag_name,
+        targetInstallPath,
       )
       setActiveDownloadId(id)
     } catch (err) {
@@ -308,6 +327,14 @@ function ReleaseSelector({
   const githubReleaseUrl = `https://github.com/${owner}/${repo}/releases/tag/${selectedRelease?.tag_name ?? ''}`
   const handleOpenGithubRelease = () => {
     void openExternalUrl(githubReleaseUrl).catch(() => {})
+  }
+
+  const handleChooseInstallPath = async () => {
+    const dir = await pickDirectory()
+    if (dir) {
+      setInstallPath(dir)
+      setDownloadError(null)
+    }
   }
 
   return (
@@ -573,7 +600,10 @@ function ReleaseSelector({
                     </div>
                     <div className="release-install-path">
                       <span>{t('release.installPath')}</span>
-                      <strong>{settings.installationPath}</strong>
+                      <strong>{installPath || t('release.installPathNotSelected')}</strong>
+                      <button type="button" className="release-secondary-btn" onClick={handleChooseInstallPath} disabled={downloading}>
+                        {t('release.chooseInstallPath')}
+                      </button>
                     </div>
                   </div>
 

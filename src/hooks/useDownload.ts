@@ -50,8 +50,9 @@ export function useDownload() {
       owner: string,
       repo: string,
       tag: string,
+      installPath?: string,
     ): Promise<string> => {
-      return startDownload(url, fileName, owner, repo, tag)
+      return startDownload(url, fileName, owner, repo, tag, installPath)
     },
     [],
   )

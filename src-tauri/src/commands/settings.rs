@@ -14,6 +14,11 @@ pub struct InstallPathValidation {
 }
 
 #[tauri::command]
+pub async fn is_portable_mode() -> Result<bool, String> {
+    Ok(crate::storage::settings::is_portable())
+}
+
+#[tauri::command]
 pub async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
     let settings = state.settings.lock().await;
     Ok(settings.clone())

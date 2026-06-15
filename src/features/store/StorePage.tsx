@@ -25,6 +25,11 @@ interface StorePageProps {
 
 const HERO_RECOMMENDATION_COUNT = 6
 
+interface StoreInstallTarget {
+  repo: GitHubSearchResult
+  initialReleaseTag?: string | null
+}
+
 function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const { t } = useI18n()
   const [query, setQuery] = useState('')
@@ -33,7 +38,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const [installableFilter, setInstallableFilter] = useState<StoreInstallableFilter>('all')
   const [heroIndex, setHeroIndex] = useState(0)
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
-  const [installTarget, setInstallTarget] = useState<GitHubSearchResult | null>(null)
+  const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
 
   const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
   const heroItems = useMemo(() => {
@@ -60,9 +65,14 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     }
     return catalog.browseItems[0]
   }, [catalog.browseItems, selectedRepo])
-  const showBlockingError = Boolean(catalog.error) &&
-    catalog.homeSections.every((section) => section.items.length === 0) &&
-    catalog.browseItems.length === 0
+  const hasStoreContent = heroItems.length > 0
+    || spotlightItems.length > 0
+    || catalog.homeSections.some((section) => section.items.length > 0)
+    || catalog.browseItems.length > 0
+    || catalog.installedRepos.length > 0
+    || catalog.favoriteRepos.length > 0
+  const showBlockingError = Boolean(catalog.error) && !hasStoreContent
+  const showInlineError = Boolean(catalog.error) && hasStoreContent
   const errorText = catalog.error?.startsWith('store.')
     ? t(catalog.error)
     : catalog.error
@@ -102,8 +112,12 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   }
 
   const handleInstall = (repo: GitHubSearchResult) => {
+    const key = repoKey(repo)
     setSelectedRepo(repo)
-    setInstallTarget(repo)
+    setInstallTarget({
+      repo,
+      initialReleaseTag: catalog.installability[key]?.latestTag ?? null,
+    })
   }
 
   const handleOpenSource = (repo: GitHubSearchResult) => {
@@ -172,7 +186,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         </button>
       </div>
 
-      {showBlockingError && (
+      {(showBlockingError || showInlineError) && (
         <div className="store-error" role="alert">
           {errorText}
         </div>
@@ -196,6 +210,34 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
       <StoreCarousel
         titleKey="store.section.spotlight"
         items={spotlightItems}
+        favoriteKeys={catalog.favoriteKeys}
+        installedByRepo={catalog.installedByRepo}
+        installability={catalog.installability}
+        projectArt={catalog.projectArt}
+        onSelect={handleSelect}
+        onFavorite={catalog.toggleFavorite}
+        onInstall={handleInstall}
+        onOpenSource={handleOpenSource}
+      />
+
+      <StoreCarousel
+        titleKey="store.section.installed"
+        subtitleKey="store.section.installedText"
+        items={catalog.installedRepos}
+        favoriteKeys={catalog.favoriteKeys}
+        installedByRepo={catalog.installedByRepo}
+        installability={catalog.installability}
+        projectArt={catalog.projectArt}
+        onSelect={handleSelect}
+        onFavorite={catalog.toggleFavorite}
+        onInstall={handleInstall}
+        onOpenSource={handleOpenSource}
+      />
+
+      <StoreCarousel
+        titleKey="store.section.favorites"
+        subtitleKey="store.section.favoritesText"
+        items={catalog.favoriteRepos}
         favoriteKeys={catalog.favoriteKeys}
         installedByRepo={catalog.installedByRepo}
         installability={catalog.installability}
@@ -249,7 +291,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onAiWorkspace={onOpenAiWorkspace}
       />
 
-      {catalog.homeSections.slice(1, 3).map((section) => (
+      {catalog.homeSections.slice(1).map((section) => (
         <StoreCarousel
           key={section.id}
           titleKey={section.titleKey}
@@ -268,11 +310,12 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
 
       {installTarget && (
         <ReleaseSelector
-          owner={installTarget.owner.login}
-          repo={installTarget.name}
-          displayName={installTarget.name}
-          description={installTarget.description ?? undefined}
-          currentVersion={catalog.installedByRepo.get(repoKey(installTarget))?.activeVersion}
+          owner={installTarget.repo.owner.login}
+          repo={installTarget.repo.name}
+          displayName={installTarget.repo.name}
+          description={installTarget.repo.description ?? undefined}
+          currentVersion={catalog.installedByRepo.get(repoKey(installTarget.repo))?.activeVersion}
+          initialReleaseTag={installTarget.initialReleaseTag}
           onClose={() => setInstallTarget(null)}
           onInstalled={() => {
             setInstallTarget(null)

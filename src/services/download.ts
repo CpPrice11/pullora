@@ -7,8 +7,9 @@ export async function startDownload(
   owner: string,
   repo: string,
   tag: string,
+  installPath?: string,
 ): Promise<string> {
-  return callTauri<string>('start_download', { url, fileName, owner, repo, tag })
+  return callTauri<string>('start_download', { url, fileName, owner, repo, tag, installPath })
 }
 
 export async function getDownloads(): Promise<DownloadProgress[]> {

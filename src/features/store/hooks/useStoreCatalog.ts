@@ -29,6 +29,7 @@ export interface StoreInstallability {
   checked: boolean
   checking: boolean
   installable: boolean
+  source?: 'release' | 'cache' | 'degraded'
   latestTag?: string | null
   assetKinds?: ReleaseAssetKind[]
   installableAssetCount?: number
@@ -41,10 +42,44 @@ export interface StoreSection {
   items: GitHubSearchResult[]
 }
 
+interface StoreInstallabilityCacheEntry {
+  checkedAt: number
+  status: Omit<StoreInstallability, 'checking'>
+}
+
 interface LibraryRepoRef {
   owner: string
   repo: string
   description?: string
+}
+
+const installabilityCacheKey = 'pullora.store.installability.v1'
+const installabilityCacheTtlMs = 6 * 60 * 60 * 1000
+
+function classifyStoreError(error: unknown) {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : ''
+  const normalized = message.toLowerCase()
+
+  if (normalized.includes('rate limit') || normalized.includes('403')) {
+    return 'store.error.rateLimit'
+  }
+
+  if (
+    normalized.includes('timed out')
+    || normalized.includes('dns')
+    || normalized.includes('network')
+    || normalized.includes('failed to send request')
+    || normalized.includes('error sending request')
+    || normalized.includes('connection')
+  ) {
+    return 'store.error.offline'
+  }
+
+  return 'store.error.load'
 }
 
 function installedKey(app: InstalledApp) {
@@ -76,9 +111,76 @@ function installabilityFromRelease(release: GitHubRelease | null): StoreInstalla
     checked: true,
     checking: false,
     installable: assets.length > 0,
+    source: 'release',
     latestTag: release?.tag_name ?? null,
     assetKinds: [...new Set(assets.map(classifyReleaseAsset))],
     installableAssetCount: assets.length,
+  }
+}
+
+function toCachedInstallability(status: StoreInstallability): Omit<StoreInstallability, 'checking'> {
+  return {
+    checked: true,
+    installable: status.installable,
+    source: status.source ?? 'release',
+    latestTag: status.latestTag ?? null,
+    assetKinds: status.assetKinds ?? [],
+    installableAssetCount: status.installableAssetCount ?? 0,
+  }
+}
+
+function fromCachedInstallability(status: Omit<StoreInstallability, 'checking'>): StoreInstallability {
+  return {
+    ...status,
+    checked: true,
+    checking: false,
+    source: 'cache',
+  }
+}
+
+function readInstallabilityCache(): Record<string, StoreInstallabilityCacheEntry> {
+  try {
+    const raw = window.localStorage.getItem(installabilityCacheKey)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeInstallabilityCache(cache: Record<string, StoreInstallabilityCacheEntry>) {
+  try {
+    window.localStorage.setItem(installabilityCacheKey, JSON.stringify(cache))
+  } catch {
+    // Cache failure should never block Store browsing.
+  }
+}
+
+function readCachedInstallability(key: string, allowStale = false): StoreInstallability | null {
+  const entry = readInstallabilityCache()[key]
+  if (!entry) return null
+
+  const isFresh = Date.now() - entry.checkedAt <= installabilityCacheTtlMs
+  if (!isFresh && !allowStale) return null
+
+  return fromCachedInstallability(entry.status)
+}
+
+function writeCachedInstallability(key: string, status: StoreInstallability) {
+  const cache = readInstallabilityCache()
+  cache[key] = {
+    checkedAt: Date.now(),
+    status: toCachedInstallability(status),
+  }
+  writeInstallabilityCache(cache)
+}
+
+function clearInstallabilityCache() {
+  try {
+    window.localStorage.removeItem(installabilityCacheKey)
+  } catch {
+    // Ignore cache cleanup failures.
   }
 }
 
@@ -280,6 +382,10 @@ export function useStoreCatalog(
     return knownRepos.filter((repo) => favoriteKeys.has(repoKey(repo)))
   }, [favoriteKeys, knownRepos])
 
+  const installedRepos = useMemo(() => {
+    return knownRepos.filter((repo) => installedByRepo.has(repoKey(repo)))
+  }, [installedByRepo, knownRepos])
+
   const browseItems = useMemo(() => {
     const source = browseTab === 'favorites'
       ? favoriteRepos.filter((repo) => matchesLocalQuery(repo, searchQuery))
@@ -322,6 +428,7 @@ export function useStoreCatalog(
           sort: section.options.sort,
           language: section.options.language,
           topic: section.options.topic,
+          releasesOnly: section.options.releasesOnly,
         })
         return {
           id: section.id,
@@ -333,13 +440,20 @@ export function useStoreCatalog(
       const sections = settled
         .filter((item): item is PromiseFulfilledResult<StoreSection> => item.status === 'fulfilled')
         .map((item) => item.value)
-      setHomeSections(sections.length > 0 ? sections : fallbackHomeSections(currentPlatform))
-      if (sections.length === 0 && settled.some((item) => item.status === 'rejected')) {
-        setError(null)
+
+      if (sections.length > 0) {
+        setHomeSections(sections)
+      } else {
+        setHomeSections((current) => current.length > 0 ? current : fallbackHomeSections(currentPlatform))
       }
-    } catch {
-      setHomeSections(fallbackHomeSections(currentPlatform))
-      setError(null)
+
+      const rejected = settled.find((item): item is PromiseRejectedResult => item.status === 'rejected')
+      if (rejected) {
+        setError(classifyStoreError(rejected.reason))
+      }
+    } catch (error) {
+      setHomeSections((current) => current.length > 0 ? current : fallbackHomeSections(currentPlatform))
+      setError(classifyStoreError(error))
     } finally {
       setLoadingHome(false)
     }
@@ -361,18 +475,22 @@ export function useStoreCatalog(
         sort: options.sort,
         language: options.language,
         topic: options.topic,
+        releasesOnly: options.releasesOnly,
       })
       const platformItems = filterReposForStorePlatform(result.items, currentPlatform)
       setBrowseItemsRaw((current) => page === 1 ? platformItems : [...current, ...platformItems])
       setBrowsePage(result.page)
       setHasMoreBrowse(result.has_more)
-    } catch {
+    } catch (error) {
       if (page === 1) {
-        setBrowseItemsRaw(platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
+        setBrowseItemsRaw((current) => {
+          if (current.length > 0) return current
+          return platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery))
+        })
         setBrowsePage(1)
         setHasMoreBrowse(false)
       }
-      setError(null)
+      setError(classifyStoreError(error))
     } finally {
       setLoadingBrowse(false)
     }
@@ -382,6 +500,12 @@ export function useStoreCatalog(
     const key = repoKey(repo)
     const current = installability[key]
     if (current?.checking || current?.checked) return current
+
+    const cached = readCachedInstallability(key)
+    if (cached) {
+      setInstallability((state) => ({ ...state, [key]: cached }))
+      return cached
+    }
 
     setInstallability((state) => ({
       ...state,
@@ -396,13 +520,16 @@ export function useStoreCatalog(
       const releases = await getReleases(repo.owner.login, repo.name)
       const release = pickLatestInstallableRelease(releases)
       const status = installabilityFromRelease(release)
+      writeCachedInstallability(key, status)
       setInstallability((state) => ({ ...state, [key]: status }))
       return status
     } catch {
-      const status = {
-        checked: true,
+      const cachedFallback = readCachedInstallability(key, true)
+      const status = cachedFallback ?? {
+        checked: false,
         checking: false,
         installable: false,
+        source: 'degraded' as const,
         latestTag: null,
       }
       setInstallability((state) => ({ ...state, [key]: status }))
@@ -443,6 +570,8 @@ export function useStoreCatalog(
   }, [favoriteKeys])
 
   const refreshAll = useCallback(async () => {
+    clearInstallabilityCache()
+    setInstallability({})
     await Promise.all([
       loadHome(),
       loadBrowse(1),
@@ -483,6 +612,7 @@ export function useStoreCatalog(
     homeSections: visibleHomeSections,
     installability,
     installedByRepo,
+    installedRepos,
     loadingBrowse,
     loadingHome,
     loadingInstallability,

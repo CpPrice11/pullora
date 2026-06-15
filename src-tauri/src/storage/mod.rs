@@ -10,6 +10,7 @@ pub enum StorageError {
     Io(std::io::Error),
     Json(serde_json::Error),
     NotFound(String),
+    InvalidData(String),
 }
 
 impl std::fmt::Display for StorageError {
@@ -18,6 +19,7 @@ impl std::fmt::Display for StorageError {
             StorageError::Io(e) => write!(f, "IO error: {}", e),
             StorageError::Json(e) => write!(f, "JSON error: {}", e),
             StorageError::NotFound(s) => write!(f, "Not found: {}", s),
+            StorageError::InvalidData(s) => write!(f, "Invalid data: {}", s),
         }
     }
 }
@@ -35,6 +37,17 @@ impl From<serde_json::Error> for StorageError {
 }
 
 pub fn get_config_dir() -> std::path::PathBuf {
+    // Portable mode is opt-in. A generic config.json next to the executable is
+    // too easy to create accidentally, so only the explicit marker is trusted.
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            let portable_marker = exe_dir.join(".portable");
+            if portable_marker.exists() {
+                return exe_dir.to_path_buf();
+            }
+        }
+    }
+
     dirs::config_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("pullora")
