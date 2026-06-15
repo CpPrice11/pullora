@@ -13,6 +13,7 @@ use super::extractor;
 
 const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
 const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
+const INSTALLER_PROCESS_WAIT_TIMEOUT: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -374,28 +375,61 @@ async fn download_task(
         let installer_owner = owner.clone();
         let installer_repo = repo.clone();
         let installer_file_name = file_name.clone();
-        let installer_dest_dir = dest_dir.clone();
         let installer_version_dir = version_dir.clone();
+        let installer_started_at = SystemTime::now()
+            .checked_sub(Duration::from_secs(5))
+            .unwrap_or(SystemTime::UNIX_EPOCH);
 
-        let installer_result = tokio::task::spawn_blocking(move || {
+        let installer_launch_result = tokio::task::spawn_blocking(move || {
             install_with_external_installer(
                 &installer_tmp_path,
-                &installer_dest_dir,
                 &installer_version_dir,
-                &installer_owner,
-                &installer_repo,
                 &installer_file_name,
             )
         })
         .await;
 
-        let executable_path = match installer_result {
-            Ok(Ok(path)) => path,
+        match installer_launch_result {
+            Ok(Ok(())) => {}
             Ok(Err(error)) => {
                 let _ = fs::remove_file(&tmp_path);
                 let _ = cleanup_path(&version_dir);
                 let _ = restore_backup_dir(&backup_dir, &version_dir);
                 return Err(error);
+            }
+            Err(error) => {
+                let _ = fs::remove_file(&tmp_path);
+                let _ = cleanup_path(&version_dir);
+                let _ = restore_backup_dir(&backup_dir, &version_dir);
+                return Err(error.to_string());
+            }
+        };
+
+        emit_progress(&app, &active, &id, |p| {
+            p.stage = DownloadStage::DetectingExecutable;
+            p.progress = 100.0;
+        })
+        .await;
+
+        let detect_dest_dir = dest_dir.clone();
+        let detect_version_dir = version_dir.clone();
+        let executable_path = match tokio::task::spawn_blocking(move || {
+            wait_for_installed_executable(
+                &detect_dest_dir,
+                &detect_version_dir,
+                &installer_owner,
+                &installer_repo,
+                installer_started_at,
+            )
+        })
+        .await
+        {
+            Ok(Some(path)) => path,
+            Ok(None) => {
+                let _ = fs::remove_file(&tmp_path);
+                let _ = cleanup_path(&version_dir);
+                let _ = restore_backup_dir(&backup_dir, &version_dir);
+                return Err("Інсталятор запущено, але Pullora не знайшла встановлений EXE. Запусти програму вручну або обери portable/архівний asset.".to_string());
             }
             Err(error) => {
                 let _ = fs::remove_file(&tmp_path);
@@ -636,16 +670,9 @@ fn install_kind_for_asset(file_name: &str) -> Result<String, String> {
 
 fn install_with_external_installer(
     installer_path: &Path,
-    dest_dir: &Path,
     version_dir: &Path,
-    owner: &str,
-    repo: &str,
     file_name: &str,
-) -> Result<PathBuf, String> {
-    let started_at = SystemTime::now()
-        .checked_sub(Duration::from_secs(5))
-        .unwrap_or(SystemTime::UNIX_EPOCH);
-
+) -> Result<(), String> {
     fs::create_dir_all(version_dir).map_err(|e| e.to_string())?;
 
     let installer_dir = version_dir.join(".installer");
@@ -654,11 +681,7 @@ fn install_with_external_installer(
     fs::copy(installer_path, &cached_installer).map_err(|e| e.to_string())?;
 
     run_installer_process(&cached_installer)?;
-
-    wait_for_installed_executable(dest_dir, version_dir, owner, repo, started_at).ok_or_else(|| {
-        "Інсталятор завершився, але Pullora не знайшла встановлений EXE. Запусти програму вручну або обери portable/архівний asset."
-            .to_string()
-    })
+    Ok(())
 }
 
 fn run_installer_process(installer_path: &Path) -> Result<(), String> {
@@ -676,8 +699,8 @@ fn run_installer_process(installer_path: &Path) -> Result<(), String> {
         std::process::Command::new(installer_path)
     };
 
-    let status = match command.status() {
-        Ok(status) => status,
+    match command.spawn() {
+        Ok(mut child) => wait_for_installer_launcher(&mut child),
         Err(error) => {
             #[cfg(target_os = "windows")]
             {
@@ -686,11 +709,24 @@ fn run_installer_process(installer_path: &Path) -> Result<(), String> {
                 }
             }
 
-            return Err(format!("Не вдалося запустити інсталятор: {}", error));
+            Err(format!("Не вдалося запустити інсталятор: {}", error))
         }
-    };
+    }
+}
 
-    installer_exit_result(status)
+fn wait_for_installer_launcher(child: &mut std::process::Child) -> Result<(), String> {
+    let deadline = Instant::now() + INSTALLER_PROCESS_WAIT_TIMEOUT;
+
+    loop {
+        match child
+            .try_wait()
+            .map_err(|error| format!("Не вдалося перевірити стан інсталятора: {}", error))?
+        {
+            Some(status) => return installer_exit_result(status),
+            None if Instant::now() >= deadline => return Ok(()),
+            None => std::thread::sleep(Duration::from_millis(500)),
+        }
+    }
 }
 
 fn installer_exit_result(status: std::process::ExitStatus) -> Result<(), String> {
@@ -727,7 +763,7 @@ if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitC
 }
 "#;
 
-    let status = std::process::Command::new("powershell")
+    let mut child = std::process::Command::new("powershell")
         .arg("-NoProfile")
         .arg("-ExecutionPolicy")
         .arg("Bypass")
@@ -735,7 +771,7 @@ if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitC
         .arg(script)
         .env("PULLORA_INSTALLER_PATH", installer_path)
         .env("PULLORA_INSTALLER_KIND", extension)
-        .status()
+        .spawn()
         .map_err(|error| {
             format!(
                 "Не вдалося запустити інсталятор з правами адміністратора: {}",
@@ -743,7 +779,7 @@ if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitC
             )
         })?;
 
-    installer_exit_result(status)
+    wait_for_installer_launcher(&mut child)
 }
 
 fn wait_for_installed_executable(
