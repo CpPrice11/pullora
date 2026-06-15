@@ -99,7 +99,7 @@ function SettingsPage({
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [intervalDraft, setIntervalDraft] = useState('')
-  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'>('idle')
+  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'>('idle')
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [codexRuntime, setCodexRuntime] = useState<CodexRuntimeStatus | null>(null)
@@ -678,8 +678,9 @@ function SettingsPage({
                 )}
               </div>
               {pathValidation !== 'idle' && (
-                <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
+                <span className={`settings-status ${pathValidation === 'ok' || pathValidation === 'requiresElevation' ? 'success' : 'error'}`}>
                   {pathValidation === 'ok' && t('settings.pathOk')}
+                  {pathValidation === 'requiresElevation' && t('settings.pathRequiresElevation')}
                   {pathValidation === 'missing' && t('settings.pathMissing')}
                   {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
                   {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}

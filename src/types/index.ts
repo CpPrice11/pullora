@@ -84,7 +84,7 @@ export interface AppAppearanceSettings {
 
 export interface InstallPathValidation {
   ok: boolean
-  status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission'
+  status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'
   message: string
 }
 

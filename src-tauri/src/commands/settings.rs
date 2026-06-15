@@ -25,10 +25,7 @@ pub async fn update_settings(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     if let Some(path) = new_settings.installation_path.as_ref() {
-        if !path.trim().is_empty() {
-            std::fs::create_dir_all(path)
-                .map_err(|e| format!("Не вдалося підготувати папку встановлення: {}", e))?;
-        }
+        prepare_installation_path_setting(path)?;
     }
 
     if new_settings.ai_workspace_enabled && !new_settings.ai_workspace_root.trim().is_empty() {
@@ -50,7 +47,7 @@ pub async fn update_settings(
 
 #[tauri::command]
 pub async fn set_installation_path(path: String, state: State<'_, AppState>) -> Result<(), String> {
-    std::fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+    prepare_installation_path_setting(&path)?;
 
     let mut settings = state.settings.lock().await;
     settings.installation_path = Some(path);
@@ -104,9 +101,37 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
             })
         }
         Err(_) => Ok(InstallPathValidation {
-            ok: false,
-            status: "noWritePermission".to_string(),
-            message: "Folder is not writable.".to_string(),
+            ok: true,
+            status: "requiresElevation".to_string(),
+            message: "Folder exists but requires elevation for writes.".to_string(),
         }),
     }
+}
+
+fn prepare_installation_path_setting(path: &str) -> Result<(), String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+
+    let folder = std::path::PathBuf::from(trimmed);
+    if folder.exists() {
+        if folder.is_dir() {
+            return Ok(());
+        }
+        return Err("Шлях встановлення не є папкою".to_string());
+    }
+
+    if let Err(error) = std::fs::create_dir_all(&folder) {
+        if error.kind() == std::io::ErrorKind::PermissionDenied {
+            return Ok(());
+        }
+
+        return Err(format!(
+            "Не вдалося підготувати папку встановлення: {}",
+            error
+        ));
+    }
+
+    Ok(())
 }
