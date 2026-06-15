@@ -1731,12 +1731,14 @@ Object.assign(dictionaries.uk, {
   'store.action.installLatest': 'Встановити останню',
   'store.installableAssets': 'Файлів для встановлення: {count}',
   'store.status.installable': 'Можна встановити',
+  'release.stepResultFailed': 'Помилка',
 })
 
 Object.assign(dictionaries.en, {
   'store.action.installLatest': 'Install latest',
   'store.installableAssets': 'Installable files: {count}',
   'store.status.installable': 'Installable',
+  'release.stepResultFailed': 'Failed',
 })
 
 Object.assign(dictionaries.uk, {

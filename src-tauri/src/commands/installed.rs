@@ -274,7 +274,7 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
 
     let root = std::path::PathBuf::from(install_path);
     if !root.exists() {
-        return Ok(0);
+        return cleanup_installer_cache(0);
     }
 
     let mut removed = 0;
@@ -312,6 +312,30 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
                 std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
                 removed += 1;
             }
+        }
+    }
+
+    cleanup_installer_cache(removed)
+}
+
+fn cleanup_installer_cache(initial_removed: usize) -> Result<usize, String> {
+    let mut removed = initial_removed;
+    let cache_dir = get_config_dir().join("installer-cache");
+    if !cache_dir.exists() {
+        return Ok(removed);
+    }
+
+    for entry in std::fs::read_dir(&cache_dir)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
+        let path = entry.path();
+        if path.is_file() {
+            std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+            removed += 1;
+        } else if path.is_dir() {
+            std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+            removed += 1;
         }
     }
 

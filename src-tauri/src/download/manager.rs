@@ -105,7 +105,7 @@ impl DownloadManager {
             owner: Some(request.owner.clone()),
             repo: Some(request.repo.clone()),
             tag: Some(request.tag.clone()),
-            install_path: Some(request.dest_dir.display().to_string()),
+            install_path: Some(display_install_path(&install_kind, &request.dest_dir)),
             executable_path: None,
             error: None,
         };
@@ -191,6 +191,54 @@ fn log_download_event(owner: &str, repo: &str, tag: &str, message: &str) {
     );
 }
 
+fn installer_cache_root() -> PathBuf {
+    crate::storage::get_config_dir().join("installer-cache")
+}
+
+fn install_workspace_dir(install_kind: &str, dest_dir: &Path) -> PathBuf {
+    if install_kind == "installer" {
+        installer_cache_root()
+    } else {
+        dest_dir.to_path_buf()
+    }
+}
+
+fn display_install_path(install_kind: &str, dest_dir: &Path) -> String {
+    if install_kind == "installer" {
+        format!(
+            "Системний інсталятор · кеш {}",
+            installer_cache_root().display()
+        )
+    } else {
+        dest_dir.display().to_string()
+    }
+}
+
+fn ensure_writable_dir(dir: &Path, install_kind: &str) -> Result<(), String> {
+    fs::create_dir_all(dir)
+        .map_err(|error| format!("Не вдалося підготувати папку {}: {}", dir.display(), error))?;
+
+    let test_file = dir.join(".pullora-write-test.tmp");
+    fs::write(&test_file, b"ok").map_err(|error| {
+        if install_kind == "installer" {
+            format!(
+                "Pullora не може записати installer-кеш {}. Перевір права доступу або запусти програму ще раз: {}",
+                dir.display(),
+                error
+            )
+        } else {
+            format!(
+                "Папка встановлення {} недоступна для запису. Обери іншу папку в Налаштуваннях, наприклад Documents\\Pullora Apps: {}",
+                dir.display(),
+                error
+            )
+        }
+    })?;
+    let _ = fs::remove_file(test_file);
+
+    Ok(())
+}
+
 async fn download_task(
     app: AppHandle,
     task: DownloadTask,
@@ -234,9 +282,11 @@ async fn download_task(
     })
     .await;
 
-    std::fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
-    let download_dir = dest_dir.join(".pullora-downloads");
-    std::fs::create_dir_all(&download_dir).map_err(|e| e.to_string())?;
+    let workspace_dir = install_workspace_dir(&install_kind, &dest_dir);
+    ensure_writable_dir(&workspace_dir, &install_kind)?;
+    let download_dir = workspace_dir.join(".pullora-downloads");
+    std::fs::create_dir_all(&download_dir)
+        .map_err(|e| format!("Не вдалося підготувати кеш завантаження Pullora: {}", e))?;
     let tmp_path = download_dir.join(format!("{}-{}", id, safe_file_name(&file_name)));
 
     let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
@@ -302,7 +352,7 @@ async fn download_task(
     })
     .await;
 
-    let app_dir = dest_dir.join(format!("{}-{}", owner, repo));
+    let app_dir = workspace_dir.join(format!("{}-{}", owner, repo));
     let version_dir = app_dir.join(&tag);
     let partial_dir = app_dir.join(format!("{}.partial-{}", tag, id));
     let backup_dir = app_dir.join(format!("{}.backup-{}", tag, id));
