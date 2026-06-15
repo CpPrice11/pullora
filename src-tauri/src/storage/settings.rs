@@ -52,7 +52,40 @@ fn default_asset_strategy() -> String {
     "portableFirst".to_string()
 }
 
+pub fn is_portable() -> bool {
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            return exe_dir.join(".portable").exists();
+        }
+    }
+    false
+}
+
+pub fn default_installation_path() -> String {
+    if is_portable() {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                return exe_dir.join("apps").to_string_lossy().to_string();
+            }
+        }
+    }
+
+    dirs::document_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("Pullora Apps")
+        .to_string_lossy()
+        .to_string()
+}
+
 pub fn default_ai_workspace_root() -> String {
+    if is_portable() {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                return exe_dir.join("workspaces").to_string_lossy().to_string();
+            }
+        }
+    }
+
     dirs::document_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("Pullora Workspaces")
@@ -68,7 +101,11 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             version: 2,
-            installation_path: None,
+            installation_path: if is_portable() {
+                Some(default_installation_path())
+            } else {
+                None
+            },
             auto_update_check: true,
             check_interval_hours: 24,
             include_prereleases: false,

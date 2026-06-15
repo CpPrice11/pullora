@@ -10,6 +10,7 @@ export interface StoreQueryOptions {
   sort?: StoreSort
   language?: string
   topic?: string
+  releasesOnly?: boolean
 }
 
 export interface StoreSectionConfig {
@@ -44,10 +45,28 @@ export const storeHomeSections: StoreSectionConfig[] = [
     options: { sort: 'updated' },
   },
   {
+    id: 'trending',
+    titleKey: 'store.section.trending',
+    subtitleKey: 'store.section.trendingText',
+    options: { query: 'stars:>=100 pushed:>=2025-01-01', sort: 'updated' },
+  },
+  {
+    id: 'hotReleases',
+    titleKey: 'store.section.hotReleases',
+    subtitleKey: 'store.section.hotReleasesText',
+    options: { sort: 'stars', topic: 'desktop-application', releasesOnly: true },
+  },
+  {
     id: 'popular',
     titleKey: 'store.section.popular',
     subtitleKey: 'store.section.popularText',
     options: { sort: 'stars' },
+  },
+  {
+    id: 'recentlyReleased',
+    titleKey: 'store.section.recentlyReleased',
+    subtitleKey: 'store.section.recentlyReleasedText',
+    options: { query: 'pushed:>=2025-01-01', sort: 'updated', releasesOnly: true },
   },
   {
     id: 'typescript',
@@ -227,7 +246,7 @@ export function browseOptions(tab: StoreBrowseTab, query: string): StoreQueryOpt
         sort: 'updated',
       }
     case 'releases':
-      return { query: trimmedQuery, sort: 'stars' }
+      return { query: trimmedQuery, sort: 'stars', releasesOnly: true }
     case 'favorites':
       return { query: trimmedQuery, sort: 'updated' }
   }

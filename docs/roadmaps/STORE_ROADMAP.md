@@ -33,7 +33,7 @@ Pullora лишається самостійним продуктом:
 - Є setup/MSI installer support з запуском зовнішнього майстра і реєстрацією знайденого EXE.
 - Є локальна бібліотека installed apps, updates, launch, uninstall, switch version.
 
-## v5.1.0 - Store Foundation
+## v5.1.0 - Store Foundation [Closed]
 
 Мета: перетворити Store з GitHub catalog UI на installable app store.
 
@@ -54,6 +54,18 @@ Pullora лишається самостійним продуктом:
 - Додати installability cache, щоб не перевіряти ті самі repos повторно без потреби.
 - Якщо GitHub API недоступний, показувати cached Store state і зрозумілий offline/rate-limit стан.
 
+Прогрес:
+
+- Єдиний backend classifier тепер використовується і для Store release-фільтра, і для download/install flow; repos без installable `.exe`, `.msi` або archive asset більше не проходять як installable тільки через наявність release assets.
+- Store installability cache зберігає результати перевірки releases локально на 6 годин, використовує stale fallback при GitHub/API помилці й очищується через manual refresh.
+- Store home отримав додаткові roadmap-секції `Trending`, `Hot Releases` і `Recently Released`; release-секції використовують backend `releasesOnly` фільтр з installable asset classifier.
+- `Install latest` тепер відкриває release selector із вже вибраним latest installable tag зі Store installability check; картки, hero і preview показують цей latest tag.
+- Store home показує локальні секції `Installed from library` і `Favorites`, коли ці проєкти вже відомі каталогу; вони використовують ті самі картки, installability badges і actions.
+- GitHub rate-limit/offline стани більше не губляться: Store зберігає вже показаний каталог або fallback sections і показує явний degraded-state банер замість тихого скидання.
+- Asset badges у Store hero, cards, row view і preview використовують спільну логіку: `Portable`, `Installer`, `Archive` показуються для installable assets, а `Unsupported` з'являється тільки після надійної release-перевірки без installable asset; degraded GitHub/API state не маскується як unsupported.
+- Browse tab `З релізами` використовує backend `releasesOnly`, а installable-only flow покрито classifier tests для `.exe`, `.msi`, archive, source archive і unsupported assets.
+- `Installed / Updates` узгоджено без дублювання Store: Store показує локальні Installed/Favorites discovery-секції, а updates-state лишається в Library/Updates Center.
+
 QA:
 
 - Store не показує repos без installable assets у installable-only режимі.
@@ -61,6 +73,7 @@ QA:
 - Source code zip/tar.gz не пропонується для встановлення.
 - Install latest відкриває release selector з правильним asset.
 - Favorites і Installed state не губляться offline.
+- `cargo test github::assets` проходить із тимчасовим `CARGO_TARGET_DIR`.
 
 ## v5.2.0 - App Details
 

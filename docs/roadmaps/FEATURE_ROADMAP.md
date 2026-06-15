@@ -134,11 +134,14 @@ Base Features roadmap описує розвиток Pullora як GitHub Releases
 - Multiple GitHub owners.
 - Custom repository pin list.
 - Local-only app entries.
-- Import/export installed registry.
 - Download speed/ETA.
 - Optional checksums/signature metadata, якщо доступно в release.
 - Better app icon/cover management.
 - Command palette для швидкого запуску.
+
+## Backlog Progress
+
+- [Done] Import/export installed registry додано в Settings -> Maintenance: експорт пише локальний registry у JSON, імпорт валідує той самий формат і замінює тільки metadata встановлених застосунків без видалення файлів на диску.
 
 ## QA Для Base Features Releases
 

@@ -35,3 +35,35 @@ export async function pickImageFile(): Promise<string | null> {
   if (!result) return null
   return typeof result === 'string' ? result : null
 }
+
+export async function pickJsonFile(): Promise<string | null> {
+  const api = await getDialogApi()
+  if (!api) return null
+  const result = await api.open({
+    directory: false,
+    multiple: false,
+    filters: [
+      {
+        name: 'JSON',
+        extensions: ['json'],
+      },
+    ],
+  })
+  if (!result) return null
+  return typeof result === 'string' ? result : null
+}
+
+export async function pickJsonSavePath(defaultPath = 'pullora-installed-registry.json'): Promise<string | null> {
+  const api = await getDialogApi()
+  if (!api) return null
+  const result = await api.save({
+    defaultPath,
+    filters: [
+      {
+        name: 'JSON',
+        extensions: ['json'],
+      },
+    ],
+  })
+  return typeof result === 'string' ? result : null
+}

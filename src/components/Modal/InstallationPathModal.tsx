@@ -6,9 +6,10 @@ import './Modal.css'
 
 interface InstallationPathModalProps {
   onPathSelected: (path: string) => Promise<void>
+  onSkip?: () => void
 }
 
-function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
+function InstallationPathModal({ onPathSelected, onSkip }: InstallationPathModalProps) {
   const { t } = useI18n()
   const modalRef = useRef<HTMLDivElement | null>(null)
   const [selectedPath, setSelectedPath] = useState('')
@@ -78,6 +79,11 @@ function InstallationPathModal({ onPathSelected }: InstallationPathModalProps) {
           {error && <div className="error-message">{error}</div>}
 
           <div className="modal-actions">
+            {onSkip && (
+              <button type="button" className="secondary-btn" onClick={onSkip} disabled={loading}>
+                {t('firstRun.skip')}
+              </button>
+            )}
             <button type="submit" disabled={loading || !selectedPath.trim()}>
               {loading ? t('firstRun.configuring') : t('firstRun.continue')}
             </button>

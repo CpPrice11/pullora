@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
-import { pickDirectory } from '../services/dialog'
+import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
+import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
 import { codexRequest, getCodexAccountStatus, getCodexRuntimeStatus, loginCodexWithApiKey, openCodexDesktop } from '../services/aiWorkspace'
 import type { CodexRuntimeStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
@@ -111,6 +112,7 @@ function SettingsPage({
   const [codexChecking, setCodexChecking] = useState(false)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
+  const [registryBusy, setRegistryBusy] = useState(false)
   const resetModalRef = useRef<HTMLElement | null>(null)
   const themeImportRef = useRef<HTMLInputElement | null>(null)
 
@@ -320,6 +322,43 @@ function SettingsPage({
       setActionMessage(t('settings.cacheCleared'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cacheError'))
+    }
+  }
+
+  const handleExportInstalledRegistry = async () => {
+    const path = await pickJsonSavePath('pullora-installed-registry.json')
+    if (!path) return
+
+    setRegistryBusy(true)
+    try {
+      const result = await exportInstalledRegistry(path)
+      setActionMessage(t('settings.registryExported', {
+        apps: result.appCount,
+        versions: result.versionCount,
+      }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.registryExportError'))
+    } finally {
+      setRegistryBusy(false)
+    }
+  }
+
+  const handleImportInstalledRegistry = async () => {
+    const path = await pickJsonFile()
+    if (!path) return
+    if (!window.confirm(t('settings.registryImportConfirm'))) return
+
+    setRegistryBusy(true)
+    try {
+      const result = await importInstalledRegistry(path)
+      setActionMessage(t('settings.registryImported', {
+        apps: result.appCount,
+        versions: result.versionCount,
+      }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.registryImportError'))
+    } finally {
+      setRegistryBusy(false)
     }
   }
 
@@ -859,6 +898,12 @@ function SettingsPage({
               </button>
               <button className="secondary-btn" onClick={handleClearCache}>
                 {t('settings.clearCache')}
+              </button>
+              <button className="secondary-btn" onClick={handleExportInstalledRegistry} disabled={registryBusy}>
+                {t('settings.exportInstalledRegistry')}
+              </button>
+              <button className="secondary-btn" onClick={handleImportInstalledRegistry} disabled={registryBusy}>
+                {t('settings.importInstalledRegistry')}
               </button>
               <button className="secondary-btn" onClick={handleCopyMaintenanceDiagnostics}>
                 {t('settings.copyDiagnostics')}

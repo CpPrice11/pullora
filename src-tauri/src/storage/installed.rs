@@ -15,6 +15,8 @@ pub struct VersionInfo {
     pub asset_name: Option<String>,
     #[serde(default)]
     pub install_kind: Option<String>,
+    #[serde(default)]
+    pub install_dir: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -31,6 +33,13 @@ pub struct InstalledApp {
 struct InstalledStore {
     version: u32,
     apps: Vec<InstalledApp>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledRegistryTransfer {
+    pub app_count: usize,
+    pub version_count: usize,
 }
 
 impl Default for InstalledStore {
@@ -87,6 +96,53 @@ fn migrate_store(store: &mut InstalledStore) -> bool {
     changed
 }
 
+fn validate_store(store: &InstalledStore) -> Result<(), StorageError> {
+    for app in &store.apps {
+        if app.owner.trim().is_empty() || app.repo.trim().is_empty() {
+            return Err(StorageError::InvalidData(
+                "Installed registry contains an app without owner or repo.".to_string(),
+            ));
+        }
+
+        if app.active_version.trim().is_empty() && !app.versions.is_empty() {
+            return Err(StorageError::InvalidData(format!(
+                "Installed registry entry {}/{} has versions but no active version.",
+                app.owner, app.repo
+            )));
+        }
+
+        if !app.versions.is_empty()
+            && !app
+                .versions
+                .iter()
+                .any(|version| version.tag == app.active_version)
+        {
+            return Err(StorageError::InvalidData(format!(
+                "Installed registry entry {}/{} points to a missing active version.",
+                app.owner, app.repo
+            )));
+        }
+
+        for version in &app.versions {
+            if version.tag.trim().is_empty() || version.executable.trim().is_empty() {
+                return Err(StorageError::InvalidData(format!(
+                    "Installed registry entry {}/{} contains an incomplete version.",
+                    app.owner, app.repo
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn transfer_summary(store: &InstalledStore) -> InstalledRegistryTransfer {
+    InstalledRegistryTransfer {
+        app_count: store.apps.len(),
+        version_count: store.apps.iter().map(|app| app.versions.len()).sum(),
+    }
+}
+
 fn save_store(config_dir: &Path, store: &InstalledStore) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("installed_apps.json");
@@ -98,6 +154,38 @@ fn save_store(config_dir: &Path, store: &InstalledStore) -> Result<(), StorageEr
 pub fn list_installed(config_dir: &Path) -> Result<Vec<InstalledApp>, StorageError> {
     let store = load_store(config_dir)?;
     Ok(store.apps)
+}
+
+pub fn export_registry(
+    config_dir: &Path,
+    target_path: &Path,
+) -> Result<InstalledRegistryTransfer, StorageError> {
+    let store = load_store(config_dir)?;
+    validate_store(&store)?;
+
+    if let Some(parent) = target_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let content = serde_json::to_string_pretty(&store)?;
+    std::fs::write(target_path, content)?;
+    Ok(transfer_summary(&store))
+}
+
+pub fn import_registry(
+    config_dir: &Path,
+    source_path: &Path,
+) -> Result<InstalledRegistryTransfer, StorageError> {
+    let content = std::fs::read_to_string(source_path)?;
+    let mut store: InstalledStore = serde_json::from_str(&content)?;
+    if store.version == 0 {
+        store.version = InstalledStore::default().version;
+    }
+    migrate_store(&mut store);
+    validate_store(&store)?;
+    let summary = transfer_summary(&store);
+    save_store(config_dir, &store)?;
+    Ok(summary)
 }
 
 pub fn add_version(

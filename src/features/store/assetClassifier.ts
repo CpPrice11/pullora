@@ -64,3 +64,24 @@ export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {
     case 'unsupported': return 'release.assetTypeUnsupported'
   }
 }
+
+interface ReleaseAssetKindStatus {
+  checked?: boolean
+  checking?: boolean
+  installable?: boolean
+  assetKinds?: ReleaseAssetKind[]
+  source?: 'release' | 'cache' | 'degraded'
+}
+
+export function releaseAssetKindsForStatus(status?: ReleaseAssetKindStatus): ReleaseAssetKind[] {
+  const kinds = status?.assetKinds ?? []
+  if (kinds.length > 0) {
+    return [...new Set(kinds)]
+  }
+
+  if (status?.checked && !status.checking && !status.installable && status.source !== 'degraded') {
+    return ['unsupported']
+  }
+
+  return []
+}

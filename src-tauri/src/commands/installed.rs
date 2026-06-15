@@ -3,7 +3,8 @@ use tauri::State;
 
 use crate::storage::get_config_dir;
 use crate::storage::installed::{
-    list_installed, remove_app, remove_version, set_active_version, InstalledApp,
+    export_registry, import_registry, list_installed, remove_app, remove_version,
+    set_active_version, InstalledApp, InstalledRegistryTransfer,
 };
 use crate::AppState;
 
@@ -60,6 +61,27 @@ fn active_version_dir(
     installed_app_dir(install_path, owner, repo).join(tag)
 }
 
+fn version_install_dir(
+    install_path: &str,
+    owner: &str,
+    repo: &str,
+    version: &crate::storage::installed::VersionInfo,
+) -> Result<std::path::PathBuf, String> {
+    if let Some(path) = version
+        .install_dir
+        .as_ref()
+        .filter(|path| !path.trim().is_empty())
+    {
+        return Ok(std::path::PathBuf::from(path));
+    }
+
+    if install_path.trim().is_empty() {
+        return Err("Для старого запису не збережено папку встановлення. Встанови версію ще раз або вкажи папку в Налаштуваннях.".to_string());
+    }
+
+    Ok(active_version_dir(install_path, owner, repo, &version.tag))
+}
+
 fn version_executable_path(version_dir: &std::path::Path, executable: &str) -> std::path::PathBuf {
     let path = std::path::PathBuf::from(executable);
     if path.is_absolute() {
@@ -110,7 +132,7 @@ fn resolve_active_app(
         .find(|v| v.tag == app.active_version)
         .ok_or("Активну версію не знайдено")?;
 
-    let version_dir = active_version_dir(install_path, owner, repo, &version.tag);
+    let version_dir = version_install_dir(install_path, owner, repo, version)?;
     Ok((app, version_dir))
 }
 
@@ -118,6 +140,28 @@ fn resolve_active_app(
 pub async fn get_installed_apps(_state: State<'_, AppState>) -> Result<Vec<InstalledApp>, String> {
     let config_dir = get_config_dir();
     list_installed(&config_dir).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn export_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
+    let target_path = std::path::PathBuf::from(path);
+    if target_path.as_os_str().is_empty() {
+        return Err("Шлях експорту не вибрано".to_string());
+    }
+
+    let config_dir = get_config_dir();
+    export_registry(&config_dir, &target_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn import_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
+    let source_path = std::path::PathBuf::from(path);
+    if source_path.as_os_str().is_empty() {
+        return Err("Файл імпорту не вибрано".to_string());
+    }
+
+    let config_dir = get_config_dir();
+    import_registry(&config_dir, &source_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -140,20 +184,25 @@ pub async fn uninstall_version(
 ) -> Result<(), String> {
     let config_dir = get_config_dir();
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Installation path not configured")?;
+    let install_path = settings.installation_path.clone().unwrap_or_default();
+    drop(settings);
 
-    let app_dir = std::path::PathBuf::from(install_path)
-        .join(format!("{}-{}", owner, repo))
-        .join(&tag);
+    let apps = list_installed(&config_dir).map_err(|e| e.to_string())?;
+    let app = apps
+        .iter()
+        .find(|item| item.owner == owner && item.repo == repo)
+        .ok_or("Застосунок не встановлено")?;
+    let version = app
+        .versions
+        .iter()
+        .find(|item| item.tag == tag)
+        .ok_or("Версію не знайдено")?;
+    let app_dir = version_install_dir(&install_path, &owner, &repo, version)?;
 
     if app_dir.exists() {
         std::fs::remove_dir_all(&app_dir).map_err(|e| e.to_string())?;
     }
 
-    drop(settings);
     remove_version(&config_dir, &owner, &repo, &tag).map_err(|e| e.to_string())
 }
 
@@ -165,17 +214,28 @@ pub async fn uninstall_app(
 ) -> Result<(), String> {
     let config_dir = get_config_dir();
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Installation path not configured")?;
-    let app_dir = installed_app_dir(install_path, &owner, &repo);
+    let install_path = settings.installation_path.clone().unwrap_or_default();
+    drop(settings);
 
-    if app_dir.exists() {
-        std::fs::remove_dir_all(&app_dir).map_err(|e| e.to_string())?;
+    let apps = list_installed(&config_dir).map_err(|e| e.to_string())?;
+    if let Some(app) = apps
+        .iter()
+        .find(|item| item.owner == owner && item.repo == repo)
+    {
+        let mut removed_dirs = std::collections::HashSet::new();
+        for version in &app.versions {
+            let version_dir = version_install_dir(&install_path, &owner, &repo, version)?;
+            if removed_dirs.insert(version_dir.clone()) && version_dir.exists() {
+                std::fs::remove_dir_all(&version_dir).map_err(|e| e.to_string())?;
+            }
+        }
+
+        let legacy_app_dir = installed_app_dir(&install_path, &owner, &repo);
+        if !install_path.trim().is_empty() && legacy_app_dir.exists() {
+            std::fs::remove_dir_all(&legacy_app_dir).map_err(|e| e.to_string())?;
+        }
     }
 
-    drop(settings);
     remove_app(&config_dir, &owner, &repo).map_err(|e| e.to_string())
 }
 
@@ -186,12 +246,10 @@ pub async fn validate_installed_app(
     state: State<'_, AppState>,
 ) -> Result<InstalledAppHealth, String> {
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Папку встановлення не налаштовано")?;
+    let install_path = settings.installation_path.clone().unwrap_or_default();
+    drop(settings);
 
-    let (app, version_dir) = resolve_active_app(&owner, &repo, install_path)?;
+    let (app, version_dir) = resolve_active_app(&owner, &repo, &install_path)?;
     let version = app
         .versions
         .iter()
@@ -235,45 +293,45 @@ pub async fn open_installed_app_dir(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Папку встановлення не налаштовано")?;
-    let app_dir = installed_app_dir(install_path, &owner, &repo);
-    let external_executable_dir = resolve_active_app(&owner, &repo, install_path)
-        .ok()
-        .and_then(|(app, version_dir)| {
-            let version = app.versions.iter().find(|v| v.tag == app.active_version)?;
-            let executable = version_executable_path(&version_dir, &version.executable);
-            if std::path::PathBuf::from(&version.executable).is_absolute() {
-                executable.parent().map(|parent| parent.to_path_buf())
-            } else {
-                None
-            }
-        });
+    let install_path = settings.installation_path.clone().unwrap_or_default();
     drop(settings);
 
-    crate::commands::updates::open_dir(
-        external_executable_dir
-            .unwrap_or(app_dir)
-            .display()
-            .to_string(),
-    )
-    .await
+    let target_dir = match resolve_active_app(&owner, &repo, &install_path) {
+        Ok((app, version_dir)) => {
+            let version = app
+                .versions
+                .iter()
+                .find(|v| v.tag == app.active_version)
+                .ok_or("Активну версію не знайдено")?;
+            let executable = version_executable_path(&version_dir, &version.executable);
+            if std::path::PathBuf::from(&version.executable).is_absolute() {
+                executable
+                    .parent()
+                    .map(|parent| parent.to_path_buf())
+                    .unwrap_or(version_dir)
+            } else {
+                version_dir
+            }
+        }
+        Err(error) => {
+            if install_path.trim().is_empty() {
+                return Err(error);
+            }
+            installed_app_dir(&install_path, &owner, &repo)
+        }
+    };
+
+    crate::commands::updates::open_dir(target_dir.display().to_string()).await
 }
 
 #[tauri::command]
 pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<usize, String> {
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Папку встановлення не налаштовано")?
-        .clone();
+    let install_path = settings.installation_path.clone().unwrap_or_default();
     drop(settings);
 
     let root = std::path::PathBuf::from(install_path);
-    if !root.exists() {
+    if root.as_os_str().is_empty() || !root.exists() {
         return cleanup_install_caches(0);
     }
 
@@ -360,12 +418,10 @@ pub async fn launch_app(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Папку встановлення не налаштовано")?;
+    let install_path = settings.installation_path.clone().unwrap_or_default();
+    drop(settings);
 
-    let (app, version_dir) = resolve_active_app(&owner, &repo, install_path)?;
+    let (app, version_dir) = resolve_active_app(&owner, &repo, &install_path)?;
     let version = app
         .versions
         .iter()

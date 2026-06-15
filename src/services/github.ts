@@ -23,6 +23,7 @@ export async function searchPublicRepositories(
     sort?: 'updated' | 'stars' | 'forks'
     language?: string
     topic?: string
+    releasesOnly?: boolean
   } = {},
 ): Promise<OwnerRepositoriesResponse> {
   return callTauri<OwnerRepositoriesResponse>('search_public_repositories', {
@@ -31,6 +32,7 @@ export async function searchPublicRepositories(
     sort: options.sort,
     language: options.language,
     topic: options.topic,
+    releasesOnly: options.releasesOnly,
   })
 }
 

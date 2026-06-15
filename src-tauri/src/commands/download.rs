@@ -5,6 +5,7 @@ use crate::download::manager::{DownloadProgress, DownloadRequest};
 use crate::AppState;
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_download(
     app: AppHandle,
     url: String,
@@ -12,15 +13,21 @@ pub async fn start_download(
     owner: String,
     repo: String,
     tag: String,
+    install_path: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let settings = state.settings.lock().await;
-    let install_path = settings
-        .installation_path
-        .as_ref()
-        .ok_or("Installation path not set. Please configure it in Settings.")?
-        .clone();
-    drop(settings);
+    let install_path = match install_path {
+        Some(path) if !path.trim().is_empty() => path.trim().to_string(),
+        _ => {
+            let settings = state.settings.lock().await;
+            settings
+                .installation_path
+                .as_ref()
+                .filter(|path| !path.trim().is_empty())
+                .ok_or("Папку встановлення не вибрано. Обери папку перед встановленням.")?
+                .clone()
+        }
+    };
 
     let id = Uuid::new_v4().to_string();
     let dest_dir = std::path::PathBuf::from(&install_path);

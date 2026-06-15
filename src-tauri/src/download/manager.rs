@@ -459,11 +459,14 @@ async fn download_task(
         let install_record_result = record_installed_version(
             &owner,
             &repo,
-            &tag,
-            executable_path.display().to_string(),
-            downloaded,
-            file_name,
-            install_kind,
+            InstalledVersionRecord {
+                tag,
+                executable: executable_path.display().to_string(),
+                size_bytes: downloaded,
+                asset_name: file_name,
+                install_kind,
+                install_dir: version_dir.display().to_string(),
+            },
         );
 
         if let Err(error) = install_record_result {
@@ -568,11 +571,14 @@ async fn download_task(
         let install_record_result = record_installed_version(
             &owner,
             &repo,
-            &tag,
-            relative,
-            downloaded,
-            file_name.clone(),
-            install_kind.clone(),
+            InstalledVersionRecord {
+                tag: tag.clone(),
+                executable: relative,
+                size_bytes: downloaded,
+                asset_name: file_name.clone(),
+                install_kind: install_kind.clone(),
+                install_dir: version_dir.display().to_string(),
+            },
         );
 
         if let Err(error) = install_record_result {
@@ -607,11 +613,14 @@ async fn download_task(
     let install_record_result = record_installed_version(
         &owner,
         &repo,
-        &tag,
-        resolved_executable,
-        downloaded,
-        file_name,
-        install_kind,
+        InstalledVersionRecord {
+            tag,
+            executable: resolved_executable,
+            size_bytes: downloaded,
+            asset_name: file_name,
+            install_kind,
+            install_dir: version_dir.display().to_string(),
+        },
     );
 
     if let Err(error) = install_record_result {
@@ -639,47 +648,35 @@ async fn download_task(
 fn record_installed_version(
     owner: &str,
     repo: &str,
-    tag: &str,
-    executable: String,
-    downloaded: u64,
-    asset_name: String,
-    install_kind: String,
+    record: InstalledVersionRecord,
 ) -> Result<(), String> {
     let config_dir = crate::storage::get_config_dir();
     let version_info = crate::storage::installed::VersionInfo {
-        tag: tag.to_string(),
+        tag: record.tag,
         installed_at: chrono::Utc::now(),
-        executable,
-        size_bytes: downloaded,
-        asset_name: Some(asset_name),
-        install_kind: Some(install_kind),
+        executable: record.executable,
+        size_bytes: record.size_bytes,
+        asset_name: Some(record.asset_name),
+        install_kind: Some(record.install_kind),
+        install_dir: Some(record.install_dir),
     };
     crate::storage::installed::add_version(&config_dir, owner, repo, version_info)
         .map_err(|e| e.to_string())
 }
 
+struct InstalledVersionRecord {
+    tag: String,
+    executable: String,
+    size_bytes: u64,
+    asset_name: String,
+    install_kind: String,
+    install_dir: String,
+}
+
 fn install_kind_for_asset(file_name: &str) -> Result<String, String> {
-    let name = file_name.to_lowercase();
-    let is_installer =
-        name.contains("setup") || name.contains("installer") || name.ends_with(".msi");
-    if is_installer {
-        return Ok("installer".to_string());
-    }
-
-    if name.ends_with(".zip")
-        || name.ends_with(".tar.gz")
-        || name.ends_with(".tgz")
-        || name.ends_with(".tar.xz")
-        || name.ends_with(".tar.bz2")
-    {
-        return Ok("archive".to_string());
-    }
-
-    if name.ends_with(".exe") || name.ends_with(".appimage") {
-        return Ok("portable".to_string());
-    }
-
-    Err("Цей asset не підтримується для автоматичного встановлення.".to_string())
+    crate::github::assets::classify_install_asset_name(file_name)
+        .map(|kind| kind.as_install_kind().to_string())
+        .ok_or_else(|| "Цей asset не підтримується для автоматичного встановлення.".to_string())
 }
 
 fn install_with_external_installer(
@@ -1101,10 +1098,58 @@ fn replace_version_dir(
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
 
-    fs::rename(partial_dir, version_dir).map_err(|e| {
-        let _ = restore_backup_dir(backup_dir, version_dir);
-        e.to_string()
-    })
+    match fs::rename(partial_dir, version_dir) {
+        Ok(()) => Ok(()),
+        Err(rename_error) => {
+            if let Err(copy_error) = copy_version_dir(partial_dir, version_dir) {
+                let _ = cleanup_path(version_dir);
+                let _ = restore_backup_dir(backup_dir, version_dir);
+                return Err(format!(
+                    "Не вдалося перенести версію: {}; copy fallback: {}",
+                    rename_error, copy_error
+                ));
+            }
+
+            Ok(())
+        }
+    }
+}
+
+fn copy_version_dir(
+    source_dir: &std::path::Path,
+    target_dir: &std::path::Path,
+) -> Result<(), String> {
+    fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
+
+    for entry in fs::read_dir(source_dir)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
+        let source = entry.path();
+        let target = target_dir.join(entry.file_name());
+        if source.is_dir() {
+            copy_version_dir(&source, &target)?;
+        } else {
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            fs::copy(&source, &target).map_err(|e| e.to_string())?;
+        }
+    }
+
+    Ok(())
+}
+
+fn restore_backup_dir(
+    backup_dir: &std::path::Path,
+    version_dir: &std::path::Path,
+) -> Result<(), String> {
+    if !backup_dir.exists() {
+        return Ok(());
+    }
+
+    cleanup_path(version_dir)?;
+    fs::rename(backup_dir, version_dir).map_err(|e| e.to_string())
 }
 
 fn install_version_dir(
@@ -1217,18 +1262,6 @@ if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitC
     let result = installer_exit_result(status);
     let _ = fs::remove_file(script_path);
     result
-}
-
-fn restore_backup_dir(
-    backup_dir: &std::path::Path,
-    version_dir: &std::path::Path,
-) -> Result<(), String> {
-    if !backup_dir.exists() {
-        return Ok(());
-    }
-
-    cleanup_path(version_dir)?;
-    fs::rename(backup_dir, version_dir).map_err(|e| e.to_string())
 }
 
 fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {

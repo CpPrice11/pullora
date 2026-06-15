@@ -96,6 +96,7 @@ export interface VersionInfo {
   sizeBytes: number
   assetName?: string | null
   installKind?: string | null
+  installDir?: string | null
 }
 
 export interface InstalledApp {

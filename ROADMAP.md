@@ -4,10 +4,10 @@ Pullora розвивається у чотирьох паралельних на
 
 ## Напрями
 
-- [Base Features](FEATURE_ROADMAP.md) - Library, встановлення, оновлення, версії, favorites, maintenance і релізний flow.
-- [Pullora Store](STORE_ROADMAP.md) - Windows-first store для застосунків, які реально мають installable GitHub release assets.
-- [AI Agent / Workspace](AI_AGENT_ROADMAP.md) - Codex runtime, workspaces, sessions, approvals, activity і agent extensions.
-- [Design](DESIGN_ROADMAP.md) - UI/UX, GitHub-style простота, Pullora identity, project-art фон і гнучкий Theme Editor.
+- [Base Features](docs/roadmaps/FEATURE_ROADMAP.md) - Library, встановлення, оновлення, версії, favorites, maintenance і релізний flow.
+- [Pullora Store](docs/roadmaps/STORE_ROADMAP.md) - Windows-first store для застосунків, які реально мають installable GitHub release assets.
+- [AI Agent / Workspace](docs/roadmaps/AI_AGENT_ROADMAP.md) - Codex runtime, workspaces, sessions, approvals, activity і agent extensions.
+- [Design](docs/roadmaps/DESIGN_ROADMAP.md) - UI/UX, GitHub-style простота, Pullora identity, project-art фон і гнучкий Theme Editor.
 
 ## Загальні Правила
 
@@ -37,9 +37,16 @@ Pullora розвивається у чотирьох паралельних на
 - Store: installable-only results, release picker, portable EXE, setup/MSI, archive, unsupported asset
 - Release directory і GitHub release містять лише portable EXE та setup EXE
 
-## Status
+## Поточний Фокус
 
-- Roadmap milestones through `v4.0.0` are closed in the Base Features, AI Agent / Workspace, and Design roadmaps.
-- `v5.0.x` закріпив Pullora rename, Store foundation, release cleanup і installer support.
-- Наступний стратегічний напрям: `v5.1.0` через `v6.0.0` у [Pullora Store](STORE_ROADMAP.md).
-- Backlog items remain future optional enhancements and are not release blockers unless moved into a numbered milestone.
+- Головний напрям зараз: `v5.2.0` App Details у [Pullora Store](docs/roadmaps/STORE_ROADMAP.md).
+- `v5.1.0` Store Foundation закрито: installable asset classifier/cache, Store sections, Install latest із вибраним latest tag, локальні Installed/Favorites секції, degraded GitHub state, asset badges (`Portable`, `Installer`, `Archive`, `Unsupported`) і `releasesOnly` browse flow готові.
+- Найближчий Store-крок: побудувати detail view для Store project із repo metadata, releases/assets списком, stable/prerelease toggle і README/release notes preview.
+- Base Features зараз рухається малими backlog-slices; import/export installed registry уже додано як Settings -> Maintenance action.
+- AI Workspace і Design не є активними блокерами: їхні milestones до `v4.0.0` / `v5.0.0` закриті, нові роботи там варто відкривати тільки окремим рішенням.
+
+## Стан Roadmap
+
+- Milestones до `v4.0.0` закриті в Base Features, AI Agent / Workspace і Design roadmaps.
+- `v5.0.x` закріпив Pullora rename, Store foundation, release cleanup і installer support; `v5.1.0` закрив Store Foundation і відкрив шлях до App Details.
+- Backlog items лишаються майбутніми optional enhancements і не блокують реліз, доки їх не перенесено в numbered milestone.

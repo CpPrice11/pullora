@@ -1,6 +1,7 @@
 use reqwest::Client;
 use std::sync::{Arc, Mutex};
 
+use super::assets::is_installable_asset_name;
 use super::cache::ApiCache;
 use super::models::{OwnerRepositoriesResponse, Release, Repository, SearchRepositoriesResponse};
 
@@ -133,6 +134,7 @@ impl GitHubClient {
         sort: Option<&str>,
         language: Option<&str>,
         topic: Option<&str>,
+        releases_only: bool,
     ) -> Result<OwnerRepositoriesResponse, String> {
         let normalized_query = query.trim();
         let normalized_language = language.unwrap_or("").trim();
@@ -161,9 +163,10 @@ impl GitHubClient {
             _ => "updated",
         };
         let cache_key = format!(
-            "search:{}:{}:{}",
+            "search:{}:{}:{}:{}",
             normalized_sort,
             search_query.to_lowercase(),
+            releases_only,
             page
         );
 
@@ -200,11 +203,22 @@ impl GitHubClient {
         }
 
         let raw: SearchRepositoriesResponse = response.json().await.map_err(|e| e.to_string())?;
-        let items = raw
+        let mut items = Vec::new();
+        for repo in raw
             .items
             .into_iter()
             .filter(|repo| !repo.private && !repo.fork && !repo.archived)
-            .collect::<Vec<_>>();
+        {
+            if releases_only
+                && !self
+                    .repository_has_release_assets(&repo.owner.login, &repo.name)
+                    .await
+            {
+                continue;
+            }
+
+            items.push(repo);
+        }
         let max_search_results = 1000_u64;
         let loaded_count = u64::from(page) * per_page as u64;
         let has_more = items.len() == per_page as usize
@@ -266,9 +280,13 @@ impl GitHubClient {
         self.get_releases(owner, repo)
             .await
             .map(|releases| {
-                releases
-                    .iter()
-                    .any(|release| !release.draft && !release.assets.is_empty())
+                releases.iter().any(|release| {
+                    !release.draft
+                        && release
+                            .assets
+                            .iter()
+                            .any(|asset| is_installable_asset_name(&asset.name))
+                })
             })
             .unwrap_or(false)
     }
