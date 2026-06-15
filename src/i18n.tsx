@@ -1728,6 +1728,18 @@ Object.assign(dictionaries.en, {
 })
 
 Object.assign(dictionaries.uk, {
+  'store.action.installLatest': 'Встановити останню',
+  'store.installableAssets': 'Файлів для встановлення: {count}',
+  'store.status.installable': 'Можна встановити',
+})
+
+Object.assign(dictionaries.en, {
+  'store.action.installLatest': 'Install latest',
+  'store.installableAssets': 'Installable files: {count}',
+  'store.status.installable': 'Installable',
+})
+
+Object.assign(dictionaries.uk, {
   'release.stepFileHelp': 'Обери portable EXE, архів з EXE всередині або setup/MSI інсталятор.',
   'release.stepProgressHelp': 'Стеж за завантаженням, розпакуванням або зовнішнім майстром інсталяції, пошуком EXE та реєстрацією версії.',
   'release.autoInstallOnly': 'Pullora підтримує portable EXE, архіви з EXE та setup/MSI інсталятори. Інсталятор може відкрити окремий майстер Windows.',

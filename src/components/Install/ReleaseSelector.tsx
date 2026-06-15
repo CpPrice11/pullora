@@ -9,6 +9,11 @@ import { openExternalUrl } from '../../services/updates'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
+import {
+  classifyReleaseAsset,
+  releaseAssetKindLabelKey,
+  type ReleaseAssetKind,
+} from '../../features/store/assetClassifier'
 import '../../features/library/components/SearchComponents.css'
 import '../Modal/Modal.css'
 
@@ -22,7 +27,7 @@ interface ReleaseSelectorProps {
   onInstalled?: () => void
 }
 
-type AssetKind = 'portable' | 'installer' | 'archive' | 'unsupported'
+type AssetKind = ReleaseAssetKind
 type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
 type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
 type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
@@ -36,25 +41,11 @@ function formatBytes(bytes: number) {
 }
 
 function getAssetKind(asset: GitHubAsset): AssetKind {
-  const name = asset.name.toLowerCase()
-  const isInstaller = name.includes('setup') ||
-    name.includes('installer') ||
-    name.endsWith('.msi')
-
-  if (isInstaller) return 'installer'
-  if (name.includes('portable') || name.endsWith('.appimage')) return 'portable'
-  if (name.endsWith('.zip') || name.endsWith('.tar.gz') || name.endsWith('.tar.xz')) return 'archive'
-  if (name.endsWith('.exe')) return 'portable'
-  return 'unsupported'
+  return classifyReleaseAsset(asset)
 }
 
 function assetKindKey(kind: AssetKind) {
-  switch (kind) {
-    case 'portable': return 'release.assetTypePortable'
-    case 'installer': return 'release.assetTypeInstaller'
-    case 'archive': return 'release.assetTypeArchive'
-    case 'unsupported': return 'release.assetTypeUnsupported'
-  }
+  return releaseAssetKindLabelKey(kind)
 }
 
 function compareVersionTags(left: string, right: string) {
@@ -127,7 +118,9 @@ function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
 function pickRecommendedAsset(assets: GitHubAsset[], strategy: AssetStrategy): GitHubAsset | null {
   if (strategy === 'manual') return null
   const sortedAssets = sortAssets(assets, strategy)
-  if (strategy === 'installerFirst') return sortedAssets[0] ?? null
+  if (strategy === 'installerFirst') {
+    return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
+  }
   return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
 }
 
