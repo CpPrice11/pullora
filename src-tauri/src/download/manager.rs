@@ -1190,10 +1190,16 @@ fn elevated_replace_version_dir(
     fs::create_dir_all(&script_dir).map_err(|e| e.to_string())?;
     let script_path = script_dir.join(format!("elevated-install-{}.ps1", uuid::Uuid::new_v4()));
     let script = r#"
+param(
+  [Parameter(Mandatory = $true)]
+  [string]$Source,
+  [Parameter(Mandatory = $true)]
+  [string]$Target,
+  [Parameter(Mandatory = $true)]
+  [string]$Backup
+)
+
 $ErrorActionPreference = 'Stop'
-$Source = $env:PULLORA_SOURCE_DIR
-$Target = $env:PULLORA_TARGET_DIR
-$Backup = $env:PULLORA_BACKUP_DIR
 
 if ([string]::IsNullOrWhiteSpace($Source) -or [string]::IsNullOrWhiteSpace($Target) -or [string]::IsNullOrWhiteSpace($Backup)) {
   throw 'Missing install paths.'
@@ -1231,8 +1237,27 @@ try {
     let launcher = r#"
 $ErrorActionPreference = 'Stop'
 $script = $env:PULLORA_ELEVATED_SCRIPT
-$escapedScript = $script.Replace('"', '\"')
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$escapedScript`""
+$source = $env:PULLORA_SOURCE_DIR
+$target = $env:PULLORA_TARGET_DIR
+$backup = $env:PULLORA_BACKUP_DIR
+
+function Quote-Argument([string]$value) {
+  '"' + $value.Replace('"', '\"') + '"'
+}
+
+$arguments = @(
+  '-NoProfile',
+  '-ExecutionPolicy',
+  'Bypass',
+  '-File',
+  (Quote-Argument $script),
+  '-Source',
+  (Quote-Argument $source),
+  '-Target',
+  (Quote-Argument $target),
+  '-Backup',
+  (Quote-Argument $backup)
+) -join ' '
 
 $process = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -Verb RunAs -Wait -PassThru
 
