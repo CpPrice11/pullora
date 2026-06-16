@@ -20,7 +20,7 @@ import {
   projectArtKey,
   setProjectArt,
 } from '../../services/projectArt'
-import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
+import type { DownloadProgress, FavoriteApp, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
 import '../../pages/PageStyles.css'
 
@@ -40,6 +40,72 @@ type BatchUpdateJob = {
 type UninstallTarget = {
   repo: GitHubSearchResult
   installedApp: InstalledApp
+}
+
+function repoLookupKey(owner: string, repo: string) {
+  return `${owner}/${repo}`.toLowerCase()
+}
+
+function syntheticRepoId(owner: string, repo: string) {
+  const key = repoLookupKey(owner, repo)
+  let hash = 0
+  for (let index = 0; index < key.length; index += 1) {
+    hash = ((hash << 5) - hash) + key.charCodeAt(index)
+    hash |= 0
+  }
+  return -Math.abs(hash || 1)
+}
+
+function latestInstalledAt(app: InstalledApp) {
+  const sortedDates = app.versions
+    .map((version) => version.installedAt)
+    .filter(Boolean)
+    .sort()
+  return sortedDates[sortedDates.length - 1] ?? new Date(0).toISOString()
+}
+
+function makeInstalledRepository(app: InstalledApp, favorite?: FavoriteApp): GitHubSearchResult {
+  return {
+    id: syntheticRepoId(app.owner, app.repo),
+    name: app.repo,
+    full_name: `${app.owner}/${app.repo}`,
+    owner: {
+      login: app.owner,
+      avatar_url: '',
+    },
+    description: favorite?.description ?? null,
+    stargazers_count: 0,
+    updated_at: latestInstalledAt(app),
+    html_url: `https://github.com/${app.owner}/${app.repo}`,
+    language: null,
+    topics: null,
+    has_releases: true,
+    fork: false,
+    archived: false,
+    private: false,
+  }
+}
+
+function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
+  return {
+    id: syntheticRepoId(favorite.owner, favorite.repo),
+    name: favorite.repo,
+    full_name: `${favorite.owner}/${favorite.repo}`,
+    owner: {
+      login: favorite.owner,
+      avatar_url: '',
+    },
+    description: favorite.description ?? null,
+    stargazers_count: 0,
+    updated_at: favorite.lastChecked ?? new Date(0).toISOString(),
+    html_url: `https://github.com/${favorite.owner}/${favorite.repo}`,
+    language: null,
+    topics: null,
+    has_releases: true,
+    fork: false,
+    archived: false,
+    private: false,
+  }
 }
 
 const storeFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
@@ -145,6 +211,7 @@ function LibraryPage({
   const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
+  const [favorites, setFavorites] = useState<FavoriteApp[]>([])
   const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [heroActionsOpen, setHeroActionsOpen] = useState(false)
   const [artError, setArtError] = useState<string | null>(null)
@@ -183,6 +250,7 @@ function LibraryPage({
     latestVersionErrorCount,
     latestVersionsCheckedAt,
     installedLoadError,
+    installedApps,
     getInstalledApp,
     getLatestVersion,
     refreshInstalledApps,
@@ -433,8 +501,9 @@ function LibraryPage({
   }, [])
 
   const loadFavorites = async () => {
-    const favorites = await getFavorites()
-    setFavoriteKeys(new Set(favorites.map((item) => projectArtKey(item.owner, item.repo))))
+    const items = await getFavorites()
+    setFavorites(items)
+    setFavoriteKeys(new Set(items.map((item) => projectArtKey(item.owner, item.repo))))
   }
 
   useEffect(() => {
@@ -488,19 +557,46 @@ function LibraryPage({
     void refreshLocalStatus()
   }, [batchDownloads, batchUpdateJobs, batchUpdating, refreshLocalStatus])
 
+  const libraryRepositories = useMemo(() => {
+    if (!isLibraryMode) return state.repositories
+
+    const reposByKey = new Map(
+      state.repositories.map((repo) => [repoLookupKey(repo.owner.login, repo.name), repo]),
+    )
+    const favoritesByKey = new Map(
+      favorites.map((favorite) => [repoLookupKey(favorite.owner, favorite.repo), favorite]),
+    )
+
+    installedApps.forEach((app) => {
+      const key = repoLookupKey(app.owner, app.repo)
+      if (!reposByKey.has(key)) {
+        reposByKey.set(key, makeInstalledRepository(app, favoritesByKey.get(key)))
+      }
+    })
+
+    favorites.forEach((favorite) => {
+      const key = repoLookupKey(favorite.owner, favorite.repo)
+      if (!reposByKey.has(key)) {
+        reposByKey.set(key, makeFavoriteRepository(favorite))
+      }
+    })
+
+    return Array.from(reposByKey.values())
+  }, [favorites, installedApps, isLibraryMode, state.repositories])
+
   const updateRepositories = useMemo(() => {
-    return state.repositories.filter((repo) => {
+    return libraryRepositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
       if (!installedApp || !latestVersion || latestVersion === installedApp.activeVersion) return false
       return !dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion))
     })
-  }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, state.repositories])
+  }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
 
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
-    const filtered = state.repositories.filter((repo) => {
+    const filtered = libraryRepositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
       const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
@@ -560,17 +656,17 @@ function LibraryPage({
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, isLibraryMode, query, sort, state.repositories])
+  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, isLibraryMode, libraryRepositories, query, sort])
 
   const modeRepositoryCount = useMemo(() => {
-    if (!isLibraryMode) return state.repositories.length
+    if (!isLibraryMode) return libraryRepositories.length
 
-    return state.repositories.filter((repo) => {
+    return libraryRepositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
       return Boolean(installedApp) || isFavorite
     }).length
-  }, [favoriteKeys, getInstalledApp, isLibraryMode, state.repositories])
+  }, [favoriteKeys, getInstalledApp, isLibraryMode, libraryRepositories])
 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
@@ -1283,8 +1379,8 @@ function LibraryPage({
     )
   }
 
-  const requiresOwner = isLibraryMode && !owner
-  const showLoadingState = !requiresOwner && state.loading && state.repositories.length === 0
+  const requiresOwner = false
+  const showLoadingState = state.loading && libraryRepositories.length === 0
   const emptyTitleKey = modeRepositoryCount === 0
     ? `${pageKey}.emptyTitle`
     : `${pageKey}.noMatchesTitle`
@@ -1338,7 +1434,9 @@ function LibraryPage({
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <div className="library-sam-pane-head">
               <div>
-                <span className="library-sam-kicker">{isLibraryMode ? owner : t('store.globalSource')}</span>
+                <span className="library-sam-kicker">
+                  {isLibraryMode ? t('library.localSource') : t('store.globalSource')}
+                </span>
                 <h3>{t(`${pageKey}.title`)}</h3>
               </div>
               <p className="results-count">
@@ -1478,7 +1576,7 @@ function LibraryPage({
               })}
             </div>
 
-            {state.hasMore && (
+            {!isLibraryMode && state.hasMore && (
               <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
                 {state.loading ? t('library.loadingMore') : t('library.loadMore')}
               </button>
