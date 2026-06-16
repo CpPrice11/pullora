@@ -25,6 +25,10 @@ interface StorePageProps {
 
 const HERO_RECOMMENDATION_COUNT = 6
 
+function scrollToBrowse() {
+  document.querySelector('.store-browse')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 interface StoreInstallTarget {
   repo: GitHubSearchResult
   initialReleaseTag?: string | null
@@ -132,6 +136,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     }
     setInstallableFilter('all')
     setSelectedRepo(undefined)
+    window.setTimeout(scrollToBrowse, 0)
   }
 
   const handleSearchChange = (value: string) => {
@@ -149,9 +154,11 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
 
   const handleCategory = (label: string) => {
     setQuery(label)
+    setStoreSearchQuery(label.trim())
     setBrowseTab('popular')
     setInstallableFilter('all')
     setSelectedRepo(undefined)
+    window.setTimeout(scrollToBrowse, 0)
   }
 
   return (
@@ -202,9 +209,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onActiveIndexChange={setHeroIndex}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
-        onBrowse={() => {
-          document.querySelector('.store-browse')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }}
+        onBrowse={scrollToBrowse}
       />
 
       <StoreCarousel

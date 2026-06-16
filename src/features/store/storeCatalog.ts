@@ -233,7 +233,7 @@ export function languageAccent(language?: string | null) {
 }
 
 export function browseOptions(tab: StoreBrowseTab, query: string): StoreQueryOptions {
-  const trimmedQuery = query.trim()
+  const trimmedQuery = normalizeStoreQuery(query)
 
   switch (tab) {
     case 'popular':
@@ -250,6 +250,23 @@ export function browseOptions(tab: StoreBrowseTab, query: string): StoreQueryOpt
     case 'favorites':
       return { query: trimmedQuery, sort: 'updated' }
   }
+}
+
+function normalizeStoreQuery(query: string) {
+  const trimmedQuery = query.trim()
+  if (!trimmedQuery) return ''
+
+  const githubUrlMatch = trimmedQuery.match(/^https?:\/\/github\.com\/([^/\s]+)\/([^/\s?#]+)\/?$/i)
+  if (githubUrlMatch) {
+    return `repo:${githubUrlMatch[1]}/${githubUrlMatch[2]}`
+  }
+
+  const repoRefMatch = trimmedQuery.match(/^([^/\s]+)\/([^/\s]+)$/)
+  if (repoRefMatch) {
+    return `repo:${repoRefMatch[1]}/${repoRefMatch[2]}`
+  }
+
+  return trimmedQuery
 }
 
 export function repoSearchText(repo: GitHubSearchResult) {

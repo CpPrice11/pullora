@@ -467,6 +467,11 @@ export function useStoreCatalog(
       return
     }
 
+    if (page === 1) {
+      setBrowseItemsRaw([])
+      setBrowsePage(1)
+      setHasMoreBrowse(false)
+    }
     setLoadingBrowse(true)
     setError(null)
     try {
@@ -483,10 +488,7 @@ export function useStoreCatalog(
       setHasMoreBrowse(result.has_more)
     } catch (error) {
       if (page === 1) {
-        setBrowseItemsRaw((current) => {
-          if (current.length > 0) return current
-          return platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery))
-        })
+        setBrowseItemsRaw(platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
         setBrowsePage(1)
         setHasMoreBrowse(false)
       }

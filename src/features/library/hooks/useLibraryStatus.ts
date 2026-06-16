@@ -16,13 +16,6 @@ function repoKey(owner: string, repo: string) {
   return `${owner}/${repo}`.toLowerCase()
 }
 
-function isSameRepo(app: InstalledApp, repo: GitHubSearchResult) {
-  return (
-    app.owner.toLowerCase() === repo.owner.login.toLowerCase() &&
-    app.repo.toLowerCase() === repo.name.toLowerCase()
-  )
-}
-
 export function useLibraryStatus(repositories: GitHubSearchResult[]) {
   const [state, setState] = useState<LibraryStatusState>({
     installedApps: [],
@@ -60,13 +53,9 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
 
   const refreshLatestVersions = useCallback(async (
     apps: InstalledApp[] = state.installedApps,
-    repoItems: GitHubSearchResult[] = repositories,
+    _repoItems: GitHubSearchResult[] = repositories,
   ) => {
-    const installedVisibleApps = apps.filter((app) =>
-      repoItems.some((repo) => isSameRepo(app, repo)),
-    )
-
-    if (installedVisibleApps.length === 0) {
+    if (apps.length === 0) {
       setState((prev) => ({
         ...prev,
         latestVersions: new Map(),
@@ -80,7 +69,7 @@ export function useLibraryStatus(repositories: GitHubSearchResult[]) {
     setState((prev) => ({ ...prev, checkingUpdates: true }))
 
     const entries = await Promise.all(
-      installedVisibleApps.map(async (app) => {
+      apps.map(async (app) => {
         try {
           const releases = await getReleases(app.owner, app.repo)
           const latest = releases.find(
