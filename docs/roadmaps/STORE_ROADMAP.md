@@ -79,14 +79,21 @@ QA:
 
 Мета: зробити сторінку застосунку достатньою для рішення “чи встановлювати”.
 
-- Додати detail view для Store project.
-- Показувати README preview як “Про застосунок”.
-- Показувати release notes для selected release.
-- Показувати список усіх releases і installable assets.
-- Додати stable/prerelease toggle.
-- Додати summary “що змінилось” між installed version і target version.
-- Показувати repo metadata: stars, forks, issues, license, language, topics, latest release date.
-- Додати manual refresh з cooldown і дружнім retry-after state.
+- [x] Додати detail view для Store project.
+- [ ] Показувати README preview як “Про застосунок”.
+- [x] Показувати release notes для selected release.
+- [x] Показувати список усіх releases і installable assets.
+- [x] Додати stable/prerelease toggle.
+- [ ] Додати summary “що змінилось” між installed version і target version.
+- [ ] Показувати повні repo metadata: forks, issues, license і latest release date.
+- [ ] Додати manual refresh з cooldown і дружнім retry-after state.
+
+Прогрес:
+
+- Store cards, hero, browse row і preview panel відкривають єдине details-вікно без переходу зі Store.
+- Details-вікно використовує наявний releases endpoint тільки після відкриття деталей, тому не додає нових автоматичних GitHub-запитів.
+- Показуються repo owner/name, опис, language/topics, stars, локальний installed state, список stable releases, prerelease toggle, release assets, asset type/size/downloads і release notes preview.
+- README preview свідомо залишено наступним slice, щоб не додавати ще один GitHub-запит до першої версії details-вікна.
 
 QA:
 

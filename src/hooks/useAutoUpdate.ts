@@ -1,14 +1,13 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { UpdateAvailable } from '../types'
 import { checkForUpdates } from '../services/updates'
-import { clearGithubCache } from '../services/github'
 
-export function useAutoUpdate(intervalHours: number, enabled: boolean) {
+export function useAutoUpdate(_intervalHours: number, enabled: boolean) {
   const [updates, setUpdates] = useState<UpdateAvailable[]>([])
+  const hasCheckedOnStartupRef = useRef(false)
 
   const check = useCallback(async () => {
     try {
-      await clearGithubCache()
       const found = await checkForUpdates()
       setUpdates(found)
     } catch {
@@ -16,14 +15,12 @@ export function useAutoUpdate(intervalHours: number, enabled: boolean) {
     }
   }, [])
 
-  // Periodic auto-check
+  // Startup-only auto-check. Manual update checks live in Library.
   useEffect(() => {
-    if (!enabled) return
-    check() // check immediately on mount
-    const ms = intervalHours * 60 * 60 * 1000
-    const id = setInterval(check, ms)
-    return () => clearInterval(id)
-  }, [enabled, intervalHours, check])
+    if (!enabled || hasCheckedOnStartupRef.current) return
+    hasCheckedOnStartupRef.current = true
+    void check()
+  }, [enabled, check])
 
   const dismiss = useCallback((owner: string, repo: string) => {
     setUpdates((prev) => prev.filter((u) => !(u.owner === owner && u.repo === repo)))

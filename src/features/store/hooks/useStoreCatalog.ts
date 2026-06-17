@@ -54,7 +54,9 @@ interface LibraryRepoRef {
 }
 
 const installabilityCacheKey = 'pullora.store.installability.v1'
-const installabilityCacheTtlMs = 6 * 60 * 60 * 1000
+const installabilityCacheTtlMs = 24 * 60 * 60 * 1000
+const storeHomeInitialSectionLimit = 4
+const installabilityAutoCheckLimit = 6
 
 function classifyStoreError(error: unknown) {
   const message = error instanceof Error
@@ -174,14 +176,6 @@ function writeCachedInstallability(key: string, status: StoreInstallability) {
     status: toCachedInstallability(status),
   }
   writeInstallabilityCache(cache)
-}
-
-function clearInstallabilityCache() {
-  try {
-    window.localStorage.removeItem(installabilityCacheKey)
-  } catch {
-    // Ignore cache cleanup failures.
-  }
 }
 
 function normalizeStorePlatform(value: Platform | null | undefined): StorePlatform {
@@ -423,7 +417,8 @@ export function useStoreCatalog(
     setLoadingHome(true)
     setError(null)
     try {
-      const settled = await Promise.allSettled(storeHomeSections.map(async (section) => {
+      const sectionsToLoad = storeHomeSections.slice(0, storeHomeInitialSectionLimit)
+      const settled = await Promise.allSettled(sectionsToLoad.map(async (section) => {
         const result = await searchPublicRepositories(section.options.query ?? '', 1, {
           sort: section.options.sort,
           language: section.options.language,
@@ -572,7 +567,6 @@ export function useStoreCatalog(
   }, [favoriteKeys])
 
   const refreshAll = useCallback(async () => {
-    clearInstallabilityCache()
     setInstallability({})
     await Promise.all([
       loadHome(),
@@ -596,11 +590,11 @@ export function useStoreCatalog(
   }, [loadBrowse])
 
   useEffect(() => {
-    if (installableFilter !== 'installable' && browseTab !== 'releases') return
-    browseItemsRaw.slice(0, 18).forEach((repo) => {
+    if (installableFilter !== 'installable') return
+    browseItemsRaw.slice(0, installabilityAutoCheckLimit).forEach((repo) => {
       void checkInstallability(repo)
     })
-  }, [browseItemsRaw, browseTab, checkInstallability, installableFilter])
+  }, [browseItemsRaw, checkInstallability, installableFilter])
 
   return {
     browseItems,

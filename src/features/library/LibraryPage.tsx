@@ -186,7 +186,6 @@ interface LibraryPageProps {
   mode?: LibraryPageMode
   onOpenSettings?: () => void
   onOpenStore?: () => void
-  onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
   onPreviewBackground?: (url: string | null) => void
 }
 
@@ -194,7 +193,6 @@ function LibraryPage({
   mode = 'store',
   onOpenSettings,
   onOpenStore,
-  onOpenAiWorkspace,
   onPreviewBackground,
 }: LibraryPageProps) {
   const { language, t } = useI18n()
@@ -260,17 +258,21 @@ function LibraryPage({
   const handleRefresh = async () => {
     setRefreshState('idle')
     const freshRepositories = await refreshRepositories()
-    const freshInstalledApps = await refreshInstalledApps()
+    await refreshInstalledApps()
 
     if (!freshRepositories) {
       setRefreshState('error')
       return
     }
 
-    await refreshLatestVersions(freshInstalledApps, freshRepositories)
     setLastRefreshedAt(new Date())
     setRefreshState('success')
   }
+
+  const handleCheckUpdates = useCallback(async () => {
+    const freshInstalledApps = await refreshInstalledApps()
+    await refreshLatestVersions(freshInstalledApps, state.repositories, true)
+  }, [refreshInstalledApps, refreshLatestVersions, state.repositories])
 
   const handleInstalledFromRelease = async () => {
     if (selectedRepo) {
@@ -281,14 +283,12 @@ function LibraryPage({
         setRecentlyInstalledKey((current) => current === key ? null : current)
       }, 6500)
     }
-    const freshInstalledApps = await refreshInstalledApps()
-    await refreshLatestVersions(freshInstalledApps, state.repositories)
+    await refreshInstalledApps()
   }
 
   const refreshLocalStatus = useCallback(async () => {
-    const freshInstalledApps = await refreshInstalledApps()
-    await refreshLatestVersions(freshInstalledApps, state.repositories)
-  }, [refreshInstalledApps, refreshLatestVersions, state.repositories])
+    await refreshInstalledApps()
+  }, [refreshInstalledApps])
 
   const handleRequestUninstall = (repo: GitHubSearchResult) => {
     const installedApp = getInstalledApp(repo)
@@ -825,7 +825,7 @@ function LibraryPage({
             <button
               type="button"
               className="secondary-btn"
-              onClick={() => refreshLocalStatus()}
+              onClick={handleCheckUpdates}
               disabled={checkingUpdates || batchUpdating}
             >
               {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
@@ -925,7 +925,8 @@ function LibraryPage({
   const renderLibraryTrustPanel = () => {
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
-    const shouldOfferRetry = state.error || latestVersionErrorCount > 0 || !latestVersionsCheckedAt
+    const shouldOfferRetry = Boolean(state.error)
+    const shouldOfferUpdateCheck = latestVersionErrorCount > 0 || !latestVersionsCheckedAt
     const showInlineRetry = shouldOfferRetry && libraryTrustKind !== 'fresh' && libraryTrustKind !== 'checking'
 
     return (
@@ -950,6 +951,16 @@ function LibraryPage({
           </div>
         </div>
         <div className="library-trust-inline-actions">
+          {shouldOfferUpdateCheck && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={handleCheckUpdates}
+              disabled={!canRetry}
+            >
+              {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
+            </button>
+          )}
           {showInlineRetry && (
             <button
               type="button"
@@ -1004,6 +1015,16 @@ function LibraryPage({
                   disabled={!canRetry}
                 >
                   {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
+                </button>
+              )}
+              {shouldOfferUpdateCheck && (
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={handleCheckUpdates}
+                  disabled={!canRetry}
+                >
+                  {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
                 </button>
               )}
               {retryInstalled && (
@@ -1146,16 +1167,6 @@ function LibraryPage({
                     {t('installed.folder')}
                   </button>
                 )}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setHeroActionsOpen(false)
-                    onOpenAiWorkspace?.(featuredRepo)
-                  }}
-                >
-                  {t('ai.openInWorkspace')}
-                </button>
                 <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
                   {t('art.changeCover')}
                 </button>
@@ -1361,9 +1372,6 @@ function LibraryPage({
                 {t('details.open')}
               </button>
             )}
-            <button type="button" className="secondary-btn" onClick={() => onOpenAiWorkspace?.(featuredRepo)}>
-              {t('ai.openInWorkspace')}
-            </button>
           </div>
 
           <div className="library-ops-rail">
@@ -1567,7 +1575,6 @@ function LibraryPage({
                     onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                     onPickArt={() => handlePickArt('cover', repo)}
                     onClearArt={() => handleClearArt(repo)}
-                    onAiWorkspace={() => onOpenAiWorkspace?.(repo)}
                     onUninstall={() => handleRequestUninstall(repo)}
                     onInstall={() => setSelectedRepo(repo)}
                     onLaunch={() => handleLaunch(repo)}

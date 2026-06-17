@@ -58,9 +58,6 @@ export interface AppSettings {
   githubToken?: string | null
   theme: 'light' | 'dark' | 'auto'
   language: string
-  aiWorkspaceEnabled?: boolean
-  aiWorkspaceRoot?: string
-  codexRuntimePreference?: 'system'
   appearance?: AppAppearanceSettings
 }
 
@@ -178,47 +175,4 @@ export interface DownloadProgress {
   installPath?: string
   executablePath?: string
   error?: string
-}
-
-export interface AiWorkspace {
-  id: string
-  name: string
-  path: string
-  githubUrl?: string | null
-  owner?: string | null
-  repo?: string | null
-  linkedLibraryRepo?: string | null
-  createdAt: string
-  lastOpenedAt: string
-  clonedByLauncher: boolean
-}
-
-export interface CodexRuntimeStatus {
-  installed: boolean
-  running: boolean
-  executablePath?: string | null
-  protocol: string
-  error?: string | null
-}
-
-export interface CodexThread {
-  id: string
-  name?: string | null
-  preview?: string | null
-  cwd?: string | null
-  createdAt?: number | null
-  updatedAt?: number | null
-  turns?: CodexTurn[]
-}
-
-export interface CodexTurn {
-  id: string
-  status: string
-  items: Array<Record<string, unknown>>
-}
-
-export interface CodexEventPayload {
-  id?: string | number
-  method?: string
-  params?: Record<string, unknown>
 }

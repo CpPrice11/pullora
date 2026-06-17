@@ -16,6 +16,7 @@ interface StoreCarouselProps {
   onFavorite: (repo: GitHubSearchResult) => void
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
+  onDetails: (repo: GitHubSearchResult) => void
 }
 
 function StoreCarousel({
@@ -30,6 +31,7 @@ function StoreCarousel({
   onFavorite,
   onInstall,
   onOpenSource,
+  onDetails,
 }: StoreCarouselProps) {
   const { t } = useI18n()
 
@@ -58,6 +60,7 @@ function StoreCarousel({
               onFavorite={onFavorite}
               onInstall={onInstall}
               onOpenSource={onOpenSource}
+              onDetails={onDetails}
             />
           )
         })}

@@ -15,7 +15,7 @@ interface StorePreviewPanelProps {
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
   onFavorite: (repo: GitHubSearchResult) => void
-  onAiWorkspace?: (repo: GitHubSearchResult) => void
+  onDetails: (repo: GitHubSearchResult) => void
 }
 
 function StorePreviewPanel({
@@ -27,7 +27,7 @@ function StorePreviewPanel({
   onInstall,
   onOpenSource,
   onFavorite,
-  onAiWorkspace,
+  onDetails,
 }: StorePreviewPanelProps) {
   const { language, t } = useI18n()
 
@@ -100,11 +100,9 @@ function StorePreviewPanel({
           <button type="button" className="store-secondary-btn" onClick={() => onFavorite(repo)}>
             {favorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
           </button>
-          {onAiWorkspace && (
-            <button type="button" className="store-ghost-btn" onClick={() => onAiWorkspace(repo)}>
-              {t('ai.openInWorkspace')}
-            </button>
-          )}
+          <button type="button" className="store-ghost-btn" onClick={() => onDetails(repo)}>
+            {t('store.action.details')}
+          </button>
         </div>
       </div>
     </aside>

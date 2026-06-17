@@ -6,6 +6,7 @@ import ReleaseSelector from '../../components/Install/ReleaseSelector'
 import StoreHero from './components/StoreHero'
 import StoreCarousel from './components/StoreCarousel'
 import StoreBrowse from './components/StoreBrowse'
+import StoreAppDetailsModal from './components/StoreAppDetailsModal'
 import { useStoreCatalog } from './hooks/useStoreCatalog'
 import {
   repoKey,
@@ -19,7 +20,6 @@ import { useI18n } from '../../i18n'
 import './Store.css'
 
 interface StorePageProps {
-  onOpenAiWorkspace?: (repo: GitHubSearchResult) => void
   onPreviewBackground?: (url: string | null) => void
 }
 
@@ -34,7 +34,7 @@ interface StoreInstallTarget {
   initialReleaseTag?: string | null
 }
 
-function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
+function StorePage({ onPreviewBackground }: StorePageProps) {
   const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
@@ -43,6 +43,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
   const [heroIndex, setHeroIndex] = useState(0)
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
   const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
+  const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
 
   const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
   const heroItems = useMemo(() => {
@@ -115,13 +116,19 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
     void catalog.checkInstallability(repo)
   }
 
-  const handleInstall = (repo: GitHubSearchResult) => {
+  const handleInstall = (repo: GitHubSearchResult, releaseTag?: string | null) => {
     const key = repoKey(repo)
     setSelectedRepo(repo)
     setInstallTarget({
       repo,
-      initialReleaseTag: catalog.installability[key]?.latestTag ?? null,
+      initialReleaseTag: releaseTag ?? catalog.installability[key]?.latestTag ?? null,
     })
+  }
+
+  const handleDetails = (repo: GitHubSearchResult) => {
+    setSelectedRepo(repo)
+    void catalog.checkInstallability(repo)
+    setDetailsRepo(repo)
   }
 
   const handleOpenSource = (repo: GitHubSearchResult) => {
@@ -209,6 +216,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onActiveIndexChange={setHeroIndex}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
+        onDetails={handleDetails}
         onBrowse={scrollToBrowse}
       />
 
@@ -223,6 +231,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
+        onDetails={handleDetails}
       />
 
       <StoreCarousel
@@ -237,6 +246,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
+        onDetails={handleDetails}
       />
 
       <StoreCarousel
@@ -251,6 +261,7 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
+        onDetails={handleDetails}
       />
 
       <section className="store-section store-categories-section">
@@ -292,8 +303,8 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}
         onOpenSource={handleOpenSource}
+        onDetails={handleDetails}
         onLoadMore={catalog.loadMoreBrowse}
-        onAiWorkspace={onOpenAiWorkspace}
       />
 
       {catalog.homeSections.slice(1).map((section) => (
@@ -310,8 +321,26 @@ function StorePage({ onOpenAiWorkspace, onPreviewBackground }: StorePageProps) {
           onFavorite={catalog.toggleFavorite}
           onInstall={handleInstall}
           onOpenSource={handleOpenSource}
+          onDetails={handleDetails}
         />
       ))}
+
+      {detailsRepo && (
+        <StoreAppDetailsModal
+          repo={detailsRepo}
+          art={catalog.projectArt[repoKey(detailsRepo)]}
+          installedApp={catalog.installedByRepo.get(repoKey(detailsRepo))}
+          installability={catalog.installability[repoKey(detailsRepo)]}
+          favorite={catalog.favoriteKeys.has(repoKey(detailsRepo))}
+          onClose={() => setDetailsRepo(null)}
+          onInstall={(repo, releaseTag) => {
+            setDetailsRepo(null)
+            handleInstall(repo, releaseTag)
+          }}
+          onOpenSource={handleOpenSource}
+          onFavorite={catalog.toggleFavorite}
+        />
+      )}
 
       {installTarget && (
         <ReleaseSelector

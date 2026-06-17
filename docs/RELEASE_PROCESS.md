@@ -6,8 +6,8 @@ Pullora releases are Windows-only and must publish exactly two GitHub assets: on
 
 - Confirm roadmap slices with the same version number are closed together.
 - Confirm `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json`, and `AboutPage` fallback all use the same version.
-- Confirm no OpenAI/Codex secrets are stored by Pullora.
-- Confirm Library/install metadata remains separate from AI Workspace metadata.
+- Confirm AI Workspace remains removed from the active product unless a future roadmap explicitly restores it.
+- Confirm Library/install metadata remains local and independent from removed AI Workspace data.
 - Confirm the release directory contains only the portable EXE and setup EXE.
 
 ## Commands

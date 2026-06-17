@@ -6,16 +6,14 @@ import { LibraryPage } from './features/library'
 import { StorePage } from './features/store'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
-import AiWorkspacePage from './pages/AiWorkspacePage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import { useSettings } from './hooks/useSettings'
 import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyAppearanceSettings, applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
-import { LanguageProvider, useI18n } from './i18n'
-import type { GitHubSearchResult, UpdateAvailable } from './types'
+import { LanguageProvider } from './i18n'
+import type { UpdateAvailable } from './types'
 import { pickImageFile } from './services/dialog'
-import { listenCodexEvents } from './services/aiWorkspace'
 import {
   clearLauncherBackgroundArt,
   getLauncherBackgroundArt,
@@ -23,49 +21,12 @@ import {
   setLauncherBackgroundArt,
 } from './services/projectArt'
 
-type ContentTab = 'store' | 'library' | 'aiWorkspace' | 'about'
+type ContentTab = 'store' | 'library' | 'about'
 type NavigationTab = ContentTab | 'settings'
-
-function AiWorkspaceNotifications() {
-  const { t } = useI18n()
-  const [notice, setNotice] = useState<{ text: string; kind: 'success' | 'error' } | null>(null)
-
-  useEffect(() => {
-    let unlisten: Array<() => void> = []
-    let timer: number | undefined
-
-    const showNotice = (text: string, kind: 'success' | 'error') => {
-      setNotice({ text, kind })
-      if (timer) window.clearTimeout(timer)
-      timer = window.setTimeout(() => setNotice(null), 4400)
-    }
-
-    listenCodexEvents(
-      (payload) => {
-        if (payload.method === 'turn/completed') {
-          showNotice(t('ai.backgroundCompleted'), 'success')
-        }
-      },
-      () => showNotice(t('ai.backgroundFailed'), 'error'),
-    ).then((listeners) => { unlisten = listeners }).catch(() => {})
-
-    return () => {
-      if (timer) window.clearTimeout(timer)
-      unlisten.forEach((stop) => stop())
-    }
-  }, [t])
-
-  if (!notice) return null
-
-  return (
-    <div className={`library-toast library-toast--${notice.kind}`} role="status" aria-live="polite">
-      {notice.text}
-    </div>
-  )
-}
 
 function App() {
   const [activeTab, setActiveTab] = useState<ContentTab>('store')
+  const [visitedTabs, setVisitedTabs] = useState<Set<ContentTab>>(() => new Set(['store']))
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
@@ -73,7 +34,6 @@ function App() {
   const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
   const [searchPreviewBackground, setSearchPreviewBackground] = useState<string | null>(null)
   const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
-  const [aiWorkspaceRepo, setAiWorkspaceRepo] = useState<GitHubSearchResult | null>(null)
 
   // Start auto-update after settings are loaded
   const { updates, dismiss } = useAutoUpdate(
@@ -117,6 +77,15 @@ function App() {
   useEffect(() => {
     setShowPathModal(isFirstLaunch)
   }, [isFirstLaunch])
+
+  useEffect(() => {
+    setVisitedTabs((current) => {
+      if (current.has(activeTab)) return current
+      const next = new Set(current)
+      next.add(activeTab)
+      return next
+    })
+  }, [activeTab])
 
   useEffect(() => {
     getLauncherBackgroundArt()
@@ -171,39 +140,40 @@ function App() {
     ? searchPreviewBackground
     : launcherBackground
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'store':    return (
-        <StorePage
-          onOpenAiWorkspace={(repo) => {
-            setAiWorkspaceRepo(repo)
-            setActiveTab('aiWorkspace')
-          }}
-          onPreviewBackground={setSearchPreviewBackground}
-        />
-      )
-      case 'library':    return (
-        <LibraryPage
-          mode="library"
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenStore={() => setActiveTab('store')}
-          onOpenAiWorkspace={(repo) => {
-            setAiWorkspaceRepo(repo)
-            setActiveTab('aiWorkspace')
-          }}
-          onPreviewBackground={setSearchPreviewBackground}
-        />
-      )
-      case 'aiWorkspace': return (
-        <AiWorkspacePage
-          requestedRepo={aiWorkspaceRepo}
-          onRequestedRepoConsumed={() => setAiWorkspaceRepo(null)}
-        />
-      )
-      case 'about':     return <AboutPage />
-      default:          return <StorePage />
-    }
-  }
+  const shouldRenderTab = (tab: ContentTab) => visitedTabs.has(tab) || activeTab === tab
+  const tabPanelProps = (tab: ContentTab) => ({
+    hidden: settingsOpen || activeTab !== tab,
+    'aria-hidden': settingsOpen || activeTab !== tab,
+  })
+
+  const renderContent = () => (
+    <>
+      {shouldRenderTab('store') && (
+        <div {...tabPanelProps('store')}>
+          <StorePage
+            onPreviewBackground={setSearchPreviewBackground}
+          />
+        </div>
+      )}
+
+      {shouldRenderTab('library') && (
+        <div {...tabPanelProps('library')}>
+          <LibraryPage
+            mode="library"
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenStore={() => setActiveTab('store')}
+            onPreviewBackground={setSearchPreviewBackground}
+          />
+        </div>
+      )}
+
+      {shouldRenderTab('about') && (
+        <div {...tabPanelProps('about')}>
+          <AboutPage />
+        </div>
+      )}
+    </>
+  )
 
   return (
     <LanguageProvider initialLanguage={settings.language}>
@@ -214,7 +184,6 @@ function App() {
         backgroundImage={visibleBackground}
         settingsOpen={settingsOpen}
       >
-        <AiWorkspaceNotifications />
         {updates.length > 0 && (
           <UpdateBanner
             updates={updates}
@@ -223,14 +192,16 @@ function App() {
           />
         )}
 
-        {settingsOpen ? (
+        {renderContent()}
+
+        {settingsOpen && (
           <SettingsPage
             hasLauncherBackground={hasLauncherBackground}
             onChangeLauncherBackground={handleChangeLauncherBackground}
             onClearLauncherBackground={handleClearLauncherBackground}
             onClose={() => setSettingsOpen(false)}
           />
-        ) : renderContent()}
+        )}
 
         {showPathModal && (
           <InstallationPathModal
