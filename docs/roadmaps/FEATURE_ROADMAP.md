@@ -31,7 +31,7 @@ Base Features roadmap описує розвиток Pullora як GitHub Releases
 
 - Library cards стали компактнішими.
 - На картці лишився один primary action, а другорядні дії перенесені в меню `...`.
-- `Launch`, `Versions`, details, AI Workspace, cover actions і uninstall доступні без перевантаження картки.
+- `Launch`, `Versions`, details, cover actions і uninstall доступні без перевантаження картки.
 
 Другий slice після v3.0.5:
 
@@ -110,7 +110,7 @@ Base Features roadmap описує розвиток Pullora як GitHub Releases
 - Settings -> General отримав source summary для активного GitHub owner.
 - Додано recent owner chips як foundation для майбутніх multi-source сценаріїв без зміни поточної single-owner моделі.
 - Owner change продовжує очищати GitHub cache, щоб source switch не змішував cached data.
-- GitHub token/rate-limit пояснення зафіксоване як source-scoped future flow, окремо від Codex secrets.
+- GitHub token/rate-limit пояснення зафіксоване як source-scoped future flow.
 - Залишковий QA: owner change, recent owner selection, cache invalidation, invalid owner.
 
 ## v4.0.0 - Stable Launcher Core [Closed]
@@ -125,7 +125,7 @@ Base Features roadmap описує розвиток Pullora як GitHub Releases
 
 - Core version піднято до `4.0.0`.
 - Додано `docs/RELEASE_PROCESS.md` із Windows-only release policy, artifact names і release gate commands.
-- Додано `docs/REGRESSION_MATRIX.md` для Library, install/versioning, Settings/Maintenance, About self-update, AI Workspace і UI QA.
+- Додано `docs/REGRESSION_MATRIX.md` для Library, install/versioning, Settings/Maintenance, About self-update і UI QA.
 - Maintenance, install/update recovery, version management, source settings і release checks тепер мають documented stabilization path.
 - Backlog лишається як future ideas, але roadmap milestones до `v4.0.0` закриті.
 

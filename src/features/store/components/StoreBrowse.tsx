@@ -25,8 +25,8 @@ interface StoreBrowseProps {
   onFavorite: (repo: GitHubSearchResult) => void
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
+  onDetails: (repo: GitHubSearchResult) => void
   onLoadMore: () => void
-  onAiWorkspace?: (repo: GitHubSearchResult) => void
   embedded?: boolean
 }
 
@@ -49,8 +49,8 @@ function StoreBrowse({
   onFavorite,
   onInstall,
   onOpenSource,
+  onDetails,
   onLoadMore,
-  onAiWorkspace,
   embedded = false,
 }: StoreBrowseProps) {
   const { t } = useI18n()
@@ -124,6 +124,7 @@ function StoreBrowse({
                 onFavorite={onFavorite}
                 onInstall={onInstall}
                 onOpenSource={onOpenSource}
+                onDetails={onDetails}
               />
             )
           })}
@@ -143,7 +144,7 @@ function StoreBrowse({
           onInstall={onInstall}
           onOpenSource={onOpenSource}
           onFavorite={onFavorite}
-          onAiWorkspace={onAiWorkspace}
+          onDetails={onDetails}
         />
       </div>
     </section>

@@ -19,12 +19,6 @@ pub struct AppSettings {
     pub theme: String,
     pub language: String,
     #[serde(default)]
-    pub ai_workspace_enabled: bool,
-    #[serde(default = "default_ai_workspace_root")]
-    pub ai_workspace_root: String,
-    #[serde(default = "default_codex_runtime_preference")]
-    pub codex_runtime_preference: String,
-    #[serde(default)]
     pub appearance: Option<AppAppearanceSettings>,
 }
 
@@ -77,26 +71,6 @@ pub fn default_installation_path() -> String {
         .to_string()
 }
 
-pub fn default_ai_workspace_root() -> String {
-    if is_portable() {
-        if let Ok(exe_path) = std::env::current_exe() {
-            if let Some(exe_dir) = exe_path.parent() {
-                return exe_dir.join("workspaces").to_string_lossy().to_string();
-            }
-        }
-    }
-
-    dirs::document_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("Pullora Workspaces")
-        .to_string_lossy()
-        .to_string()
-}
-
-fn default_codex_runtime_preference() -> String {
-    "system".to_string()
-}
-
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -114,9 +88,6 @@ impl Default for AppSettings {
             github_token: None,
             theme: "auto".to_string(),
             language: "uk".to_string(),
-            ai_workspace_enabled: false,
-            ai_workspace_root: default_ai_workspace_root(),
-            codex_runtime_preference: default_codex_runtime_preference(),
             appearance: None,
         }
     }

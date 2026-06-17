@@ -1,6 +1,6 @@
 # Pullora
 
-Pullora - desktop-лаунчер для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у публічних GitHub Releases, встановлює portable-версії, керує оновленнями та має beta-розділ `AI Workspace` для роботи з кодом через офіційний Codex.
+Pullora - desktop-лаунчер для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у публічних GitHub Releases, встановлює portable-версії, підтримує setup/MSI installer-flow, керує локальною бібліотекою та оновленнями.
 
 Інтерфейс за замовчуванням українською. Англійська мова також підтримується для всіх основних екранів і повідомлень.
 
@@ -10,21 +10,12 @@ Pullora - desktop-лаунчер для Windows 11 на Tauri, Rust і React. В
 - `Library` з фільтрами, деталями застосунку, локальними версіями та install wizard.
 - Portable-first встановлення: portable EXE та архіви з EXE рекомендовані; setup/MSI залишаються ручним варіантом.
 - Запуск, rollback, видалення, перевірка оновлень і self-update самого лаунчера.
-- `AI Workspace` beta: локальні папки, клонування GitHub-репозиторіїв, Codex sessions, streaming chat, зображення, activity, approvals, review і handoff у Codex Desktop.
+- Store App Details: перегляд repo metadata, релізів, assets, stable/prerelease каналу та release notes перед встановленням.
 - Теми, глобальний фон лаунчера, українська й англійська мови.
 
-## AI Workspace Beta
+## Store Details
 
-`AI Workspace` використовує вже встановлений офіційний `codex.exe` та experimental `codex app-server --listen stdio://`.
-
-- Pullora не вбудовує Codex і не зберігає OpenAI API key у власних налаштуваннях.
-- Авторизацією та історією сесій керує Codex.
-- У Settings можна перевірити runtime, передати ключ у Codex без збереження або відкрити Codex Desktop.
-- Workspaces мають окремий реєстр від застосунків у Library.
-- Видалення workspace за замовчуванням лише відв'язує папку. Файли можна видалити окремо тільки для clone, створеного лаунчером, із підтвердженням.
-- Приватні GitHub clone покладаються на системний Git і Git Credential Manager.
-
-Через experimental протокол окремі можливості можуть залежати від встановленої версії Codex. Якщо щось несумісне, роботу можна продовжити в офіційному Codex Desktop.
+Store details-вікно відкривається з hero, карток, browse row і preview panel. Воно показує опис проєкту, owner/repo, мову, теми, локальний installed state, список релізів, stable/prerelease toggle, assets, тип файлу, розмір, downloads і release notes preview. Релізи завантажуються тільки після відкриття details-вікна, щоб не збільшувати автоматичні GitHub-запити.
 
 ## Файли Релізу
 
@@ -50,7 +41,7 @@ npm run tauri-build
 Перевірка metadata та release-readiness:
 
 ```powershell
-npm run check:release -- -Version 5.0.21 -RcReadiness -SkipArtifacts
+npm run check:release -- -Version 5.2.0 -RcReadiness -SkipArtifacts
 ```
 
 ## Release Policy

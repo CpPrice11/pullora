@@ -18,6 +18,7 @@ interface StoreProjectCardProps {
   onFavorite?: (repo: GitHubSearchResult) => void
   onInstall?: (repo: GitHubSearchResult) => void
   onOpenSource?: (repo: GitHubSearchResult) => void
+  onDetails?: (repo: GitHubSearchResult) => void
 }
 
 function StoreProjectCard({
@@ -32,6 +33,7 @@ function StoreProjectCard({
   onFavorite,
   onInstall,
   onOpenSource,
+  onDetails,
 }: StoreProjectCardProps) {
   const { language, t } = useI18n()
   const appIcon = projectArtCoverUrl(art) ?? repo.owner.avatar_url
@@ -156,7 +158,7 @@ function StoreProjectCard({
             className="store-secondary-btn"
             onClick={(event) => {
               event.stopPropagation()
-              onSelect?.(repo)
+              onDetails?.(repo)
             }}
           >
             {t('store.action.details')}

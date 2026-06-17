@@ -1,4 +1,3 @@
-pub mod ai_workspace;
 pub mod download;
 pub mod favorites;
 pub mod github;

@@ -5,8 +5,7 @@ import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../
 import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
 import { clearGithubCache } from '../services/github'
 import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
-import { codexRequest, getCodexAccountStatus, getCodexRuntimeStatus, loginCodexWithApiKey, openCodexDesktop } from '../services/aiWorkspace'
-import type { CodexRuntimeStatus, LauncherStorageInfo } from '../types'
+import type { LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { appearanceCssText, applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
@@ -29,25 +28,6 @@ function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
     default: return 'settings.portableFirst'
   }
 }
-
-type CodexCapabilityStatus = 'available' | 'unavailable' | 'notChecked'
-
-interface CodexCapabilityProbe {
-  id: string
-  labelKey: string
-  method: string
-  status: CodexCapabilityStatus
-  detail?: string
-}
-
-const CODEX_CAPABILITY_PROBES: Array<Omit<CodexCapabilityProbe, 'status' | 'detail'>> = [
-  { id: 'models', labelKey: 'ai.capabilityModels', method: 'model/list' },
-  { id: 'threads', labelKey: 'ai.capabilityThreads', method: 'thread/list' },
-  { id: 'skills', labelKey: 'ai.capabilitySkills', method: 'skill/list' },
-  { id: 'plugins', labelKey: 'ai.capabilityPlugins', method: 'plugin/list' },
-  { id: 'apps', labelKey: 'ai.capabilityApps', method: 'app/list' },
-  { id: 'mcp', labelKey: 'ai.capabilityMcp', method: 'mcp/list' },
-]
 
 const RECENT_GITHUB_OWNERS_KEY = 'pullora.recentGithubOwners.v1'
 const LEGACY_RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
@@ -103,13 +83,6 @@ function SettingsPage({
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'>('idle')
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
-  const [codexRuntime, setCodexRuntime] = useState<CodexRuntimeStatus | null>(null)
-  const [codexAccount, setCodexAccount] = useState<Record<string, unknown> | null>(null)
-  const [codexCapabilities, setCodexCapabilities] = useState<CodexCapabilityProbe[]>(
-    CODEX_CAPABILITY_PROBES.map((probe) => ({ ...probe, status: 'notChecked' })),
-  )
-  const [codexApiKey, setCodexApiKey] = useState('')
-  const [codexChecking, setCodexChecking] = useState(false)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
   const [registryBusy, setRegistryBusy] = useState(false)
@@ -375,8 +348,6 @@ function SettingsPage({
       `checkIntervalHours: ${settings.checkIntervalHours}`,
       `theme: ${settings.theme}`,
       `language: ${settings.language}`,
-      `aiWorkspaceEnabled: ${settings.aiWorkspaceEnabled ? 'yes' : 'no'}`,
-      `codexRuntimePreference: ${settings.codexRuntimePreference}`,
       `launcherDir: ${storageInfo?.launcherDir ?? 'not checked'}`,
       `updateCachePath: ${storageInfo?.updateCachePath ?? 'not checked'}`,
       `updateCacheCount: ${storageInfo?.updateCacheCount ?? 'not checked'}`,
@@ -410,28 +381,6 @@ function SettingsPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cleanupError'))
     }
-  }
-
-  const probeCodexCapabilities = async (runtimeInstalled: boolean) => {
-    if (!runtimeInstalled) {
-      setCodexCapabilities(CODEX_CAPABILITY_PROBES.map((probe) => ({ ...probe, status: 'unavailable' })))
-      return
-    }
-
-    const results: CodexCapabilityProbe[] = []
-    for (const probe of CODEX_CAPABILITY_PROBES) {
-      try {
-        await codexRequest(probe.method, probe.id === 'threads' ? { limit: 1 } : {})
-        results.push({ ...probe, status: 'available' })
-      } catch (err) {
-        results.push({
-          ...probe,
-          status: 'unavailable',
-          detail: err instanceof Error ? err.message : String(err),
-        })
-      }
-    }
-    setCodexCapabilities(results)
   }
 
   const clampIntervalHours = (value: string | number) => {
@@ -498,65 +447,6 @@ function SettingsPage({
     }
   }
 
-  const handleCheckCodex = async () => {
-    setCodexChecking(true)
-    setError(null)
-    try {
-      const runtime = await getCodexRuntimeStatus()
-      setCodexRuntime(runtime)
-      if (runtime.installed) {
-        try {
-          const account = await getCodexAccountStatus()
-          setCodexAccount(account)
-        } catch {
-          setCodexAccount(null)
-        }
-      }
-      await probeCodexCapabilities(runtime.installed)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('ai.connectError'))
-    } finally {
-      setCodexChecking(false)
-    }
-  }
-
-  const handleAiRootBrowse = async () => {
-    const dir = await pickDirectory()
-    if (dir && settings) {
-      await persistSettings({ ...settings, aiWorkspaceRoot: dir }, settings)
-    }
-  }
-
-  const handleCodexLogin = async () => {
-    if (!codexApiKey.trim()) return
-    setCodexChecking(true)
-    setError(null)
-    try {
-      await loginCodexWithApiKey(codexApiKey)
-      setCodexApiKey('')
-      await handleCheckCodex()
-      setActionMessage(t('ai.loginReady'))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('ai.loginError'))
-    } finally {
-      setCodexChecking(false)
-    }
-  }
-
-  const handleCodexLogout = async () => {
-    setCodexChecking(true)
-    setError(null)
-    try {
-      await codexRequest('account/logout', {})
-      setCodexAccount(null)
-      setActionMessage(t('ai.loggedOut'))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('ai.logoutError'))
-    } finally {
-      setCodexChecking(false)
-    }
-  }
-
   if (loading || !settings) {
     return (
       <section className="page settings-page settings-page-loading" aria-label={t('settings.title')}>
@@ -569,7 +459,6 @@ function SettingsPage({
     { id: 'general', label: t('settings.general') },
     { id: 'appearance', label: t('settings.appearance') },
     { id: 'installation', label: t('settings.installation') },
-    { id: 'aiWorkspace', label: t('settings.aiWorkspace') },
     { id: 'updates', label: t('settings.updates') },
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
@@ -729,105 +618,6 @@ function SettingsPage({
           </section>
         )
 
-      case 'aiWorkspace':
-        return (
-          <section id="settings-aiWorkspace" className="settings-section ai-settings-section">
-            <h3>{t('settings.aiWorkspace')}</h3>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={Boolean(settings.aiWorkspaceEnabled)}
-                onChange={(event) =>
-                  persistSettings({ ...settings, aiWorkspaceEnabled: event.target.checked }, settings)
-                }
-              />
-              {t('ai.enableBeta')}
-            </label>
-            <p className="help-text">{t('ai.betaSettingsHelp')}</p>
-            <div className="form-group">
-              <label htmlFor="aiWorkspaceRoot">{t('ai.defaultRoot')}</label>
-              <div className="path-input-row">
-                <input
-                  id="aiWorkspaceRoot"
-                  type="text"
-                  value={settings.aiWorkspaceRoot ?? ''}
-                  onChange={(event) => setSettings({ ...settings, aiWorkspaceRoot: event.target.value })}
-                  onBlur={() => persistSettings(settings, settings)}
-                />
-                <button type="button" className="secondary-btn" onClick={handleAiRootBrowse}>
-                  {t('settings.choose')}
-                </button>
-                {settings.aiWorkspaceRoot && (
-                  <button type="button" className="secondary-btn" onClick={() => openDir(settings.aiWorkspaceRoot ?? '').catch(() => {})}>
-                    {t('settings.open')}
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="ai-settings-runtime">
-              <div>
-                <strong>{t('ai.codexRuntime')}</strong>
-                <span>
-                  {codexRuntime?.installed
-                    ? codexRuntime.running ? t('ai.connected') : t('ai.installed')
-                    : t('ai.notChecked')}
-                </span>
-              </div>
-              <div className="settings-inline-actions">
-                <button type="button" className="secondary-btn" disabled={codexChecking} onClick={handleCheckCodex}>
-                  {t('ai.checkRuntime')}
-                </button>
-                <button type="button" className="secondary-btn" onClick={() => openCodexDesktop().catch(() => {})}>
-                  {t('ai.openCodex')}
-                </button>
-              </div>
-            </div>
-            <div className="settings-diagnostics-card ai-capabilities-card">
-              <span className="settings-reset-kicker">{t('ai.capabilities')}</span>
-              <p className="help-text">{t('ai.capabilitiesHelp')}</p>
-              <dl>
-                {codexCapabilities.map((capability) => (
-                  <div key={capability.id}>
-                    <dt>{t(capability.labelKey)}</dt>
-                    <dd>
-                      <span className={`settings-capability-pill ${capability.status}`}>
-                        {t(`ai.capabilityStatus.${capability.status}`)}
-                      </span>
-                      {capability.detail && <small>{capability.detail}</small>}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            {codexRuntime?.installed && !codexAccount?.account && (
-              <div className="form-group ai-key-login">
-                <label htmlFor="codexKey">{t('ai.loginWithKey')}</label>
-                <div className="path-input-row">
-                  <input
-                    id="codexKey"
-                    type="password"
-                    value={codexApiKey}
-                    onChange={(event) => setCodexApiKey(event.target.value)}
-                    autoComplete="off"
-                    placeholder="sk-..."
-                  />
-                  <button type="button" className="secondary-btn" disabled={codexChecking || !codexApiKey.trim()} onClick={handleCodexLogin}>
-                    {t('ai.login')}
-                  </button>
-                </div>
-                <p className="help-text">{t('ai.secretNotice')}</p>
-              </div>
-            )}
-            {codexRuntime?.installed && Boolean(codexAccount?.account) && (
-              <div className="settings-inline-actions">
-                <button type="button" className="secondary-btn" disabled={codexChecking} onClick={handleCodexLogout}>
-                  {t('ai.logout')}
-                </button>
-              </div>
-            )}
-          </section>
-        )
-
       case 'maintenance':
         return (
           <section id="settings-maintenance" className="danger-zone">
@@ -846,11 +636,11 @@ function SettingsPage({
                 </div>
                 <div>
                   <dt>{t('settings.prerelease')}</dt>
-                  <dd>{settings.includePrereleases ? t('ai.yes') : t('ai.no')}</dd>
+                  <dd>{settings.includePrereleases ? t('settings.yes') : t('settings.no')}</dd>
                 </div>
                 <div>
                   <dt>{t('settings.autoCheck')}</dt>
-                  <dd>{settings.autoUpdateCheck ? t('ai.yes') : t('ai.no')}</dd>
+                  <dd>{settings.autoUpdateCheck ? t('settings.yes') : t('settings.no')}</dd>
                 </div>
               </dl>
             </div>

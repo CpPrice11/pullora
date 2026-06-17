@@ -16,6 +16,7 @@ interface StoreHeroProps {
   onActiveIndexChange: (index: number) => void
   onInstall: (repo: GitHubSearchResult) => void
   onOpenSource: (repo: GitHubSearchResult) => void
+  onDetails: (repo: GitHubSearchResult) => void
   onBrowse: () => void
 }
 
@@ -29,6 +30,7 @@ function StoreHero({
   onActiveIndexChange,
   onInstall,
   onOpenSource,
+  onDetails,
   onBrowse,
 }: StoreHeroProps) {
   const { language, t } = useI18n()
@@ -141,7 +143,7 @@ function StoreHero({
           >
             {t(isInstallable ? 'store.action.installLatest' : 'store.action.source')}
           </button>
-          <button type="button" className="store-ghost-btn" onClick={onBrowse}>
+          <button type="button" className="store-ghost-btn" onClick={() => onDetails(repo)}>
             {t('store.action.details')}
           </button>
         </div>

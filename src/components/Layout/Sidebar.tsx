@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n'
 
-type Tab = 'store' | 'library' | 'aiWorkspace' | 'settings' | 'about'
-type NavIconName = 'store' | 'library' | 'aiWorkspace' | 'settings' | 'about'
+type Tab = 'store' | 'library' | 'settings' | 'about'
+type NavIconName = 'store' | 'library' | 'settings' | 'about'
 
 interface SidebarProps {
   activeTab: Tab
@@ -17,7 +17,6 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'store', icon: 'store', labelKey: 'nav.store' },
   { id: 'library', icon: 'library', labelKey: 'nav.library' },
-  { id: 'aiWorkspace', icon: 'aiWorkspace', labelKey: 'nav.aiWorkspace' },
   { id: 'settings', icon: 'settings', labelKey: 'nav.settings' },
   { id: 'about', icon: 'about', labelKey: 'nav.about' },
 ]
@@ -54,13 +53,6 @@ function NavIcon({ name }: { name: NavIconName }) {
             {...common}
             d="M18.1 13.2c.05-.39.05-.41.05-.8s0-.41-.05-.8l1.7-1.32-1.62-2.8-2 .8c-.62-.47-.72-.53-1.42-.82L14.45 5h-4.9l-.31 2.46c-.7.29-.8.35-1.42.82l-2-.8-1.62 2.8 1.7 1.32c-.05.39-.05.41-.05.8s0 .41.05.8l-1.7 1.32 1.62 2.8 2-.8c.62.47.72.53 1.42.82l.31 2.46h4.9l.31-2.46c.7-.29.8-.35 1.42-.82l2 .8 1.62-2.8-1.7-1.32Z"
           />
-        </>
-      )}
-      {name === 'aiWorkspace' && (
-        <>
-          <path {...common} d="M4.5 6.25h15v11.5h-15z" />
-          <path {...common} d="m8 10 2.25 2L8 14.25" />
-          <path {...common} d="M12.5 14.25h3.5" />
         </>
       )}
       {name === 'about' && (

@@ -16,7 +16,6 @@ interface RepoCardProps {
   onFavoriteChange?: (isFavorite: boolean) => void
   onPickArt?: () => void
   onClearArt?: () => void
-  onAiWorkspace?: () => void
   onUninstall?: () => void
   onInstall?: () => void
   onLaunch?: () => void
@@ -33,7 +32,6 @@ function RepoCard({
   onFavoriteChange,
   onPickArt,
   onClearArt,
-  onAiWorkspace,
   onUninstall,
   onInstall,
   onLaunch,
@@ -140,12 +138,6 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onUninstall?.()
-  }
-
-  const handleAiWorkspace = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    setActionsOpen(false)
-    onAiWorkspace?.()
   }
 
   const handleContextMenu = (event: React.MouseEvent) => {
@@ -261,11 +253,6 @@ function RepoCard({
                 onClick={handleLaunch}
               >
                 {t('repo.launch')}
-              </button>
-            )}
-            {onAiWorkspace && (
-              <button type="button" role="menuitem" onClick={handleAiWorkspace}>
-                {t('ai.openInWorkspace')}
               </button>
             )}
             {onPickArt && (
