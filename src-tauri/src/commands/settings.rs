@@ -36,8 +36,9 @@ pub async fn update_settings(
     let config_dir = get_config_dir();
     save_settings(&config_dir, &new_settings).map_err(|e| e.to_string())?;
 
-    let mut client = state.github_client.lock().await;
-    client.update_token(new_settings.github_token.clone());
+    state
+        .github_client
+        .update_token(new_settings.github_token.clone());
 
     let mut settings = state.settings.lock().await;
     *settings = new_settings;

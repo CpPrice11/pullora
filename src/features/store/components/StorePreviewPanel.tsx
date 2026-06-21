@@ -42,7 +42,7 @@ function StorePreviewPanel({
   const keyTopics = (repo.topics ?? []).slice(0, 5)
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const imageUrl = projectArtCoverUrl(art) ?? socialPreviewUrl(repo)
-  const isInstallable = Boolean(installability?.installable)
+  const isInstallable = installability?.installable ?? repo.has_releases
   const assetKinds = releaseAssetKindsForStatus(installability)
   const latestTag = installability?.latestTag ?? null
   const accent = languageAccent(repo.language)

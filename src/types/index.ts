@@ -46,6 +46,27 @@ export interface GitHubAsset {
   download_count: number
 }
 
+export interface GitHubRateLimitBucket {
+  remaining: number | null
+  limit: number | null
+  resetAt: number | null
+}
+
+export interface GitHubRateLimitStatus {
+  core: GitHubRateLimitBucket
+  search: GitHubRateLimitBucket
+}
+
+export interface GitHubQueueStatus {
+  active: number
+  queued: number
+  concurrency: number
+  highPriority: number
+  normalPriority: number
+  lowPriority: number
+  pausedUntil: number | null
+}
+
 // App settings — matches Rust AppSettings (Tauri returns snake_case by default, but serde renames to camelCase via Tauri)
 export interface AppSettings {
   version?: number

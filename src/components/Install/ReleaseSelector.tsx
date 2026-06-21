@@ -220,7 +220,7 @@ function ReleaseSelector({
   const installIntent = getInstallIntent(selectedRelease?.tag_name, currentVersion)
 
   useEffect(() => {
-    fetchReleases(true)
+    fetchReleases()
   }, [fetchReleases])
 
   useEffect(() => {

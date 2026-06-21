@@ -12,7 +12,7 @@ use github::GitHubClient;
 use storage::{get_config_dir, settings::load_settings};
 
 pub struct AppState {
-    pub github_client: Arc<Mutex<GitHubClient>>,
+    pub github_client: Arc<GitHubClient>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
     pub download_manager: Arc<DownloadManager>,
 }
@@ -24,7 +24,10 @@ pub fn run() {
     let token = settings.github_token.clone();
 
     let state = AppState {
-        github_client: Arc::new(Mutex::new(GitHubClient::new(token))),
+        github_client: Arc::new(GitHubClient::new(
+            token,
+            config_dir.join("github-api-cache.json"),
+        )),
         settings: Arc::new(Mutex::new(settings)),
         download_manager: Arc::new(DownloadManager::new()),
     };
@@ -48,6 +51,7 @@ pub fn run() {
             commands::github::search_public_repositories,
             commands::github::get_releases,
             commands::github::clear_github_cache,
+            commands::github::get_github_rate_limit_status,
             commands::settings::is_portable_mode,
             commands::settings::get_settings,
             commands::settings::update_settings,

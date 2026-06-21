@@ -44,8 +44,9 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
   const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
   const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
+  const [remoteBrowsingEnabled, setRemoteBrowsingEnabled] = useState(false)
 
-  const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter)
+  const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter, remoteBrowsingEnabled)
   const heroItems = useMemo(() => {
     const recommended = catalog.homeSections[0]?.items ?? []
     const supplemental = catalog.homeSections.slice(1).flatMap((section) => section.items)
@@ -83,19 +84,9 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     : catalog.error
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setStoreSearchQuery(query.trim()), 350)
-    return () => window.clearTimeout(timer)
-  }, [query])
-
-  useEffect(() => {
     if (heroIndex < heroItems.length) return
     setHeroIndex(0)
   }, [heroIndex, heroItems.length])
-
-  useEffect(() => {
-    if (!heroRepo) return
-    void catalog.checkInstallability(heroRepo)
-  }, [catalog, heroRepo])
 
   useEffect(() => {
     if (!heroRepo || !heroKey) {
@@ -113,7 +104,6 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const handleSelect = (repo: GitHubSearchResult) => {
     setSelectedRepo(repo)
-    void catalog.checkInstallability(repo)
   }
 
   const handleInstall = (repo: GitHubSearchResult, releaseTag?: string | null) => {
@@ -127,7 +117,6 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const handleDetails = (repo: GitHubSearchResult) => {
     setSelectedRepo(repo)
-    void catalog.checkInstallability(repo)
     setDetailsRepo(repo)
   }
 
@@ -143,6 +132,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     }
     setInstallableFilter('all')
     setSelectedRepo(undefined)
+    setRemoteBrowsingEnabled(true)
     window.setTimeout(scrollToBrowse, 0)
   }
 
@@ -165,7 +155,27 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     setBrowseTab('popular')
     setInstallableFilter('all')
     setSelectedRepo(undefined)
+    setRemoteBrowsingEnabled(true)
     window.setTimeout(scrollToBrowse, 0)
+  }
+
+  const handleBrowseTabChange = (tab: StoreBrowseTab) => {
+    setBrowseTab(tab)
+    if (tab !== 'favorites') {
+      setRemoteBrowsingEnabled(true)
+    }
+  }
+
+  const handleInstallableFilterChange = (filter: StoreInstallableFilter) => {
+    setInstallableFilter(filter)
+    if (filter === 'installable') {
+      setRemoteBrowsingEnabled(true)
+    }
+  }
+
+  const handleRefresh = () => {
+    setRemoteBrowsingEnabled(true)
+    void catalog.refreshAll()
   }
 
   return (
@@ -192,7 +202,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
           <span aria-hidden="true">♡</span>
           {t('store.browse.favorites')}
         </button>
-        <button type="button" className="store-refresh-btn" onClick={() => catalog.refreshAll()} aria-label={t('store.refresh')}>
+        <button type="button" className="store-refresh-btn" onClick={handleRefresh} aria-label={t('store.refresh')}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 12a8 8 0 1 1-2.35-5.65" />
             <path d="M20 4v6h-6" />
@@ -297,8 +307,8 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         installedByRepo={catalog.installedByRepo}
         installability={catalog.installability}
         projectArt={catalog.projectArt}
-        onTabChange={setBrowseTab}
-        onFilterChange={setInstallableFilter}
+        onTabChange={handleBrowseTabChange}
+        onFilterChange={handleInstallableFilterChange}
         onSelect={handleSelect}
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}

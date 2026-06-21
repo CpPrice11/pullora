@@ -99,7 +99,7 @@ function StoreAppDetailsModal({
     ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
     : null
   const notes = compactNotes(selectedRelease?.body)
-  const installable = Boolean(installability?.installable)
+  const installable = installability?.installable ?? repo.has_releases
   const lastLoadedTime = lastLoadedAt?.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
     hour: '2-digit',
     minute: '2-digit',
