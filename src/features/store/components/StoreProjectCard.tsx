@@ -41,7 +41,6 @@ function StoreProjectCard({
   const [imageUrl, setImageUrl] = useState(appIcon)
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const accent = languageAccent(repo.language)
-  const topics = (repo.topics ?? []).slice(0, 2)
   const projectType = classifyStoreProject(repo)
   const isInstallable = Boolean(installability?.installable)
   const isChecking = Boolean(installability?.checking)
@@ -97,18 +96,13 @@ function StoreProjectCard({
           <span className={`store-project-type store-project-type--${projectType}`}>
             {t(storeProjectTypeLabelKey(projectType))}
           </span>
-          {assetKinds.map((kind) => (
-            <span key={kind} className={`store-asset-badge store-asset-badge--${kind}`}>
-              {t(releaseAssetKindLabelKey(kind))}
-            </span>
-          ))}
           {latestTag && <span>{t('store.latestVersion', { version: latestTag })}</span>}
-          {topics.map((topic) => <span key={topic}>{topic}</span>)}
         </div>
         <span className="store-row-date">{updatedDate}</span>
         <span className="store-row-stars">{repo.stargazers_count.toLocaleString()}</span>
         <span className={`store-row-status ${isInstallable || installedApp ? 'ready' : ''}`} title={t(statusKey)}>
-          {isInstallable || installedApp ? '✓' : '○'}
+          <span className="store-row-status-dot" aria-hidden="true" />
+          <span>{t(statusKey)}</span>
         </span>
         <span className="store-project-key">{repoKey(repo)}</span>
       </article>
