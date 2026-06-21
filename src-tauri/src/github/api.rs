@@ -238,10 +238,6 @@ impl GitHubClient {
         let items = raw_items
             .into_iter()
             .filter(|repo| !repo.private && !repo.fork && !repo.archived)
-            .filter(|repo| {
-                !(normalized_owner.eq_ignore_ascii_case("cpprice11")
-                    && repo.name.eq_ignore_ascii_case("pullora"))
-            })
             .collect();
 
         let data = OwnerRepositoriesResponse {

@@ -2,7 +2,7 @@ import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../type
 import type { CSSProperties } from 'react'
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { languageAccent, socialPreviewUrl } from '../storeCatalog'
-import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import type { StoreInstallability } from '../storeTypes'
 import { releaseAssetKindLabelKey, releaseAssetKindsForStatus } from '../assetClassifier'
 import { classifyStoreProject, storeProjectTypeLabelKey } from '../projectClassifier'
 import { useI18n } from '../../../i18n'

@@ -1,7 +1,7 @@
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import type { StoreBrowseTab, StoreInstallableFilter, StoreProjectFilter } from '../storeCatalog'
 import { repoKey } from '../storeCatalog'
-import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import type { StoreInstallability } from '../storeTypes'
 import StoreProjectCard from './StoreProjectCard'
 import StorePreviewPanel from './StorePreviewPanel'
 import { useI18n } from '../../../i18n'

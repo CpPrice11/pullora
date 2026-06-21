@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { languageAccent } from '../storeCatalog'
-import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import type { StoreInstallability } from '../storeTypes'
 import { releaseAssetKindLabelKey, releaseAssetKindsForStatus } from '../assetClassifier'
 import { classifyStoreProject, storeProjectTypeLabelKey } from '../projectClassifier'
 import { useI18n } from '../../../i18n'

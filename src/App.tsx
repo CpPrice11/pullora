@@ -151,6 +151,7 @@ function App() {
       {shouldRenderTab('store') && (
         <div {...tabPanelProps('store')}>
           <StorePage
+            onOpenSettings={() => setSettingsOpen(true)}
             onPreviewBackground={setSearchPreviewBackground}
           />
         </div>
