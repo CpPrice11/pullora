@@ -1,11 +1,8 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import type { GitHubSearchResult, GitHubRelease } from '../../../types'
 import {
-  cancelQueuedGithubRequests,
-  isGithubRequestCancelled,
   listOwnerRepositories,
   getReleases,
-  searchPublicRepositories,
 } from '../../../services/github'
 
 interface OwnerRepositoriesState {
@@ -91,80 +88,6 @@ export function useOwnerRepositories(owner: string | undefined, releasesOnly = f
       }
     },
     [owner, releasesOnly],
-  )
-
-  const refreshRepositories = useCallback(() => {
-    return loadRepositories(1, true)
-  }, [loadRepositories])
-
-  const loadMore = useCallback(() => {
-    if (!state.hasMore || state.loading) return
-    loadRepositories(state.page + 1)
-  }, [state.hasMore, state.loading, state.page, loadRepositories])
-
-  return { state, loadRepositories, refreshRepositories, loadMore }
-}
-
-export function usePublicRepositories(searchQuery = '') {
-  const requestGeneration = useRef(0)
-  const requestGroup = 'library-public-search'
-  const [state, setState] = useState<OwnerRepositoriesState>({
-    repositories: [],
-    loading: false,
-    error: null,
-    page: 1,
-    hasMore: false,
-    lastLoadedAt: null,
-    lastRefreshAt: null,
-    lastErrorAt: null,
-    isStale: false,
-  })
-
-  const loadRepositories = useCallback(
-    async (page = 1, forceRefresh = false): Promise<GitHubSearchResult[] | null> => {
-      const generation = page === 1 ? ++requestGeneration.current : requestGeneration.current
-      if (page === 1) cancelQueuedGithubRequests(requestGroup)
-      setState((prev) => ({ ...prev, loading: true, error: null }))
-      try {
-        const data = await searchPublicRepositories(searchQuery, page, {
-          forceRefresh,
-          requestGroup,
-        })
-        if (generation !== requestGeneration.current) return null
-        const loadedAt = new Date()
-        setState((prev) => ({
-          repositories:
-            page === 1
-              ? data.items
-              : [...prev.repositories, ...data.items],
-          loading: false,
-          error: null,
-          page: data.page,
-          hasMore: data.has_more,
-          lastLoadedAt: loadedAt,
-          lastRefreshAt: forceRefresh ? loadedAt : prev.lastRefreshAt,
-          lastErrorAt: null,
-          isStale: false,
-        }))
-        return data.items
-      } catch (err) {
-        if (generation !== requestGeneration.current || isGithubRequestCancelled(err)) {
-          return null
-        }
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error:
-            err instanceof Error
-              ? err.message
-              : 'Failed to load repositories',
-          lastErrorAt: new Date(),
-          isStale: prev.repositories.length > 0,
-        }))
-        return null
-      }
-    },
-    [searchQuery],
   )
 
   const refreshRepositories = useCallback(() => {

@@ -17,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.2.4'
+const FALLBACK_CURRENT_VERSION = 'v5.2.5'
 
 type PendingLauncherAction = {
   release: GitHubRelease

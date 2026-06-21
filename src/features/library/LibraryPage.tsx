@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useOwnerRepositories, usePublicRepositories } from './hooks/useGitHub'
+import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
 import { useDownload } from '../../hooks/useDownload'
@@ -26,7 +26,6 @@ import '../../pages/PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
-type LibraryPageMode = 'store' | 'library'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type HeroPanel = 'overview' | 'versions' | 'details'
@@ -108,8 +107,7 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
   }
 }
 
-const storeFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
-const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates']
+const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
 
 function libraryFilterLabelKey(filter: LibraryFilter) {
   return filter === 'available' ? 'library.availableFilter' : `library.${filter}`
@@ -183,24 +181,18 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
 }
 
 interface LibraryPageProps {
-  mode?: LibraryPageMode
   onOpenSettings?: () => void
-  onOpenStore?: () => void
   onPreviewBackground?: (url: string | null) => void
 }
 
 function LibraryPage({
-  mode = 'store',
   onOpenSettings,
-  onOpenStore,
   onPreviewBackground,
 }: LibraryPageProps) {
   const { language, t } = useI18n()
-  const isLibraryMode = mode === 'library'
-  const pageKey = isLibraryMode ? 'library' : 'store'
-  const activeFilters = isLibraryMode ? libraryFilters : storeFilters
+  const pageKey = 'library'
+  const activeFilters = libraryFilters
   const [query, setQuery] = useState('')
-  const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
@@ -235,13 +227,12 @@ function LibraryPage({
   } = useDownload()
   const heroActionsRef = useRef<HTMLDivElement | null>(null)
   const owner = settings.githubOwner?.trim()
-  const ownerRepositories = useOwnerRepositories(owner)
-  const publicRepositories = usePublicRepositories(isLibraryMode ? '' : storeSearchQuery)
   const {
     state,
+    loadRepositories,
     refreshRepositories,
     loadMore,
-  } = isLibraryMode ? ownerRepositories : publicRepositories
+  } = useOwnerRepositories(owner)
   const {
     checkingUpdates,
     latestVersionErrorCount,
@@ -471,17 +462,9 @@ function LibraryPage({
       : 'fresh'
 
   useEffect(() => {
-    if (isLibraryMode) {
-      setStoreSearchQuery('')
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      setStoreSearchQuery(query.trim())
-    }, 350)
-
-    return () => window.clearTimeout(timer)
-  }, [isLibraryMode, query])
+    if (settingsLoading || !owner) return
+    void loadRepositories()
+  }, [loadRepositories, owner, settingsLoading])
 
   useEffect(() => {
     listProjectArt()
@@ -551,8 +534,6 @@ function LibraryPage({
   }, [batchDownloads, batchUpdateJobs, batchUpdating, refreshLocalStatus])
 
   const libraryRepositories = useMemo(() => {
-    if (!isLibraryMode) return state.repositories
-
     const reposByKey = new Map(
       state.repositories.map((repo) => [repoLookupKey(repo.owner.login, repo.name), repo]),
     )
@@ -575,7 +556,7 @@ function LibraryPage({
     })
 
     return Array.from(reposByKey.values())
-  }, [favorites, installedApps, isLibraryMode, state.repositories])
+  }, [favorites, installedApps, state.repositories])
 
   const updateRepositories = useMemo(() => {
     return libraryRepositories.filter((repo) => {
@@ -593,7 +574,6 @@ function LibraryPage({
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
       const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
-      const belongsToLibrary = Boolean(installedApp) || isFavorite
       const hasUpdate = Boolean(
         installedApp &&
         latestVersion &&
@@ -603,7 +583,6 @@ function LibraryPage({
         latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
       )
 
-      if (isLibraryMode && !belongsToLibrary) return false
       if (filter === 'installed' && !installedApp) return false
       if (filter === 'favorites' && !isFavorite) return false
       if (filter === 'updates' && (!hasUpdate || updateDismissed)) return false
@@ -649,17 +628,9 @@ function LibraryPage({
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, isLibraryMode, libraryRepositories, query, sort])
+  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, libraryRepositories, query, sort])
 
-  const modeRepositoryCount = useMemo(() => {
-    if (!isLibraryMode) return libraryRepositories.length
-
-    return libraryRepositories.filter((repo) => {
-      const installedApp = getInstalledApp(repo)
-      const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
-      return Boolean(installedApp) || isFavorite
-    }).length
-  }, [favoriteKeys, getInstalledApp, isLibraryMode, libraryRepositories])
+  const modeRepositoryCount = libraryRepositories.length
 
   useEffect(() => {
     if (visibleRepositories.length === 0) {
@@ -1380,7 +1351,7 @@ function LibraryPage({
     )
   }
 
-  const requiresOwner = false
+  const missingOwner = !settingsLoading && !owner
   const showLoadingState = state.loading && libraryRepositories.length === 0
   const emptyTitleKey = modeRepositoryCount === 0
     ? `${pageKey}.emptyTitle`
@@ -1389,13 +1360,13 @@ function LibraryPage({
     ? `${pageKey}.emptyText`
     : `${pageKey}.noMatchesText`
   const emptyActionLabel = modeRepositoryCount === 0
-    ? isLibraryMode && onOpenStore
-      ? t('store.open')
+    ? missingOwner && onOpenSettings
+      ? t('library.openSettings')
       : t(`${pageKey}.refresh`)
     : t(`${pageKey}.resetFilters`)
   const emptyAction = modeRepositoryCount === 0
-    ? isLibraryMode && onOpenStore
-      ? onOpenStore
+    ? missingOwner && onOpenSettings
+      ? onOpenSettings
       : handleRefresh
     : handleResetLibraryFilters
 
@@ -1403,40 +1374,27 @@ function LibraryPage({
     <div className="page library-page">
       <div className="page-header">
         <h2>{t(`${pageKey}.title`)}</h2>
-        {!requiresOwner && (
-          <div className="page-actions">
-            {refreshState === 'error' && (
-              <span className="refresh-status error">{t('refresh.error')}</span>
-            )}
-            <button
-              type="button"
-              className="refresh-btn"
-              onClick={handleRefresh}
-              disabled={state.loading || checkingUpdates}
-            >
-              {state.loading || checkingUpdates ? t(`${pageKey}.refreshing`) : t(`${pageKey}.refresh`)}
-            </button>
-          </div>
-        )}
+        <div className="page-actions">
+          {refreshState === 'error' && (
+            <span className="refresh-status error">{t('refresh.error')}</span>
+          )}
+          <button
+            type="button"
+            className="refresh-btn"
+            onClick={handleRefresh}
+            disabled={state.loading || checkingUpdates}
+          >
+            {state.loading || checkingUpdates ? t(`${pageKey}.refreshing`) : t(`${pageKey}.refresh`)}
+          </button>
+        </div>
       </div>
 
-      {requiresOwner && !settingsLoading && (
-        <StatePanel
-          kind="empty"
-          title={t(`${pageKey}.noOwnerTitle`)}
-          message={t(`${pageKey}.noOwnerText`)}
-          actionLabel={onOpenSettings ? t(`${pageKey}.openSettings`) : undefined}
-          onAction={onOpenSettings}
-        />
-      )}
-
-      {!requiresOwner && (
-        <div className="library-sam-workspace">
+      <div className="library-sam-workspace">
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <div className="library-sam-pane-head">
               <div>
                 <span className="library-sam-kicker">
-                  {isLibraryMode ? t('library.localSource') : t('store.globalSource')}
+                  {t('library.localSource')}
                 </span>
                 <h3>{t(`${pageKey}.title`)}</h3>
               </div>
@@ -1576,7 +1534,7 @@ function LibraryPage({
               })}
             </div>
 
-            {!isLibraryMode && state.hasMore && (
+            {state.hasMore && (
               <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
                 {state.loading ? t('library.loadingMore') : t('library.loadMore')}
               </button>
@@ -1586,23 +1544,20 @@ function LibraryPage({
           <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
             <div className="library-sam-details-toolbar">
               <span>{t('details.open')}</span>
-              {!requiresOwner && (
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleRefresh}
-                  disabled={state.loading || checkingUpdates}
-                >
-                  {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
-                </button>
-              )}
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handleRefresh}
+                disabled={state.loading || checkingUpdates}
+              >
+                {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
+              </button>
             </div>
             {renderHero()}
             {renderOperationsPanel()}
             {renderUpdatesCenter()}
           </aside>
         </div>
-      )}
 
       {selectedRepo && (
         <ReleaseSelector
