@@ -48,6 +48,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
   const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
   const [remoteBrowsingEnabled, setRemoteBrowsingEnabled] = useState(false)
+  const [catalogMode, setCatalogMode] = useState(false)
 
   const catalog = useStoreCatalog(
     storeSearchQuery,
@@ -150,6 +151,13 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const submitSearch = (nextQuery = query) => {
     const trimmedQuery = nextQuery.trim()
+    if (!trimmedQuery) {
+      setQuery('')
+      setStoreSearchQuery('')
+      setCatalogMode(false)
+      setRemoteBrowsingEnabled(false)
+      return
+    }
     setStoreSearchQuery(trimmedQuery)
     if (browseTab === 'favorites') {
       setBrowseTab('popular')
@@ -158,6 +166,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     setProjectFilter('all')
     setSelectedRepo(undefined)
     setRemoteBrowsingEnabled(true)
+    setCatalogMode(true)
     window.setTimeout(scrollToBrowse, 0)
   }
 
@@ -181,7 +190,32 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     setInstallableFilter('all')
     setSelectedRepo(undefined)
     setRemoteBrowsingEnabled(true)
+    setCatalogMode(true)
     window.setTimeout(scrollToBrowse, 0)
+  }
+
+  const handleFavorites = () => {
+    setQuery('')
+    setStoreSearchQuery('')
+    setBrowseTab('favorites')
+    setInstallableFilter('all')
+    setSelectedRepo(undefined)
+    setCatalogMode(true)
+    window.setTimeout(scrollToBrowse, 0)
+  }
+
+  const handleReturnHome = () => {
+    setQuery('')
+    setStoreSearchQuery('')
+    setBrowseTab('popular')
+    setInstallableFilter('all')
+    setProjectFilter('applications')
+    setSelectedRepo(undefined)
+    setCatalogMode(false)
+    setRemoteBrowsingEnabled(false)
+    window.setTimeout(() => {
+      document.querySelector('.store-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
   const handleBrowseTabChange = (tab: StoreBrowseTab) => {
@@ -214,7 +248,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   return (
     <div className="page store-page">
       <div className="store-toolbar">
-        <form className="store-search" onSubmit={handleSearchSubmit}>
+        <form className={`store-search ${query || catalogMode ? 'store-search--has-query' : ''}`} onSubmit={handleSearchSubmit}>
           <span className="visually-hidden">{t('store.searchLabel')}</span>
           <input
             id="store-search-input"
@@ -224,14 +258,27 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
             placeholder={t('store.searchPlaceholder')}
             onChange={(event) => handleSearchChange(event.target.value)}
           />
-          <button type="submit" aria-label={t('store.searchLabel')}>
+          {(query || catalogMode) && (
+            <button
+              type="button"
+              className="store-search-clear"
+              aria-label={t('store.search.clear')}
+              title={t('store.search.clear')}
+              onClick={handleReturnHome}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 7 10 10M17 7 7 17" />
+              </svg>
+            </button>
+          )}
+          <button type="submit" className="store-search-submit" aria-label={t('store.searchLabel')}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="6" />
               <path d="m16 16 4 4" />
             </svg>
           </button>
         </form>
-        <button type="button" className="store-wishlist-btn" onClick={() => setBrowseTab('favorites')}>
+        <button type="button" className="store-wishlist-btn" onClick={handleFavorites}>
           <span aria-hidden="true">♡</span>
           {t('store.browse.favorites')}
         </button>
@@ -249,6 +296,8 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         </div>
       )}
 
+      {!catalogMode && (
+        <>
       <StoreHero
         repo={heroRepo}
         items={heroItems}
@@ -326,8 +375,12 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
           ))}
         </div>
       </section>
+        </>
+      )}
 
       <StoreBrowse
+        resultsMode={catalogMode}
+        searchQuery={storeSearchQuery}
         items={catalog.browseItems}
         selectedRepo={browseSelectedRepo}
         tabs={catalog.browseTabs}
@@ -350,9 +403,10 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         onOpenSource={handleOpenSource}
         onDetails={handleDetails}
         onLoadMore={catalog.loadMoreBrowse}
+        onReturnHome={handleReturnHome}
       />
 
-      {catalog.homeSections.slice(1).map((section) => (
+      {!catalogMode && catalog.homeSections.slice(1).map((section) => (
         <StoreCarousel
           key={section.id}
           titleKey={section.titleKey}

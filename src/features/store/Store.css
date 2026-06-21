@@ -16,7 +16,7 @@
     linear-gradient(180deg, #071727 0%, var(--store-bg) 42%, #07111b 100%);
   color: var(--store-text);
   min-height: calc(100vh - 92px);
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: 14px 24px 28px;
 }
 
@@ -107,6 +107,10 @@
   width: min(100%, 720px);
 }
 
+.store-search--has-query {
+  grid-template-columns: 1fr 42px 46px;
+}
+
 .store-search:focus-within {
   border-color: rgba(64, 154, 255, 0.72);
   box-shadow: 0 0 0 3px rgba(36, 157, 255, 0.12);
@@ -136,10 +140,22 @@
   padding: 0 14px;
 }
 
-.store-search button {
+.store-search-submit {
   border: 0;
   border-left: 1px solid rgba(116, 161, 205, 0.16);
   border-radius: 0 6px 6px 0;
+}
+
+.store-search-clear {
+  border: 0 !important;
+  border-left: 1px solid rgba(116, 161, 205, 0.12) !important;
+  border-radius: 0 !important;
+  color: #9eb2c6 !important;
+  padding: 0 !important;
+}
+
+.store-search-clear:hover {
+  color: #ffffff !important;
 }
 
 .store-refresh-btn {
@@ -775,12 +791,49 @@
 }
 
 .store-browse-title {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
   margin: 0 0 8px;
 }
 
 .store-browse-title h2 {
   font-size: 18px;
   margin: 0;
+}
+
+.store-browse-title p {
+  color: var(--store-muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.store-results-home {
+  align-items: center;
+  background: rgba(19, 39, 62, 0.84);
+  border: 1px solid rgba(116, 161, 205, 0.22);
+  border-radius: 6px;
+  color: #e8f3ff;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.store-results-home svg {
+  fill: none;
+  height: 17px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 17px;
 }
 
 .store-browse-head {
@@ -843,7 +896,15 @@
 .store-browse-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(560px, 1fr) minmax(440px, 0.96fr);
+  grid-template-columns: minmax(560px, 1.18fr) minmax(390px, 0.82fr);
+}
+
+.store-browse--results {
+  margin-top: 4px;
+}
+
+.store-browse--results .store-browse-grid {
+  grid-template-columns: minmax(620px, 1.36fr) minmax(360px, 0.64fr);
 }
 
 .store-browse-list,
@@ -863,7 +924,7 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(260px, 1.6fr) minmax(110px, 0.7fr) minmax(150px, 0.85fr) 92px 74px 34px;
+  grid-template-columns: minmax(240px, 1.6fr) minmax(100px, 0.62fr) minmax(150px, 0.8fr) 86px 68px minmax(96px, 0.62fr);
 }
 
 .store-row-header {
@@ -954,28 +1015,38 @@
 
 .store-row-status {
   align-items: center;
-  border: 2px solid rgba(143, 166, 189, 0.54);
-  border-radius: 999px;
-  color: transparent;
+  color: #9eb2c6;
   display: inline-flex;
   font-size: 12px;
-  height: 22px;
-  justify-content: center;
-  width: 22px;
+  font-weight: 800;
+  gap: 6px;
+  min-width: 0;
 }
 
 .store-row-status.ready {
+  color: #82dc8a;
+}
+
+.store-row-status-dot {
+  border: 2px solid rgba(143, 166, 189, 0.62);
+  border-radius: 999px;
+  flex: 0 0 12px;
+  height: 12px;
+  width: 12px;
+}
+
+.store-row-status.ready .store-row-status-dot {
   background: var(--store-green);
   border-color: var(--store-green);
-  color: #09220b;
-  font-weight: 900;
 }
 
 .store-preview-panel {
   align-self: start;
+  max-height: calc(100vh - 116px);
+  overflow-y: auto;
   padding: 22px;
   position: sticky;
-  top: 88px;
+  top: 12px;
 }
 
 .store-preview-panel--empty {
@@ -1473,20 +1544,12 @@
 }
 
 @media (max-width: 1340px) {
-  .store-browse-grid {
-    grid-template-columns: 1fr;
-  }
-
   .store-search {
     width: 100%;
   }
 
   .store-category-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .store-preview-panel {
-    position: static;
   }
 
   .store-hero {
@@ -1526,6 +1589,19 @@
   }
 }
 
+@media (max-width: 1100px) {
+  .store-browse-grid,
+  .store-browse--results .store-browse-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .store-preview-panel {
+    max-height: none;
+    overflow: visible;
+    position: static;
+  }
+}
+
 @media (max-width: 900px) {
   .store-page {
     padding: 12px;
@@ -1535,6 +1611,15 @@
   .store-browse-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .store-browse-title {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .store-results-home {
+    align-self: flex-start;
   }
 
   .store-browse-filters {

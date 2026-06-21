@@ -40,7 +40,7 @@ function StorePreviewPanel({
     )
   }
 
-  const keyTopics = (repo.topics ?? []).slice(0, 5)
+  const keyTopics = (repo.topics ?? []).slice(0, 3)
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const imageUrl = projectArtCoverUrl(art) ?? socialPreviewUrl(repo)
   const projectType = classifyStoreProject(repo)
@@ -90,7 +90,6 @@ function StorePreviewPanel({
         <div className="store-preview-facts">
           <span>{t('repo.updated', { date: updatedDate })}</span>
           <span>{repo.language ?? t('details.unknown')}</span>
-          <span>{repo.html_url}</span>
           <span>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</span>
           <span>
             {installability?.checking

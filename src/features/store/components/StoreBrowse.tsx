@@ -7,6 +7,8 @@ import StorePreviewPanel from './StorePreviewPanel'
 import { useI18n } from '../../../i18n'
 
 interface StoreBrowseProps {
+  resultsMode?: boolean
+  searchQuery?: string
   items: GitHubSearchResult[]
   selectedRepo?: GitHubSearchResult
   tabs: StoreBrowseTab[]
@@ -29,10 +31,13 @@ interface StoreBrowseProps {
   onOpenSource: (repo: GitHubSearchResult) => void
   onDetails: (repo: GitHubSearchResult) => void
   onLoadMore: () => void
+  onReturnHome?: () => void
   embedded?: boolean
 }
 
 function StoreBrowse({
+  resultsMode = false,
+  searchQuery = '',
   items,
   selectedRepo,
   tabs,
@@ -55,15 +60,42 @@ function StoreBrowse({
   onOpenSource,
   onDetails,
   onLoadMore,
+  onReturnHome,
   embedded = false,
 }: StoreBrowseProps) {
   const { t } = useI18n()
   const selectedKey = selectedRepo ? repoKey(selectedRepo) : null
 
   return (
-    <section className={`store-browse ${embedded ? 'store-browse--embedded' : ''}`} aria-label={t('store.nav.browse')}>
+    <section
+      className={`store-browse ${resultsMode ? 'store-browse--results' : ''} ${embedded ? 'store-browse--embedded' : ''}`}
+      aria-label={t('store.nav.browse')}
+    >
       <div className="store-browse-title">
-        <h2>{t('store.catalog.title')}</h2>
+        <div>
+          <h2>
+            {resultsMode && searchQuery
+              ? t('store.search.results')
+              : activeTab === 'favorites'
+                ? t('store.section.favorites')
+                : t('store.catalog.title')}
+          </h2>
+          {resultsMode && (
+            <p>
+              {searchQuery
+                ? t('store.search.summary', { query: searchQuery, count: items.length })
+                : t('store.catalog.summary', { count: items.length })}
+            </p>
+          )}
+        </div>
+        {resultsMode && onReturnHome && (
+          <button type="button" className="store-results-home" onClick={onReturnHome}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            {t('store.search.backHome')}
+          </button>
+        )}
       </div>
       <div className="store-browse-head">
         <div className="store-tabs" role="tablist" aria-label={t('store.browse.tabs')}>
@@ -124,7 +156,7 @@ function StoreBrowse({
             <span>{t('store.catalog.tags')}</span>
             <span>{t('store.catalog.updated')}</span>
             <span>{t('store.catalog.stars')}</span>
-            <span />
+            <span>{t('store.catalog.status')}</span>
           </div>
           {loading && items.length === 0 && <div className="store-loading">{t('store.loading')}</div>}
           {!loading && !loadingInstallability && items.length === 0 && (
