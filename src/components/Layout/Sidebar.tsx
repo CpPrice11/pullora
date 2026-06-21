@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n'
 
-type Tab = 'store' | 'library' | 'settings' | 'about'
-type NavIconName = 'store' | 'library' | 'settings' | 'about'
+type Tab = 'library' | 'settings' | 'about'
+type NavIconName = 'library' | 'settings' | 'about'
 
 interface SidebarProps {
   activeTab: Tab
@@ -15,7 +15,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'store', icon: 'store', labelKey: 'nav.store' },
   { id: 'library', icon: 'library', labelKey: 'nav.library' },
   { id: 'settings', icon: 'settings', labelKey: 'nav.settings' },
   { id: 'about', icon: 'about', labelKey: 'nav.about' },
@@ -37,13 +36,6 @@ function NavIcon({ name }: { name: NavIconName }) {
           <path {...common} d="M4.5 10.5 12 4l7.5 6.5" />
           <path {...common} d="M6.5 9.5v9h11v-9" />
           <path {...common} d="M9.5 18.5v-5h5v5" />
-        </>
-      )}
-      {name === 'store' && (
-        <>
-          <path {...common} d="M5.5 9h13l-1 10h-11z" />
-          <path {...common} d="M8.25 9a3.75 3.75 0 0 1 7.5 0" />
-          <path {...common} d="M8.5 13.5h7" />
         </>
       )}
       {name === 'settings' && (

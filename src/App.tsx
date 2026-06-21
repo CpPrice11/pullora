@@ -3,7 +3,6 @@ import './App.css'
 import Layout from './components/Layout/Layout'
 import ReleaseSelector from './components/Install/ReleaseSelector'
 import { LibraryPage } from './features/library'
-import { StorePage } from './features/store'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
@@ -21,12 +20,12 @@ import {
   setLauncherBackgroundArt,
 } from './services/projectArt'
 
-type ContentTab = 'store' | 'library' | 'about'
+type ContentTab = 'library' | 'about'
 type NavigationTab = ContentTab | 'settings'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<ContentTab>('store')
-  const [visitedTabs, setVisitedTabs] = useState<Set<ContentTab>>(() => new Set(['store']))
+  const [activeTab, setActiveTab] = useState<ContentTab>('library')
+  const [visitedTabs, setVisitedTabs] = useState<Set<ContentTab>>(() => new Set(['library']))
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
@@ -136,7 +135,7 @@ function App() {
     setActiveTab(tab)
   }
 
-  const visibleBackground = (activeTab === 'store' || activeTab === 'library') && searchPreviewBackground
+  const visibleBackground = activeTab === 'library' && searchPreviewBackground
     ? searchPreviewBackground
     : launcherBackground
 
@@ -148,21 +147,10 @@ function App() {
 
   const renderContent = () => (
     <>
-      {shouldRenderTab('store') && (
-        <div {...tabPanelProps('store')}>
-          <StorePage
-            onOpenSettings={() => setSettingsOpen(true)}
-            onPreviewBackground={setSearchPreviewBackground}
-          />
-        </div>
-      )}
-
       {shouldRenderTab('library') && (
         <div {...tabPanelProps('library')}>
           <LibraryPage
-            mode="library"
             onOpenSettings={() => setSettingsOpen(true)}
-            onOpenStore={() => setActiveTab('store')}
             onPreviewBackground={setSearchPreviewBackground}
           />
         </div>

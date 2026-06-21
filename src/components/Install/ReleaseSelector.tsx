@@ -14,7 +14,7 @@ import {
   classifyReleaseAsset,
   releaseAssetKindLabelKey,
   type ReleaseAssetKind,
-} from '../../features/store/assetClassifier'
+} from '../../features/library/releaseAssetClassifier'
 import '../../features/library/components/SearchComponents.css'
 import '../Modal/Modal.css'
 
