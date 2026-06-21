@@ -1,6 +1,6 @@
 {
   "name": "pullora",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "description": "GitHub program launcher - download and run applications from GitHub releases",
   "type": "module",
   "scripts": {

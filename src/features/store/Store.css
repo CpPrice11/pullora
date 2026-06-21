@@ -791,6 +791,14 @@
   margin-bottom: 8px;
 }
 
+.store-browse-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .store-filter-toggle {
   background: rgba(8, 20, 34, 0.86);
   border: 1px solid rgba(116, 161, 205, 0.16);
@@ -809,6 +817,27 @@
 .store-filter-toggle button.active {
   background: rgba(39, 116, 192, 0.58);
   color: #ffffff;
+}
+
+.store-project-type {
+  background: rgba(74, 102, 128, 0.62) !important;
+  border: 1px solid rgba(154, 183, 210, 0.2);
+}
+
+.store-project-type--application,
+.store-project-type--cli,
+.store-project-type--game {
+  background: rgba(35, 126, 194, 0.62) !important;
+  border-color: rgba(91, 183, 249, 0.32);
+  color: #eaf7ff !important;
+}
+
+.store-project-type--library,
+.store-project-type--template,
+.store-project-type--resource-list {
+  background: rgba(111, 82, 146, 0.58) !important;
+  border-color: rgba(181, 139, 225, 0.28);
+  color: #f3eaff !important;
 }
 
 .store-browse-grid {
@@ -1390,6 +1419,20 @@
   border-left-color: rgba(255, 121, 121, 0.88);
 }
 
+.store-details-asset.compatible {
+  border-color: rgba(94, 207, 112, 0.38);
+}
+
+.store-details-asset.incompatible {
+  background: rgba(75, 28, 35, 0.28);
+  border-color: rgba(255, 111, 126, 0.32);
+  color: #c9aeb4;
+}
+
+.store-details-asset.incompatible strong {
+  color: #e5cbd1;
+}
+
 .store-details-asset div {
   display: grid;
   gap: 4px;
@@ -1492,6 +1535,10 @@
   .store-browse-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .store-browse-filters {
+    justify-content: flex-start;
   }
 
   .store-hero {

@@ -3,6 +3,7 @@ import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { languageAccent } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
 import { releaseAssetKindLabelKey, releaseAssetKindsForStatus } from '../assetClassifier'
+import { classifyStoreProject, storeProjectTypeLabelKey } from '../projectClassifier'
 import { useI18n } from '../../../i18n'
 import heroBackdrop from '../assets/store-hero-scene.png'
 
@@ -55,16 +56,24 @@ function StoreHero({
 
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 4)
-  const isInstallable = installability?.installable ?? repo.has_releases
+  const projectType = classifyStoreProject(repo)
+  const isInstallable = Boolean(installability?.installable)
+  const isIncompatible = Boolean(
+    installability?.checked
+    && !installability.installable
+    && installability.incompatibleAssetCount,
+  )
   const assetKinds = releaseAssetKindsForStatus(installability)
   const latestTag = installability?.latestTag ?? null
   const statusKey = installedApp
     ? 'store.status.installed'
     : isInstallable
       ? 'store.status.installable'
-      : installability?.checking
-        ? 'store.status.checking'
-        : 'store.status.source'
+      : isIncompatible
+        ? 'store.status.incompatible'
+        : installability?.checking
+          ? 'store.status.checking'
+          : 'store.status.source'
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const canNavigate = itemCount > 1
   const normalizedIndex = Math.min(activeIndex, Math.max(itemCount - 1, 0))
@@ -107,6 +116,9 @@ function StoreHero({
 
         <div className="store-hero-meta">
           {repo.language && <span>{repo.language}</span>}
+          <span className={`store-project-type store-project-type--${projectType}`}>
+            {t(storeProjectTypeLabelKey(projectType))}
+          </span>
           {assetKinds.map((kind) => (
             <span key={kind} className={`store-asset-badge store-asset-badge--${kind}`}>
               {t(releaseAssetKindLabelKey(kind))}

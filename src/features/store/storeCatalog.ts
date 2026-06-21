@@ -2,6 +2,7 @@ import type { GitHubSearchResult } from '../../types'
 
 export type StoreBrowseTab = 'popular' | 'updated' | 'new' | 'releases' | 'favorites'
 export type StoreInstallableFilter = 'all' | 'installable'
+export type StoreProjectFilter = 'applications' | 'all'
 export type StoreSort = 'updated' | 'stars' | 'forks'
 export type StorePlatform = 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'other' | null
 

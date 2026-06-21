@@ -2,9 +2,16 @@
 import type { GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { getReleases } from '../../../services/github'
 import { projectArtCoverUrl } from '../../../services/projectArt'
-import { classifyReleaseAsset, releaseAssetKindLabelKey } from '../assetClassifier'
+import {
+  classifyReleaseAssetCompatibility,
+  releaseAssetArchitectureLabelKey,
+  releaseAssetKindLabelKey,
+  releaseAssetPlatformLabelKey,
+  type ReleaseRuntime,
+} from '../assetClassifier'
 import { socialPreviewUrl } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import { classifyStoreProject, storeProjectTypeLabelKey } from '../projectClassifier'
 import { useI18n } from '../../../i18n'
 
 interface StoreAppDetailsModalProps {
@@ -12,6 +19,7 @@ interface StoreAppDetailsModalProps {
   art?: ProjectArt
   installedApp?: InstalledApp
   installability?: StoreInstallability
+  runtime: ReleaseRuntime
   favorite?: boolean
   onClose: () => void
   onInstall: (repo: GitHubSearchResult, releaseTag?: string | null) => void
@@ -42,6 +50,7 @@ function StoreAppDetailsModal({
   art,
   installedApp,
   installability,
+  runtime,
   favorite = false,
   onClose,
   onInstall,
@@ -99,7 +108,14 @@ function StoreAppDetailsModal({
     ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
     : null
   const notes = compactNotes(selectedRelease?.body)
-  const installable = installability?.installable ?? repo.has_releases
+  const projectType = classifyStoreProject(repo)
+  const selectedAssetCompatibility = selectedRelease?.assets.map((asset) => ({
+    asset,
+    compatibility: classifyReleaseAssetCompatibility(asset, runtime),
+  })) ?? []
+  const selectedReleaseInstallable = selectedAssetCompatibility.some(
+    ({ compatibility }) => compatibility.compatible,
+  )
   const lastLoadedTime = lastLoadedAt?.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
     hour: '2-digit',
     minute: '2-digit',
@@ -134,6 +150,9 @@ function StoreAppDetailsModal({
               <p>{repo.description ?? t('store.details.noDescription')}</p>
               <div className="store-details-topic-list">
                 {repo.language && <span>{repo.language}</span>}
+                <span className={`store-project-type store-project-type--${projectType}`}>
+                  {t(storeProjectTypeLabelKey(projectType))}
+                </span>
                 {(repo.topics ?? []).slice(0, 8).map((topic) => <span key={topic}>{topic}</span>)}
               </div>
             </div>
@@ -163,15 +182,25 @@ function StoreAppDetailsModal({
                 <dt>{t('library.ops.releases')}</dt>
                 <dd>{releases.length.toLocaleString()}</dd>
               </div>
+              <div>
+                <dt>{t('store.details.compatibility')}</dt>
+                <dd>
+                  {installability?.platform
+                    ? `${t(releaseAssetPlatformLabelKey(installability.platform === 'other' ? 'unknown' : installability.platform))} / ${t(releaseAssetArchitectureLabelKey(installability.architecture ?? 'unknown'))}`
+                    : t('store.compatibility.unknown')}
+                </dd>
+              </div>
             </dl>
 
             <div className="store-details-actions">
               <button
                 type="button"
-                className={installable ? 'store-primary-btn' : 'store-secondary-btn'}
-                onClick={() => installable ? onInstall(repo, selectedRelease?.tag_name ?? null) : onOpenSource(repo)}
+                className={selectedReleaseInstallable ? 'store-primary-btn' : 'store-secondary-btn'}
+                onClick={() => selectedReleaseInstallable
+                  ? onInstall(repo, selectedRelease?.tag_name ?? null)
+                  : onOpenSource(repo)}
               >
-                {t(installable ? 'store.details.installThisRelease' : 'store.action.source')}
+                {t(selectedReleaseInstallable ? 'store.details.installThisRelease' : 'store.action.source')}
               </button>
               <button type="button" className="store-secondary-btn" onClick={() => onFavorite(repo)}>
                 {favorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
@@ -234,25 +263,39 @@ function StoreAppDetailsModal({
                       <button
                         type="button"
                         className="store-secondary-btn"
+                        disabled={!selectedReleaseInstallable}
                         onClick={() => onInstall(repo, selectedRelease.tag_name)}
                       >
-                        {t('store.details.installThisRelease')}
+                        {t(selectedReleaseInstallable
+                          ? 'store.details.installThisRelease'
+                          : 'store.details.noCompatibleAsset')}
                       </button>
                     )}
                   </div>
 
                   <section className="store-details-assets">
                     <h5>{t('store.details.assets')}</h5>
-                    {selectedRelease?.assets.length ? selectedRelease.assets.map((asset) => {
-                      const kind = classifyReleaseAsset(asset)
+                    {selectedAssetCompatibility.length ? selectedAssetCompatibility.map(({ asset, compatibility }) => {
+                      const { architecture, compatible, kind, platform } = compatibility
                       return (
-                        <div key={asset.id} className={`store-details-asset store-details-asset--${kind}`}>
+                        <div
+                          key={asset.id}
+                          className={`store-details-asset store-details-asset--${kind} ${compatible ? 'compatible' : 'incompatible'}`}
+                        >
                           <div>
                             <strong>{asset.name}</strong>
-                            <span>{t(releaseAssetKindLabelKey(kind))}</span>
+                            <span>
+                              {t(releaseAssetKindLabelKey(kind))}
+                              {' · '}
+                              {t(releaseAssetPlatformLabelKey(platform))}
+                              {' · '}
+                              {t(releaseAssetArchitectureLabelKey(architecture))}
+                            </span>
                           </div>
                           <span>{formatBytes(asset.size)}</span>
-                          <span>{t('store.details.downloads', { count: asset.download_count.toLocaleString() })}</span>
+                          <span>
+                            {t(compatible ? 'store.compatibility.compatible' : 'store.compatibility.incompatible')}
+                          </span>
                         </div>
                       )
                     }) : (
