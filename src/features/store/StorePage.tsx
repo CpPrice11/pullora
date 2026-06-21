@@ -7,11 +7,12 @@ import StoreHero from './components/StoreHero'
 import StoreCarousel from './components/StoreCarousel'
 import StoreBrowse from './components/StoreBrowse'
 import StoreAppDetailsModal from './components/StoreAppDetailsModal'
-import { useStoreCatalog } from './hooks/useStoreCatalog'
+import StatePanel from '../../components/State/StatePanel'
+import { useSettings } from '../../hooks/useSettings'
+import { useOwnerStoreCatalog } from './hooks/useOwnerStoreCatalog'
 import {
   repoKey,
   socialPreviewUrl,
-  storeCategories,
   uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
@@ -22,6 +23,7 @@ import { useI18n } from '../../i18n'
 import './Store.css'
 
 interface StorePageProps {
+  onOpenSettings?: () => void
   onPreviewBackground?: (url: string | null) => void
 }
 
@@ -36,8 +38,10 @@ interface StoreInstallTarget {
   initialReleaseTag?: string | null
 }
 
-function StorePage({ onPreviewBackground }: StorePageProps) {
+function StorePage({ onOpenSettings, onPreviewBackground }: StorePageProps) {
   const { t } = useI18n()
+  const { settings, loading: settingsLoading } = useSettings()
+  const owner = settings.githubOwner?.trim()
   const [query, setQuery] = useState('')
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [browseTab, setBrowseTab] = useState<StoreBrowseTab>('popular')
@@ -47,41 +51,32 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
   const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
   const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
-  const [remoteBrowsingEnabled, setRemoteBrowsingEnabled] = useState(false)
-  const [catalogMode, setCatalogMode] = useState(false)
 
-  const catalog = useStoreCatalog(
+  const catalog = useOwnerStoreCatalog(
+    settingsLoading ? undefined : owner,
     storeSearchQuery,
     browseTab,
     installableFilter,
     projectFilter,
-    remoteBrowsingEnabled,
   )
   const heroItems = useMemo(() => {
-    const recommended = catalog.homeSections[0]?.items ?? []
-    const supplemental = catalog.homeSections.slice(1).flatMap((section) => section.items)
-    const candidates = uniqueRepos([
-      ...recommended,
-      ...supplemental,
-      ...catalog.fallbackRepos,
-    ])
+    const candidates = uniqueRepos(catalog.homeSections.flatMap((section) => section.items))
     return (projectFilter === 'all'
       ? candidates
       : candidates.filter(isStoreApplicationProject)
     ).slice(0, HERO_RECOMMENDATION_COUNT)
-  }, [catalog.fallbackRepos, catalog.homeSections, projectFilter])
+  }, [catalog.homeSections, projectFilter])
   const heroRepo = heroItems[heroIndex] ?? heroItems[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
   const spotlightItems = useMemo(() => {
-    const popular = catalog.homeSections.find((section) => section.id === 'popular')?.items ?? []
-    const candidates = uniqueRepos([...popular, ...catalog.fallbackRepos])
+    const candidates = uniqueRepos(catalog.homeSections.flatMap((section) => section.items))
     return (projectFilter === 'all'
       ? candidates
       : candidates.filter(isStoreApplicationProject)
     )
       .sort((left, right) => right.stargazers_count - left.stargazers_count)
       .slice(0, 6)
-  }, [catalog.fallbackRepos, catalog.homeSections, projectFilter])
+  }, [catalog.homeSections, projectFilter])
   const browseSelectedRepo = useMemo(() => {
     if (catalog.browseItems.length === 0) return undefined
     if (selectedRepo && catalog.browseItems.some((repo) => repoKey(repo) === repoKey(selectedRepo))) {
@@ -105,11 +100,6 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     if (heroIndex < heroItems.length) return
     setHeroIndex(0)
   }, [heroIndex, heroItems.length])
-
-  useEffect(() => {
-    if (!heroRepo) return
-    void catalog.checkInstallability(heroRepo)
-  }, [catalog.checkInstallability, heroRepo])
 
   useEffect(() => {
     if (!heroRepo || !heroKey) {
@@ -151,30 +141,15 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const submitSearch = (nextQuery = query) => {
     const trimmedQuery = nextQuery.trim()
-    if (!trimmedQuery) {
-      setQuery('')
-      setStoreSearchQuery('')
-      setCatalogMode(false)
-      setRemoteBrowsingEnabled(false)
-      return
-    }
     setStoreSearchQuery(trimmedQuery)
-    if (browseTab === 'favorites') {
-      setBrowseTab('popular')
-    }
     setInstallableFilter('all')
-    setProjectFilter('all')
     setSelectedRepo(undefined)
-    setRemoteBrowsingEnabled(true)
-    setCatalogMode(true)
     window.setTimeout(scrollToBrowse, 0)
   }
 
   const handleSearchChange = (value: string) => {
     setQuery(value)
-    if (browseTab === 'favorites') {
-      setBrowseTab('popular')
-    }
+    setStoreSearchQuery(value.trim())
     setInstallableFilter('all')
   }
 
@@ -183,24 +158,12 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     submitSearch()
   }
 
-  const handleCategory = (label: string) => {
-    setQuery(label)
-    setStoreSearchQuery(label.trim())
-    setBrowseTab('popular')
-    setInstallableFilter('all')
-    setSelectedRepo(undefined)
-    setRemoteBrowsingEnabled(true)
-    setCatalogMode(true)
-    window.setTimeout(scrollToBrowse, 0)
-  }
-
   const handleFavorites = () => {
     setQuery('')
     setStoreSearchQuery('')
     setBrowseTab('favorites')
     setInstallableFilter('all')
     setSelectedRepo(undefined)
-    setCatalogMode(true)
     window.setTimeout(scrollToBrowse, 0)
   }
 
@@ -211,8 +174,6 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
     setInstallableFilter('all')
     setProjectFilter('applications')
     setSelectedRepo(undefined)
-    setCatalogMode(false)
-    setRemoteBrowsingEnabled(false)
     window.setTimeout(() => {
       document.querySelector('.store-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 0)
@@ -220,35 +181,25 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const handleBrowseTabChange = (tab: StoreBrowseTab) => {
     setBrowseTab(tab)
-    if (tab !== 'favorites') {
-      setRemoteBrowsingEnabled(true)
-    }
   }
 
   const handleInstallableFilterChange = (filter: StoreInstallableFilter) => {
     setInstallableFilter(filter)
-    if (filter === 'installable') {
-      setRemoteBrowsingEnabled(true)
-    }
   }
 
   const handleProjectFilterChange = (filter: StoreProjectFilter) => {
     setProjectFilter(filter)
     setSelectedRepo(undefined)
-    if (filter === 'all') {
-      setRemoteBrowsingEnabled(true)
-    }
   }
 
   const handleRefresh = () => {
-    setRemoteBrowsingEnabled(true)
     void catalog.refreshAll()
   }
 
   return (
     <div className="page store-page">
       <div className="store-toolbar">
-        <form className={`store-search ${query || catalogMode ? 'store-search--has-query' : ''}`} onSubmit={handleSearchSubmit}>
+        <form className={`store-search ${query ? 'store-search--has-query' : ''}`} onSubmit={handleSearchSubmit}>
           <span className="visually-hidden">{t('store.searchLabel')}</span>
           <input
             id="store-search-input"
@@ -258,7 +209,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
             placeholder={t('store.searchPlaceholder')}
             onChange={(event) => handleSearchChange(event.target.value)}
           />
-          {(query || catalogMode) && (
+          {query && (
             <button
               type="button"
               className="store-search-clear"
@@ -296,7 +247,17 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         </div>
       )}
 
-      {!catalogMode && (
+      {!settingsLoading && !owner && (
+        <StatePanel
+          kind="empty"
+          title={t('store.noOwnerTitle')}
+          message={t('store.noOwnerText')}
+          actionLabel={onOpenSettings ? t('store.openSettings') : undefined}
+          onAction={onOpenSettings}
+        />
+      )}
+
+      {owner && (
         <>
       <StoreHero
         repo={heroRepo}
@@ -313,7 +274,8 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
       />
 
       <StoreCarousel
-        titleKey="store.section.spotlight"
+        titleKey="store.section.ownerProjects"
+        subtitleKey="store.section.ownerProjectsText"
         items={spotlightItems}
         favoriteKeys={catalog.favoriteKeys}
         installedByRepo={catalog.installedByRepo}
@@ -356,30 +318,8 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         onDetails={handleDetails}
       />
 
-      <section className="store-section store-categories-section">
-        <div className="store-section-head">
-          <h2>{t('store.section.categories')}</h2>
-        </div>
-        <div className="store-category-grid">
-          {storeCategories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              className={`store-category-tile store-category-tile--${category.id}`}
-              onClick={() => handleCategory(category.language ?? category.topic ?? category.title)}
-            >
-              <span className="store-category-icon" aria-hidden="true">{category.icon}</span>
-              <span>{category.title}</span>
-              <small>{t('store.category.projects', { count: category.estimate })}</small>
-            </button>
-          ))}
-        </div>
-      </section>
-        </>
-      )}
-
       <StoreBrowse
-        resultsMode={catalogMode}
+        resultsMode={Boolean(storeSearchQuery)}
         searchQuery={storeSearchQuery}
         items={catalog.browseItems}
         selectedRepo={browseSelectedRepo}
@@ -406,7 +346,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         onReturnHome={handleReturnHome}
       />
 
-      {!catalogMode && catalog.homeSections.slice(1).map((section) => (
+      {catalog.homeSections.slice(1).map((section) => (
         <StoreCarousel
           key={section.id}
           titleKey={section.titleKey}
@@ -423,6 +363,8 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
           onDetails={handleDetails}
         />
       ))}
+        </>
+      )}
 
       {detailsRepo && (
         <StoreAppDetailsModal

@@ -1,5 +1,5 @@
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
-import type { StoreInstallability } from '../hooks/useStoreCatalog'
+import type { StoreInstallability } from '../storeTypes'
 import StoreProjectCard from './StoreProjectCard'
 import { repoKey } from '../storeCatalog'
 import { useI18n } from '../../../i18n'
