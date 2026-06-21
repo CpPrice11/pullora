@@ -1,5 +1,5 @@
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
-import type { StoreBrowseTab, StoreInstallableFilter } from '../storeCatalog'
+import type { StoreBrowseTab, StoreInstallableFilter, StoreProjectFilter } from '../storeCatalog'
 import { repoKey } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
 import StoreProjectCard from './StoreProjectCard'
@@ -12,6 +12,7 @@ interface StoreBrowseProps {
   tabs: StoreBrowseTab[]
   activeTab: StoreBrowseTab
   installableFilter: StoreInstallableFilter
+  projectFilter: StoreProjectFilter
   loading: boolean
   loadingInstallability: boolean
   hasMore: boolean
@@ -21,6 +22,7 @@ interface StoreBrowseProps {
   projectArt: Record<string, ProjectArt>
   onTabChange: (tab: StoreBrowseTab) => void
   onFilterChange: (filter: StoreInstallableFilter) => void
+  onProjectFilterChange: (filter: StoreProjectFilter) => void
   onSelect: (repo: GitHubSearchResult) => void
   onFavorite: (repo: GitHubSearchResult) => void
   onInstall: (repo: GitHubSearchResult) => void
@@ -36,6 +38,7 @@ function StoreBrowse({
   tabs,
   activeTab,
   installableFilter,
+  projectFilter,
   loading,
   loadingInstallability,
   hasMore,
@@ -45,6 +48,7 @@ function StoreBrowse({
   projectArt,
   onTabChange,
   onFilterChange,
+  onProjectFilterChange,
   onSelect,
   onFavorite,
   onInstall,
@@ -76,21 +80,39 @@ function StoreBrowse({
             </button>
           ))}
         </div>
-        <div className="store-filter-toggle" role="group" aria-label={t('store.installableFilter')}>
-          <button
-            type="button"
-            className={installableFilter === 'all' ? 'active' : ''}
-            onClick={() => onFilterChange('all')}
-          >
-            {t('store.filter.all')}
-          </button>
-          <button
-            type="button"
-            className={installableFilter === 'installable' ? 'active' : ''}
-            onClick={() => onFilterChange('installable')}
-          >
-            {t('store.filter.installable')}
-          </button>
+        <div className="store-browse-filters">
+          <div className="store-filter-toggle" role="group" aria-label={t('store.projectFilter')}>
+            <button
+              type="button"
+              className={projectFilter === 'applications' ? 'active' : ''}
+              onClick={() => onProjectFilterChange('applications')}
+            >
+              {t('store.filter.applications')}
+            </button>
+            <button
+              type="button"
+              className={projectFilter === 'all' ? 'active' : ''}
+              onClick={() => onProjectFilterChange('all')}
+            >
+              {t('store.filter.allProjects')}
+            </button>
+          </div>
+          <div className="store-filter-toggle" role="group" aria-label={t('store.installableFilter')}>
+            <button
+              type="button"
+              className={installableFilter === 'all' ? 'active' : ''}
+              onClick={() => onFilterChange('all')}
+            >
+              {t('store.filter.all')}
+            </button>
+            <button
+              type="button"
+              className={installableFilter === 'installable' ? 'active' : ''}
+              onClick={() => onFilterChange('installable')}
+            >
+              {t('store.filter.installable')}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -15,7 +15,9 @@ import {
   uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
+  type StoreProjectFilter,
 } from './storeCatalog'
+import { isStoreApplicationProject } from './projectClassifier'
 import { useI18n } from '../../i18n'
 import './Store.css'
 
@@ -40,30 +42,45 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [browseTab, setBrowseTab] = useState<StoreBrowseTab>('popular')
   const [installableFilter, setInstallableFilter] = useState<StoreInstallableFilter>('all')
+  const [projectFilter, setProjectFilter] = useState<StoreProjectFilter>('applications')
   const [heroIndex, setHeroIndex] = useState(0)
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | undefined>()
   const [installTarget, setInstallTarget] = useState<StoreInstallTarget | null>(null)
   const [detailsRepo, setDetailsRepo] = useState<GitHubSearchResult | null>(null)
   const [remoteBrowsingEnabled, setRemoteBrowsingEnabled] = useState(false)
 
-  const catalog = useStoreCatalog(storeSearchQuery, browseTab, installableFilter, remoteBrowsingEnabled)
+  const catalog = useStoreCatalog(
+    storeSearchQuery,
+    browseTab,
+    installableFilter,
+    projectFilter,
+    remoteBrowsingEnabled,
+  )
   const heroItems = useMemo(() => {
     const recommended = catalog.homeSections[0]?.items ?? []
     const supplemental = catalog.homeSections.slice(1).flatMap((section) => section.items)
-    return uniqueRepos([
+    const candidates = uniqueRepos([
       ...recommended,
       ...supplemental,
       ...catalog.fallbackRepos,
-    ]).slice(0, HERO_RECOMMENDATION_COUNT)
-  }, [catalog.fallbackRepos, catalog.homeSections])
+    ])
+    return (projectFilter === 'all'
+      ? candidates
+      : candidates.filter(isStoreApplicationProject)
+    ).slice(0, HERO_RECOMMENDATION_COUNT)
+  }, [catalog.fallbackRepos, catalog.homeSections, projectFilter])
   const heroRepo = heroItems[heroIndex] ?? heroItems[0] ?? catalog.browseItems[0]
   const heroKey = heroRepo ? repoKey(heroRepo) : null
   const spotlightItems = useMemo(() => {
     const popular = catalog.homeSections.find((section) => section.id === 'popular')?.items ?? []
-    return uniqueRepos([...popular, ...catalog.fallbackRepos])
+    const candidates = uniqueRepos([...popular, ...catalog.fallbackRepos])
+    return (projectFilter === 'all'
+      ? candidates
+      : candidates.filter(isStoreApplicationProject)
+    )
       .sort((left, right) => right.stargazers_count - left.stargazers_count)
       .slice(0, 6)
-  }, [catalog.fallbackRepos, catalog.homeSections])
+  }, [catalog.fallbackRepos, catalog.homeSections, projectFilter])
   const browseSelectedRepo = useMemo(() => {
     if (catalog.browseItems.length === 0) return undefined
     if (selectedRepo && catalog.browseItems.some((repo) => repoKey(repo) === repoKey(selectedRepo))) {
@@ -89,6 +106,11 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   }, [heroIndex, heroItems.length])
 
   useEffect(() => {
+    if (!heroRepo) return
+    void catalog.checkInstallability(heroRepo)
+  }, [catalog.checkInstallability, heroRepo])
+
+  useEffect(() => {
     if (!heroRepo || !heroKey) {
       onPreviewBackground?.(null)
       return
@@ -104,6 +126,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
 
   const handleSelect = (repo: GitHubSearchResult) => {
     setSelectedRepo(repo)
+    void catalog.checkInstallability(repo)
   }
 
   const handleInstall = (repo: GitHubSearchResult, releaseTag?: string | null) => {
@@ -118,6 +141,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const handleDetails = (repo: GitHubSearchResult) => {
     setSelectedRepo(repo)
     setDetailsRepo(repo)
+    void catalog.checkInstallability(repo)
   }
 
   const handleOpenSource = (repo: GitHubSearchResult) => {
@@ -131,6 +155,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
       setBrowseTab('popular')
     }
     setInstallableFilter('all')
+    setProjectFilter('all')
     setSelectedRepo(undefined)
     setRemoteBrowsingEnabled(true)
     window.setTimeout(scrollToBrowse, 0)
@@ -169,6 +194,14 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
   const handleInstallableFilterChange = (filter: StoreInstallableFilter) => {
     setInstallableFilter(filter)
     if (filter === 'installable') {
+      setRemoteBrowsingEnabled(true)
+    }
+  }
+
+  const handleProjectFilterChange = (filter: StoreProjectFilter) => {
+    setProjectFilter(filter)
+    setSelectedRepo(undefined)
+    if (filter === 'all') {
       setRemoteBrowsingEnabled(true)
     }
   }
@@ -300,6 +333,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         tabs={catalog.browseTabs}
         activeTab={browseTab}
         installableFilter={installableFilter}
+        projectFilter={projectFilter}
         loading={catalog.loadingBrowse}
         loadingInstallability={catalog.loadingInstallability}
         hasMore={catalog.hasMoreBrowse}
@@ -309,6 +343,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
         projectArt={catalog.projectArt}
         onTabChange={handleBrowseTabChange}
         onFilterChange={handleInstallableFilterChange}
+        onProjectFilterChange={handleProjectFilterChange}
         onSelect={handleSelect}
         onFavorite={catalog.toggleFavorite}
         onInstall={handleInstall}
@@ -341,6 +376,7 @@ function StorePage({ onPreviewBackground }: StorePageProps) {
           art={catalog.projectArt[repoKey(detailsRepo)]}
           installedApp={catalog.installedByRepo.get(repoKey(detailsRepo))}
           installability={catalog.installability[repoKey(detailsRepo)]}
+          runtime={catalog.runtime}
           favorite={catalog.favoriteKeys.has(repoKey(detailsRepo))}
           onClose={() => setDetailsRepo(null)}
           onInstall={(repo, releaseTag) => {

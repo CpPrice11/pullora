@@ -4,6 +4,7 @@ import { projectArtCoverUrl } from '../../../services/projectArt'
 import { languageAccent, repoKey } from '../storeCatalog'
 import type { StoreInstallability } from '../hooks/useStoreCatalog'
 import { releaseAssetKindLabelKey, releaseAssetKindsForStatus } from '../assetClassifier'
+import { classifyStoreProject, storeProjectTypeLabelKey } from '../projectClassifier'
 import { useI18n } from '../../../i18n'
 
 interface StoreProjectCardProps {
@@ -41,17 +42,25 @@ function StoreProjectCard({
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 2)
-  const isInstallable = installability?.installable ?? repo.has_releases
+  const projectType = classifyStoreProject(repo)
+  const isInstallable = Boolean(installability?.installable)
   const isChecking = Boolean(installability?.checking)
+  const isIncompatible = Boolean(
+    installability?.checked
+    && !installability.installable
+    && installability.incompatibleAssetCount,
+  )
   const assetKinds = releaseAssetKindsForStatus(installability)
   const latestTag = installability?.latestTag ?? null
   const statusKey = installedApp
     ? 'store.status.installed'
     : isInstallable
       ? 'store.status.installable'
-      : isChecking
-        ? 'store.status.checking'
-        : 'store.status.source'
+      : isIncompatible
+        ? 'store.status.incompatible'
+        : isChecking
+          ? 'store.status.checking'
+          : 'store.status.source'
   const primaryLabel = installedApp
     ? 'store.action.installed'
     : isInstallable
@@ -85,6 +94,9 @@ function StoreProjectCard({
         </div>
         <div className="store-row-tags">
           {repo.language && <span>{repo.language}</span>}
+          <span className={`store-project-type store-project-type--${projectType}`}>
+            {t(storeProjectTypeLabelKey(projectType))}
+          </span>
           {assetKinds.map((kind) => (
             <span key={kind} className={`store-asset-badge store-asset-badge--${kind}`}>
               {t(releaseAssetKindLabelKey(kind))}
@@ -134,6 +146,9 @@ function StoreProjectCard({
         {repo.description && <p className="store-project-description">{repo.description}</p>}
         <div className="store-project-meta">
           {repo.language && <span>{repo.language}</span>}
+          <span className={`store-project-type store-project-type--${projectType}`}>
+            {t(storeProjectTypeLabelKey(projectType))}
+          </span>
           {assetKinds.map((kind) => (
             <span key={kind} className={`store-asset-badge store-asset-badge--${kind}`}>
               {t(releaseAssetKindLabelKey(kind))}

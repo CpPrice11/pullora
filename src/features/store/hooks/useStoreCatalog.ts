@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { platform as getPlatform, type Platform } from '@tauri-apps/plugin-os'
+import { arch as getArch, platform as getPlatform, type Platform } from '@tauri-apps/plugin-os'
 import type { FavoriteApp, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import {
   cancelQueuedGithubRequests,
@@ -14,8 +14,11 @@ import {
   classifyReleaseAsset,
   hasInstallableReleaseAsset,
   installableAssetsForRelease,
+  type ReleaseAssetArchitecture,
   type ReleaseAssetKind,
+  type ReleaseRuntime,
 } from '../assetClassifier'
+import { isStoreApplicationProject } from '../projectClassifier'
 import {
   browseOptions,
   fallbackStoreRepos,
@@ -27,6 +30,7 @@ import {
   type StoreBrowseTab,
   type StoreInstallableFilter,
   type StorePlatform,
+  type StoreProjectFilter,
 } from '../storeCatalog'
 
 export interface StoreInstallability {
@@ -37,6 +41,9 @@ export interface StoreInstallability {
   latestTag?: string | null
   assetKinds?: ReleaseAssetKind[]
   installableAssetCount?: number
+  incompatibleAssetCount?: number
+  platform?: ReleaseRuntime['platform']
+  architecture?: ReleaseAssetArchitecture
 }
 
 export interface StoreSection {
@@ -57,7 +64,7 @@ interface LibraryRepoRef {
   description?: string
 }
 
-const installabilityCacheKey = 'pullora.store.installability.v1'
+const installabilityCacheKey = 'pullora.store.installability.v2'
 const installabilityCacheTtlMs = 24 * 60 * 60 * 1000
 const installabilityAutoCheckLimit = 6
 const storeBrowseRequestGroup = 'store-browse'
@@ -100,19 +107,32 @@ function refKey(ref: LibraryRepoRef) {
   return `${ref.owner}/${ref.repo}`.toLowerCase()
 }
 
-function pickLatestInstallableRelease(releases: GitHubRelease[]) {
+function pickLatestInstallableRelease(releases: GitHubRelease[], runtime: ReleaseRuntime) {
   return releases.find((release) =>
     !release.draft &&
     !release.prerelease &&
-    hasInstallableReleaseAsset(release),
+    hasInstallableReleaseAsset(release, runtime),
   ) ?? releases.find((release) =>
     !release.draft &&
-    hasInstallableReleaseAsset(release),
+    hasInstallableReleaseAsset(release, runtime),
+  ) ?? releases.find((release) =>
+    !release.draft &&
+    !release.prerelease &&
+    release.assets.some((asset) => classifyReleaseAsset(asset) !== 'unsupported'),
+  ) ?? releases.find((release) =>
+    !release.draft &&
+    release.assets.some((asset) => classifyReleaseAsset(asset) !== 'unsupported'),
   ) ?? null
 }
 
-function installabilityFromRelease(release: GitHubRelease | null): StoreInstallability {
-  const assets = release ? installableAssetsForRelease(release) : []
+function installabilityFromRelease(
+  release: GitHubRelease | null,
+  runtime: ReleaseRuntime,
+): StoreInstallability {
+  const assets = release ? installableAssetsForRelease(release, runtime) : []
+  const supportedAssetCount = release?.assets.filter(
+    (asset) => classifyReleaseAsset(asset) !== 'unsupported',
+  ).length ?? 0
   return {
     checked: true,
     checking: false,
@@ -121,6 +141,9 @@ function installabilityFromRelease(release: GitHubRelease | null): StoreInstalla
     latestTag: release?.tag_name ?? null,
     assetKinds: [...new Set(assets.map(classifyReleaseAsset))],
     installableAssetCount: assets.length,
+    incompatibleAssetCount: Math.max(supportedAssetCount - assets.length, 0),
+    platform: runtime.platform,
+    architecture: runtime.architecture,
   }
 }
 
@@ -132,6 +155,9 @@ function toCachedInstallability(status: StoreInstallability): Omit<StoreInstalla
     latestTag: status.latestTag ?? null,
     assetKinds: status.assetKinds ?? [],
     installableAssetCount: status.installableAssetCount ?? 0,
+    incompatibleAssetCount: status.incompatibleAssetCount ?? 0,
+    platform: status.platform ?? null,
+    architecture: status.architecture ?? 'unknown',
   }
 }
 
@@ -163,12 +189,22 @@ function writeInstallabilityCache(cache: Record<string, StoreInstallabilityCache
   }
 }
 
-function readCachedInstallability(key: string, allowStale = false): StoreInstallability | null {
+function readCachedInstallability(
+  key: string,
+  runtime: ReleaseRuntime,
+  allowStale = false,
+): StoreInstallability | null {
   const entry = readInstallabilityCache()[key]
   if (!entry) return null
 
   const isFresh = Date.now() - entry.checkedAt <= installabilityCacheTtlMs
   if (!isFresh && !allowStale) return null
+  if (
+    entry.status.platform !== runtime.platform
+    || entry.status.architecture !== runtime.architecture
+  ) {
+    return null
+  }
 
   return fromCachedInstallability(entry.status)
 }
@@ -200,6 +236,29 @@ function readCurrentPlatform(): StorePlatform {
     return normalizeStorePlatform(getPlatform())
   } catch {
     return null
+  }
+}
+
+function normalizeStoreArchitecture(value: string | null | undefined): ReleaseAssetArchitecture {
+  switch (value) {
+    case 'x86_64':
+      return 'x64'
+    case 'aarch64':
+      return 'arm64'
+    case 'x86':
+      return 'x86'
+    case 'arm':
+      return 'arm'
+    default:
+      return 'unknown'
+  }
+}
+
+function readCurrentArchitecture(): ReleaseAssetArchitecture {
+  try {
+    return normalizeStoreArchitecture(getArch())
+  } catch {
+    return 'unknown'
   }
 }
 
@@ -287,9 +346,11 @@ export function useStoreCatalog(
   searchQuery: string,
   browseTab: StoreBrowseTab,
   installableFilter: StoreInstallableFilter,
+  projectFilter: StoreProjectFilter,
   remoteBrowsingEnabled = false,
 ) {
   const [currentPlatform] = useState<StorePlatform>(() => readCurrentPlatform())
+  const [currentArchitecture] = useState<ReleaseAssetArchitecture>(() => readCurrentArchitecture())
   const [homeSections] = useState<StoreSection[]>(() => fallbackHomeSections(currentPlatform))
   const [browseItemsRaw, setBrowseItemsRaw] = useState<GitHubSearchResult[]>(() =>
     filterReposForStorePlatform(fallbackStoreRepos, currentPlatform),
@@ -304,6 +365,10 @@ export function useStoreCatalog(
   const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
   const [installability, setInstallability] = useState<Record<string, StoreInstallability>>({})
   const browseRequestGeneration = useRef(0)
+  const runtime = useMemo<ReleaseRuntime>(() => ({
+    platform: currentPlatform,
+    architecture: currentArchitecture,
+  }), [currentArchitecture, currentPlatform])
   const platformFallbackRepos = useMemo(() => {
     return filterReposForStorePlatform(fallbackStoreRepos, currentPlatform)
   }, [currentPlatform])
@@ -342,18 +407,26 @@ export function useStoreCatalog(
     ])
       .filter((repo) => !libraryKeys.has(repoKey(repo)))
       .filter((repo) => filterReposForStorePlatform([repo], currentPlatform).length > 0)
+      .filter((repo) => projectFilter === 'all' || isStoreApplicationProject(repo))
 
     return candidates
       .map((repo) => ({ repo, score: scorePersonalizedRepo(repo, libraryRefs) }))
       .sort((left, right) => right.score - left.score || right.repo.stargazers_count - left.repo.stargazers_count)
       .slice(0, 12)
       .map((item) => item.repo)
-  }, [browseItemsRaw, currentPlatform, homeSections, libraryKeys, libraryRefs, platformFallbackRepos])
+  }, [browseItemsRaw, currentPlatform, homeSections, libraryKeys, libraryRefs, platformFallbackRepos, projectFilter])
 
   const personalized = personalizedItems.length > 0
 
   const visibleHomeSections = useMemo(() => {
-    if (personalizedItems.length === 0) return homeSections
+    const filteredSections = homeSections.map((section) => ({
+      ...section,
+      items: projectFilter === 'all'
+        ? section.items
+        : section.items.filter(isStoreApplicationProject),
+    }))
+
+    if (personalizedItems.length === 0) return filteredSections
 
     const recommended = {
       id: 'personalized',
@@ -361,9 +434,9 @@ export function useStoreCatalog(
       subtitleKey: 'store.section.personalizedText',
       items: personalizedItems,
     }
-    const rest = homeSections.filter((section) => section.id !== 'recommended')
+    const rest = filteredSections.filter((section) => section.id !== 'recommended')
     return [recommended, ...rest]
-  }, [homeSections, personalizedItems])
+  }, [homeSections, personalizedItems, projectFilter])
 
   const installedByRepo = useMemo(() => {
     return new Map(installedApps.map((app) => [installedKey(app), app]))
@@ -371,12 +444,12 @@ export function useStoreCatalog(
 
   const knownRepos = useMemo(() => {
     const repos = new Map<string, GitHubSearchResult>()
-    visibleHomeSections.forEach((section) => {
+    homeSections.forEach((section) => {
       section.items.forEach((repo) => repos.set(repoKey(repo), repo))
     })
     browseItemsRaw.forEach((repo) => repos.set(repoKey(repo), repo))
     return [...repos.values()]
-  }, [browseItemsRaw, visibleHomeSections])
+  }, [browseItemsRaw, homeSections])
 
   const favoriteRepos = useMemo(() => {
     return knownRepos.filter((repo) => favoriteKeys.has(repoKey(repo)))
@@ -387,14 +460,17 @@ export function useStoreCatalog(
   }, [installedByRepo, knownRepos])
 
   const browseItems = useMemo(() => {
-    const source = browseTab === 'favorites'
+    const tabSource = browseTab === 'favorites'
       ? favoriteRepos.filter((repo) => matchesLocalQuery(repo, searchQuery))
       : browseItemsRaw
+    const source = projectFilter === 'all'
+      ? tabSource
+      : tabSource.filter(isStoreApplicationProject)
 
     if (installableFilter === 'all' && browseTab !== 'releases') return source
 
     return source.filter((repo) => installability[repoKey(repo)]?.installable)
-  }, [browseItemsRaw, browseTab, favoriteRepos, installability, installableFilter, searchQuery])
+  }, [browseItemsRaw, browseTab, favoriteRepos, installability, installableFilter, projectFilter, searchQuery])
 
   const loadingInstallability = useMemo(() => {
     if (installableFilter !== 'installable' && browseTab !== 'releases') return false
@@ -482,7 +558,7 @@ export function useStoreCatalog(
     const current = installability[key]
     if (current?.checking || current?.checked) return current
 
-    const cached = readCachedInstallability(key)
+    const cached = readCachedInstallability(key, runtime)
     if (cached) {
       setInstallability((state) => ({ ...state, [key]: cached }))
       return cached
@@ -499,13 +575,13 @@ export function useStoreCatalog(
 
     try {
       const releases = await getReleases(repo.owner.login, repo.name)
-      const release = pickLatestInstallableRelease(releases)
-      const status = installabilityFromRelease(release)
+      const release = pickLatestInstallableRelease(releases, runtime)
+      const status = installabilityFromRelease(release, runtime)
       writeCachedInstallability(key, status)
       setInstallability((state) => ({ ...state, [key]: status }))
       return status
     } catch {
-      const cachedFallback = readCachedInstallability(key, true)
+      const cachedFallback = readCachedInstallability(key, runtime, true)
       const status = cachedFallback ?? {
         checked: false,
         checking: false,
@@ -516,7 +592,7 @@ export function useStoreCatalog(
       setInstallability((state) => ({ ...state, [key]: status }))
       return status
     }
-  }, [installability])
+  }, [installability, runtime])
 
   const toggleFavorite = useCallback(async (repo: GitHubSearchResult) => {
     const key = repoKey(repo)
@@ -596,9 +672,11 @@ export function useStoreCatalog(
     loadingInstallability,
     loadMoreBrowse,
     projectArt,
+    projectFilter,
     personalized,
     refreshAll,
     refreshLocalState,
     toggleFavorite,
+    runtime,
   }
 }
