@@ -3,4 +3,4 @@ pub mod assets;
 pub mod cache;
 pub mod models;
 
-pub use api::GitHubClient;
+pub use api::{GitHubClient, GitHubRateLimitStatus};

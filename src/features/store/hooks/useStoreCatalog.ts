@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { platform as getPlatform, type Platform } from '@tauri-apps/plugin-os'
 import type { FavoriteApp, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
-import { getReleases, searchPublicRepositories } from '../../../services/github'
+import {
+  cancelQueuedGithubRequests,
+  getReleases,
+  isGithubRequestCancelled,
+  searchPublicRepositories,
+} from '../../../services/github'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../../services/favorites'
 import { getInstalledApps } from '../../../services/installed'
 import { listProjectArt, projectArtKey } from '../../../services/projectArt'
@@ -18,7 +23,6 @@ import {
   matchesLocalQuery,
   repoKey,
   storeBrowseTabs,
-  storeHomeSections,
   uniqueRepos,
   type StoreBrowseTab,
   type StoreInstallableFilter,
@@ -55,8 +59,8 @@ interface LibraryRepoRef {
 
 const installabilityCacheKey = 'pullora.store.installability.v1'
 const installabilityCacheTtlMs = 24 * 60 * 60 * 1000
-const storeHomeInitialSectionLimit = 4
 const installabilityAutoCheckLimit = 6
+const storeBrowseRequestGroup = 'store-browse'
 
 function classifyStoreError(error: unknown) {
   const message = error instanceof Error
@@ -283,12 +287,15 @@ export function useStoreCatalog(
   searchQuery: string,
   browseTab: StoreBrowseTab,
   installableFilter: StoreInstallableFilter,
+  remoteBrowsingEnabled = false,
 ) {
-  const [homeSections, setHomeSections] = useState<StoreSection[]>([])
-  const [browseItemsRaw, setBrowseItemsRaw] = useState<GitHubSearchResult[]>([])
+  const [currentPlatform] = useState<StorePlatform>(() => readCurrentPlatform())
+  const [homeSections] = useState<StoreSection[]>(() => fallbackHomeSections(currentPlatform))
+  const [browseItemsRaw, setBrowseItemsRaw] = useState<GitHubSearchResult[]>(() =>
+    filterReposForStorePlatform(fallbackStoreRepos, currentPlatform),
+  )
   const [browsePage, setBrowsePage] = useState(1)
   const [hasMoreBrowse, setHasMoreBrowse] = useState(false)
-  const [loadingHome, setLoadingHome] = useState(false)
   const [loadingBrowse, setLoadingBrowse] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
@@ -296,8 +303,7 @@ export function useStoreCatalog(
   const [installedApps, setInstalledApps] = useState<InstalledApp[]>([])
   const [projectArt, setProjectArt] = useState<Record<string, ProjectArt>>({})
   const [installability, setInstallability] = useState<Record<string, StoreInstallability>>({})
-  const [currentPlatform] = useState<StorePlatform>(() => readCurrentPlatform())
-
+  const browseRequestGeneration = useRef(0)
   const platformFallbackRepos = useMemo(() => {
     return filterReposForStorePlatform(fallbackStoreRepos, currentPlatform)
   }, [currentPlatform])
@@ -385,7 +391,7 @@ export function useStoreCatalog(
       ? favoriteRepos.filter((repo) => matchesLocalQuery(repo, searchQuery))
       : browseItemsRaw
 
-    if (installableFilter === 'all') return source
+    if (installableFilter === 'all' && browseTab !== 'releases') return source
 
     return source.filter((repo) => installability[repoKey(repo)]?.installable)
   }, [browseItemsRaw, browseTab, favoriteRepos, installability, installableFilter, searchQuery])
@@ -413,48 +419,15 @@ export function useStoreCatalog(
     ))
   }, [])
 
-  const loadHome = useCallback(async () => {
-    setLoadingHome(true)
-    setError(null)
-    try {
-      const sectionsToLoad = storeHomeSections.slice(0, storeHomeInitialSectionLimit)
-      const settled = await Promise.allSettled(sectionsToLoad.map(async (section) => {
-        const result = await searchPublicRepositories(section.options.query ?? '', 1, {
-          sort: section.options.sort,
-          language: section.options.language,
-          topic: section.options.topic,
-          releasesOnly: section.options.releasesOnly,
-        })
-        return {
-          id: section.id,
-          titleKey: section.titleKey,
-          subtitleKey: section.subtitleKey,
-          items: filterReposForStorePlatform(result.items, currentPlatform).slice(0, 12),
-        }
-      }))
-      const sections = settled
-        .filter((item): item is PromiseFulfilledResult<StoreSection> => item.status === 'fulfilled')
-        .map((item) => item.value)
+  const loadBrowse = useCallback(async (page = 1, forceRefresh = false) => {
+    const requestGeneration = page === 1
+      ? ++browseRequestGeneration.current
+      : browseRequestGeneration.current
 
-      if (sections.length > 0) {
-        setHomeSections(sections)
-      } else {
-        setHomeSections((current) => current.length > 0 ? current : fallbackHomeSections(currentPlatform))
-      }
-
-      const rejected = settled.find((item): item is PromiseRejectedResult => item.status === 'rejected')
-      if (rejected) {
-        setError(classifyStoreError(rejected.reason))
-      }
-    } catch (error) {
-      setHomeSections((current) => current.length > 0 ? current : fallbackHomeSections(currentPlatform))
-      setError(classifyStoreError(error))
-    } finally {
-      setLoadingHome(false)
+    if (page === 1) {
+      cancelQueuedGithubRequests(storeBrowseRequestGroup)
     }
-  }, [currentPlatform])
 
-  const loadBrowse = useCallback(async (page = 1) => {
     if (browseTab === 'favorites') {
       setBrowseItemsRaw([])
       setBrowsePage(1)
@@ -476,12 +449,21 @@ export function useStoreCatalog(
         language: options.language,
         topic: options.topic,
         releasesOnly: options.releasesOnly,
+        forceRefresh,
+        requestGroup: storeBrowseRequestGroup,
       })
+      if (requestGeneration !== browseRequestGeneration.current) return
       const platformItems = filterReposForStorePlatform(result.items, currentPlatform)
       setBrowseItemsRaw((current) => page === 1 ? platformItems : [...current, ...platformItems])
       setBrowsePage(result.page)
       setHasMoreBrowse(result.has_more)
     } catch (error) {
+      if (
+        requestGeneration !== browseRequestGeneration.current
+        || isGithubRequestCancelled(error)
+      ) {
+        return
+      }
       if (page === 1) {
         setBrowseItemsRaw(platformFallbackRepos.filter((repo) => matchesLocalQuery(repo, searchQuery)))
         setBrowsePage(1)
@@ -489,7 +471,9 @@ export function useStoreCatalog(
       }
       setError(classifyStoreError(error))
     } finally {
-      setLoadingBrowse(false)
+      if (requestGeneration === browseRequestGeneration.current) {
+        setLoadingBrowse(false)
+      }
     }
   }, [browseTab, currentPlatform, platformFallbackRepos, searchQuery])
 
@@ -569,11 +553,10 @@ export function useStoreCatalog(
   const refreshAll = useCallback(async () => {
     setInstallability({})
     await Promise.all([
-      loadHome(),
-      loadBrowse(1),
+      loadBrowse(1, true),
       refreshLocalState(),
     ])
-  }, [loadBrowse, loadHome, refreshLocalState])
+  }, [loadBrowse, refreshLocalState])
 
   const loadMoreBrowse = useCallback(() => {
     if (loadingBrowse || !hasMoreBrowse || browseTab === 'favorites') return
@@ -582,19 +565,19 @@ export function useStoreCatalog(
 
   useEffect(() => {
     void refreshLocalState()
-    void loadHome()
-  }, [loadHome, refreshLocalState])
+  }, [refreshLocalState])
 
   useEffect(() => {
+    if (!remoteBrowsingEnabled) return
     void loadBrowse(1)
-  }, [loadBrowse])
+  }, [loadBrowse, remoteBrowsingEnabled])
 
   useEffect(() => {
-    if (installableFilter !== 'installable') return
+    if (installableFilter !== 'installable' && browseTab !== 'releases') return
     browseItemsRaw.slice(0, installabilityAutoCheckLimit).forEach((repo) => {
       void checkInstallability(repo)
     })
-  }, [browseItemsRaw, checkInstallability, installableFilter])
+  }, [browseItemsRaw, browseTab, checkInstallability, installableFilter])
 
   return {
     browseItems,
@@ -610,7 +593,6 @@ export function useStoreCatalog(
     installedByRepo,
     installedRepos,
     loadingBrowse,
-    loadingHome,
     loadingInstallability,
     loadMoreBrowse,
     projectArt,

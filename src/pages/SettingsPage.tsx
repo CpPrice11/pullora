@@ -3,9 +3,13 @@ import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
 import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
-import { clearGithubCache } from '../services/github'
+import {
+  clearGithubCache,
+  getGithubQueueStatus,
+  getGithubRateLimitStatus,
+} from '../services/github'
 import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
-import type { LauncherStorageInfo } from '../types'
+import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { appearanceCssText, applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
@@ -36,6 +40,14 @@ function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function emptyRateLimitStatus(): GitHubRateLimitStatus {
+  const emptyBucket = { remaining: null, limit: null, resetAt: null }
+  return {
+    core: { ...emptyBucket },
+    search: { ...emptyBucket },
+  }
 }
 
 function readRecentGithubOwners() {
@@ -72,7 +84,7 @@ function SettingsPage({
   onClearLauncherBackground,
   onClose,
 }: SettingsPageProps) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
   const [activeSection, setActiveSection] = useState('general')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -84,6 +96,8 @@ function SettingsPage({
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
+  const [githubRateLimit, setGithubRateLimit] = useState<GitHubRateLimitStatus>(emptyRateLimitStatus)
+  const [githubQueue, setGithubQueue] = useState<GitHubQueueStatus>(() => getGithubQueueStatus())
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
   const [registryBusy, setRegistryBusy] = useState(false)
   const resetModalRef = useRef<HTMLElement | null>(null)
@@ -127,6 +141,21 @@ function SettingsPage({
     getLauncherStorageInfo()
       .then(setStorageInfo)
       .catch(() => {})
+  }, [activeSection])
+
+  useEffect(() => {
+    if (activeSection !== 'maintenance') return
+
+    const refreshGithubDiagnostics = () => {
+      setGithubQueue(getGithubQueueStatus())
+      getGithubRateLimitStatus()
+        .then(setGithubRateLimit)
+        .catch(() => {})
+    }
+
+    refreshGithubDiagnostics()
+    const timer = window.setInterval(refreshGithubDiagnostics, 1500)
+    return () => window.clearInterval(timer)
   }, [activeSection])
 
   const showSavedState = () => {
@@ -292,6 +321,8 @@ function SettingsPage({
   const handleClearCache = async () => {
     try {
       await clearGithubCache()
+      setGithubRateLimit(emptyRateLimitStatus())
+      setGithubQueue(getGithubQueueStatus())
       setActionMessage(t('settings.cacheCleared'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cacheError'))
@@ -354,6 +385,19 @@ function SettingsPage({
       `backupPath: ${storageInfo?.backupPath ?? 'not checked'}`,
       `backupCount: ${storageInfo?.backupCount ?? 'not checked'}`,
       `cleanupBytes: ${storageInfo?.cleanupBytes ?? 'not checked'}`,
+      `githubCoreRemaining: ${githubRateLimit.core.remaining ?? 'unknown'}`,
+      `githubCoreLimit: ${githubRateLimit.core.limit ?? 'unknown'}`,
+      `githubCoreResetAt: ${githubRateLimit.core.resetAt ?? 'unknown'}`,
+      `githubSearchRemaining: ${githubRateLimit.search.remaining ?? 'unknown'}`,
+      `githubSearchLimit: ${githubRateLimit.search.limit ?? 'unknown'}`,
+      `githubSearchResetAt: ${githubRateLimit.search.resetAt ?? 'unknown'}`,
+      `githubQueueActive: ${githubQueue.active}`,
+      `githubQueueWaiting: ${githubQueue.queued}`,
+      `githubQueueConcurrency: ${githubQueue.concurrency}`,
+      `githubQueueHighPriority: ${githubQueue.highPriority}`,
+      `githubQueueNormalPriority: ${githubQueue.normalPriority}`,
+      `githubQueueLowPriority: ${githubQueue.lowPriority}`,
+      `githubQueuePausedUntil: ${githubQueue.pausedUntil ?? 'not paused'}`,
     ]
 
     try {
@@ -437,6 +481,36 @@ function SettingsPage({
     if (event.key === 'Enter') {
       event.currentTarget.blur()
     }
+  }
+
+  const formatRateLimit = (bucket: GitHubRateLimitBucket) => {
+    if (bucket.remaining === null || bucket.limit === null) {
+      return t('settings.githubLimitUnknown')
+    }
+    return t('settings.githubLimitValue', {
+      remaining: bucket.remaining,
+      limit: bucket.limit,
+    })
+  }
+
+  const formatRateLimitReset = (bucket: GitHubRateLimitBucket) => {
+    if (!bucket.resetAt) return t('settings.notChecked')
+    return new Date(bucket.resetAt * 1000).toLocaleTimeString(
+      language === 'en' ? 'en-US' : 'uk-UA',
+      { hour: '2-digit', minute: '2-digit' },
+    )
+  }
+
+  const formatQueuePause = () => {
+    if (!githubQueue.pausedUntil || githubQueue.pausedUntil <= Date.now()) {
+      return t('settings.githubQueueRunning')
+    }
+    return t('settings.githubQueuePausedUntil', {
+      time: new Date(githubQueue.pausedUntil).toLocaleTimeString(
+        language === 'en' ? 'en-US' : 'uk-UA',
+        { hour: '2-digit', minute: '2-digit' },
+      ),
+    })
   }
 
   const handleLanguageChange = async (language: AppLanguage) => {
@@ -641,6 +715,42 @@ function SettingsPage({
                 <div>
                   <dt>{t('settings.autoCheck')}</dt>
                   <dd>{settings.autoUpdateCheck ? t('settings.yes') : t('settings.no')}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubCoreLimit')}</dt>
+                  <dd>{formatRateLimit(githubRateLimit.core)}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubSearchLimit')}</dt>
+                  <dd>{formatRateLimit(githubRateLimit.search)}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubCoreReset')}</dt>
+                  <dd>{formatRateLimitReset(githubRateLimit.core)}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubSearchReset')}</dt>
+                  <dd>{formatRateLimitReset(githubRateLimit.search)}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubQueue')}</dt>
+                  <dd>{t('settings.githubQueueValue', {
+                    active: githubQueue.active,
+                    queued: githubQueue.queued,
+                    concurrency: githubQueue.concurrency,
+                  })}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubQueuePriority')}</dt>
+                  <dd>{t('settings.githubQueuePriorityValue', {
+                    high: githubQueue.highPriority,
+                    normal: githubQueue.normalPriority,
+                    low: githubQueue.lowPriority,
+                  })}</dd>
+                </div>
+                <div>
+                  <dt>{t('settings.githubQueueState')}</dt>
+                  <dd>{formatQueuePause()}</dd>
                 </div>
               </dl>
             </div>

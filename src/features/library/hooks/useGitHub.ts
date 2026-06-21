@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type { GitHubSearchResult, GitHubRelease } from '../../../types'
 import {
-  clearGithubCache,
+  cancelQueuedGithubRequests,
+  isGithubRequestCancelled,
   listOwnerRepositories,
   getReleases,
   searchPublicRepositories,
@@ -53,10 +54,12 @@ export function useOwnerRepositories(owner: string | undefined, releasesOnly = f
 
       setState((prev) => ({ ...prev, loading: true, error: null }))
       try {
-        if (forceRefresh) {
-          await clearGithubCache()
-        }
-        const data = await listOwnerRepositories(normalizedOwner, page, releasesOnly)
+        const data = await listOwnerRepositories(
+          normalizedOwner,
+          page,
+          releasesOnly,
+          forceRefresh,
+        )
         const loadedAt = new Date()
         setState((prev) => ({
           repositories:
@@ -103,6 +106,8 @@ export function useOwnerRepositories(owner: string | undefined, releasesOnly = f
 }
 
 export function usePublicRepositories(searchQuery = '') {
+  const requestGeneration = useRef(0)
+  const requestGroup = 'library-public-search'
   const [state, setState] = useState<OwnerRepositoriesState>({
     repositories: [],
     loading: false,
@@ -117,12 +122,15 @@ export function usePublicRepositories(searchQuery = '') {
 
   const loadRepositories = useCallback(
     async (page = 1, forceRefresh = false): Promise<GitHubSearchResult[] | null> => {
+      const generation = page === 1 ? ++requestGeneration.current : requestGeneration.current
+      if (page === 1) cancelQueuedGithubRequests(requestGroup)
       setState((prev) => ({ ...prev, loading: true, error: null }))
       try {
-        if (forceRefresh) {
-          await clearGithubCache()
-        }
-        const data = await searchPublicRepositories(searchQuery, page)
+        const data = await searchPublicRepositories(searchQuery, page, {
+          forceRefresh,
+          requestGroup,
+        })
+        if (generation !== requestGeneration.current) return null
         const loadedAt = new Date()
         setState((prev) => ({
           repositories:
@@ -140,6 +148,9 @@ export function usePublicRepositories(searchQuery = '') {
         }))
         return data.items
       } catch (err) {
+        if (generation !== requestGeneration.current || isGithubRequestCancelled(err)) {
+          return null
+        }
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -178,10 +189,7 @@ export function useReleases(owner: string, repo: string) {
     setLoading(true)
     setError(null)
     try {
-      if (forceRefresh) {
-        await clearGithubCache()
-      }
-      const data = await getReleases(owner, repo)
+      const data = await getReleases(owner, repo, forceRefresh)
       setReleases(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch releases')

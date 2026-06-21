@@ -239,7 +239,6 @@ function LibraryPage({
   const publicRepositories = usePublicRepositories(isLibraryMode ? '' : storeSearchQuery)
   const {
     state,
-    loadRepositories,
     refreshRepositories,
     loadMore,
   } = isLibraryMode ? ownerRepositories : publicRepositories
@@ -483,12 +482,6 @@ function LibraryPage({
 
     return () => window.clearTimeout(timer)
   }, [isLibraryMode, query])
-
-  useEffect(() => {
-    if (!settingsLoading) {
-      loadRepositories(1)
-    }
-  }, [settingsLoading, loadRepositories])
 
   useEffect(() => {
     listProjectArt()

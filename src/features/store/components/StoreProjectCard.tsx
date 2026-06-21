@@ -41,7 +41,7 @@ function StoreProjectCard({
   const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 2)
-  const isInstallable = Boolean(installability?.installable)
+  const isInstallable = installability?.installable ?? repo.has_releases
   const isChecking = Boolean(installability?.checking)
   const assetKinds = releaseAssetKindsForStatus(installability)
   const latestTag = installability?.latestTag ?? null

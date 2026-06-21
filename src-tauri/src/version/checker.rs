@@ -24,7 +24,7 @@ pub async fn check_all_updates(client: &GitHubClient) -> Result<Vec<UpdateAvaila
         if app.active_version.is_empty() {
             continue;
         }
-        match client.get_releases(&app.owner, &app.repo).await {
+        match client.get_releases(&app.owner, &app.repo, false).await {
             Ok(releases) => {
                 // Find the latest non-draft, non-prerelease
                 if let Some(latest) = releases.iter().find(|r| !r.draft && !r.prerelease) {

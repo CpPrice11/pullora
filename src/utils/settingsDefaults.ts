@@ -121,7 +121,7 @@ export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 2,
   installationPath: '',
-  autoUpdateCheck: true,
+  autoUpdateCheck: false,
   checkIntervalHours: 24,
   includePrereleases: false,
   assetStrategy: 'portableFirst',

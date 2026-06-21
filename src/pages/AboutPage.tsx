@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { clearGithubCache, getReleases } from '../services/github'
+import { getReleases } from '../services/github'
 import {
   cleanupLauncherUpdateFiles,
   getLauncherStorageInfo,
@@ -17,7 +17,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.2.0'
+const FALLBACK_CURRENT_VERSION = 'v5.2.1'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -129,13 +129,12 @@ function AboutPage() {
     }
   }
 
-  const loadLauncherReleases = async () => {
+  const loadLauncherReleases = async (forceRefresh = false) => {
     setRefreshState('idle')
     setLoadingReleases(true)
     setReleaseLoadError(null)
     try {
-      await clearGithubCache()
-      const items = await getReleases(LAUNCHER_OWNER, LAUNCHER_REPO)
+      const items = await getReleases(LAUNCHER_OWNER, LAUNCHER_REPO, forceRefresh)
       setReleases(items)
       setInstallError(null)
       setLastRefreshedAt(new Date())
@@ -366,7 +365,7 @@ function AboutPage() {
             </div>
           </div>
           <div className="about-panel-toolbar" aria-label={t('about.launcherActions')}>
-            <button type="button" className="secondary-btn" onClick={loadLauncherReleases} disabled={loadingReleases || installingVersion !== null}>
+            <button type="button" className="secondary-btn" onClick={() => void loadLauncherReleases(true)} disabled={loadingReleases || installingVersion !== null}>
               {loadingReleases ? t('library.refreshing') : t('library.refresh')}
             </button>
             <button
@@ -384,7 +383,7 @@ function AboutPage() {
                 <strong>{installError}</strong>
                 <span>{t('about.recoveryHint')}</span>
               </div>
-              <button type="button" onClick={loadLauncherReleases}>
+              <button type="button" onClick={() => void loadLauncherReleases(true)}>
                 {t('about.retryRefresh')}
               </button>
             </div>
@@ -397,7 +396,7 @@ function AboutPage() {
               details={releaseLoadError}
               detailsLabel={t('state.details')}
               actionLabel={t('about.retry')}
-              onAction={loadLauncherReleases}
+              onAction={() => void loadLauncherReleases(true)}
             />
           )}
           {loadingReleases && (
@@ -409,7 +408,7 @@ function AboutPage() {
               title={t('about.noReleases')}
               message={t('state.launcherVersionsEmptyText')}
               actionLabel={t('about.retry')}
-              onAction={loadLauncherReleases}
+              onAction={() => void loadLauncherReleases(true)}
             />
           )}
           {!loadingReleases && releases.length > 0 && filteredReleases.length === 0 && (

@@ -55,7 +55,7 @@ function StoreHero({
 
   const accent = languageAccent(repo.language)
   const topics = (repo.topics ?? []).slice(0, 4)
-  const isInstallable = Boolean(installability?.installable)
+  const isInstallable = installability?.installable ?? repo.has_releases
   const assetKinds = releaseAssetKindsForStatus(installability)
   const latestTag = installability?.latestTag ?? null
   const statusKey = installedApp

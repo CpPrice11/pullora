@@ -55,10 +55,6 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
     None
 }
 
-pub fn is_installable_asset_name(file_name: &str) -> bool {
-    classify_install_asset_name(file_name).is_some()
-}
-
 #[cfg(test)]
 mod tests {
     use super::{classify_install_asset_name, InstallAssetKind};
@@ -98,15 +94,5 @@ mod tests {
             classify_install_asset_name("tool.AppImage"),
             Some(InstallAssetKind::Portable)
         );
-    }
-
-    #[test]
-    fn installability_matches_classifier() {
-        assert!(super::is_installable_asset_name("app.exe"));
-        assert!(super::is_installable_asset_name("app-setup.exe"));
-        assert!(super::is_installable_asset_name("app.msi"));
-        assert!(super::is_installable_asset_name("app-windows.zip"));
-        assert!(!super::is_installable_asset_name("source-code.zip"));
-        assert!(!super::is_installable_asset_name("readme.md"));
     }
 }

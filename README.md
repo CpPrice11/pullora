@@ -41,7 +41,7 @@ npm run tauri-build
 Перевірка metadata та release-readiness:
 
 ```powershell
-npm run check:release -- -Version 5.2.0 -RcReadiness -SkipArtifacts
+npm run check:release -- -Version 5.2.1 -RcReadiness -SkipArtifacts
 ```
 
 ## Release Policy

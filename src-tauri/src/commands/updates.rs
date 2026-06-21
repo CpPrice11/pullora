@@ -23,8 +23,7 @@ pub async fn get_launcher_version() -> Result<String, String> {
 
 #[tauri::command]
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateAvailable>, String> {
-    let client = state.github_client.lock().await;
-    check_all_updates(&client).await
+    check_all_updates(&state.github_client).await
 }
 
 #[tauri::command]
