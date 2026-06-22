@@ -27,18 +27,16 @@ function Layout({
 }: LayoutProps) {
   return (
     <div
-      className={`layout sam-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
+      className={`layout fluent-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
     >
       <div
-        className={`sam-background ${backgroundImage ? 'is-visible' : ''}`}
+        className={`fluent-background ${backgroundImage ? 'is-visible' : ''}`}
         style={backgroundImage ? { backgroundImage: toCssUrl(backgroundImage) } : undefined}
         aria-hidden="true"
       />
-      <div className="sam-backdrop" aria-hidden="true" />
-      <header className="sam-titlebar">
-        <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
-      </header>
+      <div className="fluent-backdrop" aria-hidden="true" />
       <div className="layout-container">
+        <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
         <main className="layout-content" key={contentKey ?? activeTab}>
           {children}
         </main>
