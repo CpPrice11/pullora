@@ -1,4 +1,5 @@
 import React from 'react'
+import Header from './Header'
 import Sidebar from './Sidebar'
 import './Layout.css'
 
@@ -27,16 +28,18 @@ function Layout({
 }: LayoutProps) {
   return (
     <div
-      className={`layout fluent-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
+      className={`layout cinematic-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
     >
       <div
-        className={`fluent-background ${backgroundImage ? 'is-visible' : ''}`}
+        className={`cinematic-background ${backgroundImage ? 'is-visible' : ''}`}
         style={backgroundImage ? { backgroundImage: toCssUrl(backgroundImage) } : undefined}
         aria-hidden="true"
       />
-      <div className="fluent-backdrop" aria-hidden="true" />
-      <div className="layout-container">
+      <div className="cinematic-backdrop" aria-hidden="true" />
+      <Header>
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
+      </Header>
+      <div className="layout-container">
         <main className="layout-content" key={contentKey ?? activeTab}>
           {children}
         </main>

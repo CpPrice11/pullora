@@ -45,6 +45,11 @@ function repoLookupKey(owner: string, repo: string) {
   return `${owner}/${repo}`.toLowerCase()
 }
 
+function isLauncherRepository(owner: string, repo: string) {
+  return owner.trim().toLowerCase() === 'cpprice11' &&
+    repo.trim().toLowerCase() === 'pullora'
+}
+
 function syntheticRepoId(owner: string, repo: string) {
   const key = repoLookupKey(owner, repo)
   let hash = 0
@@ -535,13 +540,18 @@ function LibraryPage({
 
   const libraryRepositories = useMemo(() => {
     const reposByKey = new Map(
-      state.repositories.map((repo) => [repoLookupKey(repo.owner.login, repo.name), repo]),
+      state.repositories
+        .filter((repo) => !isLauncherRepository(repo.owner.login, repo.name))
+        .map((repo) => [repoLookupKey(repo.owner.login, repo.name), repo]),
     )
     const favoritesByKey = new Map(
-      favorites.map((favorite) => [repoLookupKey(favorite.owner, favorite.repo), favorite]),
+      favorites
+        .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
+        .map((favorite) => [repoLookupKey(favorite.owner, favorite.repo), favorite]),
     )
 
     installedApps.forEach((app) => {
+      if (isLauncherRepository(app.owner, app.repo)) return
       const key = repoLookupKey(app.owner, app.repo)
       if (!reposByKey.has(key)) {
         reposByKey.set(key, makeInstalledRepository(app, favoritesByKey.get(key)))
@@ -549,6 +559,7 @@ function LibraryPage({
     })
 
     favorites.forEach((favorite) => {
+      if (isLauncherRepository(favorite.owner, favorite.repo)) return
       const key = repoLookupKey(favorite.owner, favorite.repo)
       if (!reposByKey.has(key)) {
         reposByKey.set(key, makeFavoriteRepository(favorite))
