@@ -1893,32 +1893,21 @@
 
 .about-hero-mark {
   align-items: center;
-  background: linear-gradient(135deg, #008df0, #54d5ff);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   display: flex;
   height: 48px;
   justify-content: center;
+  overflow: hidden;
   width: 48px;
 }
 
-.about-hero-mark span {
-  border: 3px solid rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
-  height: 20px;
-  position: relative;
-  width: 20px;
-}
-
-.about-hero-mark span::after {
-  background: #ffffff;
-  border-radius: 999px;
-  content: '';
-  height: 8px;
-  position: absolute;
-  right: -8px;
-  top: -8px;
-  width: 8px;
+.about-hero-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .about-hero-main h3 {
