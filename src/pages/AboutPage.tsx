@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import appIcon from '../../src-tauri/icons/128x128.png'
 import { getReleases } from '../services/github'
 import {
   cleanupLauncherUpdateFiles,
@@ -17,7 +18,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.2.7'
+const FALLBACK_CURRENT_VERSION = 'v5.2.8'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -309,7 +310,7 @@ function AboutPage() {
 
       <section className="about-hero">
         <div className="about-hero-mark" aria-hidden="true">
-          <span />
+          <img src={appIcon} alt="" />
         </div>
         <div className="about-hero-main">
           <h3>Pullora</h3>

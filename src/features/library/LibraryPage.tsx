@@ -1467,39 +1467,39 @@ function LibraryPage({
 
             {renderLibraryTrustPanel()}
 
-            {state.error && !state.isStale && (
-              <StatePanel
-                kind="error"
-                title={t(libraryErrorTitleKey(libraryErrorKind))}
-                message={t(libraryErrorTextKey(libraryErrorKind))}
-                details={state.error}
-                detailsLabel={t('state.details')}
-                actionLabel={t('library.tryAgain')}
-                onAction={handleRefresh}
-              />
-            )}
-
-            {installedLoadError && (
-              <StatePanel
-                kind="error"
-                title={t('state.installedErrorTitle')}
-                message={t('library.installedStatusErrorText')}
-                details={installedLoadError}
-                detailsLabel={t('state.details')}
-                actionLabel={t('library.tryAgain')}
-                onAction={() => refreshInstalledApps()}
-              />
-            )}
-
-            {launchError && (
-              <StatePanel
-                kind="error"
-                title={t('state.launchErrorTitle')}
-                message={launchError}
-              />
-            )}
-
             <div className="search-results">
+              {state.error && !state.isStale && (
+                <StatePanel
+                  kind="error"
+                  title={t(libraryErrorTitleKey(libraryErrorKind))}
+                  message={t(libraryErrorTextKey(libraryErrorKind))}
+                  details={state.error}
+                  detailsLabel={t('state.details')}
+                  actionLabel={t('library.tryAgain')}
+                  onAction={handleRefresh}
+                />
+              )}
+
+              {installedLoadError && (
+                <StatePanel
+                  kind="error"
+                  title={t('state.installedErrorTitle')}
+                  message={t('library.installedStatusErrorText')}
+                  details={installedLoadError}
+                  detailsLabel={t('state.details')}
+                  actionLabel={t('library.tryAgain')}
+                  onAction={() => refreshInstalledApps()}
+                />
+              )}
+
+              {launchError && (
+                <StatePanel
+                  kind="error"
+                  title={t('state.launchErrorTitle')}
+                  message={launchError}
+                />
+              )}
+
               <div className="library-results-header" aria-hidden="true">
                 <span>{t('library.name')}</span>
                 <span>{t('nav.source')}</span>
