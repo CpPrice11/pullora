@@ -62,38 +62,29 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { t } = useI18n()
 
   return (
-    <aside className="sidebar">
-      <div className="fluent-brand" aria-label="Pullora">
-        <span className="fluent-brand-mark" aria-hidden="true" />
-        <span className="fluent-brand-copy">
-          <strong>Pullora</strong>
-          <small>GitHub launcher</small>
-        </span>
-      </div>
-      <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
-        {navItems.map((item) => {
-          const label = t(item.labelKey)
+    <nav className="sidebar-nav header-nav" aria-label={t('nav.navigation')}>
+      {navItems.map((item) => {
+        const label = t(item.labelKey)
 
-          return (
-            <button
-              key={item.id}
-              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => onTabChange(item.id)}
-              title={label}
-              aria-current={activeTab === item.id ? 'page' : undefined}
-              aria-label={label}
-            >
-              <span className="nav-icon" aria-hidden="true">
-                <NavIcon name={item.icon} />
-              </span>
-              <span className="nav-text">
-                <span className="nav-label">{label}</span>
-              </span>
-            </button>
-          )
-        })}
-      </nav>
-    </aside>
+        return (
+          <button
+            key={item.id}
+            className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+            onClick={() => onTabChange(item.id)}
+            title={label}
+            aria-current={activeTab === item.id ? 'page' : undefined}
+            aria-label={label}
+          >
+            <span className="nav-icon" aria-hidden="true">
+              <NavIcon name={item.icon} />
+            </span>
+            <span className="nav-text">
+              <span className="nav-label">{label}</span>
+            </span>
+          </button>
+        )
+      })}
+    </nav>
   )
 }
 

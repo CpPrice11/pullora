@@ -35,6 +35,14 @@ pub struct GitHubClient {
     rate_limit: Arc<Mutex<RateLimitState>>,
 }
 
+fn remove_launcher_repository(mut data: OwnerRepositoriesResponse) -> OwnerRepositoriesResponse {
+    data.items.retain(|repo| {
+        !(repo.owner.login.eq_ignore_ascii_case("cpprice11")
+            && repo.name.eq_ignore_ascii_case("pullora"))
+    });
+    data
+}
+
 impl GitHubClient {
     pub fn new(token: Option<String>, cache_path: PathBuf) -> Self {
         let mut headers = reqwest::header::HeaderMap::new();
@@ -172,7 +180,7 @@ impl GitHubClient {
         if !force_refresh {
             let cache = self.cache.lock().unwrap();
             if let Some(cached) = cache.get_owner_repositories(&cache_key) {
-                return Ok(cached.clone());
+                return Ok(remove_launcher_repository(cached.clone()));
             }
         }
 
@@ -210,7 +218,7 @@ impl GitHubClient {
                     .get_owner_repositories_stale(&cache_key)
                     .cloned()
                 {
-                    return Ok(cached);
+                    return Ok(remove_launcher_repository(cached));
                 }
                 return Err(error.to_string());
             }
@@ -220,7 +228,9 @@ impl GitHubClient {
             let mut cache = self.cache.lock().unwrap();
             let cached = cache.get_owner_repositories_stale(&cache_key).cloned();
             cache.touch_owner_repositories(&cache_key);
-            return cached.ok_or_else(|| "GitHub returned 304 without cached data.".to_string());
+            return cached
+                .map(remove_launcher_repository)
+                .ok_or_else(|| "GitHub returned 304 without cached data.".to_string());
         }
         let etag = Self::response_etag(response.headers());
 
@@ -244,11 +254,11 @@ impl GitHubClient {
             })
             .collect();
 
-        let data = OwnerRepositoriesResponse {
+        let data = remove_launcher_repository(OwnerRepositoriesResponse {
             items,
             page,
             has_more,
-        };
+        });
 
         {
             let mut cache = self.cache.lock().unwrap();

@@ -1,0 +1,706 @@
+.cinematic-shell {
+  --color-primary: #55d6ff;
+  --color-primary-dark: #32bce9;
+  --color-primary-light: rgba(85, 214, 255, 0.16);
+  --color-bg: #070b10;
+  --color-bg-elevated: #15191f;
+  --color-bg-secondary: #10151b;
+  --color-mica: rgba(16, 20, 26, 0.94);
+  --color-control: rgba(255, 255, 255, 0.08);
+  --color-control-hover: rgba(255, 255, 255, 0.13);
+  --color-nav-active: rgba(85, 214, 255, 0.12);
+  --color-text: #f4f6f8;
+  --color-text-secondary: #a8adb5;
+  --color-text-tertiary: #717780;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-success: #62dc78;
+  --color-error: #ff8797;
+  --color-warning: #e9c45e;
+  --border-radius: 9px;
+  --border-radius-lg: 14px;
+  --density-scale: 1;
+  --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.2);
+  --shadow-control-hover: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 24px rgba(0, 0, 0, 0.3);
+  background:
+    radial-gradient(circle at 68% 4%, rgba(54, 186, 226, 0.12), transparent 32%),
+    #070b10;
+}
+
+.cinematic-shell .cinematic-background {
+  filter: blur(18px) saturate(0.75);
+  opacity: 0;
+}
+
+.cinematic-shell .cinematic-background.is-visible {
+  opacity: 0.09;
+}
+
+.cinematic-shell .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 69% 6%, rgba(44, 191, 229, 0.09), transparent 32%),
+    linear-gradient(180deg, rgba(7, 11, 16, 0.76), rgba(7, 11, 16, 0.96));
+}
+
+.cinematic-shell .header {
+  -webkit-app-region: drag;
+  align-items: center;
+  background: rgba(7, 11, 16, 0.84);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex: 0 0 124px;
+  min-height: 124px;
+  padding: 38px 32px 16px;
+  position: relative;
+  z-index: 3;
+}
+
+.cinematic-shell .header-content {
+  align-items: center;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: auto minmax(0, 1fr);
+  width: 100%;
+}
+
+.cinematic-shell .header-brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.cinematic-shell .brand-mark {
+  align-items: center;
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  overflow: hidden;
+  width: 42px;
+}
+
+.cinematic-shell .brand-mark img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.cinematic-shell .header-title {
+  color: #f7f8fa;
+  font-size: 24px;
+  font-weight: 760;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.cinematic-shell .layout-container {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cinematic-shell .sidebar-nav {
+  -webkit-app-region: no-drag;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.cinematic-shell .nav-item,
+.cinematic-shell .nav-item:hover,
+.cinematic-shell .nav-item.active {
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.78);
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 32px minmax(0, max-content);
+  min-height: 42px;
+  padding: 4px 12px 4px 6px;
+  transform: none;
+  width: auto;
+}
+
+.cinematic-shell .nav-item.active::before {
+  background: #55d6ff;
+  border-radius: 999px;
+  bottom: -1px;
+  box-shadow: 0 0 14px rgba(85, 214, 255, 0.54);
+  height: 3px;
+  left: 10px;
+  right: 10px;
+  top: auto;
+  width: auto;
+}
+
+.cinematic-shell .nav-icon {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.065));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: currentColor;
+  height: 32px;
+  width: 32px;
+}
+
+.cinematic-shell .nav-item.active .nav-icon {
+  background: rgba(85, 214, 255, 0.13);
+  border-color: rgba(85, 214, 255, 0.52);
+  box-shadow: 0 0 0 1px rgba(85, 214, 255, 0.12), 0 12px 28px rgba(0, 0, 0, 0.28);
+  color: #68ddff;
+}
+
+.cinematic-shell .nav-text {
+  display: block;
+  opacity: 1;
+  transform: none;
+}
+
+.cinematic-shell .nav-label {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.cinematic-shell .layout-content {
+  align-items: center;
+  background: transparent;
+  padding: 72px 90px 42px;
+}
+
+.cinematic-shell .layout-content > div:not([hidden]) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.cinematic-shell .page {
+  flex: 1;
+  gap: 18px;
+  max-width: none;
+  min-height: 0;
+  width: 100%;
+}
+
+.cinematic-shell .library-page {
+  height: 100%;
+  min-height: 0;
+}
+
+.cinematic-shell .page-header {
+  min-height: 54px;
+}
+
+.cinematic-shell .page-header h2,
+.cinematic-shell .library-page .page-header h2 {
+  color: #f7f8fa;
+  font-size: 34px;
+  font-weight: 720;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+.cinematic-shell button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: var(--shadow-control);
+  color: #f3f5f7;
+  font-weight: 650;
+}
+
+.cinematic-shell button:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.11));
+  border-color: rgba(85, 214, 255, 0.34);
+  box-shadow: var(--shadow-control-hover);
+}
+
+.cinematic-shell input,
+.cinematic-shell select,
+.cinematic-shell textarea {
+  background: #101720;
+  border: 1px solid #253445;
+  border-radius: 9px;
+  color: #f3f5f7;
+}
+
+.cinematic-shell .library-sam-workspace {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  flex: 1;
+  grid-template-columns: minmax(310px, 350px) minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cinematic-shell .library-sam-list-pane,
+.cinematic-shell .library-sam-details-pane {
+  background: rgba(8, 12, 17, 0.72);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.cinematic-shell .library-sam-list-pane {
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+  overflow-y: auto;
+}
+
+.cinematic-shell .library-sam-pane-head,
+.cinematic-shell .library-sam-details-toolbar {
+  background: rgba(12, 17, 23, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.cinematic-shell .library-sam-pane-head h3 {
+  color: #f4f6f8;
+  font-size: 17px;
+  font-weight: 720;
+}
+
+.cinematic-shell .library-sam-kicker,
+.cinematic-shell .library-sam-details-toolbar > span {
+  color: #7e8791;
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.06em;
+}
+
+.cinematic-shell .library-toolstrip {
+  background: rgba(9, 13, 18, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px;
+}
+
+.cinematic-shell .library-toolstrip .search-form,
+.cinematic-shell .library-toolstrip .search-input {
+  min-width: 0;
+  width: 100%;
+}
+
+.cinematic-shell .library-toolstrip .search-input {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.cinematic-shell .library-page .library-controls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  width: 100%;
+}
+
+.cinematic-shell .library-page .segmented-control {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 10px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  width: 100%;
+}
+
+.cinematic-shell .library-page .segmented-control button {
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  box-shadow: none;
+  font-size: 11px;
+  min-height: 32px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 0 6px;
+  white-space: normal;
+}
+
+.cinematic-shell .library-page .segmented-control button.active {
+  background: rgba(85, 214, 255, 0.16);
+  color: #eefaff;
+}
+
+.cinematic-shell .library-page .sort-control,
+.cinematic-shell .library-page .sort-control select {
+  min-width: 0;
+  width: 100%;
+}
+
+.cinematic-shell .library-page .sort-control select {
+  min-height: 36px;
+}
+
+.cinematic-shell .library-trust-panel {
+  align-items: start;
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 0;
+  box-shadow: none;
+  gap: 8px;
+  grid-template-columns: 10px minmax(0, 1fr);
+  margin: 0;
+  padding: 12px;
+}
+
+.cinematic-shell .library-trust-mark {
+  margin-top: 5px;
+}
+
+.cinematic-shell .library-trust-copy {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cinematic-shell .library-trust-copy strong {
+  font-size: 13px;
+}
+
+.cinematic-shell .library-trust-copy span {
+  font-size: 11px;
+}
+
+.cinematic-shell .library-trust-inline-actions {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.cinematic-shell .library-trust-inline-actions .secondary-btn,
+.cinematic-shell .library-trust-toggle {
+  min-height: 32px;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel {
+  align-items: center;
+  background: rgba(255, 135, 151, 0.07);
+  border: 0;
+  border-bottom: 1px solid rgba(255, 135, 151, 0.16);
+  border-left: 3px solid var(--color-error);
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  height: auto;
+  min-height: 74px;
+  overflow: visible;
+  padding: 10px 12px;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel::after {
+  content: none;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel .state-panel-mark {
+  border-radius: 10px;
+  height: 38px;
+  width: 38px;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel h3 {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel p,
+.cinematic-shell .library-sam-list-pane > .state-panel summary {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.cinematic-shell .library-sam-list-pane > .state-panel .state-panel-action {
+  font-size: 11px;
+  min-height: 32px;
+  padding: 0 9px;
+}
+
+.cinematic-shell .search-results {
+  background: transparent;
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-height: 130px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.cinematic-shell .library-results-header {
+  display: none;
+}
+
+.cinematic-shell .repo-card {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.cinematic-shell .repo-card:hover,
+.cinematic-shell .repo-card.selected {
+  background: rgba(85, 214, 255, 0.11);
+  border-color: rgba(85, 214, 255, 0.35);
+  box-shadow: none;
+}
+
+.cinematic-shell .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 74% 0%, rgba(55, 193, 230, 0.11), transparent 34%),
+    rgba(8, 12, 17, 0.66);
+  overflow-y: auto;
+  padding: 0;
+}
+
+.cinematic-shell .settings-page {
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+}
+
+.cinematic-shell .settings-page-header {
+  background: transparent;
+  border: 0;
+  flex: 0 0 auto;
+  max-width: none;
+  min-height: 64px;
+  padding: 0;
+  width: 100%;
+}
+
+.cinematic-shell .settings-page-kicker {
+  color: #55d6ff;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+}
+
+.cinematic-shell .settings-page-header h2 {
+  color: #f7f8fa;
+  font-size: 34px;
+  font-weight: 720;
+}
+
+.cinematic-shell .settings-page-header p {
+  color: #9098a2;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.cinematic-shell .settings-workspace {
+  background: rgba(8, 12, 17, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  display: grid;
+  flex: 1;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cinematic-shell .settings-page .settings-nav {
+  background: rgba(10, 14, 20, 0.88);
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+}
+
+.cinematic-shell .settings-page .settings-nav button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  box-shadow: none;
+  color: #9aa2ac;
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 0 12px;
+  text-align: left;
+}
+
+.cinematic-shell .settings-page .settings-nav button:hover,
+.cinematic-shell .settings-page .settings-nav button.active {
+  background: rgba(85, 214, 255, 0.11);
+  border-color: rgba(85, 214, 255, 0.2);
+  color: #f4f8fa;
+}
+
+.cinematic-shell .settings-page .settings-nav button::before {
+  content: none;
+}
+
+.cinematic-shell .settings-page .settings-content {
+  background:
+    radial-gradient(circle at 82% 0%, rgba(55, 193, 230, 0.08), transparent 32%),
+    rgba(10, 15, 21, 0.66);
+  display: block;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.cinematic-shell .settings-page .settings-section,
+.cinematic-shell .settings-page .danger-zone {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 20px;
+}
+
+.cinematic-shell .settings-page .settings-section h3,
+.cinematic-shell .settings-page .danger-zone h3 {
+  color: #f4f6f8;
+  font-size: 18px;
+}
+
+.cinematic-shell .settings-source-summary,
+.cinematic-shell .settings-diagnostics-card {
+  background: rgba(6, 10, 15, 0.48);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.cinematic-shell .settings-page-footer {
+  display: none;
+}
+
+.cinematic-shell .about-page .page-header {
+  min-height: 54px;
+}
+
+.cinematic-shell .about-hero,
+.cinematic-shell .about-panel {
+  background: rgba(10, 15, 21, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.cinematic-shell .library-hero,
+.cinematic-shell .library-ops-panel,
+.cinematic-shell .library-inline-panel,
+.cinematic-shell .updates-center,
+.cinematic-shell .state-panel,
+.cinematic-shell .library-trust-panel {
+  border-color: rgba(255, 255, 255, 0.085);
+  border-radius: 12px;
+}
+
+.modal-overlay {
+  background: rgba(2, 5, 9, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.modal-overlay .modal-content {
+  background: rgba(15, 20, 27, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.58);
+}
+
+@media (max-width: 920px) {
+  .cinematic-shell .header {
+    flex-basis: 86px;
+    min-height: 86px;
+    padding: 24px 18px 10px;
+  }
+
+  .cinematic-shell .layout-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cinematic-shell .layout-content {
+    padding: 26px 20px 28px;
+  }
+
+  .cinematic-shell .header-content {
+    gap: 16px;
+  }
+
+  .cinematic-shell .nav-item,
+  .cinematic-shell .nav-item:hover,
+  .cinematic-shell .nav-item.active {
+    grid-template-columns: 32px;
+    padding: 4px;
+  }
+
+  .cinematic-shell .nav-text {
+    display: none;
+  }
+
+  .cinematic-shell .library-sam-workspace {
+    grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+  }
+
+  .cinematic-shell .settings-workspace {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .cinematic-shell .header-title {
+    font-size: 20px;
+  }
+
+  .cinematic-shell .brand-mark {
+    height: 36px;
+    width: 36px;
+  }
+
+  .cinematic-shell .header {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .cinematic-shell .header-brand {
+    gap: 9px;
+  }
+
+  .cinematic-shell .sidebar-nav {
+    gap: 4px;
+  }
+
+  .cinematic-shell .library-page {
+    height: auto;
+  }
+
+  .cinematic-shell .library-sam-workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .cinematic-shell .library-sam-list-pane {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+    border-right: 0;
+    max-height: 52vh;
+  }
+
+  .cinematic-shell .settings-workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .cinematic-shell .settings-page .settings-nav {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+    border-right: 0;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
