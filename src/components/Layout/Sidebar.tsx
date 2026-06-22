@@ -62,8 +62,15 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { t } = useI18n()
 
   return (
-    <div className="sam-header-sidebar">
-      <nav className="sam-header-nav sidebar-nav" aria-label={t('nav.navigation')}>
+    <aside className="sidebar">
+      <div className="fluent-brand" aria-label="Pullora">
+        <span className="fluent-brand-mark" aria-hidden="true" />
+        <span className="fluent-brand-copy">
+          <strong>Pullora</strong>
+          <small>GitHub launcher</small>
+        </span>
+      </div>
+      <nav className="sidebar-nav" aria-label={t('nav.navigation')}>
         {navItems.map((item) => {
           const label = t(item.labelKey)
 
@@ -86,7 +93,7 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           )
         })}
       </nav>
-    </div>
+    </aside>
   )
 }
 

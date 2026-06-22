@@ -1,5 +1,5 @@
 import type { AppSettings } from '../types'
-import { normalizeAppearance } from './settingsDefaults'
+import { APPEARANCE_PRESETS, normalizeAppearance } from './settingsDefaults'
 
 export type ThemePreference = AppSettings['theme']
 type ResolvedTheme = 'light' | 'dark'
@@ -75,7 +75,10 @@ export function appearanceCssText(appearance: AppSettings['appearance'] | undefi
 export function applyAppearanceSettings(appearance: AppSettings['appearance'] | undefined) {
   const root = document.documentElement
   const normalized = normalizeAppearance(appearance)
-  const variables = appearanceCssVariables(normalized)
+  const effectiveAppearance = normalized.preset === 'custom'
+    ? normalized
+    : APPEARANCE_PRESETS[normalized.preset]
+  const variables = appearanceCssVariables(effectiveAppearance)
 
   Object.entries(variables).forEach(([key, value]) => root.style.setProperty(key, value))
   root.dataset.appearancePreset = normalized.preset
@@ -86,5 +89,5 @@ export function applyAppearanceSettings(appearance: AppSettings['appearance'] | 
     style.id = CUSTOM_THEME_STYLE_ID
     document.head.appendChild(style)
   }
-  style.textContent = normalized.customCss
+  style.textContent = effectiveAppearance.customCss
 }
