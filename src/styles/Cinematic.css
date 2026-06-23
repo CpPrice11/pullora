@@ -398,10 +398,12 @@
 }
 
 .cinematic-shell .search-results {
+  align-content: start;
   background: transparent;
   display: grid;
   flex: 1;
   gap: 8px;
+  grid-auto-rows: min-content;
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   overflow-x: hidden;
@@ -425,6 +427,92 @@
   background: rgba(85, 214, 255, 0.11);
   border-color: rgba(85, 214, 255, 0.35);
   box-shadow: none;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  gap: 8px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  min-height: 34px;
+  overflow: visible;
+  padding: 5px 8px;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card:hover,
+.cinematic-shell .library-sam-list-pane .repo-card.selected {
+  background: rgba(85, 214, 255, 0.11);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card::after {
+  display: none;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card::before {
+  bottom: 7px;
+  display: block;
+  left: 0;
+  top: 7px;
+  width: 3px;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card-media,
+.cinematic-shell .library-sam-list-pane .owner-avatar {
+  align-self: center;
+  border-radius: 50%;
+  height: 24px;
+  width: 24px;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-info {
+  align-items: center;
+  align-self: center;
+  display: flex;
+  min-height: 24px;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-title-line {
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-status,
+.cinematic-shell .library-sam-list-pane .repo-owner,
+.cinematic-shell .library-sam-list-pane .repo-description,
+.cinematic-shell .library-sam-list-pane .repo-meta {
+  display: none;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-name {
+  color: #dfe3e6;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card--available .repo-name {
+  color: #8f98a0;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card--installed .repo-name,
+.cinematic-shell .library-sam-list-pane .repo-card--update .repo-name,
+.cinematic-shell .library-sam-list-pane .repo-card.selected .repo-name {
+  color: #ffffff;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card--available.selected .repo-name {
+  color: #a8b0b8;
 }
 
 .cinematic-shell .library-sam-details-pane {
