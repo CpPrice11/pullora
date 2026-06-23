@@ -3036,3 +3036,51 @@
     pointer-events: auto;
   }
 }
+
+/* Library sidebar should read like Steam's compact game list: icon + name only. */
+.library-sam-list-pane .repo-card {
+  align-items: center;
+  grid-template-columns: 26px minmax(0, 1fr);
+  min-height: 34px;
+}
+
+.library-sam-list-pane .repo-card-media,
+.library-sam-list-pane .owner-avatar {
+  height: 24px;
+  width: 24px;
+}
+
+.library-sam-list-pane .repo-info {
+  align-items: center;
+  display: flex;
+  min-height: 24px;
+}
+
+.library-sam-list-pane .repo-title-line {
+  min-width: 0;
+  width: 100%;
+}
+
+.library-sam-list-pane .repo-status,
+.library-sam-list-pane .repo-owner,
+.library-sam-list-pane .repo-description,
+.library-sam-list-pane .repo-meta {
+  display: none;
+}
+
+.library-sam-list-pane .repo-name {
+  color: #dfe3e6;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.library-sam-list-pane .repo-card--available .repo-name {
+  color: #8f98a0;
+}
+
+.library-sam-list-pane .repo-card--installed .repo-name,
+.library-sam-list-pane .repo-card--update .repo-name,
+.library-sam-list-pane .repo-card.selected .repo-name {
+  color: #ffffff;
+}
