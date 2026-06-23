@@ -211,7 +211,6 @@ function LibraryPage({
   const [heroActionsOpen, setHeroActionsOpen] = useState(false)
   const [artError, setArtError] = useState<string | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
-  const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(new Set())
   const [batchUpdating, setBatchUpdating] = useState(false)
@@ -251,17 +250,12 @@ function LibraryPage({
   } = useLibraryStatus(state.repositories)
 
   const handleRefresh = async () => {
-    setRefreshState('idle')
     const freshRepositories = await refreshRepositories()
     await refreshInstalledApps()
 
-    if (!freshRepositories) {
-      setRefreshState('error')
-      return
-    }
+    if (!freshRepositories) return
 
     setLastRefreshedAt(new Date())
-    setRefreshState('success')
   }
 
   const handleCheckUpdates = useCallback(async () => {
@@ -1383,40 +1377,8 @@ function LibraryPage({
 
   return (
     <div className="page library-page">
-      <div className="page-header">
-        <h2>{t(`${pageKey}.title`)}</h2>
-        <div className="page-actions">
-          {refreshState === 'error' && (
-            <span className="refresh-status error">{t('refresh.error')}</span>
-          )}
-          <button
-            type="button"
-            className="refresh-btn"
-            onClick={handleRefresh}
-            disabled={state.loading || checkingUpdates}
-          >
-            {state.loading || checkingUpdates ? t(`${pageKey}.refreshing`) : t(`${pageKey}.refresh`)}
-          </button>
-        </div>
-      </div>
-
       <div className="library-sam-workspace">
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
-            <div className="library-sam-pane-head">
-              <div>
-                <span className="library-sam-kicker">
-                  {t('library.localSource')}
-                </span>
-                <h3>{t(`${pageKey}.title`)}</h3>
-              </div>
-              <p className="results-count">
-                {t(`${pageKey}.count`, {
-                  visible: visibleRepositories.length.toLocaleString(),
-                  total: modeRepositoryCount.toLocaleString(),
-                })}
-              </p>
-            </div>
-
             <section className="library-toolstrip" aria-label={t(`${pageKey}.filterLabel`)}>
               <div className="search-form">
                 <label className="visually-hidden" htmlFor="library-search">
