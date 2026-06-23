@@ -439,12 +439,18 @@
   background: transparent;
   border: 0;
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 18px;
-  overflow: hidden;
+  height: auto;
+  margin: 0 auto;
+  max-width: 1680px;
+  min-height: calc(100vh - 130px);
+  overflow: visible;
 }
 
 .cinematic-shell .settings-page-header {
+  align-items: flex-end;
   background: transparent;
   border: 0;
   flex: 0 0 auto;
@@ -462,8 +468,9 @@
 
 .cinematic-shell .settings-page-header h2 {
   color: #f7f8fa;
-  font-size: 34px;
-  font-weight: 720;
+  font-size: clamp(28px, 2.4vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .cinematic-shell .settings-page-header p {
@@ -476,10 +483,11 @@
   background: rgba(8, 12, 17, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
   display: grid;
-  flex: 1;
+  flex: 0 0 auto;
   grid-template-columns: 220px minmax(0, 1fr);
-  min-height: 0;
+  min-height: min(640px, calc(100vh - 210px));
   overflow: hidden;
 }
 
@@ -489,8 +497,8 @@
   border-right: 1px solid rgba(255, 255, 255, 0.075);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px;
+  gap: 5px;
+  padding: 16px 14px;
 }
 
 .cinematic-shell .settings-page .settings-nav button {
@@ -498,11 +506,18 @@
   border: 1px solid transparent;
   border-radius: 9px;
   box-shadow: none;
-  color: #9aa2ac;
+  color: #929ba6;
+  font-size: 13px;
+  font-weight: 650;
   justify-content: flex-start;
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 42px;
+  padding: 0 13px;
   text-align: left;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 .cinematic-shell .settings-page .settings-nav button:hover,
@@ -510,6 +525,14 @@
   background: rgba(85, 214, 255, 0.11);
   border-color: rgba(85, 214, 255, 0.2);
   color: #f4f8fa;
+}
+
+.cinematic-shell .settings-page .settings-nav button:hover {
+  transform: translateX(2px);
+}
+
+.cinematic-shell .settings-page .settings-nav button.active {
+  box-shadow: inset 3px 0 0 #55d6ff;
 }
 
 .cinematic-shell .settings-page .settings-nav button::before {
@@ -522,8 +545,8 @@
     rgba(10, 15, 21, 0.66);
   display: block;
   min-height: 0;
-  overflow-y: auto;
-  padding: 24px;
+  overflow: visible;
+  padding: clamp(18px, 2.1vw, 30px);
 }
 
 .cinematic-shell .settings-page .settings-section,
@@ -532,13 +555,19 @@
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 12px;
   box-shadow: none;
-  padding: 20px;
+  margin: 0 auto;
+  max-width: 1280px;
+  padding: clamp(20px, 2vw, 28px);
+  width: 100%;
 }
 
 .cinematic-shell .settings-page .settings-section h3,
 .cinematic-shell .settings-page .danger-zone h3 {
   color: #f4f6f8;
   font-size: 18px;
+  font-weight: 720;
+  letter-spacing: 0.025em;
+  margin: 0;
 }
 
 .cinematic-shell .settings-source-summary,
@@ -546,6 +575,390 @@
   background: rgba(6, 10, 15, 0.48);
   border-color: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
+}
+
+.cinematic-shell .settings-source-summary .settings-reset-kicker,
+.cinematic-shell .settings-diagnostics-card .settings-reset-kicker {
+  color: #63d9fa;
+}
+
+.cinematic-shell .settings-page .form-group {
+  gap: 7px;
+}
+
+.cinematic-shell .settings-page .form-group > label {
+  color: #d7dce1;
+  font-size: 12px;
+  font-weight: 680;
+}
+
+.cinematic-shell .settings-page .help-text {
+  color: #858e99;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.cinematic-shell .settings-page input,
+.cinematic-shell .settings-page select {
+  min-height: 42px;
+}
+
+.cinematic-shell .settings-page input:disabled,
+.cinematic-shell .settings-page select:disabled,
+.cinematic-shell .settings-page button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.45);
+  opacity: 0.48;
+}
+
+.cinematic-shell .settings-page button:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: var(--shadow-control);
+  transform: none;
+}
+
+.cinematic-shell .settings-page .checkbox-label {
+  align-items: center;
+  color: #d7dce1;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 620 !important;
+  gap: 11px;
+  min-height: 32px;
+  width: fit-content;
+}
+
+.cinematic-shell .settings-page .checkbox-label input[type='checkbox'] {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 22px;
+  margin: 0;
+  min-height: 22px;
+  padding: 0;
+  position: relative;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+  width: 40px;
+}
+
+.cinematic-shell .settings-page .checkbox-label input[type='checkbox']::after {
+  background: #d7dce1;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.34);
+  content: '';
+  height: 16px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition:
+    background-color 150ms ease,
+    transform 170ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 16px;
+}
+
+.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked {
+  background: #49c8ee;
+  border-color: #67dcff;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.16),
+    0 0 0 3px rgba(85, 214, 255, 0.09);
+}
+
+.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked::after {
+  background: #061116;
+  transform: translateX(18px);
+}
+
+.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:focus-visible {
+  outline: 2px solid #73defe;
+  outline-offset: 3px;
+}
+
+.cinematic-shell .settings-page input[type='range'] {
+  --range-progress: 50%;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  min-height: 30px;
+  padding: 0;
+  width: 100%;
+}
+
+.cinematic-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg, #55d6ff 0 var(--range-progress), rgba(255, 255, 255, 0.16) var(--range-progress) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  height: 6px;
+}
+
+.cinematic-shell .settings-page input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  background: #67dcff;
+  border: 2px solid #10202a;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(103, 220, 255, 0.22),
+    0 3px 8px rgba(0, 0, 0, 0.34);
+  height: 18px;
+  margin-top: -7px;
+  transition:
+    box-shadow 140ms ease,
+    transform 140ms ease;
+  width: 18px;
+}
+
+.cinematic-shell .settings-page input[type='range']:hover::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 4px rgba(103, 220, 255, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.38);
+  transform: scale(1.05);
+}
+
+.cinematic-shell .settings-page input[type='range']:focus-visible {
+  outline: none;
+}
+
+.cinematic-shell .settings-page input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 4px rgba(7, 11, 16, 0.9),
+    0 0 0 6px #67dcff;
+}
+
+.cinematic-shell .settings-page .settings-range-value {
+  background: rgba(85, 214, 255, 0.08);
+  border: 1px solid rgba(85, 214, 255, 0.16);
+  border-radius: 6px;
+  color: #80e3ff;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+  padding: 3px 7px;
+  width: fit-content;
+}
+
+.cinematic-shell .settings-page .compact-control input,
+.cinematic-shell .settings-page .compact-control select {
+  max-width: none;
+}
+
+.cinematic-shell .settings-page .settings-grid {
+  gap: 18px 24px;
+}
+
+.cinematic-shell .settings-content--general .settings-grid {
+  align-items: start;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+}
+
+.cinematic-shell .settings-content--general .launcher-background-control {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 18px;
+}
+
+.cinematic-shell .settings-content--installation .settings-section {
+  max-width: 1120px;
+  margin-left: 0;
+}
+
+.cinematic-shell .settings-content--installation .path-input-row {
+  background: rgba(5, 9, 14, 0.32);
+  border-color: rgba(255, 255, 255, 0.08);
+  padding: 10px;
+}
+
+.cinematic-shell .settings-content--updates .settings-section {
+  max-width: 920px;
+  margin-left: 0;
+}
+
+.cinematic-shell .settings-content--updates .form-group {
+  max-width: 620px;
+}
+
+.cinematic-shell .settings-content--updates .form-group + .form-group {
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+  padding-top: 16px;
+}
+
+.cinematic-shell .settings-content--appearance .settings-section-heading-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 18px;
+}
+
+.cinematic-shell .settings-content--appearance .settings-theme-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  width: min(100%, 420px);
+}
+
+.cinematic-shell .settings-content--appearance .settings-theme-actions .secondary-btn {
+  width: 100%;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-grid {
+  gap: 12px;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field {
+  background: rgba(6, 10, 15, 0.42);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  min-height: 78px;
+  padding: 12px;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field:hover {
+  background: rgba(85, 214, 255, 0.055);
+  border-color: rgba(85, 214, 255, 0.22);
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color'] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  height: 36px;
+  min-height: 36px;
+  padding: 3px;
+  width: 40px;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}
+
+.cinematic-shell .settings-content--appearance .appearance-color-field code {
+  color: #8d98a5;
+  font-family: 'Cascadia Mono', Consolas, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cinematic-shell .settings-content--appearance .settings-css-editor {
+  background:
+    linear-gradient(180deg, rgba(5, 9, 14, 0.62), rgba(8, 13, 19, 0.7));
+  border-color: rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  line-height: 1.55;
+  min-height: 150px;
+  padding: 14px;
+  tab-size: 2;
+}
+
+.cinematic-shell .settings-content--updates .interval-input-control {
+  background: rgba(5, 9, 14, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  max-width: 190px;
+  padding: 6px;
+}
+
+.cinematic-shell .settings-content--updates .interval-input-control input {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  min-height: 32px;
+}
+
+.cinematic-shell .settings-content--updates .interval-input-control span {
+  padding-right: 8px;
+}
+
+.cinematic-shell .settings-content--maintenance .danger-zone {
+  align-items: start;
+  border-color: rgba(255, 255, 255, 0.075);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cinematic-shell .settings-content--maintenance .danger-zone > h3,
+.cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
+.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+  grid-column: 1 / -1;
+}
+
+.cinematic-shell .settings-content--maintenance .settings-diagnostics-card {
+  align-content: start;
+  border-color: rgba(255, 255, 255, 0.085);
+  height: 100%;
+  max-width: none;
+  padding: 16px;
+  width: 100%;
+}
+
+.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dl {
+  gap: 12px 20px;
+}
+
+.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+  color: #7f8995;
+}
+
+.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+  color: #b3bac3;
+  line-height: 1.45;
+}
+
+.cinematic-shell .settings-content--maintenance .settings-storage-actions {
+  margin-top: auto;
+}
+
+.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  max-width: none;
+  padding-top: 18px;
+}
+
+.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child .secondary-btn:first-child {
+  border-color: rgba(255, 135, 151, 0.32);
+  color: #ff9aaa;
+}
+
+.cinematic-shell .settings-page .secondary-btn {
+  min-height: 38px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.cinematic-shell .settings-page .secondary-btn:active:not(:disabled) {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.28);
+  transform: translateY(1px);
+}
+
+.cinematic-shell .settings-autosave-status {
+  min-height: 28px;
+}
+
+.cinematic-shell .settings-page .saved-indicator,
+.cinematic-shell .settings-page .settings-status {
+  backdrop-filter: blur(8px);
+  border-radius: 7px;
+  font-size: 11px;
+  padding: 5px 9px;
+}
+
+.cinematic-shell .settings-done-btn {
+  min-width: 112px;
 }
 
 .cinematic-shell .settings-page-footer {
@@ -791,6 +1204,29 @@
   .cinematic-shell .settings-workspace {
     grid-template-columns: 180px minmax(0, 1fr);
   }
+
+  .cinematic-shell .settings-page-header {
+    align-items: flex-start;
+  }
+
+  .cinematic-shell .settings-page-header-actions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .cinematic-shell .settings-content--maintenance .danger-zone {
+    grid-template-columns: 1fr;
+  }
+
+  .cinematic-shell .settings-content--maintenance .danger-zone > h3,
+  .cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
+  .cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+    grid-column: auto;
+  }
+
+  .cinematic-shell .settings-content--general .settings-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -863,6 +1299,7 @@
   .cinematic-shell .settings-workspace {
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: visible;
   }
 
@@ -871,5 +1308,33 @@
     border-right: 0;
     flex-direction: row;
     overflow-x: auto;
+  }
+
+  .cinematic-shell .settings-page {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cinematic-shell .settings-page .settings-content {
+    padding: 14px;
+  }
+
+  .cinematic-shell .settings-page .settings-section,
+  .cinematic-shell .settings-page .danger-zone {
+    padding: 16px;
+  }
+
+  .cinematic-shell .settings-section-heading-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cinematic-shell .settings-theme-actions {
+    justify-content: flex-start;
+  }
+
+  .cinematic-shell .settings-content--appearance .settings-theme-actions {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 }

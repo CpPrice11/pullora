@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
@@ -960,6 +961,7 @@ function SettingsPage({
                   min="11"
                   max="18"
                   value={appearance.fontSize}
+                  style={{ '--range-progress': `${((appearance.fontSize - 11) / 7) * 100}%` } as CSSProperties}
                   onChange={(event) => handleAppearanceChange({ fontSize: Number(event.target.value), preset: 'custom' })}
                 />
                 <span className="settings-range-value">{appearance.fontSize}px</span>
@@ -973,6 +975,7 @@ function SettingsPage({
                   min="0"
                   max="20"
                   value={appearance.radius}
+                  style={{ '--range-progress': `${(appearance.radius / 20) * 100}%` } as CSSProperties}
                   onChange={(event) => handleAppearanceChange({ radius: Number(event.target.value), preset: 'custom' })}
                 />
                 <span className="settings-range-value">{appearance.radius}px</span>
@@ -1067,7 +1070,10 @@ function SettingsPage({
             ))}
           </nav>
 
-          <div className="settings-content" key={activeSection}>
+          <div
+            className={`settings-content settings-content--${activeSection}`}
+            key={activeSection}
+          >
             {error && (
               <StatePanel
                 kind="error"
