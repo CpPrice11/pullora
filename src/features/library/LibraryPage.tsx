@@ -26,9 +26,16 @@ import '../../pages/PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
 type LibrarySort = 'updated' | 'name' | 'status'
+type LibraryViewMode = 'home' | 'recent' | 'ready'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type HeroPanel = 'overview' | 'versions' | 'details'
+type LibraryFolder = {
+  id: string
+  name: string
+  repoKeys: string[]
+  pinned?: boolean
+}
 type BatchUpdateJob = {
   url: string
   fileName: string
@@ -112,10 +119,65 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
   }
 }
 
-const libraryFilters: LibraryFilter[] = ['all', 'installed', 'favorites', 'updates', 'available']
+const favoritesFolderId = 'favorites'
+const libraryFoldersStorageKey = 'pullora-library-folders-v1'
 
-function libraryFilterLabelKey(filter: LibraryFilter) {
-  return filter === 'available' ? 'library.availableFilter' : `library.${filter}`
+function normalizeRepoKey(owner: string, repo: string) {
+  return projectArtKey(owner, repo)
+}
+
+function normalizeFolderName(name: string) {
+  return name.trim().replace(/\s+/g, ' ')
+}
+
+function createFavoritesFolder(repoKeys: string[] = []): LibraryFolder {
+  return {
+    id: favoritesFolderId,
+    name: 'Favorites',
+    repoKeys: Array.from(new Set(repoKeys)),
+    pinned: true,
+  }
+}
+
+function ensureFavoritesFolder(folders: LibraryFolder[]) {
+  const favoriteFolder = folders.find((folder) => folder.id === favoritesFolderId)
+  const otherFolders = folders.filter((folder) => folder.id !== favoritesFolderId)
+
+  return [
+    {
+      ...(favoriteFolder ?? createFavoritesFolder()),
+      id: favoritesFolderId,
+      pinned: true,
+      repoKeys: Array.from(new Set(favoriteFolder?.repoKeys ?? [])),
+    },
+    ...otherFolders.map((folder) => ({
+      ...folder,
+      repoKeys: Array.from(new Set(folder.repoKeys ?? [])),
+    })),
+  ]
+}
+
+function loadLibraryFolders() {
+  if (typeof window === 'undefined') return ensureFavoritesFolder([])
+
+  try {
+    const rawFolders = window.localStorage.getItem(libraryFoldersStorageKey)
+    if (!rawFolders) return ensureFavoritesFolder([])
+    const parsed = JSON.parse(rawFolders) as LibraryFolder[]
+    if (!Array.isArray(parsed)) return ensureFavoritesFolder([])
+
+    return ensureFavoritesFolder(parsed.filter((folder) =>
+      typeof folder?.id === 'string' &&
+      typeof folder?.name === 'string' &&
+      Array.isArray(folder?.repoKeys),
+    ))
+  } catch {
+    return ensureFavoritesFolder([])
+  }
+}
+
+function makeFolderId(name: string) {
+  return `folder-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom'}-${Date.now()}`
 }
 
 function classifyLibraryError(error: string | null): LibraryErrorKind {
@@ -188,18 +250,22 @@ function pickPortableUpdateAsset(release: GitHubRelease | null) {
 interface LibraryPageProps {
   onOpenSettings?: () => void
   onPreviewBackground?: (url: string | null) => void
+  suppressDiagnostics?: boolean
 }
 
 function LibraryPage({
   onOpenSettings,
   onPreviewBackground,
+  suppressDiagnostics = false,
 }: LibraryPageProps) {
   const { language, t } = useI18n()
   const pageKey = 'library'
-  const activeFilters = libraryFilters
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
+  const [viewMode, setViewMode] = useState<LibraryViewMode>('home')
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
+  const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => loadLibraryFolders())
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
   const [heroPanel, setHeroPanel] = useState<HeroPanel>('overview')
@@ -323,13 +389,119 @@ function LibraryPage({
     setQuery('')
     setFilter('all')
     setSort('updated')
+    setViewMode('home')
+    setActiveFolderId(null)
   }
 
   useEffect(() => {
-    if (!activeFilters.includes(filter)) {
-      setFilter('all')
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(libraryFoldersStorageKey, JSON.stringify(libraryFolders))
+  }, [libraryFolders])
+
+  useEffect(() => {
+    const favoriteRepoKeys = favorites
+      .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
+      .map((favorite) => normalizeRepoKey(favorite.owner, favorite.repo))
+
+    setLibraryFolders((current) => {
+      const folders = ensureFavoritesFolder(current)
+      const favoriteKeysSet = new Set(favoriteRepoKeys)
+      const currentFavoriteFolder = folders[0]
+      const nextFavoriteKeys = [
+        ...currentFavoriteFolder.repoKeys.filter((key) => favoriteKeysSet.has(key)),
+        ...favoriteRepoKeys,
+      ]
+
+      return [
+        {
+          ...currentFavoriteFolder,
+          repoKeys: Array.from(new Set(nextFavoriteKeys)),
+        },
+        ...folders.slice(1),
+      ]
+    })
+  }, [favorites])
+
+  const openHomeView = () => {
+    setViewMode('home')
+    setActiveFolderId(null)
+    setFilter('all')
+    setSort('updated')
+  }
+
+  const openRecentView = () => {
+    setViewMode('recent')
+    setActiveFolderId(null)
+    setFilter('all')
+    setSort('updated')
+  }
+
+  const openReadyView = () => {
+    setViewMode('ready')
+    setActiveFolderId(null)
+    setFilter('installed')
+    setSort('status')
+  }
+
+  const openFolderView = (folderId: string) => {
+    setViewMode('home')
+    setActiveFolderId(folderId)
+    setFilter('all')
+    setSort('updated')
+  }
+
+  const handleCreateFolder = () => {
+    const name = normalizeFolderName(window.prompt(t('library.folder.createPrompt')) ?? '')
+    if (!name) return
+
+    setLibraryFolders((current) => {
+      const folders = ensureFavoritesFolder(current)
+      const duplicate = folders.some((folder) => folder.name.toLowerCase() === name.toLowerCase())
+      if (duplicate) return folders
+
+      return [
+        ...folders,
+        {
+          id: makeFolderId(name),
+          name,
+          repoKeys: [],
+        },
+      ]
+    })
+  }
+
+  const handleMoveToFolder = async (repo: GitHubSearchResult, folderId: string) => {
+    const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
+
+    if (folderId === favoritesFolderId && !favoriteKeys.has(repoKey)) {
+      try {
+        await addToFavorites(
+          repo.owner.login,
+          repo.name,
+          repo.name,
+          repo.description ?? undefined,
+        )
+        handleFavoriteChange(repo, true)
+      } catch {
+        // Browser preview fallback keeps the local folder move usable.
+      }
     }
-  }, [activeFilters, filter])
+
+    setLibraryFolders((current) => ensureFavoritesFolder(current).map((folder) => {
+      const withoutCurrentRepo = folder.repoKeys.filter((key) => key !== repoKey)
+      if (folder.id !== folderId) {
+        return {
+          ...folder,
+          repoKeys: withoutCurrentRepo,
+        }
+      }
+
+      return {
+        ...folder,
+        repoKeys: [repoKey, ...withoutCurrentRepo],
+      }
+    }))
+  }
 
   const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
     setHeroActionsOpen(false)
@@ -448,17 +620,17 @@ function LibraryPage({
   const formattedRefreshTime = formatTime(lastRefreshedAt ?? state.lastRefreshAt ?? state.lastLoadedAt)
   const formattedLatestVersionsTime = formatTime(latestVersionsCheckedAt)
   const libraryErrorKind = classifyLibraryError(state.error)
-  const libraryTrustKind: LibraryTrustKind = state.error && state.isStale
+  const libraryTrustKind: LibraryTrustKind = state.loading || checkingUpdates
+    ? 'checking'
+    : state.error
     ? libraryErrorKind === 'rateLimit'
       ? 'rateLimit'
       : libraryErrorKind === 'offline'
         ? 'offline'
         : 'cached'
-    : state.loading || checkingUpdates
-      ? 'checking'
-      : latestVersionErrorCount > 0
+    : installedLoadError || latestVersionErrorCount > 0
         ? 'partial'
-      : 'fresh'
+        : 'fresh'
 
   useEffect(() => {
     if (settingsLoading || !owner) return
@@ -572,13 +744,37 @@ function LibraryPage({
     })
   }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
 
+  const displayFolders = useMemo(() => ensureFavoritesFolder(libraryFolders), [libraryFolders])
+  const activeFolder = displayFolders.find((folder) => folder.id === activeFolderId) ?? null
+  const activeFolderKeys = useMemo(() => {
+    return new Set(activeFolder?.repoKeys ?? [])
+  }, [activeFolder])
+  const favoritesByRepoKey = useMemo(() => {
+    return new Map(
+      favorites
+        .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
+        .map((favorite) => [normalizeRepoKey(favorite.owner, favorite.repo), favorite]),
+    )
+  }, [favorites])
+  const folderRepoCounts = useMemo(() => {
+    const availableKeys = new Set(
+      libraryRepositories.map((repo) => normalizeRepoKey(repo.owner.login, repo.name)),
+    )
+
+    return new Map(displayFolders.map((folder) => [
+      folder.id,
+      folder.repoKeys.filter((key) => availableKeys.has(key)).length,
+    ]))
+  }, [displayFolders, libraryRepositories])
+
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     const filtered = libraryRepositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
-      const isFavorite = favoriteKeys.has(projectArtKey(repo.owner.login, repo.name))
+      const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
+      const isFavorite = favoriteKeys.has(repoKey)
       const hasUpdate = Boolean(
         installedApp &&
         latestVersion &&
@@ -588,6 +784,8 @@ function LibraryPage({
         latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
       )
 
+      if (activeFolder && !activeFolderKeys.has(repoKey)) return false
+      if (viewMode === 'ready' && !installedApp) return false
       if (filter === 'installed' && !installedApp) return false
       if (filter === 'favorites' && !isFavorite) return false
       if (filter === 'updates' && (!hasUpdate || updateDismissed)) return false
@@ -609,6 +807,21 @@ function LibraryPage({
     })
 
     return [...filtered].sort((a, b) => {
+      const repoActivityTimestamp = (repo: GitHubSearchResult) => {
+        const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
+        const installedApp = getInstalledApp(repo)
+        const favorite = favoritesByRepoKey.get(repoKey)
+        return Math.max(
+          new Date(repo.updated_at).getTime(),
+          installedApp ? new Date(latestInstalledAt(installedApp)).getTime() : 0,
+          favorite?.lastChecked ? new Date(favorite.lastChecked).getTime() : 0,
+        )
+      }
+
+      if (viewMode === 'recent') {
+        return repoActivityTimestamp(b) - repoActivityTimestamp(a) || a.name.localeCompare(b.name)
+      }
+
       if (sort === 'name') {
         return a.name.localeCompare(b.name)
       }
@@ -631,9 +844,29 @@ function LibraryPage({
         return statusRank(a) - statusRank(b) || a.name.localeCompare(b.name)
       }
 
+      if (!activeFolder) {
+        const favoriteRank = (repo: GitHubSearchResult) =>
+          favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) ? 0 : 1
+        const favoriteDifference = favoriteRank(a) - favoriteRank(b)
+        if (favoriteDifference !== 0) return favoriteDifference
+      }
+
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [dismissedUpdateKeys, favoriteKeys, filter, getInstalledApp, getLatestVersion, libraryRepositories, query, sort])
+  }, [
+    activeFolder,
+    activeFolderKeys,
+    dismissedUpdateKeys,
+    favoriteKeys,
+    favoritesByRepoKey,
+    filter,
+    getInstalledApp,
+    getLatestVersion,
+    libraryRepositories,
+    query,
+    sort,
+    viewMode,
+  ])
 
   const modeRepositoryCount = libraryRepositories.length
 
@@ -725,7 +958,7 @@ function LibraryPage({
   }
 
   const handleFavoriteChange = (repo: GitHubSearchResult, nextValue: boolean) => {
-    const key = projectArtKey(repo.owner.login, repo.name)
+    const key = normalizeRepoKey(repo.owner.login, repo.name)
     setFavoriteKeys((current) => {
       const next = new Set(current)
       if (nextValue) {
@@ -734,6 +967,20 @@ function LibraryPage({
         next.delete(key)
       }
       return next
+    })
+
+    setLibraryFolders((current) => {
+      const folders = ensureFavoritesFolder(current)
+      return folders.map((folder) => {
+        if (folder.id !== favoritesFolderId) return folder
+        const repoKeys = nextValue
+          ? [key, ...folder.repoKeys.filter((item) => item !== key)]
+          : folder.repoKeys.filter((item) => item !== key)
+        return {
+          ...folder,
+          repoKeys,
+        }
+      })
     })
   }
 
@@ -892,6 +1139,8 @@ function LibraryPage({
   }
 
   const renderLibraryTrustPanel = () => {
+    if (suppressDiagnostics) return null
+
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
     const shouldOfferRetry = Boolean(state.error)
@@ -986,16 +1235,6 @@ function LibraryPage({
                   {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
                 </button>
               )}
-              {shouldOfferUpdateCheck && (
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleCheckUpdates}
-                  disabled={!canRetry}
-                >
-                  {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
-                </button>
-              )}
               {retryInstalled && (
                 <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
                   {t('library.trust.retryInstalled')}
@@ -1004,6 +1243,20 @@ function LibraryPage({
             </div>
           </div>
         )}
+      </section>
+    )
+  }
+
+  const renderDetailsEmpty = () => {
+    if (featuredRepo || filter === 'updates') return null
+
+    return (
+      <section className="library-details-empty" aria-label={t('library.detailsEmptyTitle')}>
+        <div className="library-details-empty-mark" aria-hidden="true">i</div>
+        <div>
+          <h3>{t('library.detailsEmptyTitle')}</h3>
+          <p>{t('library.detailsEmptyText')}</p>
+        </div>
       </section>
     )
   }
@@ -1380,6 +1633,37 @@ function LibraryPage({
       <div className="library-sam-workspace">
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <section className="library-toolstrip" aria-label={t(`${pageKey}.filterLabel`)}>
+              <div className="library-sidebar-nav" aria-label={t('library.sidebar.navigation')}>
+                <button
+                  type="button"
+                  className={`library-sidebar-nav-btn library-sidebar-nav-home ${viewMode === 'home' && !activeFolder ? 'active' : ''}`}
+                  aria-pressed={viewMode === 'home' && !activeFolder}
+                  onClick={openHomeView}
+                >
+                  {t('library.nav.home')}
+                </button>
+                <button
+                  type="button"
+                  className={`library-sidebar-nav-btn library-sidebar-nav-icon ${viewMode === 'recent' ? 'active' : ''}`}
+                  aria-label={t('library.nav.recent')}
+                  title={t('library.nav.recent')}
+                  aria-pressed={viewMode === 'recent'}
+                  onClick={openRecentView}
+                >
+                  <span aria-hidden="true">◷</span>
+                </button>
+                <button
+                  type="button"
+                  className={`library-sidebar-nav-btn library-sidebar-nav-icon ${viewMode === 'ready' ? 'active' : ''}`}
+                  aria-label={t('library.nav.ready')}
+                  title={t('library.nav.ready')}
+                  aria-pressed={viewMode === 'ready'}
+                  onClick={openReadyView}
+                >
+                  <span aria-hidden="true">▶</span>
+                </button>
+              </div>
+
               <div className="search-form">
                 <label className="visually-hidden" htmlFor="library-search">
                   {t(`${pageKey}.searchLabel`)}
@@ -1395,42 +1679,45 @@ function LibraryPage({
                 />
               </div>
 
-              <div className="library-controls">
-                <div className="segmented-control" aria-label={t(`${pageKey}.filterLabel`)}>
-                  {activeFilters.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={filter === item ? 'active' : ''}
-                      aria-pressed={filter === item}
-                      title={t(libraryFilterLabelKey(item))}
-                      onClick={() => setFilter(item)}
-                    >
-                      {t(libraryFilterLabelKey(item))}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="sort-control" htmlFor="library-sort" aria-label={t(`${pageKey}.sortLabel`)}>
-                  <span className="visually-hidden">{t(`${pageKey}.sortLabel`)}</span>
-                  <select
-                    id="library-sort"
-                    value={sort}
-                    onChange={(event) => setSort(event.target.value as LibrarySort)}
-                    aria-label={t(`${pageKey}.sortLabel`)}
+              <div className="library-folder-panel" aria-label={t('library.folder.title')}>
+                <div className="library-folder-header">
+                  <span>{t('library.folder.title')}</span>
+                  <button
+                    type="button"
+                    className="library-folder-create"
+                    onClick={handleCreateFolder}
+                    title={t('library.folder.create')}
+                    aria-label={t('library.folder.create')}
                   >
-                    <option value="updated">{t('library.recentlyUpdated')}</option>
-                    <option value="status">{t('library.status')}</option>
-                    <option value="name">{t('library.name')}</option>
-                  </select>
-                </label>
+                    +
+                  </button>
+                </div>
+                <div className="library-folder-list">
+                  {displayFolders.map((folder) => {
+                    const folderName = folder.id === favoritesFolderId
+                      ? t('library.folder.favorites')
+                      : folder.name
+
+                    return (
+                    <button
+                      key={folder.id}
+                      type="button"
+                      className={`library-folder-item ${activeFolderId === folder.id ? 'active' : ''}`}
+                      aria-pressed={activeFolderId === folder.id}
+                      title={folderName}
+                      onClick={() => openFolderView(folder.id)}
+                    >
+                      <span>{folderName}</span>
+                      <em>{folderRepoCounts.get(folder.id) ?? 0}</em>
+                    </button>
+                    )
+                  })}
+                </div>
               </div>
             </section>
 
-            {renderLibraryTrustPanel()}
-
             <div className="search-results">
-              {state.error && !state.isStale && (
+              {state.error && !state.isStale && !suppressDiagnostics && (
                 <StatePanel
                   kind="error"
                   title={t(libraryErrorTitleKey(libraryErrorKind))}
@@ -1442,7 +1729,7 @@ function LibraryPage({
                 />
               )}
 
-              {installedLoadError && (
+              {installedLoadError && !suppressDiagnostics && (
                 <StatePanel
                   kind="error"
                   title={t('state.installedErrorTitle')}
@@ -1502,6 +1789,11 @@ function LibraryPage({
                     onUninstall={() => handleRequestUninstall(repo)}
                     onInstall={() => setSelectedRepo(repo)}
                     onLaunch={() => handleLaunch(repo)}
+                    folders={displayFolders.map((folder) => ({
+                      id: folder.id,
+                      name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                    }))}
+                    onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
                   />
                 )
               })}
@@ -1517,15 +1809,9 @@ function LibraryPage({
           <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
             <div className="library-sam-details-toolbar">
               <span>{t('details.open')}</span>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={handleRefresh}
-                disabled={state.loading || checkingUpdates}
-              >
-                {state.loading || checkingUpdates ? t('library.refreshing') : t('library.refresh')}
-              </button>
             </div>
+            {renderLibraryTrustPanel()}
+            {renderDetailsEmpty()}
             {renderHero()}
             {renderOperationsPanel()}
             {renderUpdatesCenter()}

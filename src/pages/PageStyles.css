@@ -3979,6 +3979,16 @@
   border-radius: 0;
 }
 
+.sam-shell .repo-actions-menu-label {
+  color: #8f98a0;
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 8px 10px 4px;
+  text-transform: uppercase;
+}
+
 .sam-shell .about-page {
   gap: 12px;
 }
@@ -5872,6 +5882,128 @@
   color: #ffffff;
 }
 
+.sam-shell .library-sidebar-nav {
+  align-items: center;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) 34px 34px;
+}
+
+.sam-shell .library-sidebar-nav-btn {
+  align-items: center;
+  background: #1b222b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: #c7d5e0;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.sam-shell .library-sidebar-nav-btn:hover,
+.sam-shell .library-sidebar-nav-btn.active {
+  background: #24384c;
+  border-color: rgba(102, 192, 244, 0.35);
+  color: #ffffff;
+}
+
+.sam-shell .library-sidebar-nav-home {
+  justify-content: flex-start;
+}
+
+.sam-shell .library-sidebar-nav-icon {
+  font-size: 15px;
+  padding: 0;
+}
+
+.sam-shell .library-folder-panel {
+  background: rgba(13, 20, 27, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 6px;
+}
+
+.sam-shell .library-folder-header {
+  align-items: center;
+  color: #8f98a0;
+  display: flex;
+  font-size: 11px;
+  font-weight: 800;
+  justify-content: space-between;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-folder-create {
+  align-items: center;
+  background: #1b222b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  color: #66c0f4;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  height: 24px;
+  justify-content: center;
+  line-height: 1;
+  width: 24px;
+}
+
+.sam-shell .library-folder-create:hover {
+  background: #24384c;
+  color: #ffffff;
+}
+
+.sam-shell .library-folder-list {
+  display: grid;
+  gap: 3px;
+}
+
+.sam-shell .library-folder-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #c7d5e0;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 28px;
+  padding: 0 8px;
+  text-align: left;
+}
+
+.sam-shell .library-folder-item:hover,
+.sam-shell .library-folder-item.active {
+  background: #2a475e;
+  color: #ffffff;
+}
+
+.sam-shell .library-folder-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sam-shell .library-folder-item em {
+  color: #8f98a0;
+  font-style: normal;
+  font-weight: 700;
+}
+
 .sam-shell .library-sam-details-pane {
   background:
     radial-gradient(circle at 80% 0%, rgba(102, 192, 244, 0.16), transparent 28%),
@@ -6243,4 +6375,118 @@
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
+}
+
+/* v5.2.14: stabilize Library after first-run and compact release wizard. */
+.sam-shell .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 82% 0%, rgba(102, 192, 244, 0.12), transparent 24%),
+    linear-gradient(180deg, #172433 0%, #111922 100%);
+  padding: 0 14px 18px;
+}
+
+.sam-shell .library-sam-details-toolbar {
+  min-height: 42px;
+  padding: 8px 0;
+}
+
+.sam-shell .library-details-empty {
+  align-items: center;
+  background: rgba(17, 27, 37, 0.86);
+  border: 1px solid #263848;
+  display: block;
+  margin-top: 10px;
+  padding: 16px;
+}
+
+.sam-shell .library-details-empty-mark {
+  display: none;
+}
+
+.library-details-empty {
+  background: rgba(17, 27, 37, 0.86);
+  border: 1px solid #263848;
+  display: block;
+  margin-top: 10px;
+  padding: 16px;
+}
+
+.library-details-empty-mark {
+  display: none;
+}
+
+.library-details-empty h3 {
+  color: #edf6ff;
+  font-size: 18px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.library-details-empty p {
+  color: #9fb4c6;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.sam-shell .library-details-empty h3 {
+  color: #edf6ff;
+  font-size: 18px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.sam-shell .library-details-empty p {
+  color: #9fb4c6;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.sam-shell .library-hero {
+  min-height: clamp(250px, 30vh, 340px);
+  padding: 30px 30px 62px;
+}
+
+.sam-shell .library-hero-main {
+  max-width: min(840px, 70%);
+}
+
+.sam-shell .library-github-header h2 {
+  font-size: clamp(30px, 3.2vw, 42px);
+}
+
+.sam-shell .release-modal--wizard .release-asset-list,
+.release-modal--wizard .release-asset-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sam-shell .release-asset-card,
+.release-modal--wizard .release-asset-card {
+  align-items: start;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.sam-shell .release-asset-main,
+.release-modal--wizard .release-asset-main {
+  flex: 1 1 260px;
+}
+
+.sam-shell .release-asset-badges,
+.release-modal--wizard .release-asset-badges {
+  align-items: flex-start;
+  flex: 0 1 180px;
+}
+
+.sam-shell .download-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(98px, 1fr));
+}
+
+.sam-shell .download-step {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

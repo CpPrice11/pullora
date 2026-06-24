@@ -1607,7 +1607,7 @@ Object.assign(dictionaries.uk, {
   'release.autoInstallOnly': 'Pullora підтримує portable EXE, архіви з EXE та setup/MSI інсталятори. Інсталятор може відкрити окремий майстер Windows.',
   'release.installerSupportedTitle': 'Інсталятор підтримується',
   'release.installerSupportedText': 'Pullora завантажить інсталятор, запустить майстер і після завершення спробує знайти встановлений EXE для бібліотеки.',
-  'release.installerSupportedHelp': 'Заверши майстер інсталяції у відкритому вікні. Якщо майстер просить шлях, краще обери папку застосунку або стандартний Program Files шлях.',
+  'release.installerSupportedHelp': 'Заверши майстер інсталяції у відкритому вікні. Якщо майстер просить шлях, обери власну папку застосунку або лиши шлях, який пропонує сам інсталятор.',
   'download.stageRunningInstaller': 'Запуск інсталятора',
   'download.stageRunningInstallerText': 'Відкрито зовнішній майстер. Заверши інсталяцію, після цього Pullora знайде виконуваний файл.',
   'download.stageExtractingText': 'Розпаковуємо архів або переносимо portable EXE у папку застосунку.',
@@ -1620,11 +1620,53 @@ Object.assign(dictionaries.en, {
   'release.autoInstallOnly': 'Pullora supports portable EXE files, archives with an EXE, and setup/MSI installers. An installer may open a separate Windows wizard.',
   'release.installerSupportedTitle': 'Installer supported',
   'release.installerSupportedText': 'Pullora will download the installer, run its wizard, then try to find the installed EXE for the library.',
-  'release.installerSupportedHelp': 'Finish the installer wizard in the opened window. If it asks for a path, prefer the app folder or the standard Program Files location.',
+  'release.installerSupportedHelp': 'Finish the installer wizard in the opened window. If it asks for a path, choose your own app folder or keep the location offered by the installer.',
   'download.stageRunningInstaller': 'Running installer',
   'download.stageRunningInstallerText': 'An external wizard is open. Finish the installation, then Pullora will locate the executable.',
   'download.stageExtractingText': 'Extracting the archive or moving the portable EXE into the app folder.',
   'download.stageCompletedText': 'The version is installed. You can launch the app or open its folder.',
+})
+
+Object.assign(dictionaries.uk, {
+  'release.installPathUnavailable': 'Не вдалося перевірити папку встановлення.',
+  'release.installPathRequiresWritable': 'Pullora не може записати portable-версію в цю папку без прав адміністратора. Обери іншу папку, наприклад Documents\\Pullora Apps.',
+  'release.installerSupportedHelp': 'Заверши майстер інсталяції у відкритому вікні. Якщо майстер просить шлях, обери власну папку застосунку або лиши шлях, який пропонує сам інсталятор.',
+  'download.stageRunningInstaller': 'Інсталятор',
+  'library.detailsEmptyTitle': 'Оберіть застосунок',
+  'library.detailsEmptyText': 'Виберіть проєкт у списку зліва, щоб переглянути версії, деталі та дії встановлення.',
+})
+
+Object.assign(dictionaries.en, {
+  'release.installPathUnavailable': 'Could not check the install folder.',
+  'release.installPathRequiresWritable': 'Pullora cannot write a portable version to this folder without administrator rights. Choose another folder, for example Documents\\Pullora Apps.',
+  'release.installerSupportedHelp': 'Finish the installer wizard in the opened window. If it asks for a path, choose your own app folder or keep the location offered by the installer.',
+  'download.stageRunningInstaller': 'Installer',
+  'library.detailsEmptyTitle': 'Select an app',
+  'library.detailsEmptyText': 'Choose a project from the list on the left to view versions, details, and install actions.',
+})
+
+Object.assign(dictionaries.uk, {
+  'library.sidebar.navigation': 'Навігація бібліотеки',
+  'library.nav.home': 'Домівка',
+  'library.nav.recent': 'Нещодавня активність',
+  'library.nav.ready': 'Готові до запуску',
+  'library.folder.title': 'Папки',
+  'library.folder.create': 'Створити папку',
+  'library.folder.createPrompt': 'Назва нової папки',
+  'library.folder.favorites': 'Обране',
+  'library.folder.moveTo': 'Перемістити в папку',
+})
+
+Object.assign(dictionaries.en, {
+  'library.sidebar.navigation': 'Library navigation',
+  'library.nav.home': 'Home',
+  'library.nav.recent': 'Recent activity',
+  'library.nav.ready': 'Ready to launch',
+  'library.folder.title': 'Folders',
+  'library.folder.create': 'Create folder',
+  'library.folder.createPrompt': 'New folder name',
+  'library.folder.favorites': 'Favorites',
+  'library.folder.moveTo': 'Move to folder',
 })
 
 interface LanguageContextValue {
