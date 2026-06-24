@@ -10,10 +10,12 @@ interface RepoCardProps {
   installedApp?: InstalledApp
   latestVersion?: string
   art?: ProjectArt
+  folders?: Array<{ id: string; name: string }>
   isFavorite?: boolean
   isSelected?: boolean
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
+  onMoveToFolder?: (folderId: string) => void
   onPickArt?: () => void
   onClearArt?: () => void
   onUninstall?: () => void
@@ -26,10 +28,12 @@ function RepoCard({
   installedApp,
   latestVersion,
   art,
+  folders = [],
   isFavorite,
   isSelected = false,
   onPreview,
   onFavoriteChange,
+  onMoveToFolder,
   onPickArt,
   onClearArt,
   onUninstall,
@@ -140,6 +144,12 @@ function RepoCard({
     onUninstall?.()
   }
 
+  const handleMoveToFolder = (event: React.MouseEvent, folderId: string) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onMoveToFolder?.(folderId)
+  }
+
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
@@ -246,6 +256,21 @@ function RepoCard({
             >
               {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
             </button>
+            {folders.length > 0 && onMoveToFolder && (
+              <>
+                <span className="repo-actions-menu-label">{t('library.folder.moveTo')}</span>
+                {folders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={(event) => handleMoveToFolder(event, folder.id)}
+                  >
+                    {folder.name}
+                  </button>
+                ))}
+              </>
+            )}
             {isInstalled && hasUpdate && (
               <button
                 type="button"
