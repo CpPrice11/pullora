@@ -1216,6 +1216,7 @@ function LibraryPage({
 
   const renderLibraryTrustPanel = () => {
     if (suppressDiagnostics) return null
+    if (libraryTrustKind === 'fresh' && !libraryTrustExpanded) return null
 
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
