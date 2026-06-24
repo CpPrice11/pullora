@@ -1669,6 +1669,38 @@ Object.assign(dictionaries.en, {
   'library.folder.moveTo': 'Move to folder',
 })
 
+Object.assign(dictionaries.uk, {
+  'library.folder.addTo': 'Додати до',
+  'library.folder.createNew': 'Створити нову папку',
+  'library.folder.uncategorized': 'Без папки',
+  'library.folder.modalTitle': 'Нова папка',
+  'library.folder.nameLabel': 'Назва папки',
+  'library.folder.namePlaceholder': 'Наприклад RPG',
+  'library.folder.cancel': 'Скасувати',
+  'library.folder.confirm': 'Створити',
+  'library.folder.emptyName': 'Введіть назву папки.',
+  'library.folder.duplicateName': 'Папка з такою назвою вже існує.',
+  'library.folder.saveError': 'Не вдалося зберегти папки бібліотеки.',
+  'library.folder.itemsCount': '{count} елементів',
+  'library.folder.targetApp': 'Елемент буде додано: {name}',
+})
+
+Object.assign(dictionaries.en, {
+  'library.folder.addTo': 'Add to',
+  'library.folder.createNew': 'Create new folder',
+  'library.folder.uncategorized': 'Uncategorized',
+  'library.folder.modalTitle': 'New folder',
+  'library.folder.nameLabel': 'Folder name',
+  'library.folder.namePlaceholder': 'For example RPG',
+  'library.folder.cancel': 'Cancel',
+  'library.folder.confirm': 'Create',
+  'library.folder.emptyName': 'Enter a folder name.',
+  'library.folder.duplicateName': 'A folder with this name already exists.',
+  'library.folder.saveError': 'Could not save library folders.',
+  'library.folder.itemsCount': '{count} items',
+  'library.folder.targetApp': 'Item will be added: {name}',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

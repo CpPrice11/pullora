@@ -1,5 +1,6 @@
 pub mod favorites;
 pub mod installed;
+pub mod library_folders;
 pub mod logs;
 pub mod project_art;
 pub mod settings;
@@ -51,10 +52,16 @@ pub fn get_config_dir() -> std::path::PathBuf {
 
 fn is_portable_executable() -> bool {
     if let Ok(exe_path) = std::env::current_exe() {
-        return exe_path
+        let portable_file_name = exe_path
             .file_name()
             .and_then(|name| name.to_str())
             .is_some_and(|name| name.to_ascii_lowercase().contains("portable"));
+        let portable_marker = exe_path
+            .parent()
+            .map(|dir| dir.join(".portable").exists())
+            .unwrap_or(false);
+
+        return portable_file_name || portable_marker;
     }
 
     false

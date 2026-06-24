@@ -141,6 +141,13 @@ export interface FavoriteApp {
   lastChecked?: string
 }
 
+export interface LibraryFolder {
+  id: string
+  name: string
+  repoKeys: string[]
+  pinned?: boolean
+}
+
 export interface ProjectArt {
   owner: string
   repo: string
