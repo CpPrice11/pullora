@@ -36,12 +36,9 @@ impl From<serde_json::Error> for StorageError {
 }
 
 pub fn get_config_dir() -> std::path::PathBuf {
-    // Portable mode is opt-in. A generic config.json next to the executable is
-    // too easy to create accidentally, so only the explicit marker is trusted.
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            let portable_marker = exe_dir.join(".portable");
-            if portable_marker.exists() {
+    if is_portable_executable() {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
                 return exe_dir.to_path_buf();
             }
         }
@@ -50,4 +47,15 @@ pub fn get_config_dir() -> std::path::PathBuf {
     dirs::config_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("pullora")
+}
+
+fn is_portable_executable() -> bool {
+    if let Ok(exe_path) = std::env::current_exe() {
+        return exe_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.to_ascii_lowercase().contains("portable"));
+    }
+
+    false
 }
