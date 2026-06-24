@@ -1868,14 +1868,11 @@ function LibraryPage({
           </section>
 
           <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
-            <div className="library-sam-details-toolbar">
-              <span>{t('details.open')}</span>
-            </div>
-            {renderLibraryTrustPanel()}
             {renderDetailsEmpty()}
             {renderHero()}
             {renderOperationsPanel()}
             {renderUpdatesCenter()}
+            {renderLibraryTrustPanel()}
           </aside>
         </div>
 
