@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::StorageError;
 
@@ -48,6 +48,14 @@ fn default_asset_strategy() -> String {
 
 pub fn is_portable() -> bool {
     if let Ok(exe_path) = std::env::current_exe() {
+        if exe_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.to_ascii_lowercase().contains("portable"))
+        {
+            return true;
+        }
+
         if let Some(exe_dir) = exe_path.parent() {
             return exe_dir.join(".portable").exists();
         }
@@ -69,6 +77,39 @@ pub fn default_installation_path() -> String {
         .join("Pullora Apps")
         .to_string_lossy()
         .to_string()
+}
+
+fn is_legacy_git_installation_path(path: &str) -> bool {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    let path_buf = PathBuf::from(trimmed);
+    let ends_with_git = path_buf
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.eq_ignore_ascii_case("Git"));
+
+    if !ends_with_git {
+        return false;
+    }
+
+    let normalized = trimmed.replace('/', "\\").to_ascii_lowercase();
+    normalized.ends_with("\\program files\\git")
+        || normalized.ends_with("\\program files (x86)\\git")
+}
+
+fn normalize_loaded_settings(mut settings: AppSettings) -> AppSettings {
+    if settings
+        .installation_path
+        .as_deref()
+        .is_some_and(is_legacy_git_installation_path)
+    {
+        settings.installation_path = Some(default_installation_path());
+    }
+
+    settings
 }
 
 impl Default for AppSettings {
@@ -100,7 +141,7 @@ pub fn load_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
     }
     let content = std::fs::read_to_string(&path)?;
     let settings: AppSettings = serde_json::from_str(&content)?;
-    Ok(settings)
+    Ok(normalize_loaded_settings(settings))
 }
 
 pub fn save_settings(config_dir: &Path, settings: &AppSettings) -> Result<(), StorageError> {
