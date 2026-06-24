@@ -11,6 +11,7 @@ import StatePanel from '../../components/State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir, uninstallApp } from '../../services/installed'
 import { getReleases } from '../../services/github'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
+import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
 import { pickImageFile } from '../../services/dialog'
 import {
   clearProjectArt,
@@ -20,7 +21,7 @@ import {
   projectArtKey,
   setProjectArt,
 } from '../../services/projectArt'
-import type { DownloadProgress, FavoriteApp, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, ProjectArt } from '../../types'
+import type { DownloadProgress, FavoriteApp, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
 import '../../pages/PageStyles.css'
 
@@ -30,10 +31,10 @@ type LibraryViewMode = 'home' | 'recent' | 'ready'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
 type HeroPanel = 'overview' | 'versions' | 'details'
-type LibraryFolder = {
+type LibrarySection = {
   id: string
-  name: string
-  repoKeys: string[]
+  title: string
+  repositories: GitHubSearchResult[]
   pinned?: boolean
 }
 type BatchUpdateJob = {
@@ -120,7 +121,6 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
 }
 
 const favoritesFolderId = 'favorites'
-const libraryFoldersStorageKey = 'pullora-library-folders-v1'
 
 function normalizeRepoKey(owner: string, repo: string) {
   return projectArtKey(owner, repo)
@@ -155,25 +155,6 @@ function ensureFavoritesFolder(folders: LibraryFolder[]) {
       repoKeys: Array.from(new Set(folder.repoKeys ?? [])),
     })),
   ]
-}
-
-function loadLibraryFolders() {
-  if (typeof window === 'undefined') return ensureFavoritesFolder([])
-
-  try {
-    const rawFolders = window.localStorage.getItem(libraryFoldersStorageKey)
-    if (!rawFolders) return ensureFavoritesFolder([])
-    const parsed = JSON.parse(rawFolders) as LibraryFolder[]
-    if (!Array.isArray(parsed)) return ensureFavoritesFolder([])
-
-    return ensureFavoritesFolder(parsed.filter((folder) =>
-      typeof folder?.id === 'string' &&
-      typeof folder?.name === 'string' &&
-      Array.isArray(folder?.repoKeys),
-    ))
-  } catch {
-    return ensureFavoritesFolder([])
-  }
 }
 
 function makeFolderId(name: string) {
@@ -265,7 +246,11 @@ function LibraryPage({
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [viewMode, setViewMode] = useState<LibraryViewMode>('home')
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
-  const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => loadLibraryFolders())
+  const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => ensureFavoritesFolder([]))
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false)
+  const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
+  const [folderName, setFolderName] = useState('')
+  const [folderError, setFolderError] = useState<string | null>(null)
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
   const [heroPanel, setHeroPanel] = useState<HeroPanel>('overview')
@@ -296,6 +281,7 @@ function LibraryPage({
     cancel: cancelBatchDownload,
   } = useDownload()
   const heroActionsRef = useRef<HTMLDivElement | null>(null)
+  const libraryFoldersLoadedRef = useRef(false)
   const owner = settings.githubOwner?.trim()
   const {
     state,
@@ -394,9 +380,31 @@ function LibraryPage({
   }
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(libraryFoldersStorageKey, JSON.stringify(libraryFolders))
-  }, [libraryFolders])
+    let cancelled = false
+
+    getLibraryFolders()
+      .then((folders) => {
+        if (cancelled) return
+        libraryFoldersLoadedRef.current = true
+        setLibraryFolders(ensureFavoritesFolder(folders))
+      })
+      .catch(() => {
+        if (cancelled) return
+        libraryFoldersLoadedRef.current = true
+        setLibraryActionMessage(t('library.folder.saveError'))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!libraryFoldersLoadedRef.current) return
+
+    saveLibraryFolders(ensureFavoritesFolder(libraryFolders))
+      .catch(() => setLibraryActionMessage(t('library.folder.saveError')))
+  }, [libraryFolders, t])
 
   useEffect(() => {
     const favoriteRepoKeys = favorites
@@ -443,31 +451,60 @@ function LibraryPage({
     setSort('status')
   }
 
-  const openFolderView = (folderId: string) => {
-    setViewMode('home')
-    setActiveFolderId(folderId)
-    setFilter('all')
-    setSort('updated')
+  const openCreateFolderDialog = (repo: GitHubSearchResult) => {
+    setFolderDialogRepo(repo)
+    setFolderName('')
+    setFolderError(null)
+    setFolderDialogOpen(true)
   }
 
-  const handleCreateFolder = () => {
-    const name = normalizeFolderName(window.prompt(t('library.folder.createPrompt')) ?? '')
-    if (!name) return
+  const closeCreateFolderDialog = () => {
+    setFolderDialogOpen(false)
+    setFolderDialogRepo(null)
+    setFolderName('')
+    setFolderError(null)
+  }
+
+  const handleConfirmCreateFolder = () => {
+    const name = normalizeFolderName(folderName)
+    if (!name) {
+      setFolderError(t('library.folder.emptyName'))
+      return
+    }
+
+    const normalizedName = name.toLowerCase()
+    const duplicate = displayFolders.some((folder) =>
+      folder.name.toLowerCase() === normalizedName ||
+      (folder.id === favoritesFolderId && t('library.folder.favorites').toLowerCase() === normalizedName)
+    )
+    if (duplicate) {
+      setFolderError(t('library.folder.duplicateName'))
+      return
+    }
+
+    const repoKey = folderDialogRepo
+      ? normalizeRepoKey(folderDialogRepo.owner.login, folderDialogRepo.name)
+      : null
 
     setLibraryFolders((current) => {
-      const folders = ensureFavoritesFolder(current)
-      const duplicate = folders.some((folder) => folder.name.toLowerCase() === name.toLowerCase())
-      if (duplicate) return folders
+      const folders = ensureFavoritesFolder(current).map((folder) => {
+        if (!repoKey || folder.id === favoritesFolderId) return folder
+        return {
+          ...folder,
+          repoKeys: folder.repoKeys.filter((key) => key !== repoKey),
+        }
+      })
 
       return [
         ...folders,
         {
           id: makeFolderId(name),
           name,
-          repoKeys: [],
+          repoKeys: repoKey ? [repoKey] : [],
         },
       ]
     })
+    closeCreateFolderDialog()
   }
 
   const handleMoveToFolder = async (repo: GitHubSearchResult, folderId: string) => {
@@ -488,7 +525,10 @@ function LibraryPage({
     }
 
     setLibraryFolders((current) => ensureFavoritesFolder(current).map((folder) => {
-      const withoutCurrentRepo = folder.repoKeys.filter((key) => key !== repoKey)
+      const keepFavoriteMembership = folder.id === favoritesFolderId && folder.id !== folderId
+      const withoutCurrentRepo = keepFavoriteMembership
+        ? folder.repoKeys
+        : folder.repoKeys.filter((key) => key !== repoKey)
       if (folder.id !== folderId) {
         return {
           ...folder,
@@ -756,16 +796,6 @@ function LibraryPage({
         .map((favorite) => [normalizeRepoKey(favorite.owner, favorite.repo), favorite]),
     )
   }, [favorites])
-  const folderRepoCounts = useMemo(() => {
-    const availableKeys = new Set(
-      libraryRepositories.map((repo) => normalizeRepoKey(repo.owner.login, repo.name)),
-    )
-
-    return new Map(displayFolders.map((folder) => [
-      folder.id,
-      folder.repoKeys.filter((key) => availableKeys.has(key)).length,
-    ]))
-  }, [displayFolders, libraryRepositories])
 
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -867,6 +897,52 @@ function LibraryPage({
     sort,
     viewMode,
   ])
+
+  const visibleRepositorySections = useMemo<LibrarySection[]>(() => {
+    if (visibleRepositories.length === 0) return []
+
+    const reposByKey = new Map(
+      visibleRepositories.map((repo) => [normalizeRepoKey(repo.owner.login, repo.name), repo]),
+    )
+    const assignedRepoKeys = new Set<string>()
+    const folders = activeFolder ? [activeFolder] : displayFolders
+    const sections: LibrarySection[] = []
+
+    folders.forEach((folder) => {
+      const repositories = folder.repoKeys
+        .map((key) => reposByKey.get(key))
+        .filter((repo): repo is GitHubSearchResult => Boolean(repo))
+
+      if (repositories.length === 0) return
+
+      repositories.forEach((repo) => {
+        assignedRepoKeys.add(normalizeRepoKey(repo.owner.login, repo.name))
+      })
+
+      sections.push({
+        id: folder.id,
+        title: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+        repositories,
+        pinned: folder.pinned,
+      })
+    })
+
+    if (!activeFolder) {
+      const ungroupedRepositories = visibleRepositories.filter((repo) =>
+        !assignedRepoKeys.has(normalizeRepoKey(repo.owner.login, repo.name))
+      )
+
+      if (ungroupedRepositories.length > 0) {
+        sections.push({
+          id: 'uncategorized',
+          title: t('library.folder.uncategorized'),
+          repositories: ungroupedRepositories,
+        })
+      }
+    }
+
+    return sections
+  }, [activeFolder, displayFolders, t, visibleRepositories])
 
   const modeRepositoryCount = libraryRepositories.length
 
@@ -1627,6 +1703,15 @@ function LibraryPage({
       ? onOpenSettings
       : handleRefresh
     : handleResetLibraryFilters
+  const normalizedFolderName = normalizeFolderName(folderName)
+  const folderNameDuplicate = Boolean(normalizedFolderName) && displayFolders.some((folder) =>
+    folder.name.toLowerCase() === normalizedFolderName.toLowerCase() ||
+    (folder.id === favoritesFolderId &&
+      t('library.folder.favorites').toLowerCase() === normalizedFolderName.toLowerCase())
+  )
+  const folderDialogError = folderError ||
+    (folderNameDuplicate ? t('library.folder.duplicateName') : null)
+  const canCreateFolder = Boolean(normalizedFolderName) && !folderNameDuplicate
 
   return (
     <div className="page library-page">
@@ -1679,41 +1764,6 @@ function LibraryPage({
                 />
               </div>
 
-              <div className="library-folder-panel" aria-label={t('library.folder.title')}>
-                <div className="library-folder-header">
-                  <span>{t('library.folder.title')}</span>
-                  <button
-                    type="button"
-                    className="library-folder-create"
-                    onClick={handleCreateFolder}
-                    title={t('library.folder.create')}
-                    aria-label={t('library.folder.create')}
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="library-folder-list">
-                  {displayFolders.map((folder) => {
-                    const folderName = folder.id === favoritesFolderId
-                      ? t('library.folder.favorites')
-                      : folder.name
-
-                    return (
-                    <button
-                      key={folder.id}
-                      type="button"
-                      className={`library-folder-item ${activeFolderId === folder.id ? 'active' : ''}`}
-                      aria-pressed={activeFolderId === folder.id}
-                      title={folderName}
-                      onClick={() => openFolderView(folder.id)}
-                    >
-                      <span>{folderName}</span>
-                      <em>{folderRepoCounts.get(folder.id) ?? 0}</em>
-                    </button>
-                    )
-                  })}
-                </div>
-              </div>
             </section>
 
             <div className="search-results">
@@ -1770,33 +1820,44 @@ function LibraryPage({
                 />
               )}
 
-              {visibleRepositories.map((repo) => {
-                const key = projectArtKey(repo.owner.login, repo.name)
+              {visibleRepositorySections.map((section) => (
+                <section key={section.id} className={`library-folder-section ${section.pinned ? 'pinned' : ''}`}>
+                  <div className="library-folder-section-header">
+                    <span>{section.title}</span>
+                    <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
+                  </div>
+                  <div className="library-folder-section-items">
+                    {section.repositories.map((repo) => {
+                      const key = projectArtKey(repo.owner.login, repo.name)
 
-                return (
-                  <RepoCard
-                    key={repo.id}
-                    repo={repo}
-                    installedApp={getInstalledApp(repo)}
-                    latestVersion={getLatestVersion(repo)}
-                    art={projectArt[key]}
-                    isFavorite={favoriteKeys.has(key)}
-                    isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                    onPreview={() => selectFeaturedRepo(repo)}
-                    onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                    onPickArt={() => handlePickArt('cover', repo)}
-                    onClearArt={() => handleClearArt(repo)}
-                    onUninstall={() => handleRequestUninstall(repo)}
-                    onInstall={() => setSelectedRepo(repo)}
-                    onLaunch={() => handleLaunch(repo)}
-                    folders={displayFolders.map((folder) => ({
-                      id: folder.id,
-                      name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                    }))}
-                    onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
-                  />
-                )
-              })}
+                      return (
+                        <RepoCard
+                          key={repo.id}
+                          repo={repo}
+                          installedApp={getInstalledApp(repo)}
+                          latestVersion={getLatestVersion(repo)}
+                          art={projectArt[key]}
+                          isFavorite={favoriteKeys.has(key)}
+                          isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+                          onPreview={() => selectFeaturedRepo(repo)}
+                          onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+                          onPickArt={() => handlePickArt('cover', repo)}
+                          onClearArt={() => handleClearArt(repo)}
+                          onUninstall={() => handleRequestUninstall(repo)}
+                          onInstall={() => setSelectedRepo(repo)}
+                          onLaunch={() => handleLaunch(repo)}
+                          folders={displayFolders.map((folder) => ({
+                            id: folder.id,
+                            name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                          }))}
+                          onCreateFolder={() => openCreateFolderDialog(repo)}
+                          onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
+                        />
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
             </div>
 
             {state.hasMore && (
@@ -1847,6 +1908,66 @@ function LibraryPage({
           }}
           onConfirm={handleConfirmUninstall}
         />
+      )}
+
+      {folderDialogOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeCreateFolderDialog}>
+          <div
+            className="confirm-modal library-folder-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="library-folder-modal-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="confirm-modal-header">
+              <div>
+                <span className="confirm-modal-kicker">{t('library.folder.title')}</span>
+                <h3 id="library-folder-modal-title">{t('library.folder.modalTitle')}</h3>
+              </div>
+              <button
+                type="button"
+                className="secondary-btn confirm-close-btn"
+                aria-label={t('library.folder.cancel')}
+                onClick={closeCreateFolderDialog}
+              >
+                ×
+              </button>
+            </div>
+            <div className="library-folder-form">
+              <label htmlFor="library-folder-name">{t('library.folder.nameLabel')}</label>
+              <input
+                id="library-folder-name"
+                type="text"
+                value={folderName}
+                placeholder={t('library.folder.namePlaceholder')}
+                autoFocus
+                onChange={(event) => {
+                  setFolderName(event.target.value)
+                  setFolderError(null)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && canCreateFolder) {
+                    handleConfirmCreateFolder()
+                  }
+                }}
+              />
+              {folderDialogRepo && (
+                <p>{t('library.folder.targetApp', { name: folderDialogRepo.name })}</p>
+              )}
+              {folderDialogError && (
+                <span className="library-folder-error" role="alert">{folderDialogError}</span>
+              )}
+            </div>
+            <div className="confirm-actions">
+              <button type="button" className="secondary-btn" onClick={closeCreateFolderDialog}>
+                {t('library.folder.cancel')}
+              </button>
+              <button type="button" onClick={handleConfirmCreateFolder} disabled={!canCreateFolder}>
+                {t('library.folder.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {libraryActionMessage && (

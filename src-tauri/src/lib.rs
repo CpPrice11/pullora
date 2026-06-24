@@ -62,6 +62,8 @@ pub fn run() {
             commands::favorites::add_to_favorites,
             commands::favorites::remove_from_favorites,
             commands::favorites::check_is_favorite,
+            commands::library_folders::get_library_folders,
+            commands::library_folders::save_library_folders,
             commands::installed::get_installed_apps,
             commands::installed::export_installed_registry,
             commands::installed::import_installed_registry,

@@ -15,6 +15,7 @@ interface RepoCardProps {
   isSelected?: boolean
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
+  onCreateFolder?: () => void
   onMoveToFolder?: (folderId: string) => void
   onPickArt?: () => void
   onClearArt?: () => void
@@ -33,6 +34,7 @@ function RepoCard({
   isSelected = false,
   onPreview,
   onFavoriteChange,
+  onCreateFolder,
   onMoveToFolder,
   onPickArt,
   onClearArt,
@@ -44,6 +46,7 @@ function RepoCard({
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
+  const [folderMenuOpen, setFolderMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
   const isInstalled = Boolean(installedApp)
@@ -65,7 +68,10 @@ function RepoCard({
   }, [isFavorite, repo.owner.login, repo.name])
 
   useEffect(() => {
-    if (!actionsOpen) return
+    if (!actionsOpen) {
+      setFolderMenuOpen(false)
+      return
+    }
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!actionsRef.current?.contains(event.target as Node)) {
@@ -148,6 +154,12 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onMoveToFolder?.(folderId)
+  }
+
+  const handleCreateFolder = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onCreateFolder?.()
   }
 
   const handleContextMenu = (event: React.MouseEvent) => {
@@ -256,10 +268,36 @@ function RepoCard({
             >
               {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
             </button>
-            {folders.length > 0 && onMoveToFolder && (
-              <>
-                <span className="repo-actions-menu-label">{t('library.folder.moveTo')}</span>
-                {folders.map((folder) => (
+            {(onCreateFolder || onMoveToFolder) && (
+              <div
+                className={`repo-actions-submenu ${folderMenuOpen ? 'open' : ''}`}
+                onMouseEnter={() => setFolderMenuOpen(true)}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="repo-actions-submenu-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={folderMenuOpen}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setFolderMenuOpen((current) => !current)
+                  }}
+                >
+                  <span>{t('library.folder.addTo')}</span>
+                  <span aria-hidden="true">›</span>
+                </button>
+                {folderMenuOpen && (
+                  <div className="repo-actions-submenu-panel" role="menu">
+                    {onCreateFolder && (
+                      <button type="button" role="menuitem" onClick={handleCreateFolder}>
+                        {t('library.folder.createNew')}
+                      </button>
+                    )}
+                    {folders.length > 0 && (
+                      <span className="repo-actions-menu-label">{t('library.folder.title')}</span>
+                    )}
+                    {folders.map((folder) => (
                   <button
                     key={folder.id}
                     type="button"
@@ -268,8 +306,10 @@ function RepoCard({
                   >
                     {folder.name}
                   </button>
-                ))}
-              </>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             {isInstalled && hasUpdate && (
               <button
