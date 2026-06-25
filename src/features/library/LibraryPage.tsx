@@ -121,6 +121,7 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
 }
 
 const favoritesFolderId = 'favorites'
+const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
 
 function normalizeRepoKey(owner: string, repo: string) {
   return projectArtKey(owner, repo)
@@ -159,6 +160,20 @@ function ensureFavoritesFolder(folders: LibraryFolder[]) {
 
 function makeFolderId(name: string) {
   return `folder-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom'}-${Date.now()}`
+}
+
+function loadCollapsedFolderIds() {
+  if (typeof window === 'undefined') return new Set<string>()
+
+  try {
+    const rawIds = window.localStorage.getItem(collapsedFoldersStorageKey)
+    if (!rawIds) return new Set<string>()
+    const parsed = JSON.parse(rawIds) as unknown
+    if (!Array.isArray(parsed)) return new Set<string>()
+    return new Set(parsed.filter((id): id is string => typeof id === 'string'))
+  } catch {
+    return new Set<string>()
+  }
 }
 
 function classifyLibraryError(error: string | null): LibraryErrorKind {
@@ -251,6 +266,7 @@ function LibraryPage({
   const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
   const [folderName, setFolderName] = useState('')
   const [folderError, setFolderError] = useState<string | null>(null)
+  const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => loadCollapsedFolderIds())
   const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
   const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
   const [heroPanel, setHeroPanel] = useState<HeroPanel>('overview')
@@ -407,6 +423,14 @@ function LibraryPage({
   }, [libraryFolders, t])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(
+      collapsedFoldersStorageKey,
+      JSON.stringify(Array.from(collapsedFolderIds)),
+    )
+  }, [collapsedFolderIds])
+
+  useEffect(() => {
     const favoriteRepoKeys = favorites
       .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
       .map((favorite) => normalizeRepoKey(favorite.owner, favorite.repo))
@@ -463,6 +487,18 @@ function LibraryPage({
     setFolderDialogRepo(null)
     setFolderName('')
     setFolderError(null)
+  }
+
+  const toggleFolderSection = (sectionId: string) => {
+    setCollapsedFolderIds((current) => {
+      const next = new Set(current)
+      if (next.has(sectionId)) {
+        next.delete(sectionId)
+      } else {
+        next.add(sectionId)
+      }
+      return next
+    })
   }
 
   const handleConfirmCreateFolder = () => {
@@ -1821,44 +1857,61 @@ function LibraryPage({
                 />
               )}
 
-              {visibleRepositorySections.map((section) => (
-                <section key={section.id} className={`library-folder-section ${section.pinned ? 'pinned' : ''}`}>
-                  <div className="library-folder-section-header">
-                    <span>{section.title}</span>
-                    <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
-                  </div>
-                  <div className="library-folder-section-items">
-                    {section.repositories.map((repo) => {
-                      const key = projectArtKey(repo.owner.login, repo.name)
+              {visibleRepositorySections.map((section) => {
+                const isCollapsed = collapsedFolderIds.has(section.id)
 
-                      return (
-                        <RepoCard
-                          key={repo.id}
-                          repo={repo}
-                          installedApp={getInstalledApp(repo)}
-                          latestVersion={getLatestVersion(repo)}
-                          art={projectArt[key]}
-                          isFavorite={favoriteKeys.has(key)}
-                          isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                          onPreview={() => selectFeaturedRepo(repo)}
-                          onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                          onPickArt={() => handlePickArt('cover', repo)}
-                          onClearArt={() => handleClearArt(repo)}
-                          onUninstall={() => handleRequestUninstall(repo)}
-                          onInstall={() => setSelectedRepo(repo)}
-                          onLaunch={() => handleLaunch(repo)}
-                          folders={displayFolders.map((folder) => ({
-                            id: folder.id,
-                            name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                          }))}
-                          onCreateFolder={() => openCreateFolderDialog(repo)}
-                          onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
-                        />
-                      )
-                    })}
-                  </div>
-                </section>
-              ))}
+                return (
+                  <section
+                    key={section.id}
+                    className={`library-folder-section ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="library-folder-section-header"
+                      aria-expanded={!isCollapsed}
+                      onClick={() => toggleFolderSection(section.id)}
+                    >
+                      <span className="library-folder-section-title">
+                        <span className="library-folder-section-chevron" aria-hidden="true" />
+                        <span>{section.title}</span>
+                      </span>
+                      <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="library-folder-section-items">
+                        {section.repositories.map((repo) => {
+                          const key = projectArtKey(repo.owner.login, repo.name)
+
+                          return (
+                            <RepoCard
+                              key={repo.id}
+                              repo={repo}
+                              installedApp={getInstalledApp(repo)}
+                              latestVersion={getLatestVersion(repo)}
+                              art={projectArt[key]}
+                              isFavorite={favoriteKeys.has(key)}
+                              isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+                              onPreview={() => selectFeaturedRepo(repo)}
+                              onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+                              onPickArt={() => handlePickArt('cover', repo)}
+                              onClearArt={() => handleClearArt(repo)}
+                              onUninstall={() => handleRequestUninstall(repo)}
+                              onInstall={() => setSelectedRepo(repo)}
+                              onLaunch={() => handleLaunch(repo)}
+                              folders={displayFolders.map((folder) => ({
+                                id: folder.id,
+                                name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                              }))}
+                              onCreateFolder={() => openCreateFolderDialog(repo)}
+                              onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </section>
+                )
+              })}
             </div>
 
             {state.hasMore && (

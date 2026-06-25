@@ -4053,15 +4053,34 @@
 
 .library-folder-section-header {
   align-items: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   color: var(--color-text-secondary);
+  cursor: pointer;
   display: flex;
+  font: inherit;
   gap: 8px;
   justify-content: space-between;
   min-height: 28px;
   padding: 2px 8px;
+  text-align: left;
+  width: 100%;
 }
 
-.library-folder-section-header span {
+.library-folder-section-header:hover {
+  background: color-mix(in srgb, var(--color-control-hover) 28%, transparent);
+  transform: none;
+}
+
+.library-folder-section-title {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.library-folder-section-title span:last-child {
   color: var(--color-text);
   font-size: 13px;
   font-weight: 800;
@@ -4071,6 +4090,29 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.library-folder-section-chevron {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 14px;
+  justify-content: center;
+  width: 10px;
+}
+
+.library-folder-section-chevron::before {
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  content: '';
+  display: block;
+  transform: rotate(90deg);
+  transition: transform var(--motion-fast);
+}
+
+.library-folder-section.collapsed .library-folder-section-chevron::before {
+  transform: rotate(0deg);
 }
 
 .library-folder-section-header em {
@@ -4094,21 +4136,31 @@
 .sam-shell .library-folder-section-header {
   background: rgba(255, 255, 255, 0.025);
   border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 0;
+  box-shadow: none;
   min-height: 26px;
   padding: 0 8px;
+}
+
+.sam-shell .library-folder-section-header:hover {
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .sam-shell .library-folder-section.pinned .library-folder-section-header {
   background: rgba(102, 192, 244, 0.08);
 }
 
-.sam-shell .library-folder-section-header span {
+.sam-shell .library-folder-section-title span:last-child {
   color: #9fb4c6;
   font-size: 12px;
 }
 
-.sam-shell .library-folder-section.pinned .library-folder-section-header span {
+.sam-shell .library-folder-section.pinned .library-folder-section-title span:last-child {
   color: #66c0f4;
+}
+
+.sam-shell .library-folder-section-chevron {
+  color: #6f8292;
 }
 
 .sam-shell .library-folder-section-header em {
