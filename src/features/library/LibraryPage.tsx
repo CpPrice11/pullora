@@ -1456,12 +1456,6 @@ function LibraryPage({
           <button type="button" className="hero-primary-btn" onClick={primaryAction}>
             {primaryLabel}
           </button>
-          <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
-            {t('repo.versions')}
-          </button>
-          <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
-            {t('details.open')}
-          </button>
           <div
             className={`project-actions-menu hero-actions-menu ${heroActionsOpen ? 'open' : ''}`}
             ref={heroActionsRef}
@@ -1572,9 +1566,6 @@ function LibraryPage({
             <span>{t('details.localVersions')}</span>
             <strong>{localVersionCount.toLocaleString()}</strong>
           </div>
-          <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
-            {hasUpdate ? t('repo.updateAction') : t('repo.versions')}
-          </button>
         </div>
         <div className="library-inline-version-list">
           {localVersions.length > 0 ? localVersions.map((version) => {
@@ -1639,9 +1630,6 @@ function LibraryPage({
     )
 
     const renderInlinePanel = () => {
-      if (heroPanel === 'versions') return renderVersionsInlinePanel()
-      if (heroPanel === 'details') return renderDetailsInlinePanel()
-
       return (
         <div className="library-inline-overview-grid">
           {renderVersionsInlinePanel(true)}
@@ -1663,33 +1651,6 @@ function LibraryPage({
             </span>
           </div>
 
-          <div className="library-ops-grid">
-            <div>
-              <span>{t('library.ops.owner')}</span>
-              <strong>{featuredRepo.owner.login}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.updated')}</span>
-              <strong>{updatedDate}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.language')}</span>
-              <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.localVersions')}</span>
-              <strong>{localVersionCount.toLocaleString()}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.active')}</span>
-              <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.latest')}</span>
-              <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
-            </div>
-          </div>
-
           <div className="library-ops-action-row" aria-label={t('library.action')}>
             <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
               {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
@@ -1709,12 +1670,6 @@ function LibraryPage({
           </div>
 
           <div className="library-ops-tabs" aria-label={t('details.open')}>
-            <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
-              {t('repo.versions')}
-            </button>
-            <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
-              {t('details.open')}
-            </button>
             <span className={`library-ops-tab-label ${featuredRepo.has_releases ? 'ready' : 'muted'}`}>{t('library.ops.releases')}</span>
             <span className={`library-ops-tab-label ${isFavorite ? 'ready' : 'muted'}`}>{t('library.ops.favorite')}</span>
             <span className={`library-ops-tab-label ${featuredRepo.archived ? 'warning' : 'ready'}`}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
