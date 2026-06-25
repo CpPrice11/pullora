@@ -1702,18 +1702,13 @@ function LibraryPage({
             <button type="button" className={`secondary-btn ${heroPanel === 'versions' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('versions')}>
               {t('repo.versions')}
             </button>
-            {installedApp && (
-              <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
-                {t('details.open')}
-              </button>
-            )}
-          </div>
-
-          <div className="library-ops-rail">
-            <span className={featuredRepo.has_releases ? 'ready' : 'muted'}>{t('library.ops.releases')}</span>
-            <span className={isFavorite ? 'ready' : 'muted'}>{t('library.ops.favorite')}</span>
-            <span className={featuredRepo.archived ? 'warning' : 'ready'}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
-            <span className={featuredRepo.fork ? 'muted' : 'ready'}>{featuredRepo.fork ? t('library.ops.fork') : t('library.ops.sourceRepo')}</span>
+            <button type="button" className={`secondary-btn ${heroPanel === 'details' ? 'active-soft' : ''}`} onClick={() => setHeroPanel('details')}>
+              {t('details.open')}
+            </button>
+            <span className={`library-ops-tab-label ${featuredRepo.has_releases ? 'ready' : 'muted'}`}>{t('library.ops.releases')}</span>
+            <span className={`library-ops-tab-label ${isFavorite ? 'ready' : 'muted'}`}>{t('library.ops.favorite')}</span>
+            <span className={`library-ops-tab-label ${featuredRepo.archived ? 'warning' : 'ready'}`}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
+            <span className={`library-ops-tab-label ${featuredRepo.fork ? 'muted' : 'ready'}`}>{featuredRepo.fork ? t('library.ops.fork') : t('library.ops.sourceRepo')}</span>
           </div>
         </section>
 
@@ -1926,7 +1921,7 @@ function LibraryPage({
             {renderHero()}
             {renderOperationsPanel()}
             {renderUpdatesCenter()}
-            {renderLibraryTrustPanel()}
+            {heroPanel === 'details' && renderLibraryTrustPanel()}
           </aside>
         </div>
 
