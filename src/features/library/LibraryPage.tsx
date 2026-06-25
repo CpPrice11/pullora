@@ -1546,69 +1546,68 @@ function LibraryPage({
       : null
     const localVersions = installedApp?.versions ?? []
 
-    const renderInlinePanel = () => {
-      if (heroPanel === 'overview') return null
+    const renderVersionsInlinePanel = (isDefaultView = false) => (
+      <section className={`library-inline-panel library-inline-panel--versions ${isDefaultView ? 'library-inline-panel--default' : ''}`} aria-label={t('repo.versions')}>
+        <div className="library-inline-panel-head">
+          <div>
+            <span>{t('repo.versions')}</span>
+            <strong>{featuredRepo.name}</strong>
+          </div>
+          {!isDefaultView && (
+            <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
+              {t('library.trust.collapse')}
+            </button>
+          )}
+        </div>
+        <div className="library-inline-summary">
+          <div>
+            <span>{t('details.activeVersion')}</span>
+            <strong>{installedApp?.activeVersion ?? t('release.notInstalled')}</strong>
+          </div>
+          <div>
+            <span>{t('details.latestVersion')}</span>
+            <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
+          </div>
+          <div>
+            <span>{t('details.localVersions')}</span>
+            <strong>{localVersionCount.toLocaleString()}</strong>
+          </div>
+          <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
+            {hasUpdate ? t('repo.updateAction') : t('repo.versions')}
+          </button>
+        </div>
+        <div className="library-inline-version-list">
+          {localVersions.length > 0 ? localVersions.map((version) => {
+            const isActive = version.tag === installedApp?.activeVersion
+            const versionDate = new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+            return (
+              <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
+                <div>
+                  <strong>{version.tag}</strong>
+                  <span>{versionDate}</span>
+                </div>
+                <span>{isActive ? t('installed.active') : t('details.versionStateOlder')}</span>
+              </div>
+            )
+          }) : (
+            <p className="library-inline-empty">{t('release.notInstalled')}</p>
+          )}
+        </div>
+      </section>
+    )
 
-      if (heroPanel === 'versions') {
-        return (
-          <section className="library-inline-panel library-inline-panel--versions" aria-label={t('repo.versions')}>
-            <div className="library-inline-panel-head">
-              <div>
-                <span>{t('repo.versions')}</span>
-                <strong>{featuredRepo.name}</strong>
-              </div>
-              <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
-                {t('library.trust.collapse')}
-              </button>
-            </div>
-            <div className="library-inline-summary">
-              <div>
-                <span>{t('details.activeVersion')}</span>
-                <strong>{installedApp?.activeVersion ?? t('release.notInstalled')}</strong>
-              </div>
-              <div>
-                <span>{t('details.latestVersion')}</span>
-                <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
-              </div>
-              <div>
-                <span>{t('details.localVersions')}</span>
-                <strong>{localVersionCount.toLocaleString()}</strong>
-              </div>
-              <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(featuredRepo)}>
-                {hasUpdate ? t('repo.updateAction') : t('repo.versions')}
-              </button>
-            </div>
-            <div className="library-inline-version-list">
-              {localVersions.length > 0 ? localVersions.map((version) => {
-                const isActive = version.tag === installedApp?.activeVersion
-                const versionDate = new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
-                return (
-                  <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
-                    <div>
-                      <strong>{version.tag}</strong>
-                      <span>{versionDate}</span>
-                    </div>
-                    <span>{isActive ? t('installed.active') : t('details.versionStateOlder')}</span>
-                  </div>
-                )
-              }) : (
-                <p className="library-inline-empty">{t('release.notInstalled')}</p>
-              )}
-            </div>
-          </section>
-        )
-      }
-
-      return (
-        <section className="library-inline-panel library-inline-panel--details" aria-label={t('details.open')}>
+    const renderDetailsInlinePanel = (isDefaultView = false) => (
+      <section className={`library-inline-panel library-inline-panel--details ${isDefaultView ? 'library-inline-panel--default' : ''}`} aria-label={t('details.open')}>
           <div className="library-inline-panel-head">
             <div>
               <span>{t('details.kicker')}</span>
               <strong>{featuredRepo.full_name}</strong>
             </div>
-            <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
-              {t('library.trust.collapse')}
-            </button>
+            {!isDefaultView && (
+              <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
+                {t('library.trust.collapse')}
+              </button>
+            )}
           </div>
           <div className="library-inline-summary library-inline-summary--details">
             <div>
@@ -1637,6 +1636,17 @@ function LibraryPage({
             </div>
           </div>
         </section>
+    )
+
+    const renderInlinePanel = () => {
+      if (heroPanel === 'versions') return renderVersionsInlinePanel()
+      if (heroPanel === 'details') return renderDetailsInlinePanel()
+
+      return (
+        <div className="library-inline-overview-grid">
+          {renderVersionsInlinePanel(true)}
+          {renderDetailsInlinePanel(true)}
+        </div>
       )
     }
 
