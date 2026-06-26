@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
@@ -125,6 +125,10 @@ const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
 
 function normalizeRepoKey(owner: string, repo: string) {
   return projectArtKey(owner, repo)
+}
+
+function toCssUrl(value: string) {
+  return `url("${value.replace(/\\/g, '/').replace(/"/g, '\\"')}")`
 }
 
 function normalizeFolderName(name: string) {
@@ -579,6 +583,28 @@ function LibraryPage({
     }))
   }
 
+  const handleRemoveFromFolder = async (repo: GitHubSearchResult, folderId: string) => {
+    const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
+
+    if (folderId === favoritesFolderId) {
+      try {
+        await removeFromFavorites(repo.owner.login, repo.name)
+      } catch {
+        // Browser preview fallback keeps the local folder update usable.
+      }
+      handleFavoriteChange(repo, false)
+      return
+    }
+
+    setLibraryFolders((current) => ensureFavoritesFolder(current).map((folder) => {
+      if (folder.id !== folderId) return folder
+      return {
+        ...folder,
+        repoKeys: folder.repoKeys.filter((key) => key !== repoKey),
+      }
+    }))
+  }
+
   const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
     setHeroActionsOpen(false)
     setFeaturedRepo(repo)
@@ -1025,7 +1051,7 @@ function LibraryPage({
     }
   }
 
-  const handlePickArt = async (kind: 'cover', targetRepo = featuredRepo) => {
+  const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
     setHeroActionsOpen(false)
@@ -1049,7 +1075,7 @@ function LibraryPage({
     }
   }
 
-  const handleClearArt = async (targetRepo = featuredRepo) => {
+  const handleClearArt = async (targetRepo = featuredRepo, kind: 'cover' | 'background' = 'cover') => {
     if (!targetRepo) return
 
     setHeroActionsOpen(false)
@@ -1058,7 +1084,7 @@ function LibraryPage({
       const updatedArt = await clearProjectArt(
         targetRepo.owner.login,
         targetRepo.name,
-        'cover',
+        kind,
       )
       setProjectArtState((current) => ({
         ...current,
@@ -1406,11 +1432,15 @@ function LibraryPage({
           err instanceof Error ? err.message : t('installed.openFolderError'),
         ))
     }
+    const heroStyle = featuredBackground
+      ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
+      : undefined
 
     return (
       <section
         className={`library-hero library-github-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
         aria-label={featuredRepo.name}
+        style={heroStyle}
       >
         <div className="library-hero-cover">
           {featuredCover ? (
@@ -1499,9 +1529,17 @@ function LibraryPage({
                 <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
                   {t('art.changeCover')}
                 </button>
+                <button type="button" role="menuitem" onClick={() => handlePickArt('background')}>
+                  {t('art.changeBackground')}
+                </button>
                 {featuredArt?.coverPath && (
                   <button type="button" role="menuitem" onClick={() => handleClearArt()}>
                     {t('art.resetCover')}
+                  </button>
+                )}
+                {featuredArt?.backgroundPath && (
+                  <button type="button" role="menuitem" onClick={() => handleClearArt(featuredRepo, 'background')}>
+                    {t('art.resetBackground')}
                   </button>
                 )}
                 {isInstalled && (
@@ -1532,7 +1570,6 @@ function LibraryPage({
       latestVersion &&
       latestVersion !== installedApp.activeVersion,
     )
-    const isFavorite = favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))
     const updatedDate = new Date(featuredRepo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
     const localVersionCount = installedApp?.versions.length ?? 0
     const installPath = settings.installationPath && installedApp
@@ -1669,12 +1706,6 @@ function LibraryPage({
             </div>
           </div>
 
-          <div className="library-ops-tabs" aria-label={t('details.open')}>
-            <span className={`library-ops-tab-label ${featuredRepo.has_releases ? 'ready' : 'muted'}`}>{t('library.ops.releases')}</span>
-            <span className={`library-ops-tab-label ${isFavorite ? 'ready' : 'muted'}`}>{t('library.ops.favorite')}</span>
-            <span className={`library-ops-tab-label ${featuredRepo.archived ? 'warning' : 'ready'}`}>{featuredRepo.archived ? t('library.ops.archived') : t('library.ops.activeRepo')}</span>
-            <span className={`library-ops-tab-label ${featuredRepo.fork ? 'muted' : 'ready'}`}>{featuredRepo.fork ? t('library.ops.fork') : t('library.ops.sourceRepo')}</span>
-          </div>
         </section>
 
         {renderInlinePanel()}
@@ -1854,7 +1885,9 @@ function LibraryPage({
                               onPreview={() => selectFeaturedRepo(repo)}
                               onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
                               onPickArt={() => handlePickArt('cover', repo)}
-                              onClearArt={() => handleClearArt(repo)}
+                              onPickBackground={() => handlePickArt('background', repo)}
+                              onClearArt={() => handleClearArt(repo, 'cover')}
+                              onClearBackground={() => handleClearArt(repo, 'background')}
                               onUninstall={() => handleRequestUninstall(repo)}
                               onInstall={() => setSelectedRepo(repo)}
                               onLaunch={() => handleLaunch(repo)}
@@ -1864,6 +1897,9 @@ function LibraryPage({
                               }))}
                               onCreateFolder={() => openCreateFolderDialog(repo)}
                               onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
+                              onRemoveFromFolder={section.id !== 'uncategorized'
+                                ? () => handleRemoveFromFolder(repo, section.id)
+                                : undefined}
                             />
                           )
                         })}
