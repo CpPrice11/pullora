@@ -1701,6 +1701,16 @@ Object.assign(dictionaries.en, {
   'library.folder.targetApp': 'Item will be added: {name}',
 })
 
+Object.assign(dictionaries.uk, {
+  'art.resetBackground': '\u0421\u043a\u0438\u043d\u0443\u0442\u0438 \u0444\u043e\u043d',
+  'library.folder.removeFromFolder': '\u0412\u0438\u043b\u0443\u0447\u0438\u0442\u0438',
+})
+
+Object.assign(dictionaries.en, {
+  'art.resetBackground': 'Reset background',
+  'library.folder.removeFromFolder': 'Remove',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

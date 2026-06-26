@@ -17,8 +17,11 @@ interface RepoCardProps {
   onFavoriteChange?: (isFavorite: boolean) => void
   onCreateFolder?: () => void
   onMoveToFolder?: (folderId: string) => void
+  onRemoveFromFolder?: () => void
   onPickArt?: () => void
+  onPickBackground?: () => void
   onClearArt?: () => void
+  onClearBackground?: () => void
   onUninstall?: () => void
   onInstall?: () => void
   onLaunch?: () => void
@@ -36,8 +39,11 @@ function RepoCard({
   onFavoriteChange,
   onCreateFolder,
   onMoveToFolder,
+  onRemoveFromFolder,
   onPickArt,
+  onPickBackground,
   onClearArt,
+  onClearBackground,
   onUninstall,
   onInstall,
   onLaunch,
@@ -138,10 +144,28 @@ function RepoCard({
     onPickArt?.()
   }
 
+  const handlePickBackground = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onPickBackground?.()
+  }
+
   const handleClearArt = (event: React.MouseEvent) => {
     event.stopPropagation()
     setActionsOpen(false)
     onClearArt?.()
+  }
+
+  const handleClearBackground = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onClearBackground?.()
+  }
+
+  const handleRemoveFromFolder = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onRemoveFromFolder?.()
   }
 
   const handleUninstall = (event: React.MouseEvent) => {
@@ -311,6 +335,15 @@ function RepoCard({
                 )}
               </div>
             )}
+            {onRemoveFromFolder && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleRemoveFromFolder}
+              >
+                {t('library.folder.removeFromFolder')}
+              </button>
+            )}
             {isInstalled && hasUpdate && (
               <button
                 type="button"
@@ -329,9 +362,23 @@ function RepoCard({
                 {t('art.changeCover')}
               </button>
             )}
+            {onPickBackground && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handlePickBackground}
+              >
+                {t('art.changeBackground')}
+              </button>
+            )}
             {art?.coverPath && onClearArt && (
               <button type="button" role="menuitem" onClick={handleClearArt}>
                 {t('art.resetCover')}
+              </button>
+            )}
+            {art?.backgroundPath && onClearBackground && (
+              <button type="button" role="menuitem" onClick={handleClearBackground}>
+                {t('art.resetBackground')}
               </button>
             )}
             {isInstalled && onUninstall && (
