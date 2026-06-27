@@ -307,7 +307,10 @@ function RepoCard({
             {(onCreateFolder || onMoveToFolder || onMoveToUncategorized) && (
               <div
                 className={`repo-actions-submenu ${folderMenuOpen ? 'open' : ''}`}
-                onMouseEnter={() => setFolderMenuOpen(true)}
+                onMouseEnter={() => {
+                  setFolderMenuOpen(true)
+                  setRemoveFolderMenuOpen(false)
+                }}
               >
                 <button
                   type="button"
@@ -317,7 +320,11 @@ function RepoCard({
                   aria-expanded={folderMenuOpen}
                   onClick={(event) => {
                     event.stopPropagation()
-                    setFolderMenuOpen((current) => !current)
+                    setFolderMenuOpen((current) => {
+                      const next = !current
+                      if (next) setRemoveFolderMenuOpen(false)
+                      return next
+                    })
                   }}
                 >
                   <span>{t('library.folder.addTo')}</span>
@@ -355,7 +362,10 @@ function RepoCard({
             {onRemoveFromFolder && removableFolders.length > 0 && (
               <div
                 className={`repo-actions-submenu ${removeFolderMenuOpen ? 'open' : ''}`}
-                onMouseEnter={() => setRemoveFolderMenuOpen(true)}
+                onMouseEnter={() => {
+                  setRemoveFolderMenuOpen(true)
+                  setFolderMenuOpen(false)
+                }}
               >
                 <button
                   type="button"
@@ -365,7 +375,11 @@ function RepoCard({
                   aria-expanded={removeFolderMenuOpen}
                   onClick={(event) => {
                     event.stopPropagation()
-                    setRemoveFolderMenuOpen((current) => !current)
+                    setRemoveFolderMenuOpen((current) => {
+                      const next = !current
+                      if (next) setFolderMenuOpen(false)
+                      return next
+                    })
                   }}
                 >
                   <span>{t('library.folder.removeFrom')}</span>
