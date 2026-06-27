@@ -121,6 +121,7 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
 }
 
 const favoritesFolderId = 'favorites'
+const uncategorizedFolderId = 'uncategorized'
 const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
 
 function normalizeRepoKey(owner: string, repo: string) {
@@ -160,6 +161,12 @@ function ensureFavoritesFolder(folders: LibraryFolder[]) {
       repoKeys: Array.from(new Set(folder.repoKeys ?? [])),
     })),
   ]
+}
+
+function cleanLibraryFolders(folders: LibraryFolder[]) {
+  return ensureFavoritesFolder(folders).filter((folder) =>
+    folder.id === favoritesFolderId || folder.repoKeys.length > 0
+  )
 }
 
 function makeFolderId(name: string) {
@@ -264,7 +271,6 @@ function LibraryPage({
   const [filter, setFilter] = useState<LibraryFilter>('all')
   const [sort, setSort] = useState<LibrarySort>('updated')
   const [viewMode, setViewMode] = useState<LibraryViewMode>('home')
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
   const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => ensureFavoritesFolder([]))
   const [folderDialogOpen, setFolderDialogOpen] = useState(false)
   const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
@@ -396,7 +402,6 @@ function LibraryPage({
     setFilter('all')
     setSort('updated')
     setViewMode('home')
-    setActiveFolderId(null)
   }
 
   useEffect(() => {
@@ -406,7 +411,7 @@ function LibraryPage({
       .then((folders) => {
         if (cancelled) return
         libraryFoldersLoadedRef.current = true
-        setLibraryFolders(ensureFavoritesFolder(folders))
+        setLibraryFolders(cleanLibraryFolders(folders))
       })
       .catch(() => {
         if (cancelled) return
@@ -422,7 +427,7 @@ function LibraryPage({
   useEffect(() => {
     if (!libraryFoldersLoadedRef.current) return
 
-    saveLibraryFolders(ensureFavoritesFolder(libraryFolders))
+    saveLibraryFolders(cleanLibraryFolders(libraryFolders))
       .catch(() => setLibraryActionMessage(t('library.folder.saveError')))
   }, [libraryFolders, t])
 
@@ -448,33 +453,30 @@ function LibraryPage({
         ...favoriteRepoKeys,
       ]
 
-      return [
+      return cleanLibraryFolders([
         {
           ...currentFavoriteFolder,
           repoKeys: Array.from(new Set(nextFavoriteKeys)),
         },
         ...folders.slice(1),
-      ]
+      ])
     })
   }, [favorites])
 
   const openHomeView = () => {
     setViewMode('home')
-    setActiveFolderId(null)
     setFilter('all')
     setSort('updated')
   }
 
   const openRecentView = () => {
     setViewMode('recent')
-    setActiveFolderId(null)
     setFilter('all')
     setSort('updated')
   }
 
   const openReadyView = () => {
     setViewMode('ready')
-    setActiveFolderId(null)
     setFilter('installed')
     setSort('status')
   }
@@ -535,14 +537,14 @@ function LibraryPage({
         }
       })
 
-      return [
+      return cleanLibraryFolders([
         ...folders,
         {
           id: makeFolderId(name),
           name,
           repoKeys: repoKey ? [repoKey] : [],
         },
-      ]
+      ])
     })
     closeCreateFolderDialog()
   }
@@ -564,7 +566,7 @@ function LibraryPage({
       }
     }
 
-    setLibraryFolders((current) => ensureFavoritesFolder(current).map((folder) => {
+    setLibraryFolders((current) => cleanLibraryFolders(ensureFavoritesFolder(current).map((folder) => {
       const keepFavoriteMembership = folder.id === favoritesFolderId && folder.id !== folderId
       const withoutCurrentRepo = keepFavoriteMembership
         ? folder.repoKeys
@@ -580,7 +582,7 @@ function LibraryPage({
         ...folder,
         repoKeys: [repoKey, ...withoutCurrentRepo],
       }
-    }))
+    })))
   }
 
   const handleRemoveFromFolder = async (repo: GitHubSearchResult, folderId: string) => {
@@ -596,13 +598,31 @@ function LibraryPage({
       return
     }
 
-    setLibraryFolders((current) => ensureFavoritesFolder(current).map((folder) => {
+    setLibraryFolders((current) => cleanLibraryFolders(ensureFavoritesFolder(current).map((folder) => {
       if (folder.id !== folderId) return folder
       return {
         ...folder,
         repoKeys: folder.repoKeys.filter((key) => key !== repoKey),
       }
-    }))
+    })))
+  }
+
+  const handleMoveToUncategorized = async (repo: GitHubSearchResult) => {
+    const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
+
+    if (favoriteKeys.has(repoKey)) {
+      try {
+        await removeFromFavorites(repo.owner.login, repo.name)
+      } catch {
+        // Browser preview fallback keeps the local folder update usable.
+      }
+      handleFavoriteChange(repo, false)
+    }
+
+    setLibraryFolders((current) => cleanLibraryFolders(ensureFavoritesFolder(current).map((folder) => ({
+      ...folder,
+      repoKeys: folder.repoKeys.filter((key) => key !== repoKey),
+    }))))
   }
 
   const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
@@ -846,11 +866,7 @@ function LibraryPage({
     })
   }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
 
-  const displayFolders = useMemo(() => ensureFavoritesFolder(libraryFolders), [libraryFolders])
-  const activeFolder = displayFolders.find((folder) => folder.id === activeFolderId) ?? null
-  const activeFolderKeys = useMemo(() => {
-    return new Set(activeFolder?.repoKeys ?? [])
-  }, [activeFolder])
+  const displayFolders = useMemo(() => cleanLibraryFolders(libraryFolders), [libraryFolders])
   const favoritesByRepoKey = useMemo(() => {
     return new Map(
       favorites
@@ -876,7 +892,6 @@ function LibraryPage({
         latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
       )
 
-      if (activeFolder && !activeFolderKeys.has(repoKey)) return false
       if (viewMode === 'ready' && !installedApp) return false
       if (filter === 'installed' && !installedApp) return false
       if (filter === 'favorites' && !isFavorite) return false
@@ -936,18 +951,14 @@ function LibraryPage({
         return statusRank(a) - statusRank(b) || a.name.localeCompare(b.name)
       }
 
-      if (!activeFolder) {
-        const favoriteRank = (repo: GitHubSearchResult) =>
-          favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) ? 0 : 1
-        const favoriteDifference = favoriteRank(a) - favoriteRank(b)
-        if (favoriteDifference !== 0) return favoriteDifference
-      }
+      const favoriteRank = (repo: GitHubSearchResult) =>
+        favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) ? 0 : 1
+      const favoriteDifference = favoriteRank(a) - favoriteRank(b)
+      if (favoriteDifference !== 0) return favoriteDifference
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
   }, [
-    activeFolder,
-    activeFolderKeys,
     dismissedUpdateKeys,
     favoriteKeys,
     favoritesByRepoKey,
@@ -967,7 +978,7 @@ function LibraryPage({
       visibleRepositories.map((repo) => [normalizeRepoKey(repo.owner.login, repo.name), repo]),
     )
     const assignedRepoKeys = new Set<string>()
-    const folders = activeFolder ? [activeFolder] : displayFolders
+    const folders = displayFolders
     const sections: LibrarySection[] = []
 
     folders.forEach((folder) => {
@@ -989,22 +1000,20 @@ function LibraryPage({
       })
     })
 
-    if (!activeFolder) {
-      const ungroupedRepositories = visibleRepositories.filter((repo) =>
-        !assignedRepoKeys.has(normalizeRepoKey(repo.owner.login, repo.name))
-      )
+    const ungroupedRepositories = visibleRepositories.filter((repo) =>
+      !assignedRepoKeys.has(normalizeRepoKey(repo.owner.login, repo.name))
+    )
 
-      if (ungroupedRepositories.length > 0) {
-        sections.push({
-          id: 'uncategorized',
-          title: t('library.folder.uncategorized'),
-          repositories: ungroupedRepositories,
-        })
-      }
+    if (ungroupedRepositories.length > 0) {
+      sections.push({
+        id: uncategorizedFolderId,
+        title: t('library.folder.uncategorized'),
+        repositories: ungroupedRepositories,
+      })
     }
 
     return sections
-  }, [activeFolder, displayFolders, t, visibleRepositories])
+  }, [displayFolders, t, visibleRepositories])
 
   const modeRepositoryCount = libraryRepositories.length
 
@@ -1749,8 +1758,8 @@ function LibraryPage({
               <div className="library-sidebar-nav" aria-label={t('library.sidebar.navigation')}>
                 <button
                   type="button"
-                  className={`library-sidebar-nav-btn library-sidebar-nav-home ${viewMode === 'home' && !activeFolder ? 'active' : ''}`}
-                  aria-pressed={viewMode === 'home' && !activeFolder}
+                  className={`library-sidebar-nav-btn library-sidebar-nav-home ${viewMode === 'home' ? 'active' : ''}`}
+                  aria-pressed={viewMode === 'home'}
                   onClick={openHomeView}
                 >
                   {t('library.nav.home')}
@@ -1850,11 +1859,14 @@ function LibraryPage({
 
               {visibleRepositorySections.map((section) => {
                 const isCollapsed = collapsedFolderIds.has(section.id)
+                const sectionKind = section.id === favoritesFolderId || section.id === uncategorizedFolderId
+                  ? 'system'
+                  : 'custom'
 
                 return (
                   <section
                     key={section.id}
-                    className={`library-folder-section ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                    className={`library-folder-section ${sectionKind} ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
                   >
                     <button
                       type="button"
@@ -1864,6 +1876,7 @@ function LibraryPage({
                     >
                       <span className="library-folder-section-title">
                         <span className="library-folder-section-chevron" aria-hidden="true" />
+                        <span className="library-folder-section-icon" aria-hidden="true" />
                         <span>{section.title}</span>
                       </span>
                       <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
@@ -1872,6 +1885,12 @@ function LibraryPage({
                       <div className="library-folder-section-items">
                         {section.repositories.map((repo) => {
                           const key = projectArtKey(repo.owner.login, repo.name)
+                          const removableFolders = displayFolders
+                            .filter((folder) => folder.repoKeys.includes(key))
+                            .map((folder) => ({
+                              id: folder.id,
+                              name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                            }))
 
                           return (
                             <RepoCard
@@ -1895,10 +1914,12 @@ function LibraryPage({
                                 id: folder.id,
                                 name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
                               }))}
+                              removableFolders={removableFolders}
                               onCreateFolder={() => openCreateFolderDialog(repo)}
                               onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
-                              onRemoveFromFolder={section.id !== 'uncategorized'
-                                ? () => handleRemoveFromFolder(repo, section.id)
+                              onRemoveFromFolder={(folderId) => handleRemoveFromFolder(repo, folderId)}
+                              onMoveToUncategorized={removableFolders.length > 0
+                                ? () => handleMoveToUncategorized(repo)
                                 : undefined}
                             />
                           )

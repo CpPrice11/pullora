@@ -1703,11 +1703,13 @@ Object.assign(dictionaries.en, {
 
 Object.assign(dictionaries.uk, {
   'art.resetBackground': '\u0421\u043a\u0438\u043d\u0443\u0442\u0438 \u0444\u043e\u043d',
+  'library.folder.removeFrom': '\u0412\u0438\u043b\u0443\u0447\u0438\u0442\u0438 \u0437',
   'library.folder.removeFromFolder': '\u0412\u0438\u043b\u0443\u0447\u0438\u0442\u0438',
 })
 
 Object.assign(dictionaries.en, {
   'art.resetBackground': 'Reset background',
+  'library.folder.removeFrom': 'Remove from',
   'library.folder.removeFromFolder': 'Remove',
 })
 
