@@ -1885,6 +1885,12 @@ function LibraryPage({
                       <div className="library-folder-section-items">
                         {section.repositories.map((repo) => {
                           const key = projectArtKey(repo.owner.login, repo.name)
+                          const addableFolders = displayFolders
+                            .filter((folder) => !folder.repoKeys.includes(key))
+                            .map((folder) => ({
+                              id: folder.id,
+                              name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                            }))
                           const removableFolders = displayFolders
                             .filter((folder) => folder.repoKeys.includes(key))
                             .map((folder) => ({
@@ -1910,10 +1916,7 @@ function LibraryPage({
                               onUninstall={() => handleRequestUninstall(repo)}
                               onInstall={() => setSelectedRepo(repo)}
                               onLaunch={() => handleLaunch(repo)}
-                              folders={displayFolders.map((folder) => ({
-                                id: folder.id,
-                                name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                              }))}
+                              folders={addableFolders}
                               removableFolders={removableFolders}
                               onCreateFolder={() => openCreateFolderDialog(repo)}
                               onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}

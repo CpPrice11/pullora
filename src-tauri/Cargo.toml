@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "5.2.24"
+version = "5.2.25"
 description = "Pullora - GitHub program launcher"
 authors = ["you"]
 license = ""
