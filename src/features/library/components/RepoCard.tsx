@@ -11,13 +11,15 @@ interface RepoCardProps {
   latestVersion?: string
   art?: ProjectArt
   folders?: Array<{ id: string; name: string }>
+  removableFolders?: Array<{ id: string; name: string }>
   isFavorite?: boolean
   isSelected?: boolean
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
   onCreateFolder?: () => void
   onMoveToFolder?: (folderId: string) => void
-  onRemoveFromFolder?: () => void
+  onRemoveFromFolder?: (folderId: string) => void
+  onMoveToUncategorized?: () => void
   onPickArt?: () => void
   onPickBackground?: () => void
   onClearArt?: () => void
@@ -33,6 +35,7 @@ function RepoCard({
   latestVersion,
   art,
   folders = [],
+  removableFolders = [],
   isFavorite,
   isSelected = false,
   onPreview,
@@ -40,6 +43,7 @@ function RepoCard({
   onCreateFolder,
   onMoveToFolder,
   onRemoveFromFolder,
+  onMoveToUncategorized,
   onPickArt,
   onPickBackground,
   onClearArt,
@@ -53,6 +57,7 @@ function RepoCard({
   const [favLoading, setFavLoading] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
   const [folderMenuOpen, setFolderMenuOpen] = useState(false)
+  const [removeFolderMenuOpen, setRemoveFolderMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
   const isInstalled = Boolean(installedApp)
@@ -76,6 +81,7 @@ function RepoCard({
   useEffect(() => {
     if (!actionsOpen) {
       setFolderMenuOpen(false)
+      setRemoveFolderMenuOpen(false)
       return
     }
 
@@ -162,10 +168,10 @@ function RepoCard({
     onClearBackground?.()
   }
 
-  const handleRemoveFromFolder = (event: React.MouseEvent) => {
+  const handleRemoveFromFolder = (event: React.MouseEvent, folderId: string) => {
     event.stopPropagation()
     setActionsOpen(false)
-    onRemoveFromFolder?.()
+    onRemoveFromFolder?.(folderId)
   }
 
   const handleUninstall = (event: React.MouseEvent) => {
@@ -178,6 +184,12 @@ function RepoCard({
     event.stopPropagation()
     setActionsOpen(false)
     onMoveToFolder?.(folderId)
+  }
+
+  const handleMoveToUncategorized = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onMoveToUncategorized?.()
   }
 
   const handleCreateFolder = (event: React.MouseEvent) => {
@@ -292,7 +304,7 @@ function RepoCard({
             >
               {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
             </button>
-            {(onCreateFolder || onMoveToFolder) && (
+            {(onCreateFolder || onMoveToFolder || onMoveToUncategorized) && (
               <div
                 className={`repo-actions-submenu ${folderMenuOpen ? 'open' : ''}`}
                 onMouseEnter={() => setFolderMenuOpen(true)}
@@ -318,6 +330,11 @@ function RepoCard({
                         {t('library.folder.createNew')}
                       </button>
                     )}
+                    {onMoveToUncategorized && (
+                      <button type="button" role="menuitem" onClick={handleMoveToUncategorized}>
+                        {t('library.folder.uncategorized')}
+                      </button>
+                    )}
                     {folders.length > 0 && (
                       <span className="repo-actions-menu-label">{t('library.folder.title')}</span>
                     )}
@@ -335,14 +352,40 @@ function RepoCard({
                 )}
               </div>
             )}
-            {onRemoveFromFolder && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleRemoveFromFolder}
+            {onRemoveFromFolder && removableFolders.length > 0 && (
+              <div
+                className={`repo-actions-submenu ${removeFolderMenuOpen ? 'open' : ''}`}
+                onMouseEnter={() => setRemoveFolderMenuOpen(true)}
               >
-                {t('library.folder.removeFromFolder')}
-              </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="repo-actions-submenu-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={removeFolderMenuOpen}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setRemoveFolderMenuOpen((current) => !current)
+                  }}
+                >
+                  <span>{t('library.folder.removeFrom')}</span>
+                  <span aria-hidden="true">&gt;</span>
+                </button>
+                {removeFolderMenuOpen && (
+                  <div className="repo-actions-submenu-panel" role="menu">
+                    {removableFolders.map((folder) => (
+                      <button
+                        key={folder.id}
+                        type="button"
+                        role="menuitem"
+                        onClick={(event) => handleRemoveFromFolder(event, folder.id)}
+                      >
+                        {folder.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             {isInstalled && hasUpdate && (
               <button
