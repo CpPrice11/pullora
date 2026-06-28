@@ -8034,3 +8034,311 @@
   background: #2a475e;
   box-shadow: inset 3px 0 0 #66c0f4;
 }
+
+/* v5.2.28: Keep the active shell aligned with the final Steam-like library surface. */
+.cinematic-shell .library-page .library-sam-workspace {
+  grid-template-columns: 372px minmax(0, 1fr);
+}
+
+.cinematic-shell .library-page .library-sam-list-pane {
+  background: #171f29;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(102, 192, 244, 0.16), transparent 28%),
+    linear-gradient(180deg, #1b2f43 0%, #222a34 360px, #1f252e 760px, #121922 100%);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 28px 32px;
+}
+
+.cinematic-shell .library-page .library-sam-details-toolbar {
+  background: transparent;
+  border: 0;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0;
+  min-height: 48px;
+  padding: 8px 0 2px;
+  position: relative;
+  z-index: 7;
+}
+
+.cinematic-shell .library-page .library-sam-details-toolbar span {
+  display: none;
+}
+
+.cinematic-shell .library-page .library-hero {
+  align-items: end;
+  background:
+    linear-gradient(180deg, rgba(20, 27, 36, 0) 0%, rgba(20, 27, 36, 0.16) 46%, rgba(20, 27, 36, 0.88) 100%),
+    linear-gradient(90deg, rgba(20, 27, 36, 0.16), rgba(20, 27, 36, 0.5)),
+    #263a4e;
+  border: 0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: clamp(320px, 38vh, 430px);
+  overflow: hidden;
+  padding: 44px 42px 76px;
+  position: relative;
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(180deg, rgba(20, 27, 36, 0) 0%, rgba(20, 27, 36, 0.16) 46%, rgba(20, 27, 36, 0.88) 100%),
+    linear-gradient(90deg, rgba(20, 27, 36, 0.16), rgba(20, 27, 36, 0.5)),
+    var(--library-hero-background, transparent),
+    #263a4e;
+  background-position: center;
+  background-size: cover;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.cinematic-shell .library-page .library-hero::after {
+  background:
+    radial-gradient(circle at 76% 28%, rgba(102, 192, 244, 0.22), transparent 28%),
+    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 42%, transparent 100%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.cinematic-shell .library-page .library-hero--fallback .library-hero-cover {
+  bottom: 0;
+  height: min(76%, 320px);
+  opacity: 0.72;
+  position: absolute;
+  right: clamp(70px, 12vw, 220px);
+  width: clamp(220px, 20vw, 340px);
+  z-index: 1;
+}
+
+.cinematic-shell .library-page .library-hero--art .library-hero-cover {
+  inset: 0;
+  opacity: 0.46;
+  position: absolute;
+  z-index: 0;
+}
+
+.cinematic-shell .library-page .library-hero--art .library-hero-cover img,
+.cinematic-shell .library-page .library-hero--fallback .library-hero-cover img {
+  filter: saturate(1.18) contrast(1.04);
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.cinematic-shell .library-page .library-hero-main {
+  max-width: min(880px, 58%);
+  position: relative;
+  z-index: 2;
+}
+
+.cinematic-shell .library-page .library-github-header h2 {
+  color: #ffffff;
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 0.98;
+  margin: 8px 0 0;
+  max-width: 18ch;
+  overflow-wrap: anywhere;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.55);
+}
+
+.cinematic-shell .library-page .library-github-header .library-hero-repo,
+.cinematic-shell .library-page .library-github-header .library-hero-description {
+  color: #c7d5e0;
+  font-size: 14px;
+}
+
+.cinematic-shell .library-page .library-github-header .library-hero-description {
+  line-height: 1.45;
+  margin-top: 10px;
+  max-width: 720px;
+}
+
+.cinematic-shell .library-page .library-hero-meta {
+  background: rgba(0, 0, 0, 0.26);
+  border: 0;
+  margin-top: 14px;
+}
+
+.cinematic-shell .library-page .library-hero-meta span {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d7e3ee;
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.cinematic-shell .library-page .library-ops-panel {
+  background:
+    linear-gradient(180deg, rgba(49, 59, 70, 0.92), rgba(31, 39, 49, 0.98)),
+    #202a35;
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  box-shadow: 0 -28px 54px rgba(0, 0, 0, 0.38), 0 18px 44px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: -54px 0 0;
+  padding: 0;
+  position: relative;
+  z-index: 6;
+}
+
+.cinematic-shell .library-page .library-ops-header {
+  display: none;
+}
+
+.cinematic-shell .library-page .library-ops-action-row {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(200px, 270px) repeat(3, minmax(140px, 1fr));
+  order: 1;
+  padding: 10px 12px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
+.cinematic-shell .library-page .library-ops-action-row .secondary-btn {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 46px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
+  background: linear-gradient(90deg, #75c83d, #43a72f);
+  color: #ffffff !important;
+  font-size: 20px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
+  background: linear-gradient(90deg, #91de4d, #59bf3d);
+}
+
+.cinematic-shell .library-page .library-ops-action-row .secondary-btn {
+  background: rgba(255, 255, 255, 0.07);
+  color: #dfe3e6;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .secondary-btn.active-soft {
+  background: rgba(102, 192, 244, 0.24);
+  color: #ffffff;
+}
+
+.cinematic-shell .library-page .library-ops-rail {
+  background: rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  order: 2;
+}
+
+.cinematic-shell .library-page .library-ops-rail span {
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+  color: #8f98a0;
+  min-height: 34px;
+  padding: 10px 14px;
+}
+
+.cinematic-shell .library-page .library-ops-rail span.ready {
+  color: #8bc53f;
+}
+
+.cinematic-shell .library-page .library-ops-grid {
+  background: rgba(12, 19, 27, 0.42);
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  order: 3;
+}
+
+.cinematic-shell .library-page .library-ops-grid > div,
+.cinematic-shell .library-page .library-ops-grid > div:nth-child(3n) {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.055);
+  min-height: 58px;
+  padding: 9px 12px;
+}
+
+.cinematic-shell .library-page .library-ops-grid > div:last-child {
+  border-right: 0;
+}
+
+.cinematic-shell .library-page .library-ops-grid span {
+  color: #8f98a0;
+  font-size: 11px;
+}
+
+.cinematic-shell .library-page .library-ops-grid strong {
+  color: #dfe3e6;
+  font-size: 14px;
+}
+
+@media (max-width: 1180px) {
+  .cinematic-shell .library-page .library-sam-workspace {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .cinematic-shell .library-page .library-hero-main {
+    max-width: 86%;
+  }
+}
+
+@media (max-width: 860px) {
+  .cinematic-shell .library-page .library-sam-workspace {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .cinematic-shell .library-page .library-sam-list-pane {
+    border-right: 0;
+    flex: 0 0 auto;
+    max-height: 48vh;
+  }
+
+  .cinematic-shell .library-page .library-sam-details-pane {
+    flex: 1 1 auto;
+    overflow: visible;
+    padding: 0 12px 16px;
+  }
+
+  .cinematic-shell .library-page .library-hero {
+    min-height: 240px;
+    padding: 20px;
+  }
+
+  .cinematic-shell .library-page .library-hero-main {
+    max-width: 100%;
+  }
+
+  .cinematic-shell .library-page .library-ops-action-row,
+  .cinematic-shell .library-page .library-ops-grid {
+    grid-template-columns: 1fr;
+  }
+}
