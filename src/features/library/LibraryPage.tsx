@@ -1749,6 +1749,22 @@ function LibraryPage({
   const folderDialogError = folderError ||
     (folderNameDuplicate ? t('library.folder.duplicateName') : null)
   const canCreateFolder = Boolean(normalizedFolderName) && !folderNameDuplicate
+  const sidebarSectionGroups = [
+    {
+      id: 'custom',
+      label: t('library.folder.myFolders'),
+      sections: visibleRepositorySections.filter(
+        (section) => section.id !== favoritesFolderId && section.id !== uncategorizedFolderId,
+      ),
+    },
+    {
+      id: 'system',
+      label: t('library.folder.systemSections'),
+      sections: visibleRepositorySections.filter(
+        (section) => section.id === favoritesFolderId || section.id === uncategorizedFolderId,
+      ),
+    },
+  ].filter((group) => group.sections.length > 0)
 
   return (
     <div className="page library-page">
@@ -1857,81 +1873,90 @@ function LibraryPage({
                 />
               )}
 
-              {visibleRepositorySections.map((section) => {
-                const isCollapsed = collapsedFolderIds.has(section.id)
-                const sectionKind = section.id === favoritesFolderId || section.id === uncategorizedFolderId
-                  ? 'system'
-                  : 'custom'
+              {sidebarSectionGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className={`library-folder-group library-folder-group--${group.id}`}
+                  aria-label={group.label}
+                >
+                  <div className="library-folder-group-label">{group.label}</div>
+                  {group.sections.map((section) => {
+                    const isCollapsed = collapsedFolderIds.has(section.id)
+                    const sectionKind = section.id === favoritesFolderId || section.id === uncategorizedFolderId
+                      ? 'system'
+                      : 'custom'
 
-                return (
-                  <section
-                    key={section.id}
-                    className={`library-folder-section ${sectionKind} ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
-                  >
-                    <button
-                      type="button"
-                      className="library-folder-section-header"
-                      aria-expanded={!isCollapsed}
-                      onClick={() => toggleFolderSection(section.id)}
-                    >
-                      <span className="library-folder-section-title">
-                        <span className="library-folder-section-chevron" aria-hidden="true" />
-                        <span className="library-folder-section-icon" aria-hidden="true" />
-                        <span>{section.title}</span>
-                      </span>
-                      <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
-                    </button>
-                    {!isCollapsed && (
-                      <div className="library-folder-section-items">
-                        {section.repositories.map((repo) => {
-                          const key = projectArtKey(repo.owner.login, repo.name)
-                          const addableFolders = displayFolders
-                            .filter((folder) => !folder.repoKeys.includes(key))
-                            .map((folder) => ({
-                              id: folder.id,
-                              name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                            }))
-                          const removableFolders = displayFolders
-                            .filter((folder) => folder.repoKeys.includes(key))
-                            .map((folder) => ({
-                              id: folder.id,
-                              name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                            }))
+                    return (
+                      <section
+                        key={section.id}
+                        className={`library-folder-section ${sectionKind} ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="library-folder-section-header"
+                          aria-expanded={!isCollapsed}
+                          onClick={() => toggleFolderSection(section.id)}
+                        >
+                          <span className="library-folder-section-title">
+                            <span className="library-folder-section-chevron" aria-hidden="true" />
+                            <span className="library-folder-section-icon" aria-hidden="true" />
+                            <span>{section.title}</span>
+                          </span>
+                          <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
+                        </button>
+                        {!isCollapsed && (
+                          <div className="library-folder-section-items">
+                            {section.repositories.map((repo) => {
+                              const key = projectArtKey(repo.owner.login, repo.name)
+                              const addableFolders = displayFolders
+                                .filter((folder) => !folder.repoKeys.includes(key))
+                                .map((folder) => ({
+                                  id: folder.id,
+                                  name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                                }))
+                              const removableFolders = displayFolders
+                                .filter((folder) => folder.repoKeys.includes(key))
+                                .map((folder) => ({
+                                  id: folder.id,
+                                  name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+                                }))
 
-                          return (
-                            <RepoCard
-                              key={repo.id}
-                              repo={repo}
-                              installedApp={getInstalledApp(repo)}
-                              latestVersion={getLatestVersion(repo)}
-                              art={projectArt[key]}
-                              isFavorite={favoriteKeys.has(key)}
-                              isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                              onPreview={() => selectFeaturedRepo(repo)}
-                              onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                              onPickArt={() => handlePickArt('cover', repo)}
-                              onPickBackground={() => handlePickArt('background', repo)}
-                              onClearArt={() => handleClearArt(repo, 'cover')}
-                              onClearBackground={() => handleClearArt(repo, 'background')}
-                              onUninstall={() => handleRequestUninstall(repo)}
-                              onInstall={() => setSelectedRepo(repo)}
-                              onLaunch={() => handleLaunch(repo)}
-                              folders={addableFolders}
-                              removableFolders={removableFolders}
-                              onCreateFolder={() => openCreateFolderDialog(repo)}
-                              onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
-                              onRemoveFromFolder={(folderId) => handleRemoveFromFolder(repo, folderId)}
-                              onMoveToUncategorized={removableFolders.length > 0
-                                ? () => handleMoveToUncategorized(repo)
-                                : undefined}
-                            />
-                          )
-                        })}
-                      </div>
-                    )}
-                  </section>
-                )
-              })}
+                              return (
+                                <RepoCard
+                                  key={repo.id}
+                                  repo={repo}
+                                  installedApp={getInstalledApp(repo)}
+                                  latestVersion={getLatestVersion(repo)}
+                                  art={projectArt[key]}
+                                  isFavorite={favoriteKeys.has(key)}
+                                  isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+                                  onPreview={() => selectFeaturedRepo(repo)}
+                                  onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+                                  onPickArt={() => handlePickArt('cover', repo)}
+                                  onPickBackground={() => handlePickArt('background', repo)}
+                                  onClearArt={() => handleClearArt(repo, 'cover')}
+                                  onClearBackground={() => handleClearArt(repo, 'background')}
+                                  onUninstall={() => handleRequestUninstall(repo)}
+                                  onInstall={() => setSelectedRepo(repo)}
+                                  onLaunch={() => handleLaunch(repo)}
+                                  folders={addableFolders}
+                                  removableFolders={removableFolders}
+                                  onCreateFolder={() => openCreateFolderDialog(repo)}
+                                  onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
+                                  onRemoveFromFolder={(folderId) => handleRemoveFromFolder(repo, folderId)}
+                                  onMoveToUncategorized={removableFolders.length > 0
+                                    ? () => handleMoveToUncategorized(repo)
+                                    : undefined}
+                                />
+                              )
+                            })}
+                          </div>
+                        )}
+                      </section>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
 
             {state.hasMore && (

@@ -1713,6 +1713,16 @@ Object.assign(dictionaries.en, {
   'library.folder.removeFromFolder': 'Remove',
 })
 
+Object.assign(dictionaries.uk, {
+  'library.folder.myFolders': '\u041c\u043e\u0457 \u043f\u0430\u043f\u043a\u0438',
+  'library.folder.systemSections': '\u0421\u0438\u0441\u0442\u0435\u043c\u043d\u0456',
+})
+
+Object.assign(dictionaries.en, {
+  'library.folder.myFolders': 'My folders',
+  'library.folder.systemSections': 'System',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void
