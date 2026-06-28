@@ -7793,3 +7793,244 @@
   background: #2a475e;
   box-shadow: inset 2px 0 0 #66c0f4;
 }
+
+/* v5.2.27: Apply the sidebar hierarchy to the active cinematic shell as well. */
+.cinematic-shell .library-page .library-toolstrip {
+  background:
+    linear-gradient(180deg, rgba(13, 24, 32, 0.92), rgba(6, 11, 16, 0.94)),
+    #080d12;
+  border: 1px solid rgba(102, 192, 244, 0.1);
+  border-radius: 14px;
+  box-shadow: none;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 12px;
+}
+
+.cinematic-shell .library-page .library-sidebar-nav {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: minmax(0, auto) 42px 42px;
+}
+
+.cinematic-shell .library-page .library-sidebar-nav-btn {
+  background:
+    linear-gradient(180deg, rgba(58, 66, 76, 0.92), rgba(27, 33, 40, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 0 rgba(0, 0, 0, 0.24);
+  color: #edf6ff;
+  font-size: 13px;
+  font-weight: 850;
+  min-height: 34px;
+  padding: 0 14px;
+}
+
+.cinematic-shell .library-page .library-sidebar-nav-btn:hover {
+  border-color: rgba(102, 192, 244, 0.42);
+}
+
+.cinematic-shell .library-page .library-sidebar-nav-btn.active {
+  background:
+    linear-gradient(180deg, rgba(31, 72, 91, 0.98), rgba(14, 38, 50, 0.98));
+  border-color: rgba(102, 192, 244, 0.72);
+  box-shadow:
+    inset 0 -2px 0 #66c0f4,
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cinematic-shell .library-page .library-toolstrip .search-input {
+  background: #0f1821;
+  border: 1px solid rgba(102, 192, 244, 0.2);
+  border-radius: 9px;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.cinematic-shell .library-page .search-results {
+  gap: 0;
+  padding: 0 14px 18px;
+}
+
+.cinematic-shell .library-page .library-folder-group {
+  display: grid;
+  gap: 4px;
+}
+
+.cinematic-shell .library-page .library-folder-group + .library-folder-group {
+  border-top: 1px solid rgba(103, 126, 145, 0.14);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.cinematic-shell .library-page .library-folder-group-label {
+  color: #7f8d9a;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.085em;
+  line-height: 1;
+  padding: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.cinematic-shell .library-page .library-folder-section,
+.cinematic-shell .library-page .library-folder-section + .library-folder-section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+}
+
+.cinematic-shell .library-page .library-folder-section-header {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+  color: #aebac5;
+  min-height: 26px;
+  padding: 0 3px;
+}
+
+.cinematic-shell .library-page .library-folder-section-header:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #dbe8f4;
+}
+
+.cinematic-shell .library-page .library-folder-section-title {
+  gap: 7px;
+  min-width: 0;
+}
+
+.cinematic-shell .library-page .library-folder-section-title span:last-child,
+.cinematic-shell .library-page .library-folder-section.pinned .library-folder-section-title span:last-child,
+.cinematic-shell .library-page .library-folder-section.custom .library-folder-section-title span:last-child {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.cinematic-shell .library-page .library-folder-section-header em {
+  color: #74818d;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: max-content;
+}
+
+.cinematic-shell .library-page .library-folder-section-chevron {
+  color: #97a8b8;
+  height: 12px;
+  width: 10px;
+}
+
+.cinematic-shell .library-page .library-folder-section-chevron::before {
+  border-left-color: currentColor;
+  transform: rotate(90deg);
+}
+
+.cinematic-shell .library-page .library-folder-section.collapsed .library-folder-section-chevron::before {
+  transform: rotate(0deg);
+}
+
+.cinematic-shell .library-page .library-folder-section-icon {
+  align-items: center;
+  border: 0;
+  box-shadow: none;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 14px;
+  justify-content: center;
+  width: 14px;
+}
+
+.cinematic-shell .library-page .library-folder-section-icon::before {
+  background: none;
+  border: 0;
+  content: '\25A3';
+  height: auto;
+  left: auto;
+  line-height: 1;
+  opacity: 1;
+  position: static;
+  top: auto;
+  width: auto;
+}
+
+.cinematic-shell .library-page .library-folder-section.system .library-folder-section-icon {
+  color: #8fb7d5;
+}
+
+.cinematic-shell .library-page .library-folder-section.system.pinned .library-folder-section-icon {
+  color: #d9e6f2;
+}
+
+.cinematic-shell .library-page .library-folder-section.system.pinned .library-folder-section-icon::before {
+  content: '\2605';
+}
+
+.cinematic-shell .library-page .library-folder-section.custom .library-folder-section-icon {
+  border: 1px solid rgba(102, 192, 244, 0.18);
+  border-radius: 2px;
+  color: #8ea4b7;
+  height: 9px;
+  margin-left: 1px;
+  position: relative;
+  width: 13px;
+}
+
+.cinematic-shell .library-page .library-folder-section.custom .library-folder-section-icon::before {
+  background: currentColor;
+  border-radius: 2px 2px 0 0;
+  content: '';
+  height: 3px;
+  left: 1px;
+  opacity: 0.72;
+  position: absolute;
+  top: -4px;
+  width: 6px;
+}
+
+.cinematic-shell .library-page .library-folder-section-items {
+  border-left: 1px solid rgba(102, 192, 244, 0.13);
+  display: grid;
+  gap: 1px;
+  margin-left: 18px;
+  padding-left: 8px;
+}
+
+.cinematic-shell .library-page .library-folder-section.system .library-folder-section-items {
+  border-left-color: rgba(143, 183, 213, 0.12);
+}
+
+.cinematic-shell .library-page .library-folder-section.collapsed .library-folder-section-items {
+  display: none;
+}
+
+.cinematic-shell .library-page .library-folder-section-items .repo-card {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+  min-height: 28px;
+  padding: 2px 6px;
+}
+
+.cinematic-shell .library-page .library-folder-section-items .repo-card:hover {
+  background: rgba(42, 71, 94, 0.58);
+}
+
+.cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
+  background: #2a475e;
+  box-shadow: inset 3px 0 0 #66c0f4;
+}
