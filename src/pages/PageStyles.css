@@ -7530,3 +7530,266 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Final library sidebar hierarchy: toolbar, folder groups, system sections, app rows. */
+.sam-shell .library-page .library-toolstrip {
+  background:
+    linear-gradient(180deg, rgba(22, 33, 44, 0.86), rgba(12, 18, 25, 0.78)),
+    #111923;
+  border-bottom: 1px solid rgba(102, 192, 244, 0.08);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+  gap: 10px;
+  padding: 11px 10px 12px;
+}
+
+.sam-shell .library-page .library-sidebar-nav {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, auto) 30px 30px;
+}
+
+.sam-shell .library-page .library-sidebar-nav-btn {
+  background:
+    linear-gradient(180deg, rgba(55, 66, 78, 0.92), rgba(28, 35, 43, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 1px 0 rgba(0, 0, 0, 0.24);
+  color: #edf6ff;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.sam-shell .library-page .library-sidebar-nav-btn:hover {
+  background:
+    linear-gradient(180deg, rgba(67, 80, 94, 0.95), rgba(34, 44, 55, 0.98));
+  border-color: rgba(102, 192, 244, 0.28);
+}
+
+.sam-shell .library-page .library-sidebar-nav-btn.active {
+  background:
+    linear-gradient(180deg, rgba(37, 70, 88, 0.95), rgba(23, 42, 55, 0.98));
+  border-color: rgba(102, 192, 244, 0.62);
+  box-shadow:
+    inset 0 -2px 0 #66c0f4,
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.sam-shell .library-page .library-sidebar-nav-icon {
+  font-size: 13px;
+  padding: 0;
+}
+
+.sam-shell .library-page .library-toolstrip .search-form {
+  margin-top: 0;
+}
+
+.sam-shell .library-page .library-toolstrip .search-input {
+  background: #101923;
+  border: 1px solid rgba(102, 192, 244, 0.18);
+  border-radius: 6px;
+  min-height: 32px;
+  padding: 0 11px;
+}
+
+.sam-shell .library-page .search-results {
+  gap: 0;
+  padding: 12px 8px 14px;
+}
+
+.sam-shell .library-page .library-folder-group {
+  display: grid;
+  gap: 3px;
+}
+
+.sam-shell .library-page .library-folder-group + .library-folder-group {
+  border-top: 1px solid rgba(103, 126, 145, 0.13);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.sam-shell .library-page .library-folder-group-label {
+  color: #7f8d9a;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 0 8px 4px;
+  text-transform: uppercase;
+}
+
+.sam-shell .library-page .library-folder-section,
+.sam-shell .library-page .library-folder-section + .library-folder-section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+}
+
+.sam-shell .library-page .library-folder-section-header {
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #aab7c3;
+  min-height: 24px;
+  padding: 0 8px;
+}
+
+.sam-shell .library-page .library-folder-section-header:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #d7e4ef;
+}
+
+.sam-shell .library-page .library-folder-section.custom .library-folder-section-header {
+  color: #c6d2dd;
+}
+
+.sam-shell .library-page .library-folder-section.system .library-folder-section-header {
+  color: #b8c5d0;
+}
+
+.sam-shell .library-page .library-folder-section-title {
+  gap: 6px;
+  min-width: 0;
+}
+
+.sam-shell .library-page .library-folder-section-title span:last-child,
+.sam-shell .library-page .library-folder-section.pinned .library-folder-section-title span:last-child,
+.sam-shell .library-page .library-folder-section.custom .library-folder-section-title span:last-child {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 790;
+  letter-spacing: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sam-shell .library-page .library-folder-section-header em {
+  color: #768491;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: max-content;
+}
+
+.sam-shell .library-page .library-folder-section-chevron {
+  color: #aebac5;
+  height: 12px;
+  width: 10px;
+}
+
+.sam-shell .library-page .library-folder-section-chevron::before {
+  border-left-color: currentColor;
+  transform: rotate(90deg);
+}
+
+.sam-shell .library-page .library-folder-section.collapsed .library-folder-section-chevron::before {
+  transform: rotate(0deg);
+}
+
+.sam-shell .library-page .library-folder-section-icon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.sam-shell .library-page .library-folder-section.custom .library-folder-section-icon {
+  border: 1px solid rgba(102, 192, 244, 0.18);
+  border-radius: 2px;
+  color: #8ea4b7;
+  height: 9px;
+  margin-left: 1px;
+  width: 13px;
+}
+
+.sam-shell .library-page .library-folder-section.custom .library-folder-section-icon::before {
+  background: currentColor;
+  border-radius: 2px 2px 0 0;
+  content: '';
+  height: 3px;
+  left: 1px;
+  opacity: 0.72;
+  position: absolute;
+  top: -4px;
+  width: 6px;
+}
+
+.sam-shell .library-page .library-folder-section.system .library-folder-section-icon {
+  border: 0;
+  box-shadow: none;
+  color: #8fb7d5;
+  font-size: 12px;
+  height: 14px;
+  position: relative;
+  width: 14px;
+}
+
+.sam-shell .library-page .library-folder-section.system .library-folder-section-icon::before {
+  background: none;
+  border: 0;
+  content: '\25A3';
+  height: auto;
+  left: auto;
+  line-height: 1;
+  opacity: 1;
+  position: static;
+  top: auto;
+  width: auto;
+}
+
+.sam-shell .library-page .library-folder-section.system.pinned .library-folder-section-icon {
+  color: #d7dde4;
+}
+
+.sam-shell .library-page .library-folder-section.system.pinned .library-folder-section-icon::before {
+  content: '\2605';
+}
+
+.sam-shell .library-page .library-folder-section-items {
+  border-left: 1px solid rgba(102, 192, 244, 0.13);
+  display: grid;
+  gap: 1px;
+  margin-left: 18px;
+  padding-left: 7px;
+}
+
+.sam-shell .library-page .library-folder-section.system .library-folder-section-items {
+  border-left-color: rgba(143, 183, 213, 0.12);
+}
+
+.sam-shell .library-page .library-folder-section.collapsed .library-folder-section-items {
+  display: none;
+}
+
+.sam-shell .library-page .library-folder-section-items .repo-card {
+  border-radius: 4px;
+  min-height: 26px;
+  padding: 2px 6px;
+}
+
+.sam-shell .library-page .library-folder-section-items .repo-card::before {
+  bottom: 5px;
+  top: 5px;
+}
+
+.sam-shell .library-page .library-folder-section-items .repo-card:hover {
+  background: rgba(42, 71, 94, 0.68);
+}
+
+.sam-shell .library-page .library-folder-section-items .repo-card.selected {
+  background: #2a475e;
+  box-shadow: inset 2px 0 0 #66c0f4;
+}
