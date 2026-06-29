@@ -4634,8 +4634,10 @@
 }
 
 .cinematic-shell .library-page .library-sam-workspace {
+  align-items: stretch;
   gap: 14px;
   grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  height: calc(100vh - 164px);
   min-height: calc(100vh - 164px);
 }
 
@@ -4652,7 +4654,8 @@
 
 .cinematic-shell .library-page .library-sam-list-pane {
   border-right: 1px solid var(--library-fluent-border);
-  max-height: calc(100vh - 164px);
+  height: 100%;
+  max-height: none;
   overflow: hidden;
 }
 
@@ -4662,8 +4665,18 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
     rgba(15, 24, 34, 0.72);
   border-radius: 24px;
+  height: 100%;
   overflow: auto;
   padding: 16px 20px 28px;
+}
+
+.cinematic-shell .library-page .library-hero,
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-overview-grid {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1440px;
+  width: 100%;
 }
 
 .cinematic-shell .library-page .library-sam-details-toolbar {
