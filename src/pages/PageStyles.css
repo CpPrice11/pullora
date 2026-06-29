@@ -5700,3 +5700,157 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* v5.2.35: compact Fluent Library density pass. */
+.cinematic-shell .library-page {
+  --library-fluent-accent: #4cc2ff;
+  --library-fluent-accent-strong: #0067c0;
+  --library-fluent-bg: rgba(31, 31, 31, 0.8);
+  --library-fluent-card: rgba(42, 42, 42, 0.72);
+  --library-fluent-card-strong: rgba(46, 46, 46, 0.76);
+  --library-fluent-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.cinematic-shell .library-page .library-sam-workspace {
+  align-items: stretch;
+  height: auto;
+  min-height: min(620px, calc(100vh - 164px));
+}
+
+.cinematic-shell .library-page .library-sam-list-pane,
+.cinematic-shell .library-page .library-sam-details-pane {
+  height: auto;
+  min-height: inherit;
+}
+
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0.008)),
+    rgba(31, 31, 31, 0.8);
+  padding: 12px 14px 16px;
+}
+
+.cinematic-shell .library-page .library-hero {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012)),
+    var(--library-fluent-card);
+  gap: 18px;
+  grid-template-columns: 82px minmax(0, 1fr);
+  min-height: 142px;
+  padding: 18px 20px;
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(31, 31, 31, 0.94), rgba(31, 31, 31, 0.76)),
+    var(--library-hero-background, transparent);
+  opacity: 0.24;
+}
+
+.cinematic-shell .library-page .library-hero::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 72%);
+}
+
+.cinematic-shell .library-page .library-hero-cover,
+.cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
+.cinematic-shell .library-page .library-hero--art .library-hero-cover {
+  border-radius: 8px;
+  height: 82px;
+  width: 82px;
+}
+
+.cinematic-shell .library-page .library-github-header h2 {
+  font-size: clamp(25px, 2.1vw, 36px);
+  line-height: 1.12;
+  margin: 4px 0 0;
+}
+
+.cinematic-shell .library-page .library-github-header .library-hero-description {
+  line-height: 1.35;
+  margin-top: 8px;
+  max-width: 760px;
+}
+
+.cinematic-shell .library-page .library-hero-meta {
+  margin-top: 10px;
+}
+
+.cinematic-shell .library-page .library-ops-panel {
+  margin-top: 8px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row {
+  gap: 7px;
+  grid-template-columns: minmax(150px, 220px) repeat(3, minmax(118px, 1fr));
+  padding: 8px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
+.cinematic-shell .library-page .library-ops-action-row .secondary-btn,
+.cinematic-shell .library-page .library-play-status {
+  min-height: 38px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
+  background: var(--library-fluent-accent-strong);
+  border-color: rgba(76, 194, 255, 0.28);
+  font-size: 14px;
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
+  background: #0a75ce;
+}
+
+.cinematic-shell .library-page .library-play-status {
+  align-content: center;
+  padding: 6px 10px;
+}
+
+.cinematic-shell .library-page .library-inline-overview-grid {
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cinematic-shell .library-page .library-inline-panel {
+  display: grid;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
+  min-height: 166px;
+}
+
+.cinematic-shell .library-page .library-inline-panel-head {
+  margin-bottom: 10px;
+}
+
+.cinematic-shell .library-page .library-inline-summary {
+  gap: 8px;
+}
+
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button {
+  min-height: 52px;
+  padding: 9px 10px;
+}
+
+.cinematic-shell .library-page .library-inline-panel--details .library-inline-summary {
+  grid-template-rows: repeat(2, minmax(52px, 1fr));
+}
+
+.cinematic-shell .library-page .library-inline-version-list {
+  margin-top: 10px;
+}
+
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty {
+  min-height: 36px;
+  padding: 8px 10px;
+}
+
+@media (min-width: 1200px) {
+  .cinematic-shell .library-page .library-inline-panel--versions {
+    max-height: 256px;
+  }
+}
