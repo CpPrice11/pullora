@@ -6141,3 +6141,125 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.018)),
     rgba(42, 42, 42, 0.2);
 }
+
+/* v5.2.39: final app-wide Fluent Acrylic pass. Keep surfaces translucent so Mica/custom art stays visible. */
+.cinematic-shell .page,
+.cinematic-shell .library-page,
+.cinematic-shell .settings-page,
+.cinematic-shell .about-page {
+  background: transparent;
+}
+
+.cinematic-shell .library-page {
+  --library-fluent-bg: rgba(18, 18, 18, 0.18);
+  --library-fluent-card: rgba(42, 42, 42, 0.18);
+  --library-fluent-card-strong: rgba(48, 48, 48, 0.24);
+  --library-fluent-control: rgba(255, 255, 255, 0.055);
+  --library-fluent-control-hover: rgba(255, 255, 255, 0.1);
+}
+
+.cinematic-shell .library-page .library-sam-workspace,
+.cinematic-shell .settings-workspace,
+.cinematic-shell .about-hero,
+.cinematic-shell .about-panel,
+.cinematic-shell .settings-page .settings-section,
+.cinematic-shell .settings-page .danger-zone,
+.cinematic-shell .confirm-modal,
+.cinematic-shell .about-release-link,
+.cinematic-shell .library-trust-panel,
+.cinematic-shell .library-cache-note,
+.cinematic-shell .empty-state,
+.cinematic-shell .error-banner {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.018)),
+    var(--material-acrylic-subtle);
+  border-color: var(--material-border);
+  backdrop-filter: blur(30px) saturate(1.24);
+  -webkit-backdrop-filter: blur(30px) saturate(1.24);
+}
+
+.cinematic-shell .library-page .library-sam-workspace {
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.2), rgba(10, 10, 10, 0.06)),
+    linear-gradient(90deg, rgba(6, 10, 14, 0.18), rgba(6, 10, 14, 0.04)),
+    var(--library-hero-background, transparent);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, cover;
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-workspace,
+.cinematic-shell.has-custom-background .settings-workspace,
+.cinematic-shell.has-custom-background .about-hero,
+.cinematic-shell.has-custom-background .about-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
+    rgba(28, 28, 28, 0.14);
+}
+
+.cinematic-shell .library-page .library-sam-list-pane,
+.cinematic-shell .library-page .library-sam-details-pane,
+.cinematic-shell .library-page .library-hero,
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.016)),
+    rgba(34, 34, 34, 0.2);
+  border-color: var(--material-border);
+  backdrop-filter: blur(34px) saturate(1.28);
+  -webkit-backdrop-filter: blur(34px) saturate(1.28);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-list-pane,
+.cinematic-shell.has-custom-background .library-page .library-sam-details-pane,
+.cinematic-shell.has-custom-background .library-page .library-hero,
+.cinematic-shell.has-custom-background .library-page .library-ops-panel,
+.cinematic-shell.has-custom-background .library-page .library-inline-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.014)),
+    rgba(30, 30, 30, 0.16);
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(18, 18, 18, 0.28), rgba(18, 18, 18, 0.08)),
+    var(--library-hero-background, transparent);
+  opacity: 0.92;
+}
+
+.cinematic-shell .library-page .library-play-status,
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button,
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty,
+.cinematic-shell .settings-page .settings-nav,
+.cinematic-shell .settings-page .settings-content,
+.cinematic-shell .settings-card,
+.cinematic-shell .appearance-color-field,
+.cinematic-shell .path-input-row,
+.cinematic-shell .about-release-status {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.068), rgba(255, 255, 255, 0.018)),
+    rgba(255, 255, 255, 0.035);
+  border-color: var(--material-border);
+  backdrop-filter: blur(22px) saturate(1.18);
+  -webkit-backdrop-filter: blur(22px) saturate(1.18);
+}
+
+:root[data-theme='light'] .cinematic-shell .page,
+:root[data-theme='light'] .cinematic-shell .library-page,
+:root[data-theme='light'] .cinematic-shell .settings-page,
+:root[data-theme='light'] .cinematic-shell .about-page {
+  background: transparent;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sam-workspace,
+:root[data-theme='light'] .cinematic-shell .settings-workspace,
+:root[data-theme='light'] .cinematic-shell .about-hero,
+:root[data-theme='light'] .cinematic-shell .about-panel,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-section,
+:root[data-theme='light'] .cinematic-shell .settings-page .danger-zone {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22)),
+    var(--material-acrylic-subtle);
+}

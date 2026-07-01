@@ -289,3 +289,57 @@
 .error-message {
   border-radius: 0;
 }
+
+/* v5.2.39: dialogs must keep the app Acrylic/Mica background visible. */
+.cinematic-shell .modal-overlay,
+.modal-overlay {
+  background:
+    radial-gradient(circle at 72% 12%, rgba(91, 215, 255, 0.1), transparent 26%),
+    rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(28px) saturate(1.18);
+  -webkit-backdrop-filter: blur(28px) saturate(1.18);
+}
+
+.cinematic-shell .modal-content,
+.modal-content {
+  background: var(--material-acrylic-strong);
+  border-color: var(--material-border-strong);
+  border-radius: 14px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+  backdrop-filter: blur(34px) saturate(1.28);
+  -webkit-backdrop-filter: blur(34px) saturate(1.28);
+}
+
+.cinematic-shell .modal-header,
+.modal-header,
+.cinematic-shell .modal-actions,
+.modal-actions,
+.cinematic-shell .path-input-group,
+.path-input-group {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.014)),
+    rgba(255, 255, 255, 0.035);
+  border-color: var(--material-border);
+}
+
+.cinematic-shell .modal-header h2,
+.modal-header h2,
+.cinematic-shell .form-group label,
+.form-group label {
+  color: var(--color-text);
+}
+
+.cinematic-shell .modal-description,
+.cinematic-shell .modal-footer-text,
+.modal-description,
+.modal-footer-text {
+  color: var(--color-text-secondary);
+}
+
+.cinematic-shell .error-message,
+.error-message {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 52%, var(--material-border));
+  border-radius: 10px;
+}

@@ -412,3 +412,28 @@
     flex: 1 1 auto;
   }
 }
+
+/* v5.2.39: update banners use shared Acrylic instead of opaque legacy panels. */
+.cinematic-shell .update-banner,
+.update-banner {
+  background: var(--material-acrylic-strong);
+  border-color: var(--material-border);
+  backdrop-filter: blur(30px) saturate(1.22);
+  -webkit-backdrop-filter: blur(30px) saturate(1.22);
+}
+
+.cinematic-shell .update-row,
+.update-row,
+.cinematic-shell .update-banner-mark,
+.update-banner-mark,
+.cinematic-shell .update-versions span,
+.update-versions span,
+.cinematic-shell .update-versions strong,
+.update-versions strong,
+.cinematic-shell .update-dismiss-btn,
+.update-dismiss-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.014)),
+    rgba(255, 255, 255, 0.035);
+  border-color: var(--material-border);
+}

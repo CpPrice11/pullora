@@ -3084,3 +3084,28 @@
 .library-sam-list-pane .repo-card.selected .repo-name {
   color: #ffffff;
 }
+
+/* v5.2.39: Library list controls stay translucent over custom backgrounds. */
+.cinematic-shell .repo-card,
+.cinematic-shell .owner-avatar,
+.cinematic-shell .repo-actions-menu .project-actions-trigger,
+.cinematic-shell .fav-btn,
+.cinematic-shell .install-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.012)),
+    rgba(255, 255, 255, 0.03);
+  border-color: var(--material-border);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card {
+  background: transparent;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card:hover,
+.cinematic-shell .library-sam-list-pane .repo-card.selected {
+  background:
+    linear-gradient(90deg, rgba(90, 200, 250, 0.2), rgba(90, 200, 250, 0.07)),
+    rgba(255, 255, 255, 0.035);
+}
