@@ -1042,6 +1042,9 @@ function LibraryPage({
     : undefined
   const featuredCover = projectArtCoverUrl(featuredArt)
   const featuredBackground = projectArtBackgroundUrl(featuredArt)
+  const featuredBackgroundStyle = featuredBackground
+    ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
+    : undefined
 
   useEffect(() => {
     onPreviewBackground?.(featuredBackground)
@@ -1441,15 +1444,11 @@ function LibraryPage({
           err instanceof Error ? err.message : t('installed.openFolderError'),
         ))
     }
-    const heroStyle = featuredBackground
-      ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
-      : undefined
-
     return (
       <section
         className={`library-hero library-github-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
         aria-label={featuredRepo.name}
-        style={heroStyle}
+        style={featuredBackgroundStyle}
       >
         <div className="library-hero-cover">
           {featuredCover ? (
@@ -1767,7 +1766,7 @@ function LibraryPage({
   ].filter((group) => group.sections.length > 0)
 
   return (
-    <div className="page library-page">
+    <div className="page library-page" style={featuredBackgroundStyle}>
       <div className="library-sam-workspace">
           <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
             <section className="library-toolstrip" aria-label={t(`${pageKey}.filterLabel`)}>
@@ -1969,9 +1968,6 @@ function LibraryPage({
           <aside
             className="library-sam-details-pane"
             aria-label={featuredRepo?.name ?? t('details.open')}
-            style={featuredBackground
-              ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
-              : undefined}
           >
             {renderDetailsEmpty()}
             {renderHero()}
