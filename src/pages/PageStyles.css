@@ -5854,3 +5854,166 @@
     max-height: 256px;
   }
 }
+
+/* v5.2.36: stronger Acrylic/Mica material for the Library surface. */
+.cinematic-shell .library-page {
+  --library-fluent-accent: #5ac8fa;
+  --library-fluent-accent-strong: #0078d4;
+  --library-fluent-bg: rgba(22, 22, 22, 0.58);
+  --library-fluent-card: rgba(48, 48, 48, 0.42);
+  --library-fluent-card-strong: rgba(58, 58, 58, 0.46);
+  --library-fluent-control: rgba(255, 255, 255, 0.075);
+  --library-fluent-control-hover: rgba(255, 255, 255, 0.115);
+  --library-fluent-control-active: rgba(90, 200, 250, 0.19);
+  --library-fluent-border: rgba(255, 255, 255, 0.16);
+  --library-fluent-border-strong: rgba(90, 200, 250, 0.5);
+  --library-fluent-shadow: 0 12px 34px rgba(0, 0, 0, 0.26);
+  background:
+    linear-gradient(145deg, rgba(60, 72, 84, 0.22), rgba(18, 18, 18, 0.12) 42%, rgba(44, 52, 60, 0.18)),
+    linear-gradient(180deg, rgba(12, 27, 35, 0.32), rgba(10, 10, 10, 0.08));
+}
+
+.cinematic-shell .library-page .library-sam-list-pane,
+.cinematic-shell .library-page .library-sam-details-pane,
+.cinematic-shell .library-page .library-hero,
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-panel,
+.cinematic-shell .library-page .library-play-status,
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button,
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty {
+  backdrop-filter: blur(34px) saturate(1.32);
+  -webkit-backdrop-filter: blur(34px) saturate(1.32);
+}
+
+.cinematic-shell .library-page .library-sam-list-pane,
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.092), rgba(255, 255, 255, 0.032)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
+    var(--library-fluent-bg);
+  border-color: rgba(255, 255, 255, 0.145);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 18px 44px rgba(0, 0, 0, 0.26);
+  position: relative;
+}
+
+.cinematic-shell .library-page .library-sam-list-pane::before,
+.cinematic-shell .library-page .library-sam-details-pane::before {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.018) 0,
+      rgba(255, 255, 255, 0.018) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  opacity: 0.24;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.cinematic-shell .library-page .library-sam-list-pane > *,
+.cinematic-shell .library-page .library-sam-details-pane > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cinematic-shell .library-page .library-toolstrip {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.018)),
+    rgba(255, 255, 255, 0.018);
+  border-bottom-color: rgba(255, 255, 255, 0.105);
+}
+
+.cinematic-shell .library-page .library-sidebar-nav-btn,
+.cinematic-shell .library-page .library-toolstrip .search-input {
+  backdrop-filter: blur(22px) saturate(1.24);
+  -webkit-backdrop-filter: blur(22px) saturate(1.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.115), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.155);
+}
+
+.cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
+  background:
+    linear-gradient(90deg, rgba(90, 200, 250, 0.22), rgba(90, 200, 250, 0.08)),
+    rgba(255, 255, 255, 0.05);
+}
+
+.cinematic-shell .library-page .library-hero {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.032)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.012)),
+    var(--library-fluent-card);
+  border-color: rgba(255, 255, 255, 0.155);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 16px 38px rgba(0, 0, 0, 0.24);
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(28, 28, 28, 0.72), rgba(28, 28, 28, 0.46)),
+    var(--library-hero-background, transparent);
+  opacity: 0.58;
+}
+
+.cinematic-shell .library-page .library-hero::after {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.01) 62%, transparent),
+    linear-gradient(90deg, rgba(90, 200, 250, 0.07), transparent 44%);
+}
+
+.cinematic-shell .library-page .library-hero-cover,
+.cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
+.cinematic-shell .library-page .library-hero--art .library-hero-cover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.09)),
+    rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 24px rgba(0, 0, 0, 0.24);
+}
+
+.cinematic-shell .library-page .library-hero-meta,
+.cinematic-shell .library-page .library-play-status,
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button,
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.03)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.046), rgba(255, 255, 255, 0.012)),
+    var(--library-fluent-card-strong);
+  border-color: rgba(255, 255, 255, 0.145);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 14px 32px rgba(0, 0, 0, 0.22);
+}
+
+.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent),
+    var(--library-fluent-accent-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(0, 120, 212, 0.22);
+}
