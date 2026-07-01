@@ -6063,3 +6063,81 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)),
     rgba(255, 255, 255, 0.03);
 }
+
+/* v5.2.38: make the Library surface behave like real Fluent acrylic over custom art. */
+.cinematic-shell .library-page {
+  --library-fluent-bg: rgba(18, 18, 18, 0.24);
+  --library-fluent-card: rgba(42, 42, 42, 0.22);
+  --library-fluent-card-strong: rgba(48, 48, 48, 0.26);
+  background: transparent;
+}
+
+.cinematic-shell .library-page .library-sam-workspace {
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.34), rgba(10, 10, 10, 0.16)),
+    linear-gradient(90deg, rgba(6, 10, 14, 0.38), rgba(6, 10, 14, 0.16)),
+    var(--library-hero-background, transparent);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, cover;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-workspace {
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.28), rgba(10, 10, 10, 0.1)),
+    linear-gradient(90deg, rgba(6, 10, 14, 0.26), rgba(6, 10, 14, 0.08)),
+    var(--library-hero-background, transparent);
+}
+
+.cinematic-shell .library-page .library-sam-list-pane,
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.018)),
+    rgba(28, 28, 28, 0.24);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.012)),
+    linear-gradient(135deg, rgba(90, 200, 250, 0.08), rgba(255, 255, 255, 0.01) 36%, rgba(0, 0, 0, 0.12)),
+    rgba(20, 20, 20, 0.2);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-list-pane,
+.cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.012)),
+    rgba(24, 24, 24, 0.18);
+}
+
+.cinematic-shell .library-page .library-sam-list-pane::before,
+.cinematic-shell .library-page .library-sam-details-pane::before {
+  opacity: 0.12;
+}
+
+.cinematic-shell .library-page .library-hero,
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.018)),
+    rgba(38, 38, 38, 0.24);
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(18, 18, 18, 0.36), rgba(18, 18, 18, 0.14)),
+    var(--library-hero-background, transparent);
+  opacity: 0.92;
+}
+
+.cinematic-shell .library-page .library-play-status,
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button,
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.018)),
+    rgba(42, 42, 42, 0.2);
+}
