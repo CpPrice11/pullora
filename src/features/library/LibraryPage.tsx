@@ -1966,7 +1966,13 @@ function LibraryPage({
             )}
           </section>
 
-          <aside className="library-sam-details-pane" aria-label={featuredRepo?.name ?? t('details.open')}>
+          <aside
+            className="library-sam-details-pane"
+            aria-label={featuredRepo?.name ?? t('details.open')}
+            style={featuredBackground
+              ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
+              : undefined}
+          >
             {renderDetailsEmpty()}
             {renderHero()}
             {renderOperationsPanel()}

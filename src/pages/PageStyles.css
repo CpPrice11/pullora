@@ -6017,3 +6017,49 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 8px 18px rgba(0, 120, 212, 0.22);
 }
+
+/* v5.2.37: expose custom Library backgrounds through the Fluent material. */
+.cinematic-shell .library-page {
+  --library-fluent-bg: rgba(22, 22, 22, 0.34);
+  --library-fluent-card: rgba(48, 48, 48, 0.28);
+  --library-fluent-card-strong: rgba(58, 58, 58, 0.32);
+  --library-fluent-control: rgba(255, 255, 255, 0.06);
+  --library-fluent-control-hover: rgba(255, 255, 255, 0.105);
+}
+
+.cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    linear-gradient(180deg, rgba(28, 28, 28, 0.5), rgba(28, 28, 28, 0.28)),
+    linear-gradient(135deg, rgba(90, 200, 250, 0.12), rgba(255, 255, 255, 0.025) 38%, rgba(0, 0, 0, 0.18)),
+    var(--library-hero-background, transparent),
+    rgba(20, 20, 20, 0.38);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, cover, auto;
+}
+
+.cinematic-shell .library-page .library-hero,
+.cinematic-shell .library-page .library-ops-panel,
+.cinematic-shell .library-page .library-inline-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.022)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01)),
+    var(--library-fluent-card);
+}
+
+.cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(28, 28, 28, 0.5), rgba(28, 28, 28, 0.24)),
+    var(--library-hero-background, transparent);
+  opacity: 0.72;
+}
+
+.cinematic-shell .library-page .library-play-status,
+.cinematic-shell .library-page .library-inline-summary > div,
+.cinematic-shell .library-page .library-inline-summary > button,
+.cinematic-shell .library-page .library-inline-version-row,
+.cinematic-shell .library-page .library-inline-empty {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)),
+    rgba(255, 255, 255, 0.03);
+}
