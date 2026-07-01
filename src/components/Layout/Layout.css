@@ -750,3 +750,91 @@
     grid-template-columns: 18px;
   }
 }
+
+/* v5.2.39: global Acrylic/Mica foundation for the whole application shell. */
+.layout,
+.cinematic-shell.layout,
+.sam-shell.layout {
+  background: transparent;
+}
+
+.cinematic-shell {
+  --color-mica: var(--material-mica);
+}
+
+.cinematic-shell .cinematic-background,
+.sam-background {
+  filter: blur(20px) saturate(1.12);
+  inset: -24px;
+  opacity: 0;
+  transform: scale(1.04);
+}
+
+.cinematic-shell .cinematic-background.is-visible,
+.sam-background.is-visible {
+  opacity: 0.82;
+}
+
+.cinematic-backdrop,
+.sam-backdrop {
+  backdrop-filter: blur(22px) saturate(1.18);
+  -webkit-backdrop-filter: blur(22px) saturate(1.18);
+  background:
+    radial-gradient(circle at 66% 12%, rgba(90, 200, 250, 0.08), transparent 30%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.38), rgba(10, 10, 10, 0.16) 48%, rgba(10, 10, 10, 0.06)),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.38), rgba(10, 10, 10, 0.1));
+  pointer-events: none;
+}
+
+.cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 66% 12%, rgba(90, 200, 250, 0.065), transparent 30%),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.3), rgba(10, 10, 10, 0.1) 48%, rgba(10, 10, 10, 0.02)),
+    linear-gradient(180deg, rgba(10, 10, 10, 0.26), rgba(10, 10, 10, 0.04));
+}
+
+:root[data-theme='light'] .cinematic-backdrop,
+:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    linear-gradient(90deg, rgba(243, 243, 243, 0.5), rgba(243, 243, 243, 0.24) 48%, rgba(243, 243, 243, 0.08)),
+    linear-gradient(180deg, rgba(243, 243, 243, 0.56), rgba(243, 243, 243, 0.12));
+}
+
+.cinematic-shell .header,
+.sam-titlebar {
+  backdrop-filter: blur(28px) saturate(1.18);
+  -webkit-backdrop-filter: blur(28px) saturate(1.18);
+  background: var(--material-acrylic);
+  border-bottom-color: var(--material-border);
+}
+
+.layout-container,
+.cinematic-shell .layout-content,
+.sam-shell .layout-content {
+  background: transparent;
+}
+
+.sidebar,
+.cinematic-shell .sidebar,
+.sam-shell .sidebar {
+  backdrop-filter: blur(30px) saturate(1.16);
+  -webkit-backdrop-filter: blur(30px) saturate(1.16);
+  background: var(--material-acrylic-subtle);
+  border-right-color: var(--material-border);
+}
+
+.nav-icon,
+.cinematic-shell .nav-icon {
+  backdrop-filter: blur(18px) saturate(1.16);
+  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+  background: var(--material-acrylic-subtle);
+  border-color: var(--material-border);
+}
+
+.nav-item.active .nav-icon,
+.cinematic-shell .nav-item.active .nav-icon {
+  background:
+    linear-gradient(180deg, rgba(90, 200, 250, 0.2), rgba(90, 200, 250, 0.08)),
+    var(--material-acrylic-subtle);
+  border-color: rgba(90, 200, 250, 0.48);
+}

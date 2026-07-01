@@ -611,3 +611,45 @@
 .sam-shell .download-actions button {
   min-height: 28px;
 }
+
+/* v5.2.39: installer/download surfaces follow the shared Acrylic material. */
+.cinematic-shell .download-panel,
+.download-panel {
+  background: var(--material-acrylic-strong);
+  border-color: var(--material-border);
+  backdrop-filter: blur(32px) saturate(1.24);
+  -webkit-backdrop-filter: blur(32px) saturate(1.24);
+}
+
+.cinematic-shell .download-panel-head,
+.download-panel-head,
+.cinematic-shell .download-item,
+.download-item,
+.cinematic-shell .download-header,
+.download-header,
+.cinematic-shell .download-step,
+.download-step,
+.cinematic-shell .download-recovery,
+.download-recovery,
+.cinematic-shell .download-error-details pre,
+.download-error-details pre,
+.cinematic-shell .progress-bar-wrap,
+.progress-bar-wrap,
+.cinematic-shell .download-panel-count,
+.download-panel-count,
+.cinematic-shell .download-action-btn,
+.download-action-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.064), rgba(255, 255, 255, 0.014)),
+    rgba(255, 255, 255, 0.035);
+  border-color: var(--material-border);
+  backdrop-filter: blur(22px) saturate(1.16);
+  -webkit-backdrop-filter: blur(22px) saturate(1.16);
+}
+
+.cinematic-shell .download-panel-title,
+.download-panel-title,
+.cinematic-shell .download-name,
+.download-name {
+  color: var(--color-text);
+}

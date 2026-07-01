@@ -1426,3 +1426,140 @@
     width: 100%;
   }
 }
+
+/* v5.2.39: final app-wide Acrylic pass over custom backgrounds. */
+.cinematic-shell {
+  background: transparent;
+}
+
+.cinematic-shell .cinematic-background.is-visible {
+  opacity: 0.84;
+}
+
+.cinematic-shell .cinematic-backdrop {
+  backdrop-filter: blur(24px) saturate(1.18);
+  -webkit-backdrop-filter: blur(24px) saturate(1.18);
+  background:
+    radial-gradient(circle at 68% 8%, rgba(85, 214, 255, 0.08), transparent 30%),
+    linear-gradient(90deg, rgba(7, 11, 16, 0.3), rgba(7, 11, 16, 0.1) 52%, rgba(7, 11, 16, 0.03)),
+    linear-gradient(180deg, rgba(7, 11, 16, 0.28), rgba(7, 11, 16, 0.04));
+}
+
+.cinematic-shell .header,
+.cinematic-shell .library-sam-workspace,
+.cinematic-shell .settings-workspace,
+.cinematic-shell .about-hero,
+.cinematic-shell .about-panel {
+  backdrop-filter: blur(34px) saturate(1.18);
+  -webkit-backdrop-filter: blur(34px) saturate(1.18);
+  background: var(--material-acrylic);
+  border-color: var(--material-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 44px rgba(0, 0, 0, 0.2);
+}
+
+.cinematic-shell .library-sam-list-pane,
+.cinematic-shell .library-sam-details-pane,
+.cinematic-shell .library-sam-pane-head,
+.cinematic-shell .library-sam-details-toolbar,
+.cinematic-shell .library-toolstrip,
+.cinematic-shell .settings-page .settings-nav,
+.cinematic-shell .settings-page .settings-content,
+.cinematic-shell .settings-page .settings-section,
+.cinematic-shell .settings-page .danger-zone,
+.cinematic-shell .settings-source-summary,
+.cinematic-shell .settings-diagnostics-card,
+.cinematic-shell .settings-content--appearance .appearance-color-field,
+.cinematic-shell .settings-content--installation .path-input-row,
+.cinematic-shell .settings-content--updates .interval-input-control,
+.cinematic-shell .library-hero,
+.cinematic-shell .library-ops-panel,
+.cinematic-shell .library-inline-panel,
+.cinematic-shell .updates-center,
+.cinematic-shell .library-trust-panel {
+  backdrop-filter: blur(26px) saturate(1.16);
+  -webkit-backdrop-filter: blur(26px) saturate(1.16);
+  background: var(--material-acrylic-subtle);
+  border-color: var(--material-border);
+}
+
+.cinematic-shell .library-sam-list-pane,
+.cinematic-shell .settings-page .settings-nav {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
+    rgba(24, 24, 24, 0.2);
+}
+
+.cinematic-shell .library-sam-details-pane,
+.cinematic-shell .settings-page .settings-content {
+  background:
+    radial-gradient(circle at 76% 4%, rgba(85, 214, 255, 0.08), transparent 28%),
+    var(--material-acrylic-subtle);
+}
+
+.cinematic-shell .library-ops-panel {
+  background: var(--material-acrylic-strong);
+}
+
+.cinematic-shell .library-ops-action-row,
+.cinematic-shell .library-ops-tabs,
+.cinematic-shell .library-ops-rail,
+.cinematic-shell .library-ops-grid,
+.cinematic-shell .library-play-status,
+.cinematic-shell .repo-card,
+.cinematic-shell .library-page .segmented-control,
+.cinematic-shell .settings-content--appearance .settings-css-editor {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--material-border);
+}
+
+.cinematic-shell input,
+.cinematic-shell select,
+.cinematic-shell textarea,
+.cinematic-shell button,
+.cinematic-shell .library-sidebar-nav-btn {
+  backdrop-filter: blur(18px) saturate(1.14);
+  -webkit-backdrop-filter: blur(18px) saturate(1.14);
+  background: var(--material-acrylic-subtle);
+  border-color: var(--material-border);
+}
+
+.cinematic-shell button:hover,
+.cinematic-shell .library-sidebar-nav-btn:hover {
+  background: var(--material-acrylic);
+  border-color: rgba(85, 214, 255, 0.34);
+}
+
+.cinematic-shell .library-page .library-sam-workspace {
+  background:
+    linear-gradient(180deg, rgba(7, 11, 16, 0.22), rgba(7, 11, 16, 0.04)),
+    var(--library-hero-background, transparent),
+    var(--material-acrylic-subtle);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto, cover, auto;
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-workspace,
+.cinematic-shell.has-custom-background .settings-workspace,
+.cinematic-shell.has-custom-background .about-hero,
+.cinematic-shell.has-custom-background .about-panel {
+  background:
+    linear-gradient(180deg, rgba(7, 11, 16, 0.18), rgba(7, 11, 16, 0.03)),
+    var(--material-acrylic-subtle);
+}
+
+:root[data-theme='light'] .cinematic-shell .header,
+:root[data-theme='light'] .cinematic-shell .library-sam-workspace,
+:root[data-theme='light'] .cinematic-shell .settings-workspace,
+:root[data-theme='light'] .cinematic-shell .about-hero,
+:root[data-theme='light'] .cinematic-shell .about-panel,
+:root[data-theme='light'] .cinematic-shell .library-sam-list-pane,
+:root[data-theme='light'] .cinematic-shell .library-sam-details-pane,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-nav,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-content,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-section,
+:root[data-theme='light'] .cinematic-shell .settings-page .danger-zone {
+  background: var(--material-acrylic);
+}
