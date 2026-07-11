@@ -13,12 +13,13 @@ import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
+import { compareVersionTags } from '../utils/format'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.2.39'
+const FALLBACK_CURRENT_VERSION = 'v5.2.40'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -29,19 +30,6 @@ type PendingLauncherAction = {
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
 
 const releaseFilters: AboutReleaseFilter[] = ['all', 'rollback', 'current']
-
-function compareVersionTags(left: string, right: string) {
-  const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const rightParts = right.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const length = Math.max(leftParts.length, rightParts.length)
-
-  for (let index = 0; index < length; index += 1) {
-    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0)
-    if (diff !== 0) return diff
-  }
-
-  return 0
-}
 
 function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   const candidates = assets.filter((asset) => {

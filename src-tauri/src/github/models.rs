@@ -8,13 +8,6 @@ pub struct OwnerRepositoriesResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchRepositoriesResponse {
-    pub total_count: u64,
-    pub incomplete_results: bool,
-    pub items: Vec<Repository>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Repository {
     pub id: u64,
     pub name: String,

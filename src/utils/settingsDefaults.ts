@@ -121,8 +121,6 @@ export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 2,
   installationPath: '',
-  autoUpdateCheck: false,
-  checkIntervalHours: 24,
   includePrereleases: false,
   assetStrategy: 'portableFirst',
   githubOwner: 'CpPrice11',
@@ -138,8 +136,6 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     ...settings,
     version: settings?.version || DEFAULT_SETTINGS.version,
     installationPath: settings?.installationPath || DEFAULT_SETTINGS.installationPath,
-    autoUpdateCheck: settings?.autoUpdateCheck ?? DEFAULT_SETTINGS.autoUpdateCheck,
-    checkIntervalHours: settings?.checkIntervalHours || DEFAULT_SETTINGS.checkIntervalHours,
     includePrereleases: settings?.includePrereleases ?? DEFAULT_SETTINGS.includePrereleases,
     assetStrategy: settings?.assetStrategy || DEFAULT_SETTINGS.assetStrategy,
     githubOwner: settings?.githubOwner ?? DEFAULT_SETTINGS.githubOwner,

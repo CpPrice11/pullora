@@ -1,5 +1,6 @@
 import type { DownloadProgress as DL, DownloadStage } from '../../types'
 import { useI18n } from '../../i18n'
+import { formatBytes } from '../../utils/format'
 import './Install.css'
 
 interface DownloadProgressProps {
@@ -23,12 +24,6 @@ const installStages: DownloadStage[] = [
   'registering',
   'completed',
 ]
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
 
 function stageLabel(stage: DownloadStage | undefined, t: (key: string) => string) {
   switch (stage) {

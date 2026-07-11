@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::cache::ApiCache;
-use super::models::{OwnerRepositoriesResponse, Release, Repository, SearchRepositoriesResponse};
+use super::models::{OwnerRepositoriesResponse, Release, Repository};
 
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -259,137 +259,6 @@ impl GitHubClient {
             page,
             has_more,
         });
-
-        {
-            let mut cache = self.cache.lock().unwrap();
-            cache.set_owner_repositories(cache_key, data.clone(), etag);
-        }
-
-        Ok(data)
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub async fn search_public_repositories(
-        &self,
-        query: &str,
-        page: u32,
-        sort: Option<&str>,
-        language: Option<&str>,
-        topic: Option<&str>,
-        _releases_only: bool,
-        force_refresh: bool,
-    ) -> Result<OwnerRepositoriesResponse, String> {
-        let normalized_query = query.trim();
-        let normalized_language = language.unwrap_or("").trim();
-        let normalized_topic = topic.unwrap_or("").trim();
-        let mut query_parts = Vec::new();
-
-        if normalized_query.is_empty() {
-            query_parts.push("stars:>=0".to_string());
-        } else {
-            query_parts.push(normalized_query.to_string());
-        }
-        if !normalized_language.is_empty() {
-            query_parts.push(format!("language:{}", normalized_language));
-        }
-        if !normalized_topic.is_empty() {
-            query_parts.push(format!("topic:{}", normalized_topic));
-        }
-        query_parts.push("fork:false".to_string());
-        query_parts.push("archived:false".to_string());
-
-        let search_query = query_parts.join(" ");
-        let normalized_sort = match sort.unwrap_or("updated") {
-            "stars" => "stars",
-            "forks" => "forks",
-            "updated" => "updated",
-            _ => "updated",
-        };
-        let cache_key = format!(
-            "search:{}:{}:{}",
-            normalized_sort,
-            search_query.to_lowercase(),
-            page
-        );
-
-        if !force_refresh {
-            let cache = self.cache.lock().unwrap();
-            if let Some(cached) = cache.get_owner_repositories(&cache_key) {
-                return Ok(cached.clone());
-            }
-        }
-
-        self.check_rate_limit("search", 1)?;
-
-        let per_page = 30;
-        let url = format!(
-            "https://api.github.com/search/repositories?q={}&sort={}&order=desc&per_page={}&page={}",
-            urlencoding::encode(&search_query),
-            normalized_sort,
-            per_page,
-            page
-        );
-
-        let mut req = self.client.get(&url);
-        if let Some(auth) = self.auth_header() {
-            req = req.header(reqwest::header::AUTHORIZATION, auth);
-        }
-        if let Some(etag) = self
-            .cache
-            .lock()
-            .unwrap()
-            .get_owner_repositories_etag(&cache_key)
-            .map(str::to_string)
-        {
-            req = req.header(reqwest::header::IF_NONE_MATCH, etag);
-        }
-
-        let response = match req.send().await {
-            Ok(response) => response,
-            Err(error) => {
-                if let Some(cached) = self
-                    .cache
-                    .lock()
-                    .unwrap()
-                    .get_owner_repositories_stale(&cache_key)
-                    .cloned()
-                {
-                    return Ok(cached);
-                }
-                return Err(error.to_string());
-            }
-        };
-        self.record_rate_limit(response.headers());
-        if response.status() == reqwest::StatusCode::NOT_MODIFIED {
-            let mut cache = self.cache.lock().unwrap();
-            let cached = cache.get_owner_repositories_stale(&cache_key).cloned();
-            cache.touch_owner_repositories(&cache_key);
-            return cached.ok_or_else(|| "GitHub returned 304 without cached data.".to_string());
-        }
-        let etag = Self::response_etag(response.headers());
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(self.github_error("search", status, body));
-        }
-
-        let raw: SearchRepositoriesResponse = response.json().await.map_err(|e| e.to_string())?;
-        let items: Vec<Repository> = raw
-            .items
-            .into_iter()
-            .filter(|repo| !repo.private && !repo.fork && !repo.archived)
-            .collect();
-        let max_search_results = 1000_u64;
-        let loaded_count = u64::from(page) * per_page as u64;
-        let has_more = items.len() == per_page as usize
-            && loaded_count < raw.total_count.min(max_search_results);
-
-        let data = OwnerRepositoriesResponse {
-            items,
-            page,
-            has_more,
-        };
 
         {
             let mut cache = self.cache.lock().unwrap();

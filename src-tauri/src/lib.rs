@@ -5,7 +5,6 @@ mod commands;
 mod download;
 mod github;
 mod storage;
-mod version;
 
 use download::DownloadManager;
 use github::GitHubClient;
@@ -48,11 +47,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::github::list_owner_repositories,
-            commands::github::search_public_repositories,
             commands::github::get_releases,
             commands::github::clear_github_cache,
             commands::github::get_github_rate_limit_status,
-            commands::settings::is_portable_mode,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::settings::set_installation_path,
@@ -82,7 +79,6 @@ pub fn run() {
             commands::download::get_downloads,
             commands::download::cancel_download,
             commands::updates::get_launcher_version,
-            commands::updates::check_for_updates,
             commands::updates::open_dir,
             commands::updates::open_external_url,
             commands::updates::get_launcher_storage_info,

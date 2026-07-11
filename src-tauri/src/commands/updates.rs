@@ -1,9 +1,6 @@
 use serde::Serialize;
 use std::io::Write;
-use tauri::{AppHandle, State};
-
-use crate::version::checker::{check_all_updates, UpdateAvailable};
-use crate::AppState;
+use tauri::AppHandle;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,11 +16,6 @@ pub struct LauncherStorageInfo {
 #[tauri::command]
 pub async fn get_launcher_version() -> Result<String, String> {
     Ok(format!("v{}", env!("CARGO_PKG_VERSION")))
-}
-
-#[tauri::command]
-pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateAvailable>, String> {
-    check_all_updates(&state.github_client).await
 }
 
 #[tauri::command]
