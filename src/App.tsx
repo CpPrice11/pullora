@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import Layout from './components/Layout/Layout'
-import ReleaseSelector from './components/Install/ReleaseSelector'
 import { LibraryPage } from './features/library'
 import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
-import UpdateBanner from './components/UpdateBanner/UpdateBanner'
 import { useSettings } from './hooks/useSettings'
-import { useAutoUpdate } from './hooks/useAutoUpdate'
 import { applyAppearanceSettings, applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import { LanguageProvider } from './i18n'
-import type { UpdateAvailable } from './types'
 import { pickImageFile } from './services/dialog'
 import {
   clearLauncherBackgroundArt,
@@ -33,15 +29,6 @@ function App() {
   const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
   const [searchPreviewBackground, setSearchPreviewBackground] = useState<string | null>(null)
   const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
-
-  // Start auto-update after settings are loaded
-  const { updates, dismiss } = useAutoUpdate(
-    settings.checkIntervalHours,
-    settings.autoUpdateCheck,
-  )
-
-  // Repo open from update banner
-  const [updateTarget, setUpdateTarget] = useState<UpdateAvailable | null>(null)
 
   useEffect(() => {
     setThemePreference(settings.theme)
@@ -104,11 +91,6 @@ function App() {
     setShowPathModal(false)
   }
 
-  const handleInstallUpdate = (update: UpdateAvailable) => {
-    dismiss(update.owner, update.repo)
-    setUpdateTarget(update)
-  }
-
   const handleChangeLauncherBackground = async () => {
     const imagePath = await pickImageFile()
     if (!imagePath) return
@@ -152,6 +134,7 @@ function App() {
           <LibraryPage
             onOpenSettings={() => setSettingsOpen(true)}
             onPreviewBackground={setSearchPreviewBackground}
+            suppressDiagnostics={showPathModal}
           />
         </div>
       )}
@@ -173,14 +156,6 @@ function App() {
         backgroundImage={visibleBackground}
         settingsOpen={settingsOpen}
       >
-        {updates.length > 0 && (
-          <UpdateBanner
-            updates={updates}
-            onDismiss={dismiss}
-            onInstall={handleInstallUpdate}
-          />
-        )}
-
         {renderContent()}
 
         {settingsOpen && (
@@ -199,15 +174,6 @@ function App() {
           />
         )}
 
-        {updateTarget && (
-          <ReleaseSelector
-            owner={updateTarget.owner}
-            repo={updateTarget.repo}
-            displayName={updateTarget.appName}
-            currentVersion={updateTarget.currentVersion}
-            onClose={() => setUpdateTarget(null)}
-          />
-        )}
       </Layout>
     </LanguageProvider>
   )

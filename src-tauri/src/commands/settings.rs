@@ -14,11 +14,6 @@ pub struct InstallPathValidation {
 }
 
 #[tauri::command]
-pub async fn is_portable_mode() -> Result<bool, String> {
-    Ok(crate::storage::settings::is_portable())
-}
-
-#[tauri::command]
 pub async fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
     let settings = state.settings.lock().await;
     Ok(settings.clone())
@@ -70,24 +65,34 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
         return Ok(InstallPathValidation {
             ok: false,
             status: "missing".to_string(),
-            message: "Installation path is empty.".to_string(),
+            message: "Папку встановлення не вибрано.".to_string(),
         });
     }
 
     let folder = std::path::PathBuf::from(trimmed);
     if !folder.exists() {
-        return Ok(InstallPathValidation {
-            ok: false,
-            status: "missing".to_string(),
-            message: "Folder does not exist yet.".to_string(),
-        });
+        if let Err(error) = std::fs::create_dir_all(&folder) {
+            if error.kind() == std::io::ErrorKind::PermissionDenied {
+                return Ok(InstallPathValidation {
+                    ok: true,
+                    status: "requiresElevation".to_string(),
+                    message: "Папку можна створити тільки з правами адміністратора.".to_string(),
+                });
+            }
+
+            return Ok(InstallPathValidation {
+                ok: false,
+                status: "inaccessible".to_string(),
+                message: format!("Не вдалося створити папку встановлення: {}", error),
+            });
+        }
     }
 
     if !folder.is_dir() {
         return Ok(InstallPathValidation {
             ok: false,
             status: "inaccessible".to_string(),
-            message: "Path is not a folder.".to_string(),
+            message: "Шлях встановлення не є папкою.".to_string(),
         });
     }
 
@@ -98,13 +103,13 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
             Ok(InstallPathValidation {
                 ok: true,
                 status: "ok".to_string(),
-                message: "Folder is available and writable.".to_string(),
+                message: "Папка доступна для запису.".to_string(),
             })
         }
         Err(_) => Ok(InstallPathValidation {
             ok: true,
             status: "requiresElevation".to_string(),
-            message: "Folder exists but requires elevation for writes.".to_string(),
+            message: "Папка існує, але для запису потрібні права адміністратора.".to_string(),
         }),
     }
 }

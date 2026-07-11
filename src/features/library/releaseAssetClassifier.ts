@@ -128,10 +128,6 @@ export function installableAssetsForRelease(release: GitHubRelease, runtime?: Re
   return release.assets.filter((asset) => isInstallableReleaseAsset(asset, runtime))
 }
 
-export function hasInstallableReleaseAsset(release: GitHubRelease, runtime?: ReleaseRuntime) {
-  return installableAssetsForRelease(release, runtime).length > 0
-}
-
 export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {
   switch (kind) {
     case 'portable': return 'release.assetTypePortable'
@@ -139,33 +135,4 @@ export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {
     case 'archive': return 'release.assetTypeArchive'
     case 'unsupported': return 'release.assetTypeUnsupported'
   }
-}
-
-export function releaseAssetPlatformLabelKey(platform: ReleaseAssetPlatform) {
-  return `store.platform.${platform}`
-}
-
-export function releaseAssetArchitectureLabelKey(architecture: ReleaseAssetArchitecture) {
-  return `store.architecture.${architecture}`
-}
-
-interface ReleaseAssetKindStatus {
-  checked?: boolean
-  checking?: boolean
-  installable?: boolean
-  assetKinds?: ReleaseAssetKind[]
-  source?: 'release' | 'cache' | 'degraded'
-}
-
-export function releaseAssetKindsForStatus(status?: ReleaseAssetKindStatus): ReleaseAssetKind[] {
-  const kinds = status?.assetKinds ?? []
-  if (kinds.length > 0) {
-    return [...new Set(kinds)]
-  }
-
-  if (status?.checked && !status.checking && !status.installable && status.source !== 'degraded') {
-    return ['unsupported']
-  }
-
-  return []
 }

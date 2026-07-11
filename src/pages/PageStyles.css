@@ -1714,7 +1714,6 @@
 
 .settings-page {
   align-items: center;
-  display: flex;
   flex-direction: column;
 }
 
@@ -2147,10 +2146,7 @@
   border-radius: 18px;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  min-height: 64px;
   overflow: visible;
-  padding: 9px 12px;
   position: relative;
 }
 
@@ -2236,7 +2232,6 @@
 
 .cinematic-shell .about-release-asset {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
   overflow-wrap: anywhere;
 }
 
@@ -2812,25 +2807,6 @@
 :root[data-theme='light'] .ai-settings-runtime {
   background: rgba(17, 24, 39, 0.04);
   border-color: rgba(17, 24, 39, 0.1);
-}
-
-.interval-input-control {
-  align-items: center;
-  display: inline-flex;
-  gap: 8px;
-  max-width: 170px;
-  min-width: 0;
-}
-
-.interval-input-control input {
-  max-width: 110px;
-  text-align: center;
-}
-
-.interval-input-control span {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: 750;
 }
 
 .settings-maintenance-actions {
@@ -3923,29 +3899,16 @@
 /* v5.2.21: Library inline panels must also render in the current cinematic shell. */
 .cinematic-shell .library-page .library-inline-overview-grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  margin-top: 12px;
 }
 
 .cinematic-shell .library-page .library-inline-panel {
-  background:
-    linear-gradient(180deg, rgba(19, 28, 38, 0.96), rgba(9, 15, 22, 0.98)),
-    #101821;
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 10px;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.18);
-  display: grid;
   gap: 12px;
   margin-top: 12px;
-  min-width: 0;
-  padding: 14px 16px 16px;
 }
 
 .cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
   align-content: start;
   margin-top: 0;
-  min-height: 178px;
 }
 
 .cinematic-shell .library-page .library-inline-panel-head {
@@ -3964,16 +3927,10 @@
 }
 
 .cinematic-shell .library-page .library-inline-panel-head span {
-  color: #66c0f4;
-  font-size: 11px;
-  font-weight: 850;
-  letter-spacing: 0.055em;
   text-transform: uppercase;
 }
 
 .cinematic-shell .library-page .library-inline-panel-head strong {
-  color: #edf6ff;
-  font-size: 15px;
   line-height: 1.2;
   min-width: 0;
   overflow: hidden;
@@ -3983,7 +3940,6 @@
 
 .cinematic-shell .library-page .library-inline-summary {
   display: grid;
-  gap: 1px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -3998,9 +3954,7 @@
   border-right: 1px solid rgba(255, 255, 255, 0.055);
   display: grid;
   gap: 5px;
-  min-height: 52px;
   min-width: 0;
-  padding: 10px 12px;
 }
 
 .cinematic-shell .library-page .library-inline-summary > div:last-child {
@@ -4074,62 +4028,19 @@
 
 /* v5.2.27: Apply the sidebar hierarchy to the active cinematic shell as well. */
 .cinematic-shell .library-page .library-toolstrip {
-  background:
-    linear-gradient(180deg, rgba(13, 24, 32, 0.92), rgba(6, 11, 16, 0.94)),
-    #080d12;
-  border: 1px solid rgba(102, 192, 244, 0.1);
-  border-radius: 14px;
-  box-shadow: none;
   gap: 12px;
-  margin: 0 0 16px;
-  padding: 12px;
 }
 
 .cinematic-shell .library-page .library-sidebar-nav {
   display: grid;
-  gap: 5px;
-  grid-template-columns: minmax(0, auto) 42px 42px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn {
-  background:
-    linear-gradient(180deg, rgba(58, 66, 76, 0.92), rgba(27, 33, 40, 0.96));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 1px 0 rgba(0, 0, 0, 0.24);
-  color: #edf6ff;
-  font-size: 13px;
-  font-weight: 850;
-  min-height: 34px;
-  padding: 0 14px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn:hover {
-  border-color: rgba(102, 192, 244, 0.42);
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn.active {
-  background:
-    linear-gradient(180deg, rgba(31, 72, 91, 0.98), rgba(14, 38, 50, 0.98));
-  border-color: rgba(102, 192, 244, 0.72);
-  box-shadow:
-    inset 0 -2px 0 #66c0f4,
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .cinematic-shell .library-page .library-toolstrip .search-input {
-  background: #0f1821;
-  border: 1px solid rgba(102, 192, 244, 0.2);
-  border-radius: 9px;
-  min-height: 36px;
   padding: 0 12px;
 }
 
 .cinematic-shell .library-page .search-results {
   gap: 0;
-  padding: 0 14px 18px;
 }
 
 .cinematic-shell .library-page .library-folder-group {
@@ -4137,20 +4048,9 @@
   gap: 4px;
 }
 
-.cinematic-shell .library-page .library-folder-group + .library-folder-group {
-  border-top: 1px solid rgba(103, 126, 145, 0.14);
-  margin-top: 14px;
-  padding-top: 12px;
-}
-
 .cinematic-shell .library-page .library-folder-group-label {
-  color: #7f8d9a;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: 0.085em;
   line-height: 1;
   padding: 0 0 6px;
-  text-transform: uppercase;
 }
 
 .cinematic-shell .library-page .library-folder-section,
@@ -4166,17 +4066,10 @@
 }
 
 .cinematic-shell .library-page .library-folder-section-header {
-  background: transparent;
-  border: 0;
-  border-radius: 5px;
   box-shadow: none;
-  color: #aebac5;
-  min-height: 26px;
-  padding: 0 3px;
 }
 
 .cinematic-shell .library-page .library-folder-section-header:hover {
-  background: rgba(255, 255, 255, 0.035);
   color: #dbe8f4;
 }
 
@@ -4189,8 +4082,6 @@
 .cinematic-shell .library-page .library-folder-section.pinned .library-folder-section-title span:last-child,
 .cinematic-shell .library-page .library-folder-section.custom .library-folder-section-title span:last-child {
   color: inherit;
-  font-size: 12px;
-  font-weight: 780;
   letter-spacing: 0;
   min-width: 0;
   overflow: hidden;
@@ -4200,9 +4091,6 @@
 }
 
 .cinematic-shell .library-page .library-folder-section-header em {
-  color: #74818d;
-  font-size: 10px;
-  font-weight: 800;
   min-width: max-content;
 }
 
@@ -4282,8 +4170,6 @@
 .cinematic-shell .library-page .library-folder-section-items {
   border-left: 1px solid rgba(102, 192, 244, 0.13);
   display: grid;
-  gap: 1px;
-  margin-left: 18px;
   padding-left: 8px;
 }
 
@@ -4296,44 +4182,22 @@
 }
 
 .cinematic-shell .library-page .library-folder-section-items .repo-card {
-  background: transparent;
   border: 0;
-  border-radius: 5px;
   box-shadow: none;
-  min-height: 28px;
-  padding: 2px 6px;
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card:hover {
-  background: rgba(42, 71, 94, 0.58);
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
-  background: #2a475e;
-  box-shadow: inset 3px 0 0 #66c0f4;
 }
 
 /* v5.2.28: Keep the active shell aligned with the final Steam-like library surface. */
-.cinematic-shell .library-page .library-sam-workspace {
-  grid-template-columns: 372px minmax(0, 1fr);
-}
 
 .cinematic-shell .library-page .library-sam-list-pane {
   background: #171f29;
   border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.055);
   border-radius: 0;
   box-shadow: none;
 }
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    radial-gradient(circle at 80% 0%, rgba(102, 192, 244, 0.16), transparent 28%),
-    linear-gradient(180deg, #1b2f43 0%, #222a34 360px, #1f252e 760px, #121922 100%);
   border: 0;
-  border-radius: 0;
   box-shadow: none;
-  padding: 0 28px 32px;
 }
 
 .cinematic-shell .library-page .library-sam-details-toolbar {
@@ -4342,8 +4206,6 @@
   display: flex;
   justify-content: flex-end;
   margin: 0;
-  min-height: 48px;
-  padding: 8px 0 2px;
   position: relative;
   z-index: 7;
 }
@@ -4353,31 +4215,13 @@
 }
 
 .cinematic-shell .library-page .library-hero {
-  align-items: end;
-  background:
-    linear-gradient(180deg, rgba(20, 27, 36, 0) 0%, rgba(20, 27, 36, 0.16) 46%, rgba(20, 27, 36, 0.88) 100%),
-    linear-gradient(90deg, rgba(20, 27, 36, 0.16), rgba(20, 27, 36, 0.5)),
-    #263a4e;
-  border: 0;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  min-height: clamp(320px, 38vh, 430px);
   overflow: hidden;
-  padding: 44px 42px 76px;
   position: relative;
 }
 
 .cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(180deg, rgba(20, 27, 36, 0) 0%, rgba(20, 27, 36, 0.16) 46%, rgba(20, 27, 36, 0.88) 100%),
-    linear-gradient(90deg, rgba(20, 27, 36, 0.16), rgba(20, 27, 36, 0.5)),
-    var(--library-hero-background, transparent),
-    #263a4e;
-  background-position: center;
-  background-size: cover;
   border: 0;
-  border-radius: 0;
   box-shadow: none;
   content: '';
   inset: 0;
@@ -4387,9 +4231,6 @@
 }
 
 .cinematic-shell .library-page .library-hero::after {
-  background:
-    radial-gradient(circle at 76% 28%, rgba(102, 192, 244, 0.22), transparent 28%),
-    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 42%, transparent 100%);
   content: '';
   inset: 0;
   pointer-events: none;
@@ -4414,68 +4255,24 @@
   z-index: 0;
 }
 
-.cinematic-shell .library-page .library-hero--art .library-hero-cover img,
-.cinematic-shell .library-page .library-hero--fallback .library-hero-cover img {
-  filter: saturate(1.18) contrast(1.04);
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
 .cinematic-shell .library-page .library-hero-main {
-  max-width: min(880px, 58%);
   position: relative;
   z-index: 2;
 }
 
 .cinematic-shell .library-page .library-github-header h2 {
-  color: #ffffff;
-  font-size: 46px;
-  font-weight: 700;
-  line-height: 0.98;
-  margin: 8px 0 0;
-  max-width: 18ch;
   overflow-wrap: anywhere;
-  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.55);
-}
-
-.cinematic-shell .library-page .library-github-header .library-hero-repo,
-.cinematic-shell .library-page .library-github-header .library-hero-description {
-  color: #c7d5e0;
-  font-size: 14px;
-}
-
-.cinematic-shell .library-page .library-github-header .library-hero-description {
-  line-height: 1.45;
-  margin-top: 10px;
-  max-width: 720px;
-}
-
-.cinematic-shell .library-page .library-hero-meta {
-  background: rgba(0, 0, 0, 0.26);
-  border: 0;
-  margin-top: 14px;
 }
 
 .cinematic-shell .library-page .library-hero-meta span {
   border-color: rgba(255, 255, 255, 0.12);
-  color: #d7e3ee;
-  font-size: 12px;
-  padding: 7px 10px;
 }
 
 .cinematic-shell .library-page .library-ops-panel {
-  background:
-    linear-gradient(180deg, rgba(49, 59, 70, 0.92), rgba(31, 39, 49, 0.98)),
-    #202a35;
-  border: 0;
   border-left: 0;
-  border-radius: 0;
-  box-shadow: 0 -28px 54px rgba(0, 0, 0, 0.38), 0 18px 44px rgba(0, 0, 0, 0.24);
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin: -54px 0 0;
   padding: 0;
   position: relative;
   z-index: 6;
@@ -4488,30 +4285,14 @@
 .cinematic-shell .library-page .library-ops-action-row {
   align-items: center;
   display: grid;
-  gap: 4px;
-  grid-template-columns: minmax(200px, 270px) repeat(3, minmax(140px, 1fr));
   order: 1;
-  padding: 10px 12px;
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
 .cinematic-shell .library-page .library-ops-action-row .secondary-btn {
   border: 0;
-  border-radius: 0;
-  box-shadow: none;
   font-size: 13px;
   font-weight: 700;
-  min-height: 46px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
-  background: linear-gradient(90deg, #75c83d, #43a72f);
-  color: #ffffff !important;
-  font-size: 20px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
-  background: linear-gradient(90deg, #91de4d, #59bf3d);
 }
 
 .cinematic-shell .library-page .library-ops-action-row .secondary-btn {
@@ -4577,9 +4358,6 @@
 }
 
 @media (max-width: 1180px) {
-.cinematic-shell .library-page .library-sam-workspace {
-    grid-template-columns: 300px minmax(0, 1fr);
-  }
 
 .cinematic-shell .library-page .library-hero-main {
     max-width: 86%;
@@ -4587,12 +4365,6 @@
 }
 
 @media (max-width: 860px) {
-.cinematic-shell .library-page .library-sam-workspace {
-    display: flex;
-  flex-direction: column;
-  height: auto;
-  min-height: 100%;
-  }
 
 .cinematic-shell .library-page .library-sam-list-pane {
     border-right: 0;
@@ -4603,12 +4375,6 @@
 .cinematic-shell .library-page .library-sam-details-pane {
     flex: 1 1 auto;
   overflow: visible;
-  padding: 0 12px 16px;
-  }
-
-.cinematic-shell .library-page .library-hero {
-    min-height: 240px;
-  padding: 20px;
   }
 
 .cinematic-shell .library-page .library-hero-main {
@@ -4626,241 +4392,39 @@
   --library-fluent-surface: rgba(18, 28, 39, 0.72);
   --library-fluent-surface-strong: rgba(22, 34, 47, 0.84);
   --library-fluent-surface-soft: rgba(255, 255, 255, 0.055);
-  --library-fluent-border: rgba(176, 213, 238, 0.14);
-  --library-fluent-border-strong: rgba(102, 192, 244, 0.34);
-  --library-fluent-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
-  --library-fluent-accent: #42c7f4;
-  --library-fluent-accent-strong: #2ea8df;
-}
-
-.cinematic-shell .library-page .library-sam-workspace {
-  align-items: stretch;
-  gap: 14px;
-  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
-  height: calc(100vh - 164px);
-  min-height: calc(100vh - 164px);
-}
-
-.cinematic-shell .library-page .library-sam-list-pane,
-.cinematic-shell .library-page .library-sam-details-pane {
-  backdrop-filter: blur(28px) saturate(1.18);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022)),
-    var(--library-fluent-surface);
-  border: 1px solid var(--library-fluent-border);
-  border-radius: 22px;
-  box-shadow: var(--library-fluent-shadow);
 }
 
 .cinematic-shell .library-page .library-sam-list-pane {
-  border-right: 1px solid var(--library-fluent-border);
   height: 100%;
   max-height: none;
-  overflow: hidden;
 }
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    radial-gradient(circle at 78% 0%, rgba(102, 192, 244, 0.13), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
-    rgba(15, 24, 34, 0.72);
   border-radius: 24px;
   height: 100%;
-  overflow: auto;
-  padding: 16px 20px 28px;
-}
-
-.cinematic-shell .library-page .library-hero,
-.cinematic-shell .library-page .library-ops-panel,
-.cinematic-shell .library-page .library-inline-overview-grid {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 1440px;
-  width: 100%;
-}
-
-.cinematic-shell .library-page .library-sam-details-toolbar {
-  min-height: 36px;
-  padding: 0 0 12px;
 }
 
 .cinematic-shell .library-page .library-toolstrip {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.028)),
-    rgba(10, 20, 29, 0.52);
   border-color: rgba(102, 192, 244, 0.16);
-  border-radius: 18px;
-  margin: 0 0 14px;
-  padding: 12px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav {
-  grid-template-columns: minmax(0, 1fr) 48px 48px;
 }
 
 .cinematic-shell .library-page .library-sidebar-nav-btn {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.125), rgba(255, 255, 255, 0.048)),
-    rgba(37, 47, 58, 0.78);
   border-color: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 8px 22px rgba(0, 0, 0, 0.18);
-  color: #f2f8fe;
-  min-height: 40px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn.active {
-  background:
-    linear-gradient(180deg, rgba(66, 199, 244, 0.25), rgba(66, 199, 244, 0.1)),
-    rgba(21, 46, 61, 0.86);
-  border-color: rgba(66, 199, 244, 0.68);
-  box-shadow:
-    inset 0 -2px 0 var(--library-fluent-accent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 10px 28px rgba(26, 148, 199, 0.18);
 }
 
 .cinematic-shell .library-page .library-toolstrip .search-input {
-  background: rgba(8, 17, 25, 0.54);
   border-color: rgba(102, 192, 244, 0.22);
-  border-radius: 12px;
-  min-height: 42px;
-}
-
-.cinematic-shell .library-page .search-results {
-  padding: 0 12px 18px;
 }
 
 .cinematic-shell .library-page .library-folder-group + .library-folder-group {
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-.cinematic-shell .library-page .library-folder-group-label {
-  color: #92a5b8;
-  font-size: 11px;
-  padding-left: 2px;
-}
-
 .cinematic-shell .library-page .library-folder-section-header {
-  background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 11px;
-  min-height: 31px;
-  padding: 0 8px;
-}
-
-.cinematic-shell .library-page .library-folder-section-header:hover {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(102, 192, 244, 0.2);
-}
-
-.cinematic-shell .library-page .library-folder-section-items {
-  border-left-color: rgba(102, 192, 244, 0.2);
-  gap: 3px;
-  margin-left: 16px;
-  padding: 6px 0 4px 8px;
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card {
-  border-radius: 10px;
-  min-height: 32px;
-  padding: 4px 8px;
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
-  background:
-    linear-gradient(90deg, rgba(66, 199, 244, 0.26), rgba(66, 199, 244, 0.12)),
-    rgba(255, 255, 255, 0.055);
-  box-shadow: inset 3px 0 0 var(--library-fluent-accent);
-}
-
-.cinematic-shell .library-page .library-hero {
-  align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.034)),
-    rgba(19, 31, 43, 0.68);
-  border: 1px solid var(--library-fluent-border);
-  border-radius: 24px;
-  box-shadow: var(--library-fluent-shadow);
-  gap: 26px;
-  grid-template-columns: 132px minmax(0, 1fr);
-  min-height: 220px;
-  padding: 28px 30px;
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(15, 24, 34, 0.92), rgba(15, 24, 34, 0.56)),
-    var(--library-hero-background, transparent);
-  background-position: center;
-  background-size: cover;
-  border-radius: inherit;
-  opacity: 0.78;
-}
-
-.cinematic-shell .library-page .library-hero::after {
-  background:
-    radial-gradient(circle at 82% 18%, rgba(102, 192, 244, 0.2), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 60%);
-  border-radius: inherit;
-}
-
-.cinematic-shell .library-page .library-hero-cover,
-.cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
-.cinematic-shell .library-page .library-hero--art .library-hero-cover {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.055)),
-    rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 26px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
-  height: 124px;
-  inset: auto;
-  opacity: 1;
-  overflow: hidden;
-  position: relative;
-  right: auto;
-  width: 124px;
-  z-index: 2;
-}
-
-.cinematic-shell .library-page .library-hero--art .library-hero-cover img,
-.cinematic-shell .library-page .library-hero--fallback .library-hero-cover img {
-  filter: none;
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
-.cinematic-shell .library-page .library-hero-main {
-  max-width: none;
-}
-
-.cinematic-shell .library-page .library-github-header h2 {
-  color: #f7fbff;
-  font-size: clamp(30px, 3.1vw, 48px);
-  font-weight: 780;
-  line-height: 1.04;
-  max-width: min(780px, 100%);
-  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
-}
-
-.cinematic-shell .library-page .library-github-header .library-hero-repo,
-.cinematic-shell .library-page .library-github-header .library-hero-description {
-  color: #c8d8e6;
-  font-size: 14px;
 }
 
 .cinematic-shell .library-page .library-hero-meta {
-  background: rgba(7, 14, 21, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
   display: inline-flex;
   overflow: hidden;
 }
@@ -4878,12 +4442,6 @@
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
   margin: 14px 0 0;
   overflow: hidden;
-}
-
-.cinematic-shell .library-page .library-ops-action-row {
-  gap: 10px;
-  grid-template-columns: minmax(190px, 280px) repeat(3, minmax(126px, 1fr));
-  padding: 12px;
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
@@ -4923,15 +4481,10 @@
 .cinematic-shell .library-page .library-play-status {
   display: grid;
   gap: 4px;
-  min-height: 46px;
-  padding: 8px 12px;
 }
 
 .cinematic-shell .library-page .library-inline-overview-grid {
-  align-items: stretch;
-  gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 14px;
 }
 
 .cinematic-shell .library-page .library-inline-panel {
@@ -4943,19 +4496,6 @@
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
   grid-template-rows: auto 1fr auto;
   height: 100%;
-  padding: 16px 18px 18px;
-}
-
-.cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
-  min-height: 238px;
-}
-
-.cinematic-shell .library-page .library-inline-panel-head span {
-  color: var(--library-fluent-accent);
-}
-
-.cinematic-shell .library-page .library-inline-summary {
-  gap: 10px;
 }
 
 .cinematic-shell .library-page .library-inline-panel--versions .library-inline-summary,
@@ -4963,13 +4503,8 @@
   align-content: start;
 }
 
-.cinematic-shell .library-page .library-inline-panel--details .library-inline-summary {
-  grid-template-rows: repeat(2, minmax(76px, 1fr));
-}
-
 .cinematic-shell .library-page .library-inline-version-list {
   align-content: end;
-  margin-top: auto;
 }
 
 .cinematic-shell .library-page .library-inline-version-row,
@@ -4980,9 +4515,6 @@
 }
 
 @media (max-width: 1180px) {
-  .cinematic-shell .library-page .library-sam-workspace {
-    grid-template-columns: 320px minmax(0, 1fr);
-  }
 
   .cinematic-shell .library-page .library-hero {
     grid-template-columns: 112px minmax(0, 1fr);
@@ -4990,10 +4522,6 @@
 }
 
 @media (max-width: 860px) {
-  .cinematic-shell .library-page .library-sam-list-pane,
-  .cinematic-shell .library-page .library-sam-details-pane {
-    max-height: none;
-  }
 
   .cinematic-shell .library-page .library-sam-details-pane {
     padding: 12px;
@@ -5027,116 +4555,8 @@
 
 /* v5.2.33: Windows Fluent library surface, without the previous cinematic/game treatment. */
 .cinematic-shell .library-page {
-  --library-fluent-accent: #60cdff;
-  --library-fluent-accent-strong: #0078d4;
-  --library-fluent-bg: rgba(30, 30, 30, 0.72);
-  --library-fluent-card: rgba(43, 43, 43, 0.78);
-  --library-fluent-card-strong: rgba(50, 50, 50, 0.86);
-  --library-fluent-control: rgba(255, 255, 255, 0.06);
-  --library-fluent-control-hover: rgba(255, 255, 255, 0.09);
-  --library-fluent-control-active: rgba(96, 205, 255, 0.16);
-  --library-fluent-border: rgba(255, 255, 255, 0.105);
-  --library-fluent-border-strong: rgba(96, 205, 255, 0.42);
-  --library-fluent-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
   color-scheme: dark;
   font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-}
-
-.cinematic-shell .library-page .library-sam-workspace {
-  gap: 12px;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-}
-
-.cinematic-shell .library-page .library-sam-list-pane,
-.cinematic-shell .library-page .library-sam-details-pane {
-  backdrop-filter: blur(22px) saturate(1.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
-    var(--library-fluent-bg);
-  border: 1px solid var(--library-fluent-border);
-  border-radius: 12px;
-  box-shadow: var(--library-fluent-shadow);
-}
-
-.cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.012)),
-    rgba(32, 32, 32, 0.78);
-  padding: 14px 16px 22px;
-}
-
-.cinematic-shell .library-page .library-toolstrip {
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 0;
-  box-shadow: none;
-  margin: 0 0 12px;
-  padding: 12px 12px 14px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav {
-  gap: 6px;
-  grid-template-columns: minmax(0, 1fr) 38px 38px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn {
-  background: var(--library-fluent-control);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 7px;
-  box-shadow: none;
-  color: #f3f3f3;
-  font-size: 13px;
-  font-weight: 600;
-  min-height: 34px;
-  padding: 0 12px;
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn:hover {
-  background: var(--library-fluent-control-hover);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.cinematic-shell .library-page .library-sidebar-nav-btn.active {
-  background: var(--library-fluent-control-active);
-  border-color: rgba(96, 205, 255, 0.28);
-  box-shadow: inset 0 -2px 0 var(--library-fluent-accent);
-  color: #ffffff;
-}
-
-.cinematic-shell .library-page .library-toolstrip .search-input {
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.095);
-  border-radius: 8px;
-  color: #f3f3f3;
-  min-height: 36px;
-}
-
-.cinematic-shell .library-page .library-toolstrip .search-input:focus {
-  border-color: var(--library-fluent-accent);
-  box-shadow: inset 0 -2px 0 var(--library-fluent-accent);
-}
-
-.cinematic-shell .library-page .library-folder-group-label {
-  color: #9d9d9d;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
-
-.cinematic-shell .library-page .library-folder-section-header {
-  background: transparent;
-  border-color: transparent;
-  border-radius: 6px;
-  color: #d6d6d6;
-  min-height: 30px;
-  padding: 0 6px;
-}
-
-.cinematic-shell .library-page .library-folder-section-header:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: transparent;
 }
 
 .cinematic-shell .library-page .library-folder-section-title span:last-child,
@@ -5153,65 +4573,12 @@
 }
 
 .cinematic-shell .library-page .library-folder-section-items {
-  border-left-color: rgba(255, 255, 255, 0.075);
-  gap: 2px;
   padding-top: 3px;
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card {
-  background: transparent;
-  border-radius: 6px;
-  min-height: 31px;
-  padding: 3px 7px;
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card:hover {
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow: inset 3px 0 0 var(--library-fluent-accent);
 }
 
 .cinematic-shell .library-page .library-folder-section-items .repo-card.selected .repo-name,
 .cinematic-shell .library-page .library-folder-section-items .repo-card:hover .repo-name {
   color: #ffffff;
-}
-
-.cinematic-shell .library-page .library-hero {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
-    var(--library-fluent-card);
-  border: 1px solid var(--library-fluent-border);
-  border-radius: 12px;
-  box-shadow: var(--library-fluent-shadow);
-  gap: 20px;
-  grid-template-columns: 96px minmax(0, 1fr);
-  min-height: 176px;
-  padding: 24px;
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(32, 32, 32, 0.86), rgba(32, 32, 32, 0.68)),
-    var(--library-hero-background, transparent);
-  opacity: 0.38;
-}
-
-.cinematic-shell .library-page .library-hero::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 72%);
-}
-
-.cinematic-shell .library-page .library-hero-cover,
-.cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
-.cinematic-shell .library-page .library-hero--art .library-hero-cover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-  height: 96px;
-  width: 96px;
 }
 
 .cinematic-shell .library-page .repo-status,
@@ -5221,78 +4588,8 @@
   box-shadow: none;
 }
 
-.cinematic-shell .library-page .library-github-header h2 {
-  color: #f3f3f3;
-  font-size: clamp(28px, 2.5vw, 40px);
-  font-weight: 650;
-  letter-spacing: 0;
-  line-height: 1.12;
-  text-shadow: none;
-}
-
-.cinematic-shell .library-page .library-github-header .library-hero-repo,
-.cinematic-shell .library-page .library-github-header .library-hero-description {
-  color: #c8c8c8;
-}
-
 .cinematic-shell .library-page .library-hero-meta {
-  background: rgba(255, 255, 255, 0.055);
   border-color: rgba(255, 255, 255, 0.085);
-  border-radius: 7px;
-}
-
-.cinematic-shell .library-page .library-ops-panel,
-.cinematic-shell .library-page .library-inline-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.014)),
-    var(--library-fluent-card-strong);
-  border: 1px solid var(--library-fluent-border);
-  border-radius: 12px;
-  box-shadow: var(--library-fluent-shadow);
-}
-
-.cinematic-shell .library-page .library-ops-panel {
-  margin-top: 10px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row {
-  gap: 8px;
-  grid-template-columns: minmax(170px, 240px) repeat(3, minmax(126px, 1fr));
-  padding: 10px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
-.cinematic-shell .library-page .library-ops-action-row .secondary-btn {
-  border-radius: 7px;
-  box-shadow: none;
-  min-height: 42px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
-  background: var(--library-fluent-accent-strong);
-  border-color: rgba(96, 205, 255, 0.34);
-  color: #ffffff !important;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
-  background: #1084d8;
-}
-
-.cinematic-shell .library-page .library-play-status,
-.cinematic-shell .library-page .library-inline-summary > div,
-.cinematic-shell .library-page .library-inline-summary > button,
-.cinematic-shell .library-page .library-inline-version-row,
-.cinematic-shell .library-page .library-inline-empty {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-}
-
-.cinematic-shell .library-page .library-play-status {
-  min-height: 42px;
-  padding: 7px 10px;
 }
 
 .cinematic-shell .library-page .library-play-status span,
@@ -5312,19 +4609,6 @@
   font-weight: 600;
 }
 
-.cinematic-shell .library-page .library-inline-overview-grid {
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.cinematic-shell .library-page .library-inline-panel {
-  padding: 14px 16px 16px;
-}
-
-.cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
-  min-height: 218px;
-}
-
 .cinematic-shell .library-page .library-inline-panel-head span {
   color: var(--library-fluent-accent);
   font-size: 11px;
@@ -5339,45 +4623,23 @@
 }
 
 @media (max-width: 1180px) {
-  .cinematic-shell .library-page .library-sam-workspace {
-    grid-template-columns: 300px minmax(0, 1fr);
-  }
 }
 
 /* v5.2.34: final Windows/Fluent pass for the active Library shell. */
 .cinematic-shell .library-page {
-  --library-fluent-accent: #60cdff;
-  --library-fluent-accent-strong: #0078d4;
-  --library-fluent-bg: rgba(32, 32, 32, 0.78);
   --library-fluent-pane: rgba(36, 36, 36, 0.82);
-  --library-fluent-card: rgba(43, 43, 43, 0.78);
-  --library-fluent-card-strong: rgba(48, 48, 48, 0.84);
-  --library-fluent-control: rgba(255, 255, 255, 0.055);
-  --library-fluent-control-hover: rgba(255, 255, 255, 0.085);
-  --library-fluent-control-active: rgba(96, 205, 255, 0.15);
-  --library-fluent-border: rgba(255, 255, 255, 0.095);
-  --library-fluent-border-strong: rgba(96, 205, 255, 0.42);
-  --library-fluent-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
 .cinematic-shell .library-page .library-sam-workspace {
-  align-items: stretch;
   gap: 14px;
   grid-template-columns: minmax(320px, 356px) minmax(0, 1fr);
-  height: calc(100vh - 164px);
-  min-height: calc(100vh - 164px);
 }
 
 .cinematic-shell .library-page .library-sam-list-pane,
 .cinematic-shell .library-page .library-sam-details-pane {
   backdrop-filter: blur(20px) saturate(1.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012)),
-    var(--library-fluent-bg);
   border: 1px solid var(--library-fluent-border);
   border-radius: 10px;
-  box-shadow: var(--library-fluent-shadow);
-  height: 100%;
   max-height: none;
 }
 
@@ -5387,11 +4649,7 @@
 }
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.01)),
-    rgba(33, 33, 33, 0.82);
   overflow: auto;
-  padding: 14px 16px 20px;
 }
 
 .cinematic-shell .library-page .library-hero,
@@ -5409,7 +4667,6 @@
 }
 
 .cinematic-shell .library-page .library-toolstrip {
-  background: transparent;
   border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 0;
@@ -5512,53 +4769,34 @@
 }
 
 .cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
-  background: rgba(96, 205, 255, 0.13);
   box-shadow: inset 3px 0 0 var(--library-fluent-accent);
 }
 
 .cinematic-shell .library-page .library-hero {
   align-items: center;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.036), rgba(255, 255, 255, 0.014)),
-    var(--library-fluent-card);
   border: 1px solid var(--library-fluent-border);
   border-radius: 10px;
-  box-shadow: var(--library-fluent-shadow);
-  gap: 20px;
-  grid-template-columns: 96px minmax(0, 1fr);
-  min-height: 168px;
-  padding: 22px 24px;
 }
 
 .cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(33, 33, 33, 0.92), rgba(33, 33, 33, 0.66)),
-    var(--library-hero-background, transparent);
   background-position: center;
   background-size: cover;
   border-radius: inherit;
-  opacity: 0.34;
 }
 
 .cinematic-shell .library-page .library-hero::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 68%);
   border-radius: inherit;
 }
 
 .cinematic-shell .library-page .library-hero-cover,
 .cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
 .cinematic-shell .library-page .library-hero--art .library-hero-cover {
-  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.115);
-  border-radius: 10px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-  height: 96px;
   inset: auto;
   opacity: 1;
   overflow: hidden;
   position: relative;
   right: auto;
-  width: 96px;
   z-index: 2;
 }
 
@@ -5576,10 +4814,8 @@
 
 .cinematic-shell .library-page .library-github-header h2 {
   color: #f3f3f3;
-  font-size: clamp(28px, 2.4vw, 40px);
   font-weight: 650;
   letter-spacing: 0;
-  line-height: 1.12;
   max-width: min(820px, 100%);
   text-shadow: none;
 }
@@ -5604,22 +4840,8 @@
 
 .cinematic-shell .library-page .library-ops-panel,
 .cinematic-shell .library-page .library-inline-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.036), rgba(255, 255, 255, 0.014)),
-    var(--library-fluent-card-strong);
   border: 1px solid var(--library-fluent-border);
   border-radius: 10px;
-  box-shadow: var(--library-fluent-shadow);
-}
-
-.cinematic-shell .library-page .library-ops-panel {
-  margin-top: 10px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row {
-  gap: 8px;
-  grid-template-columns: minmax(170px, 240px) repeat(3, minmax(126px, 1fr));
-  padding: 10px;
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
@@ -5630,15 +4852,9 @@
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
-  background: var(--library-fluent-accent-strong);
   border: 1px solid rgba(96, 205, 255, 0.34);
   color: #ffffff !important;
-  font-size: 15px;
   font-weight: 600;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
-  background: #1084d8;
 }
 
 .cinematic-shell .library-page .library-play-status,
@@ -5646,32 +4862,16 @@
 .cinematic-shell .library-page .library-inline-summary > button,
 .cinematic-shell .library-page .library-inline-version-row,
 .cinematic-shell .library-page .library-inline-empty {
-  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.065);
   border-radius: 7px;
 }
 
 .cinematic-shell .library-page .library-play-status {
   min-height: 42px;
-  padding: 7px 10px;
 }
 
 .cinematic-shell .library-page .library-inline-overview-grid {
   align-items: stretch;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.cinematic-shell .library-page .library-inline-panel {
-  padding: 14px 16px 16px;
-}
-
-.cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
-  min-height: 214px;
-}
-
-.cinematic-shell .library-page .library-inline-panel--details .library-inline-summary {
-  grid-template-rows: repeat(2, minmax(68px, 1fr));
 }
 
 @media (max-width: 1180px) {
@@ -5702,14 +4902,6 @@
 }
 
 /* v5.2.35: compact Fluent Library density pass. */
-.cinematic-shell .library-page {
-  --library-fluent-accent: #4cc2ff;
-  --library-fluent-accent-strong: #0067c0;
-  --library-fluent-bg: rgba(31, 31, 31, 0.8);
-  --library-fluent-card: rgba(42, 42, 42, 0.72);
-  --library-fluent-card-strong: rgba(46, 46, 46, 0.76);
-  --library-fluent-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-}
 
 .cinematic-shell .library-page .library-sam-workspace {
   align-items: stretch;
@@ -5724,31 +4916,14 @@
 }
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0.008)),
-    rgba(31, 31, 31, 0.8);
   padding: 12px 14px 16px;
 }
 
 .cinematic-shell .library-page .library-hero {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012)),
-    var(--library-fluent-card);
   gap: 18px;
   grid-template-columns: 82px minmax(0, 1fr);
   min-height: 142px;
   padding: 18px 20px;
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(31, 31, 31, 0.94), rgba(31, 31, 31, 0.76)),
-    var(--library-hero-background, transparent);
-  opacity: 0.24;
-}
-
-.cinematic-shell .library-page .library-hero::after {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 72%);
 }
 
 .cinematic-shell .library-page .library-hero-cover,
@@ -5792,7 +4967,6 @@
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
-  background: var(--library-fluent-accent-strong);
   border-color: rgba(76, 194, 255, 0.28);
   font-size: 14px;
 }
@@ -5859,18 +5033,10 @@
 .cinematic-shell .library-page {
   --library-fluent-accent: #5ac8fa;
   --library-fluent-accent-strong: #0078d4;
-  --library-fluent-bg: rgba(22, 22, 22, 0.58);
-  --library-fluent-card: rgba(48, 48, 48, 0.42);
-  --library-fluent-card-strong: rgba(58, 58, 58, 0.46);
-  --library-fluent-control: rgba(255, 255, 255, 0.075);
-  --library-fluent-control-hover: rgba(255, 255, 255, 0.115);
   --library-fluent-control-active: rgba(90, 200, 250, 0.19);
   --library-fluent-border: rgba(255, 255, 255, 0.16);
   --library-fluent-border-strong: rgba(90, 200, 250, 0.5);
   --library-fluent-shadow: 0 12px 34px rgba(0, 0, 0, 0.26);
-  background:
-    linear-gradient(145deg, rgba(60, 72, 84, 0.22), rgba(18, 18, 18, 0.12) 42%, rgba(44, 52, 60, 0.18)),
-    linear-gradient(180deg, rgba(12, 27, 35, 0.32), rgba(10, 10, 10, 0.08));
 }
 
 .cinematic-shell .library-page .library-sam-list-pane,
@@ -5889,11 +5055,6 @@
 
 .cinematic-shell .library-page .library-sam-list-pane,
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.092), rgba(255, 255, 255, 0.032)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
-    var(--library-fluent-bg);
-  border-color: rgba(255, 255, 255, 0.145);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.11),
     0 18px 44px rgba(0, 0, 0, 0.26);
@@ -5913,7 +5074,6 @@
   border-radius: inherit;
   content: '';
   inset: 0;
-  opacity: 0.24;
   pointer-events: none;
   position: absolute;
   z-index: 0;
@@ -5957,13 +5117,6 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 16px 38px rgba(0, 0, 0, 0.24);
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(28, 28, 28, 0.72), rgba(28, 28, 28, 0.46)),
-    var(--library-hero-background, transparent);
-  opacity: 0.58;
 }
 
 .cinematic-shell .library-page .library-hero::after {
@@ -6019,67 +5172,19 @@
 }
 
 /* v5.2.37: expose custom Library backgrounds through the Fluent material. */
-.cinematic-shell .library-page {
-  --library-fluent-bg: rgba(22, 22, 22, 0.34);
-  --library-fluent-card: rgba(48, 48, 48, 0.28);
-  --library-fluent-card-strong: rgba(58, 58, 58, 0.32);
-  --library-fluent-control: rgba(255, 255, 255, 0.06);
-  --library-fluent-control-hover: rgba(255, 255, 255, 0.105);
-}
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    linear-gradient(180deg, rgba(28, 28, 28, 0.5), rgba(28, 28, 28, 0.28)),
-    linear-gradient(135deg, rgba(90, 200, 250, 0.12), rgba(255, 255, 255, 0.025) 38%, rgba(0, 0, 0, 0.18)),
-    var(--library-hero-background, transparent),
-    rgba(20, 20, 20, 0.38);
   background-position: center;
   background-repeat: no-repeat;
   background-size: auto, auto, cover, auto;
 }
 
-.cinematic-shell .library-page .library-hero,
-.cinematic-shell .library-page .library-ops-panel,
-.cinematic-shell .library-page .library-inline-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.022)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01)),
-    var(--library-fluent-card);
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(28, 28, 28, 0.5), rgba(28, 28, 28, 0.24)),
-    var(--library-hero-background, transparent);
-  opacity: 0.72;
-}
-
-.cinematic-shell .library-page .library-play-status,
-.cinematic-shell .library-page .library-inline-summary > div,
-.cinematic-shell .library-page .library-inline-summary > button,
-.cinematic-shell .library-page .library-inline-version-row,
-.cinematic-shell .library-page .library-inline-empty {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)),
-    rgba(255, 255, 255, 0.03);
-}
-
 /* v5.2.38: make the Library surface behave like real Fluent acrylic over custom art. */
 .cinematic-shell .library-page {
-  --library-fluent-bg: rgba(18, 18, 18, 0.24);
-  --library-fluent-card: rgba(42, 42, 42, 0.22);
-  --library-fluent-card-strong: rgba(48, 48, 48, 0.26);
   background: transparent;
 }
 
 .cinematic-shell .library-page .library-sam-workspace {
-  background:
-    linear-gradient(180deg, rgba(10, 10, 10, 0.34), rgba(10, 10, 10, 0.16)),
-    linear-gradient(90deg, rgba(6, 10, 14, 0.38), rgba(6, 10, 14, 0.16)),
-    var(--library-hero-background, transparent);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: auto, auto, cover;
   border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -6123,13 +5228,6 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.018)),
     rgba(38, 38, 38, 0.24);
-}
-
-.cinematic-shell .library-page .library-hero::before {
-  background:
-    linear-gradient(90deg, rgba(18, 18, 18, 0.36), rgba(18, 18, 18, 0.14)),
-    var(--library-hero-background, transparent);
-  opacity: 0.92;
 }
 
 .cinematic-shell .library-page .library-play-status,

@@ -1,6 +1,6 @@
 {
   "name": "pullora",
-  "version": "5.2.39",
+  "version": "5.2.40",
   "description": "GitHub program launcher - download and run applications from GitHub releases",
   "type": "module",
   "scripts": {
@@ -15,9 +15,6 @@
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.7.1",
-    "@tauri-apps/plugin-fs": "^2.0.0",
-    "@tauri-apps/plugin-http": "^2.0.0",
-    "@tauri-apps/plugin-os": "^2.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

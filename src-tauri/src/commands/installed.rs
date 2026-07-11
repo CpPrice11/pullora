@@ -52,13 +52,73 @@ fn installed_app_dir(install_path: &str, owner: &str, repo: &str) -> std::path::
     std::path::PathBuf::from(install_path).join(format!("{}-{}", owner, repo))
 }
 
-fn active_version_dir(
+fn push_unique_path(paths: &mut Vec<std::path::PathBuf>, path: std::path::PathBuf) {
+    let key = path
+        .to_string_lossy()
+        .replace('/', "\\")
+        .to_ascii_lowercase();
+    let exists = paths.iter().any(|item| {
+        item.to_string_lossy()
+            .replace('/', "\\")
+            .to_ascii_lowercase()
+            == key
+    });
+
+    if !exists {
+        paths.push(path);
+    }
+}
+
+fn known_install_roots(current_install_path: &str) -> Vec<std::path::PathBuf> {
+    let mut roots = Vec::new();
+    let trimmed = current_install_path.trim();
+    if !trimmed.is_empty() {
+        push_unique_path(&mut roots, std::path::PathBuf::from(trimmed));
+    }
+
+    push_unique_path(
+        &mut roots,
+        std::path::PathBuf::from(crate::storage::settings::default_installation_path()),
+    );
+
+    if let Some(downloads) = dirs::download_dir() {
+        push_unique_path(&mut roots, downloads.join("Installers").join("apps"));
+    }
+
+    if let Some(documents) = dirs::document_dir() {
+        push_unique_path(&mut roots, documents.join("Pullora Apps"));
+    }
+
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            push_unique_path(&mut roots, exe_dir.join("apps"));
+        }
+    }
+
+    roots
+}
+
+fn legacy_version_candidates(
     install_path: &str,
     owner: &str,
     repo: &str,
     tag: &str,
-) -> std::path::PathBuf {
-    installed_app_dir(install_path, owner, repo).join(tag)
+) -> Vec<std::path::PathBuf> {
+    known_install_roots(install_path)
+        .into_iter()
+        .map(|root| root.join(format!("{}-{}", owner, repo)).join(tag))
+        .collect()
+}
+
+fn version_dir_contains_app(
+    dir: &std::path::Path,
+    version: &crate::storage::installed::VersionInfo,
+) -> bool {
+    if !dir.is_dir() {
+        return false;
+    }
+
+    version_executable_path(dir, &version.executable).exists() || find_exe_in_dir(dir).is_some()
 }
 
 fn version_install_dir(
@@ -75,11 +135,19 @@ fn version_install_dir(
         return Ok(std::path::PathBuf::from(path));
     }
 
-    if install_path.trim().is_empty() {
-        return Err("Для старого запису не збережено папку встановлення. Встанови версію ще раз або вкажи папку в Налаштуваннях.".to_string());
+    let candidates = legacy_version_candidates(install_path, owner, repo, &version.tag);
+    if let Some(found) = candidates
+        .iter()
+        .find(|candidate| version_dir_contains_app(candidate, version))
+    {
+        return Ok(found.clone());
     }
 
-    Ok(active_version_dir(install_path, owner, repo, &version.tag))
+    if let Some(fallback) = candidates.into_iter().next() {
+        return Ok(fallback);
+    }
+
+    Err("Для старого запису не збережено папку встановлення. Встанови версію ще раз або вкажи папку в Налаштуваннях.".to_string())
 }
 
 fn version_executable_path(version_dir: &std::path::Path, executable: &str) -> std::path::PathBuf {

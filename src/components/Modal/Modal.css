@@ -17,9 +17,6 @@
 
 .modal-content {
   background-color: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 14px;
-  box-shadow: var(--shadow-lg);
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
@@ -68,13 +65,6 @@
 .cinematic-shell .modal-header,
 .modal-header {
   border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-.cinematic-shell .modal-description,
-.cinematic-shell .modal-footer-text,
-.modal-description,
-.modal-footer-text {
-  color: rgba(255, 255, 255, 0.68);
 }
 
 :root[data-theme='light'] .cinematic-shell .modal-description,
@@ -159,22 +149,13 @@
 
 .sam-shell .modal-overlay,
 .modal-overlay {
-  background: rgba(5, 9, 13, 0.84);
   backdrop-filter: none;
 }
 
 .sam-shell .modal-content,
 .modal-content {
-  background: #121d27;
   border: 1px solid #30495f;
-  border-radius: 2px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
   color: #e7eef6;
-}
-
-.sam-shell .modal-header,
-.modal-header {
-  border-bottom-color: #263848;
 }
 
 .sam-shell .modal-description,
@@ -200,7 +181,6 @@
 
 .sam-shell .modal-header,
 .modal-header {
-  background: #101a24;
   box-shadow: inset 3px 0 0 #4ba3df;
   padding: 16px 18px 12px;
 }
@@ -219,7 +199,6 @@
 
 .sam-shell .modal-actions,
 .modal-actions {
-  background: #101a24;
   border-top: 1px solid #263848;
   margin: 0 -18px -18px;
   padding: 12px 18px;

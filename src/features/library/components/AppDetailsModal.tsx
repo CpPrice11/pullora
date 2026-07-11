@@ -12,6 +12,7 @@ import {
 import { useSettings } from '../../../hooks/useSettings'
 import { useI18n } from '../../../i18n'
 import { useModalFocus } from '../../../hooks/useModalFocus'
+import { formatBytes } from '../../../utils/format'
 import UninstallConfirmModal from './UninstallConfirmModal'
 import SwitchVersionConfirmModal from './SwitchVersionConfirmModal'
 import './SearchComponents.css'
@@ -34,12 +35,6 @@ type UninstallTarget = {
 
 function appKey(owner: string, repo: string) {
   return `${owner}/${repo}`
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
 function stripMarkdown(value: string) {

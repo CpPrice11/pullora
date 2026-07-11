@@ -16,6 +16,7 @@ import { useModalFocus } from '../hooks/useModalFocus'
 import { appearanceCssText, applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
 import { APPEARANCE_PRESETS, DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
+import { formatBytes } from '../utils/format'
 import './PageStyles.css'
 
 interface SettingsPageProps {
@@ -36,12 +37,6 @@ function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
 
 const RECENT_GITHUB_OWNERS_KEY = 'pullora.recentGithubOwners.v1'
 const LEGACY_RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
 
 function emptyRateLimitStatus(): GitHubRateLimitStatus {
   const emptyBucket = { remaining: null, limit: null, resetAt: null }
@@ -92,7 +87,6 @@ function SettingsPage({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [intervalDraft, setIntervalDraft] = useState('')
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'>('idle')
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
@@ -109,13 +103,11 @@ function SettingsPage({
       .then((loadedSettings) => {
         const normalizedSettings = normalizeSettings(loadedSettings)
         setSettings(normalizedSettings)
-        setIntervalDraft(String(normalizedSettings.checkIntervalHours))
         applyThemePreference(normalizedSettings.theme)
         applyAppearanceSettings(normalizedSettings.appearance)
       })
       .catch(() => {
         setSettings(DEFAULT_SETTINGS)
-        setIntervalDraft(String(DEFAULT_SETTINGS.checkIntervalHours))
         applyThemePreference(DEFAULT_SETTINGS.theme)
         applyAppearanceSettings(DEFAULT_SETTINGS.appearance)
       })
@@ -314,7 +306,6 @@ function SettingsPage({
       applyThemePreference(savedSettings.theme, true)
       applyAppearanceSettings(savedSettings.appearance)
       notifyThemePreference(savedSettings.theme)
-      setIntervalDraft(String(savedSettings.checkIntervalHours))
       setActionMessage(t('settings.resetDone'))
     }
   }
@@ -376,8 +367,6 @@ function SettingsPage({
       `installationPath: ${settings.installationPath || 'not set'}`,
       `assetStrategy: ${settings.assetStrategy}`,
       `includePrereleases: ${settings.includePrereleases ? 'yes' : 'no'}`,
-      `autoUpdateCheck: ${settings.autoUpdateCheck ? 'yes' : 'no'}`,
-      `checkIntervalHours: ${settings.checkIntervalHours}`,
       `theme: ${settings.theme}`,
       `language: ${settings.language}`,
       `launcherDir: ${storageInfo?.launcherDir ?? 'not checked'}`,
@@ -397,7 +386,6 @@ function SettingsPage({
       `githubQueueConcurrency: ${githubQueue.concurrency}`,
       `githubQueueHighPriority: ${githubQueue.highPriority}`,
       `githubQueueNormalPriority: ${githubQueue.normalPriority}`,
-      `githubQueueLowPriority: ${githubQueue.lowPriority}`,
       `githubQueuePausedUntil: ${githubQueue.pausedUntil ?? 'not paused'}`,
     ]
 
@@ -425,28 +413,6 @@ function SettingsPage({
       setActionMessage(t('settings.cleanupDone'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cleanupError'))
-    }
-  }
-
-  const clampIntervalHours = (value: string | number) => {
-    const numericValue = typeof value === 'number' ? value : Number(value)
-    return Math.max(1, Math.min(168, Number.isFinite(numericValue) ? Math.trunc(numericValue) : 24))
-  }
-
-  const commitIntervalDraft = async () => {
-    if (!settings) return
-    const previousIntervalHours = settings.checkIntervalHours
-    const checkIntervalHours = clampIntervalHours(intervalDraft)
-    setIntervalDraft(String(checkIntervalHours))
-    const savedSettings = await persistSettings({ ...settings, checkIntervalHours }, settings)
-    if (!savedSettings) {
-      setIntervalDraft(String(previousIntervalHours))
-    }
-  }
-
-  const handleIntervalKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.currentTarget.blur()
     }
   }
 
@@ -714,10 +680,6 @@ function SettingsPage({
                   <dd>{settings.includePrereleases ? t('settings.yes') : t('settings.no')}</dd>
                 </div>
                 <div>
-                  <dt>{t('settings.autoCheck')}</dt>
-                  <dd>{settings.autoUpdateCheck ? t('settings.yes') : t('settings.no')}</dd>
-                </div>
-                <div>
                   <dt>{t('settings.githubCoreLimit')}</dt>
                   <dd>{formatRateLimit(githubRateLimit.core)}</dd>
                 </div>
@@ -746,7 +708,6 @@ function SettingsPage({
                   <dd>{t('settings.githubQueuePriorityValue', {
                     high: githubQueue.highPriority,
                     normal: githubQueue.normalPriority,
-                    low: githubQueue.lowPriority,
                   })}</dd>
                 </div>
                 <div>
@@ -817,37 +778,6 @@ function SettingsPage({
         return (
           <section id="settings-updates" className="settings-section">
             <h3>{t('settings.updates')}</h3>
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={settings.autoUpdateCheck}
-                  onChange={(event) =>
-                    persistSettings({ ...settings, autoUpdateCheck: event.target.checked }, settings)
-                  }
-                />
-                {t('settings.autoCheck')}
-              </label>
-            </div>
-
-            <div className="form-group compact-control">
-              <label htmlFor="checkInterval">{t('settings.interval')}</label>
-              <div className="interval-input-control">
-                <input
-                  id="checkInterval"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={intervalDraft}
-                  onBlur={commitIntervalDraft}
-                  onChange={(event) => setIntervalDraft(event.target.value.replace(/[^\d]/g, '').slice(0, 3))}
-                  onKeyDown={handleIntervalKeyDown}
-                  disabled={!settings.autoUpdateCheck}
-                />
-                <span>{t('settings.intervalUnitHours')}</span>
-              </div>
-            </div>
-
             <div className="form-group">
               <label className="checkbox-label">
                 <input

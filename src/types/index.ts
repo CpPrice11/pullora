@@ -63,7 +63,6 @@ export interface GitHubQueueStatus {
   concurrency: number
   highPriority: number
   normalPriority: number
-  lowPriority: number
   pausedUntil: number | null
 }
 
@@ -71,8 +70,6 @@ export interface GitHubQueueStatus {
 export interface AppSettings {
   version?: number
   installationPath: string
-  autoUpdateCheck: boolean
-  checkIntervalHours: number
   includePrereleases?: boolean
   assetStrategy?: 'portableFirst' | 'installerFirst' | 'manual'
   githubOwner?: string
@@ -156,16 +153,6 @@ export interface ProjectArt {
   coverDataUrl?: string | null
   backgroundDataUrl?: string | null
   updatedAt: string
-}
-
-// Update check
-export interface UpdateAvailable {
-  owner: string
-  repo: string
-  appName: string
-  currentVersion: string
-  latestVersion: string
-  releaseUrl: string
 }
 
 export interface LauncherStorageInfo {

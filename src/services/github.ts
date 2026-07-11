@@ -8,7 +8,6 @@ import type {
 
 const githubCacheKey = 'pullora.github.api-cache.v2'
 const githubRateLimitKey = 'pullora.github.rate-limit.v1'
-const searchCacheTtlMs = 60 * 60 * 1000
 const ownerCacheTtlMs = 6 * 60 * 60 * 1000
 const releasesCacheTtlMs = 6 * 60 * 60 * 1000
 const fallbackRateLimitCooldownMs = 15 * 60 * 1000
@@ -16,14 +15,12 @@ const forceRefreshCooldownMs = 30 * 1000
 const maxCacheEntries = 200
 const githubRequestConcurrency = 2
 type GitHubRateLimitBucket = 'core' | 'search'
-type GitHubRequestPriority = 'high' | 'normal' | 'low'
+type GitHubRequestPriority = 'high' | 'normal'
 
 interface QueuedGithubRequest {
   bucket: GitHubRateLimitBucket
-  group?: string
   priority: GitHubRequestPriority
   sequence: number
-  cancel: () => void
   start: () => void
 }
 
@@ -44,7 +41,6 @@ let queueWakeTimer: number | null = null
 const priorityRank: Record<GitHubRequestPriority, number> = {
   high: 0,
   normal: 1,
-  low: 2,
 }
 
 function scheduleQueueWake() {
@@ -92,19 +88,12 @@ function enqueueGithubRequest<T>(
   request: () => Promise<T>,
   bucket: GitHubRateLimitBucket,
   priority: GitHubRequestPriority,
-  group?: string,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     requestQueue.push({
       bucket,
-      group,
       priority,
       sequence: requestSequence++,
-      cancel: () => {
-        const error = new Error('GitHub request cancelled')
-        error.name = 'GithubRequestCancelledError'
-        reject(error)
-      },
       start: () => {
         request()
           .then(resolve, reject)
@@ -116,20 +105,6 @@ function enqueueGithubRequest<T>(
     })
     runQueuedRequests()
   })
-}
-
-export function cancelQueuedGithubRequests(group: string) {
-  for (let index = requestQueue.length - 1; index >= 0; index -= 1) {
-    const queued = requestQueue[index]
-    if (queued.group !== group) continue
-    requestQueue.splice(index, 1)
-    queued.cancel()
-  }
-  scheduleQueueWake()
-}
-
-export function isGithubRequestCancelled(error: unknown) {
-  return error instanceof Error && error.name === 'GithubRequestCancelledError'
 }
 
 export function getGithubQueueStatus(): GitHubQueueStatus {
@@ -144,7 +119,6 @@ export function getGithubQueueStatus(): GitHubQueueStatus {
     concurrency: githubRequestConcurrency,
     highPriority: requestQueue.filter((item) => item.priority === 'high').length,
     normalPriority: requestQueue.filter((item) => item.priority === 'normal').length,
-    lowPriority: requestQueue.filter((item) => item.priority === 'low').length,
     pausedUntil: pausedUntilValues.length > 0 ? Math.min(...pausedUntilValues) : null,
   }
 }
@@ -216,7 +190,6 @@ async function cachedGithubRequest<T>(
   ttlMs: number,
   bucket: GitHubRateLimitBucket,
   priority: GitHubRequestPriority,
-  group: string | undefined,
   forceRefresh: boolean,
   request: () => Promise<T>,
 ): Promise<T> {
@@ -239,7 +212,7 @@ async function cachedGithubRequest<T>(
   const currentRequest = inFlightRequests.get(key)
   if (currentRequest) return currentRequest as Promise<T>
 
-  const pending = enqueueGithubRequest(request, bucket, priority, group)
+  const pending = enqueueGithubRequest(request, bucket, priority)
     .then((data) => {
       const nextCache = readCache()
       nextCache[key] = {
@@ -273,55 +246,12 @@ export async function listOwnerRepositories(
 ): Promise<OwnerRepositoriesResponse> {
   const normalizedOwner = owner.trim().toLowerCase()
   const key = `owner:${normalizedOwner}:${page}:${releasesOnly}`
-  return cachedGithubRequest(key, ownerCacheTtlMs, 'core', 'normal', undefined, forceRefresh, () =>
+  return cachedGithubRequest(key, ownerCacheTtlMs, 'core', 'normal', forceRefresh, () =>
     callTauri<OwnerRepositoriesResponse>('list_owner_repositories', {
       owner,
       page,
       releasesOnly,
       forceRefresh,
-    }),
-  )
-}
-
-export async function searchPublicRepositories(
-  query = '',
-  page = 1,
-  options: {
-    sort?: 'updated' | 'stars' | 'forks'
-    language?: string
-    topic?: string
-    releasesOnly?: boolean
-    forceRefresh?: boolean
-    requestGroup?: string
-  } = {},
-): Promise<OwnerRepositoriesResponse> {
-  const normalizedQuery = query.trim().toLowerCase()
-  const key = [
-    'search',
-    options.sort ?? 'updated',
-    normalizedQuery,
-    options.language?.trim().toLowerCase() ?? '',
-    options.topic?.trim().toLowerCase() ?? '',
-    options.releasesOnly ?? false,
-    page,
-  ].join(':')
-
-  return cachedGithubRequest(
-    key,
-    searchCacheTtlMs,
-    'search',
-    'low',
-    options.requestGroup,
-    options.forceRefresh ?? false,
-    () =>
-    callTauri<OwnerRepositoriesResponse>('search_public_repositories', {
-      query,
-      page,
-      sort: options.sort,
-      language: options.language,
-      topic: options.topic,
-      releasesOnly: options.releasesOnly,
-      forceRefresh: options.forceRefresh,
     }),
   )
 }
@@ -332,7 +262,7 @@ export async function getReleases(
   forceRefresh = false,
 ): Promise<GitHubRelease[]> {
   const key = `releases:${owner.trim().toLowerCase()}/${repo.trim().toLowerCase()}`
-  return cachedGithubRequest(key, releasesCacheTtlMs, 'core', 'high', undefined, forceRefresh, () =>
+  return cachedGithubRequest(key, releasesCacheTtlMs, 'core', 'high', forceRefresh, () =>
     callTauri<GitHubRelease[]>('get_releases', { owner, repo, forceRefresh }),
   )
 }

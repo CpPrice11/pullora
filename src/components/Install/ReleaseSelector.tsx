@@ -7,9 +7,11 @@ import type { AppSettings, DownloadProgress, GitHubAsset, GitHubRelease } from '
 import DownloadProgressPanel from './DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
 import { pickDirectory } from '../../services/dialog'
+import { validateInstallationPath } from '../../services/settings'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
+import { compareVersionTags, formatBytes } from '../../utils/format'
 import {
   classifyReleaseAsset,
   releaseAssetKindLabelKey,
@@ -36,31 +38,12 @@ type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
 
 const wizardSteps: WizardStep[] = ['version', 'file', 'confirm', 'progress', 'result']
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
-
 function getAssetKind(asset: GitHubAsset): AssetKind {
   return classifyReleaseAsset(asset)
 }
 
 function assetKindKey(kind: AssetKind) {
   return releaseAssetKindLabelKey(kind)
-}
-
-function compareVersionTags(left: string, right: string) {
-  const leftParts = left.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const rightParts = right.replace(/^v/i, '').split('.').map((part) => Number.parseInt(part, 10) || 0)
-  const length = Math.max(leftParts.length, rightParts.length)
-
-  for (let index = 0; index < length; index += 1) {
-    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0)
-    if (diff !== 0) return diff
-  }
-
-  return 0
 }
 
 function releaseStatusKey(release: GitHubRelease, latestTag: string | null, currentVersion?: string) {
@@ -276,6 +259,25 @@ function ReleaseSelector({
     const targetInstallPath = installPath.trim()
     if (!targetInstallPath) {
       setDownloadError(t('release.installPathRequired'))
+      setStep('confirm')
+      return
+    }
+
+    try {
+      const validation = await validateInstallationPath(targetInstallPath)
+      if (!validation.ok) {
+        setDownloadError(validation.message || t('release.installPathUnavailable'))
+        setStep('confirm')
+        return
+      }
+
+      if (validation.status === 'requiresElevation' && selectedAssetKind !== 'installer') {
+        setDownloadError(t('release.installPathRequiresWritable'))
+        setStep('confirm')
+        return
+      }
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
       setStep('confirm')
       return
     }

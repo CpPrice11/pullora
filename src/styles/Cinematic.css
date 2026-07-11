@@ -23,24 +23,11 @@
   --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.2);
   --shadow-control-hover: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 24px rgba(0, 0, 0, 0.3);
-  background:
-    radial-gradient(circle at 68% 4%, rgba(54, 186, 226, 0.12), transparent 32%),
-    #070b10;
 }
 
 .cinematic-shell .cinematic-background {
   filter: blur(18px) saturate(0.75);
   opacity: 0;
-}
-
-.cinematic-shell .cinematic-background.is-visible {
-  opacity: 0.09;
-}
-
-.cinematic-shell .cinematic-backdrop {
-  background:
-    radial-gradient(circle at 69% 6%, rgba(44, 191, 229, 0.09), transparent 32%),
-    linear-gradient(180deg, rgba(7, 11, 16, 0.76), rgba(7, 11, 16, 0.96));
 }
 
 .cinematic-shell .header {
@@ -950,27 +937,6 @@
   tab-size: 2;
 }
 
-.cinematic-shell .settings-content--updates .interval-input-control {
-  background: rgba(5, 9, 14, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9px;
-  max-width: 190px;
-  padding: 6px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control input {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-  min-height: 32px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control span {
-  padding-right: 8px;
-}
-
 .cinematic-shell .settings-content--maintenance .danger-zone {
   align-items: start;
   border-color: rgba(255, 255, 255, 0.075);
@@ -1092,9 +1058,6 @@
 }
 
 .cinematic-shell .library-ops-panel {
-  background:
-    linear-gradient(180deg, rgba(27, 36, 47, 0.98), rgba(15, 22, 30, 0.98)),
-    #111820;
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
   display: flex;
@@ -1472,7 +1435,6 @@
 .cinematic-shell .settings-diagnostics-card,
 .cinematic-shell .settings-content--appearance .appearance-color-field,
 .cinematic-shell .settings-content--installation .path-input-row,
-.cinematic-shell .settings-content--updates .interval-input-control,
 .cinematic-shell .library-hero,
 .cinematic-shell .library-ops-panel,
 .cinematic-shell .library-inline-panel,

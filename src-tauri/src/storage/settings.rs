@@ -8,8 +8,6 @@ use super::StorageError;
 pub struct AppSettings {
     pub version: u32,
     pub installation_path: Option<String>,
-    pub auto_update_check: bool,
-    pub check_interval_hours: u32,
     #[serde(default)]
     pub include_prereleases: bool,
     #[serde(default = "default_asset_strategy")]
@@ -121,8 +119,6 @@ impl Default for AppSettings {
             } else {
                 None
             },
-            auto_update_check: true,
-            check_interval_hours: 24,
             include_prereleases: false,
             asset_strategy: default_asset_strategy(),
             github_owner: Some("CpPrice11".to_string()),

@@ -1,9 +1,5 @@
 import { callTauri } from './tauri'
-import type { LauncherStorageInfo, UpdateAvailable } from '../types'
-
-export async function checkForUpdates(): Promise<UpdateAvailable[]> {
-  return callTauri<UpdateAvailable[]>('check_for_updates')
-}
+import type { LauncherStorageInfo } from '../types'
 
 export async function getLauncherVersion(): Promise<string> {
   return callTauri<string>('get_launcher_version')
