@@ -2052,8 +2052,16 @@
 .sam-shell .repo-card {
   align-items: center;
   animation: none;
+  background: #111b25;
+  border: 0;
+  border-bottom: 1px solid #263848;
   border-radius: 0;
+  box-shadow: none;
   display: grid;
+  gap: 8px;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  min-height: 54px;
+  padding: 6px 8px 6px 11px;
 }
 
 .sam-shell .repo-card::before {
@@ -2088,14 +2096,32 @@
   outline-offset: -2px;
 }
 
+.sam-shell .repo-card-media,
 .sam-shell .owner-avatar {
+  height: 32px;
+  width: 32px;
+}
+
+.sam-shell .owner-avatar {
+  background: #0d161f;
   border-color: #30495f;
+  border-radius: 2px;
 }
 
 .sam-shell .repo-card.selected .owner-avatar,
 .sam-shell .repo-card:hover .owner-avatar {
   border-color: #4ba3df;
   box-shadow: none;
+}
+
+.sam-shell .repo-title-line {
+  gap: 7px;
+}
+
+.sam-shell .repo-name {
+  color: #eef6ff;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .sam-shell .repo-owner {
@@ -2108,8 +2134,22 @@
   display: none;
 }
 
+.sam-shell .repo-meta {
+  color: #7f98ac;
+  font-size: 10px;
+  gap: 3px 7px;
+  margin-top: 3px;
+}
+
 .sam-shell .repo-lang {
+  background: #203346;
   border-radius: 2px;
+  color: #9ed5f7;
+  padding: 1px 5px;
+}
+
+.sam-shell .repo-card-actions {
+  gap: 3px;
 }
 
 .sam-shell .fav-btn,
@@ -2135,8 +2175,13 @@
 }
 
 .sam-shell .install-btn {
+  background: #4ba3df;
   border-color: #83c8f2;
+  color: #07131c;
+  font-size: 12px;
   font-weight: 800;
+  min-width: 78px;
+  padding: 0 9px;
 }
 
 .sam-shell .install-btn:hover {
@@ -2164,6 +2209,7 @@
 .sam-shell .release-asset-card.active {
   background: #294c67;
   border-color: #4ba3df;
+  box-shadow: none;
 }
 
 .sam-shell .release-summary-main strong,
@@ -2271,16 +2317,26 @@
 }
 
 .sam-shell .repo-card--available .install-btn {
+  background: #203346;
   border-color: #395a72;
   color: #d9e8f4;
 }
 
 .sam-shell .repo-card--installed .install-btn {
+  background: #1f3d2b;
   border-color: rgba(102, 192, 111, 0.52);
+  color: #8fe09a;
 }
 
 .sam-shell .repo-card--update .install-btn {
+  background: #4ba3df;
   border-color: #83c8f2;
+  color: #07131c;
+}
+
+.sam-shell .repo-meta span {
+  border-right: 1px solid #263848;
+  padding-right: 8px;
 }
 
 .sam-shell .repo-meta span:last-child {
@@ -2296,12 +2352,35 @@
 
 /* GitHub direction: compact library list rows. */
 .sam-shell .repo-card {
+  background: transparent;
   border-bottom: 0;
   gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 42px;
+  padding: 4px 8px 4px 10px;
 }
 
 .sam-shell .repo-card::before {
   display: none;
+}
+
+.sam-shell .repo-card:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.sam-shell .repo-card.selected {
+  background: #344966;
+}
+
+.sam-shell .repo-card-media,
+.sam-shell .owner-avatar {
+  height: 28px;
+  width: 28px;
+}
+
+.sam-shell .repo-name {
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .sam-shell .repo-owner,
@@ -2309,17 +2388,34 @@
   color: #8f98a0;
 }
 
+.sam-shell .repo-meta {
+  margin-top: 1px;
+}
+
+.sam-shell .repo-card-actions {
+  gap: 4px;
+}
+
 .sam-shell .fav-btn,
 .sam-shell .repo-actions-menu .project-actions-trigger {
+  background: rgba(0, 0, 0, 0.18);
   border: 0;
+  min-height: 28px;
+  width: 28px;
 }
 
 .sam-shell .install-btn {
   border: 0;
+  min-height: 28px;
 }
 
 .sam-shell .repo-card--available .install-btn {
   background: #2a475e;
+}
+
+.sam-shell .repo-card--installed .install-btn {
+  background: linear-gradient(90deg, #5aa832, #3f8f2f);
+  color: #ffffff;
 }
 
 .sam-shell .release-modal--wizard {
@@ -2328,7 +2424,10 @@
 }
 
 .sam-shell .release-wizard-steps {
+  background: #0d141b;
+  border-bottom: 1px solid #263848;
   gap: 4px;
+  padding: 10px 16px;
 }
 
 .sam-shell .release-step-pill {
@@ -2336,6 +2435,7 @@
   border-color: #2a4054;
   border-radius: 2px;
   color: #8fa6b9;
+  min-height: 30px;
 }
 
 .sam-shell .release-step-pill.active {
@@ -2350,7 +2450,11 @@
 }
 
 .sam-shell .release-wizard-context {
+  background: #101a24;
+  border: 1px solid #263848;
   border-radius: 2px;
+  margin: 10px 16px 0;
+  padding: 9px 10px;
 }
 
 .sam-shell .release-modal .modal-header {
@@ -2519,6 +2623,7 @@
   background: #0d141b;
   gap: 10px;
   grid-template-columns: minmax(300px, 0.78fr) minmax(460px, 1.22fr);
+  padding: 12px;
 }
 
 .sam-shell .app-details-summary,
@@ -2978,29 +3083,4 @@
 .library-sam-list-pane .repo-card--update .repo-name,
 .library-sam-list-pane .repo-card.selected .repo-name {
   color: #ffffff;
-}
-
-/* v5.2.39: Library list controls stay translucent over custom backgrounds. */
-.cinematic-shell .repo-card,
-.cinematic-shell .owner-avatar,
-.cinematic-shell .repo-actions-menu .project-actions-trigger,
-.cinematic-shell .fav-btn,
-.cinematic-shell .install-btn {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.012)),
-    rgba(255, 255, 255, 0.03);
-  border-color: var(--material-border);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card {
-  background: transparent;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card:hover,
-.cinematic-shell .library-sam-list-pane .repo-card.selected {
-  background:
-    linear-gradient(90deg, rgba(90, 200, 250, 0.2), rgba(90, 200, 250, 0.07)),
-    rgba(255, 255, 255, 0.035);
 }
