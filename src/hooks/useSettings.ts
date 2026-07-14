@@ -1,4 +1,13 @@
-import { useState, useEffect } from 'react'
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { AppSettings } from '../types'
 import {
   getSettings,
@@ -8,7 +17,16 @@ import {
 } from '../services/settings'
 import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 
-export function useSettings() {
+interface SettingsContextValue {
+  settings: AppSettings
+  isFirstLaunch: boolean
+  loading: boolean
+  setInstallationPath: (path: string) => Promise<void>
+}
+
+const SettingsContext = createContext<SettingsContextValue | null>(null)
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [isFirstLaunch, setIsFirstLaunch] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -48,11 +66,27 @@ export function useSettings() {
     return () => window.removeEventListener(SETTINGS_CHANGE_EVENT, handleSettingsChange)
   }, [])
 
-  const setInstallationPath = async (path: string) => {
+  const setInstallationPath = useCallback(async (path: string) => {
     await saveInstallationPath(path)
     setSettings((prev) => ({ ...prev, installationPath: path }))
     setIsFirstLaunch(false)
+  }, [])
+
+  const value = useMemo(() => ({
+    settings,
+    isFirstLaunch,
+    loading,
+    setInstallationPath,
+  }), [isFirstLaunch, loading, setInstallationPath, settings])
+
+  return createElement(SettingsContext.Provider, { value }, children)
+}
+
+export function useSettings() {
+  const context = useContext(SettingsContext)
+  if (!context) {
+    throw new Error('useSettings must be used inside SettingsProvider')
   }
 
-  return { settings, isFirstLaunch, loading, setInstallationPath }
+  return context
 }

@@ -43,8 +43,12 @@ pub async fn open_dir(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), String> {
-    if !(url.starts_with("https://") || url.starts_with("http://")) {
-        return Err("Only http and https URLs can be opened.".to_string());
+    let parsed = reqwest::Url::parse(&url).map_err(|_| "Invalid URL".to_string())?;
+    if parsed.scheme() != "https"
+        || parsed.host_str() != Some("github.com")
+        || parsed.port_or_known_default() != Some(443)
+    {
+        return Err("Only secure GitHub URLs can be opened.".to_string());
     }
 
     #[cfg(target_os = "windows")]
@@ -103,6 +107,17 @@ pub async fn install_launcher_release(
     asset_url: String,
     asset_name: String,
 ) -> Result<(), String> {
+    crate::github::assets::validate_release_asset_url(&asset_url, "CpPrice11", "pullora")?;
+    if version.is_empty()
+        || version == "."
+        || version == ".."
+        || version
+            .chars()
+            .any(|ch| !(ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_')))
+    {
+        return Err("Invalid launcher version".to_string());
+    }
+
     let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let current_pid = std::process::id();
     let config_dir = crate::storage::get_config_dir();
