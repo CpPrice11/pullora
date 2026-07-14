@@ -1693,7 +1693,9 @@ function LibraryPage({
             </div>
             <div>
               <span>{t('release.installPath')}</span>
-              <strong>{installPath ?? t('details.unknown')}</strong>
+              <strong className="library-inline-install-path" title={installPath ?? t('details.unknown')}>
+                {installPath ?? t('details.unknown')}
+              </strong>
             </div>
             <div>
               <span>{t('library.ops.latest')}</span>

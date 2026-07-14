@@ -18,6 +18,27 @@ impl InstallAssetKind {
 const ARCHIVE_EXTENSIONS: [&str; 5] = [".zip", ".tar.gz", ".tgz", ".tar.xz", ".tar.bz2"];
 const SOURCE_ARCHIVE_NAMES: [&str; 3] = ["source code", "source-code", "source_code"];
 
+pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<(), String> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| "Invalid release asset URL".to_string())?;
+    let segments = parsed
+        .path_segments()
+        .map(|segments| segments.collect::<Vec<_>>())
+        .unwrap_or_default();
+
+    let trusted = parsed.scheme() == "https"
+        && parsed.host_str() == Some("github.com")
+        && parsed.port_or_known_default() == Some(443)
+        && segments.len() >= 6
+        && segments[0].eq_ignore_ascii_case(owner)
+        && segments[1].eq_ignore_ascii_case(repo)
+        && segments[2] == "releases"
+        && segments[3] == "download";
+
+    trusted
+        .then_some(())
+        .ok_or_else(|| "Release asset URL must point to the selected GitHub repository".to_string())
+}
+
 pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> {
     let name = file_name.trim().to_lowercase();
     if name.is_empty() {
@@ -57,7 +78,7 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_install_asset_name, InstallAssetKind};
+    use super::{classify_install_asset_name, validate_release_asset_url, InstallAssetKind};
 
     #[test]
     fn classifies_supported_windows_assets() {
@@ -94,5 +115,33 @@ mod tests {
             classify_install_asset_name("tool.AppImage"),
             Some(InstallAssetKind::Portable)
         );
+    }
+
+    #[test]
+    fn accepts_only_matching_github_release_assets() {
+        assert!(validate_release_asset_url(
+            "https://github.com/CpPrice11/pullora/releases/download/v1.0.0/Pullora.exe",
+            "CpPrice11",
+            "pullora",
+        )
+        .is_ok());
+        assert!(validate_release_asset_url(
+            "http://github.com/CpPrice11/pullora/releases/download/v1.0.0/Pullora.exe",
+            "CpPrice11",
+            "pullora",
+        )
+        .is_err());
+        assert!(validate_release_asset_url(
+            "https://example.com/CpPrice11/pullora/releases/download/v1.0.0/Pullora.exe",
+            "CpPrice11",
+            "pullora",
+        )
+        .is_err());
+        assert!(validate_release_asset_url(
+            "https://github.com/other/pullora/releases/download/v1.0.0/Pullora.exe",
+            "CpPrice11",
+            "pullora",
+        )
+        .is_err());
     }
 }

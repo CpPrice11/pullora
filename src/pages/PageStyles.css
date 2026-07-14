@@ -3685,6 +3685,10 @@
   padding: 10px;
 }
 
+.library-sam-details-pane > * {
+  flex-shrink: 0;
+}
+
 .library-sam-pane-head,
 .library-sam-details-toolbar {
   align-items: center;
@@ -4005,6 +4009,7 @@
 
 .cinematic-shell .library-page .library-inline-summary--details {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 76px);
 }
 
 .cinematic-shell .library-page .library-inline-summary > div,
@@ -4036,6 +4041,13 @@
   font-size: 14px;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.cinematic-shell .library-page .library-inline-install-path {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  overflow: hidden;
 }
 
 .cinematic-shell .library-page .library-inline-version-list {
@@ -4972,6 +4984,10 @@
   .cinematic-shell .library-page .library-hero {
     grid-template-columns: 112px minmax(0, 1fr);
   }
+
+  .cinematic-shell .library-page .library-ops-action-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 860px) {
@@ -5007,5 +5023,9 @@
   .cinematic-shell .library-page .library-inline-summary,
   .cinematic-shell .library-page .library-inline-summary--details {
     grid-template-columns: 1fr;
+  }
+
+  .cinematic-shell .library-page .library-inline-summary--details {
+    grid-template-rows: none;
   }
 }

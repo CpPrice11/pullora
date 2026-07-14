@@ -16,6 +16,8 @@ pub async fn start_download(
     install_path: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
+    crate::github::assets::validate_release_asset_url(&url, &owner, &repo)?;
+
     let install_path = match install_path {
         Some(path) if !path.trim().is_empty() => path.trim().to_string(),
         _ => {
