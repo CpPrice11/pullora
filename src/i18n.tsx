@@ -244,7 +244,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'store.filter.applications': 'Застосунки',
     'store.filter.allProjects': 'Усі проєкти',
     'store.status.installed': 'Встановлено',
-    'store.status.installable': 'Є реліз',
     'store.status.incompatible': 'Несумісно',
     'store.status.checking': 'Перевіряємо',
     'store.status.source': 'Джерело',
@@ -340,8 +339,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'about.portableReady': 'Portable asset знайдено',
     'about.portableMissing': 'Portable asset відсутній',
     'about.currentStatus': 'Поточна',
-    'about.newerStatus': 'Доступна',
-    'about.olderStatus': 'Старіша',
     'about.retry': 'Повторити',
     'about.updateConfirm': 'Лаунчер закриється, замінить EXE на {version} і перезапуститься. Продовжити?',
     'about.rollbackConfirm': 'Відкотитися на {version}? Лаунчер закриється і перезапуститься після заміни EXE.',
@@ -666,7 +663,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'store.filter.applications': 'Applications',
     'store.filter.allProjects': 'All projects',
     'store.status.installed': 'Installed',
-    'store.status.installable': 'Release ready',
     'store.status.incompatible': 'Incompatible',
     'store.status.checking': 'Checking',
     'store.status.source': 'Source',
@@ -762,8 +758,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'about.portableReady': 'Portable asset found',
     'about.portableMissing': 'Portable asset missing',
     'about.currentStatus': 'Current',
-    'about.newerStatus': 'Available',
-    'about.olderStatus': 'Older',
     'about.retry': 'Retry',
     'about.updateConfirm': 'The launcher will close, replace the EXE with {version}, and restart. Continue?',
     'about.rollbackConfirm': 'Rollback to {version}? The launcher will close and restart after replacing the EXE.',
@@ -898,7 +892,6 @@ Object.assign(dictionaries.uk, {
   'art.clearError': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0441\u043a\u0438\u043d\u0443\u0442\u0438 \u0430\u0440\u0442 \u043f\u0440\u043e\u0454\u043a\u0442\u0443',
   'projectActions.open': '\u0414\u0456\u0457 \u043f\u0440\u043e\u0454\u043a\u0442\u0443',
   'settings.general': '\u0417\u0430\u0433\u0430\u043b\u044c\u043d\u0435',
-  'settings.installation': '\u0412\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f',
   'settings.maintenance': '\u041e\u0431\u0441\u043b\u0443\u0433\u043e\u0432\u0443\u0432\u0430\u043d\u043d\u044f',
   'settings.close': '\u0417\u0430\u043a\u0440\u0438\u0442\u0438',
   'settings.launcherBackground': '\u0424\u043e\u043d \u043b\u0430\u0443\u043d\u0447\u0435\u0440\u0430',
@@ -956,7 +949,6 @@ Object.assign(dictionaries.en, {
   'art.clearError': 'Failed to reset project art',
   'projectActions.open': 'Project actions',
   'settings.general': 'General',
-  'settings.installation': 'Installation',
   'settings.maintenance': 'Maintenance',
   'settings.close': 'Close',
   'settings.launcherBackground': 'Launcher background',
@@ -977,9 +969,7 @@ Object.assign(dictionaries.uk, {
   'release.stepProgress': 'Прогрес',
   'release.stepResult': 'Готово',
   'release.stepVersionHelp': 'Обери реліз. Pullora покаже поточну, новішу або старішу версію перед встановленням.',
-  'release.stepFileHelp': 'Рекомендований файл має бути portable EXE або архівом з EXE всередині. Setup/MSI лишаються ручним варіантом.',
   'release.stepConfirmHelp': 'Перевір версію, файл і папку встановлення перед стартом.',
-  'release.stepProgressHelp': 'Стеж за завантаженням, перевіркою, пошуком EXE та реєстрацією версії.',
   'release.stepResultHelp': 'Після успіху можна запустити застосунок, відкрити папку або повернутися до бібліотеки.',
   'release.next': 'Далі',
   'release.back': 'Назад',
@@ -998,7 +988,6 @@ Object.assign(dictionaries.uk, {
   'release.actionUpdate': 'Оновлення',
   'release.actionReinstall': 'Повторне встановлення',
   'release.actionDowngrade': 'Відкат версії',
-  'release.autoInstallOnly': 'Автоматично встановлюються portable EXE та архіви з EXE всередині. Setup/MSI показані нижче лише як ручні файли релізу.',
   'release.installerBlockedTitle': 'Setup/MSI не встановлюється як portable-версія',
   'release.installerBlockedText': 'Це інсталятор. Pullora не реєструє його автоматично як portable-версію, щоб не підмінити шлях запуску.',
   'release.choosePortable': 'Обери portable EXE або архів. Інсталятор можна відкрити на GitHub вручну.',
@@ -1014,10 +1003,8 @@ Object.assign(dictionaries.uk, {
   'download.stageQueuedText': 'Очікуємо старту завантаження і резервуємо місце для версії.',
   'download.stageDownloadingText': 'Завантажуємо вибраний asset з GitHub. Можна скасувати, якщо файл не той.',
   'download.stageVerifyingText': 'Перевіряємо завантажений файл перед встановленням.',
-  'download.stageExtractingText': 'Розпаковуємо архів або переносимо portable EXE у папку застосунку.',
   'download.stageDetectingExecutableText': 'Шукаємо головний EXE, який буде запускатися з бібліотеки.',
   'download.stageRegisteringText': 'Записуємо версію, шлях запуску і metadata у локальну бібліотеку.',
-  'download.stageCompletedText': 'Версію встановлено. Можна запустити застосунок або відкрити його папку.',
   'download.stageFailedText': 'Встановлення зупинилось до реєстрації версії. Спробуй recovery action нижче.',
   'download.timeline': 'Кроки встановлення',
   'download.launch': 'Запустити',
@@ -1041,9 +1028,7 @@ Object.assign(dictionaries.en, {
   'release.stepProgress': 'Progress',
   'release.stepResult': 'Done',
   'release.stepVersionHelp': 'Choose a release. Pullora will show whether it is current, newer, or older before installing.',
-  'release.stepFileHelp': 'The recommended file should be a portable EXE or an archive containing an EXE. Setup/MSI remains a manual choice.',
   'release.stepConfirmHelp': 'Check the version, file, and install folder before starting.',
-  'release.stepProgressHelp': 'Follow download, verification, EXE detection, and version registration.',
   'release.stepResultHelp': 'After success, launch the app, open its folder, or return to the library.',
   'release.next': 'Next',
   'release.back': 'Back',
@@ -1062,7 +1047,6 @@ Object.assign(dictionaries.en, {
   'release.actionUpdate': 'Update',
   'release.actionReinstall': 'Reinstall',
   'release.actionDowngrade': 'Downgrade',
-  'release.autoInstallOnly': 'Pullora can automatically install portable EXE files and archives that contain an EXE. Setup/MSI files are shown below only as manual release files.',
   'release.installerBlockedTitle': 'Setup/MSI is not installed as a portable version',
   'release.installerBlockedText': 'This is an installer. Pullora will not register it automatically as a portable version, so the launch path stays predictable.',
   'release.choosePortable': 'Choose a portable EXE or archive. You can open the installer on GitHub manually.',
@@ -1078,10 +1062,8 @@ Object.assign(dictionaries.en, {
   'download.stageQueuedText': 'Waiting to start the download and reserve space for this version.',
   'download.stageDownloadingText': 'Downloading the selected GitHub asset. You can cancel if the file is wrong.',
   'download.stageVerifyingText': 'Checking the downloaded file before installation.',
-  'download.stageExtractingText': 'Extracting the archive or moving the portable EXE into the app folder.',
   'download.stageDetectingExecutableText': 'Finding the main EXE that will launch from the library.',
   'download.stageRegisteringText': 'Saving the version, launch path, and metadata into the local library.',
-  'download.stageCompletedText': 'The version is installed. You can launch the app or open its folder.',
   'download.stageFailedText': 'Installation stopped before version registration. Try a recovery action below.',
   'download.timeline': 'Install steps',
   'download.launch': 'Launch',
@@ -1402,7 +1384,6 @@ Object.assign(dictionaries.uk, {
   'about.cleanupConfirm': 'Очистити тимчасові файли self-update і старі backup EXE? Найсвіжіший backup буде збережено.',
   'about.cleanupDone': 'Старі файли лаунчера очищено',
   'about.cleanupError': 'Не вдалося очистити старі файли лаунчера',
-  'about.versionCenterText': 'Переглядай релізи, notes, rollback і безпечні дії з portable-версією лаунчера.',
   'about.filterLabel': 'Фільтр версій лаунчера',
   'about.filter.all': 'Усі',
   'about.filter.rollback': 'Старі',
@@ -1422,7 +1403,6 @@ Object.assign(dictionaries.en, {
   'about.updateAvailable': 'Update available',
   'about.installMode': 'Mode',
   'about.portableMode': 'Portable EXE',
-  'about.rollbackReady': 'Rollback',
   'about.availableCount': 'Available: {count}',
   'about.none': 'None',
   'about.cleanupEstimate': 'Can clean',
@@ -1440,10 +1420,8 @@ Object.assign(dictionaries.en, {
   'about.cleanupConfirm': 'Clean self-update temporary files and old backup EXEs? The newest backup will be kept.',
   'about.cleanupDone': 'Old launcher files cleaned',
   'about.cleanupError': 'Failed to clean old launcher files',
-  'about.versionCenterText': 'Review releases, notes, rollback, and safe actions for the launcher portable version.',
   'about.filterLabel': 'Launcher version filter',
   'about.filter.all': 'All',
-  'about.filter.rollback': 'Rollback',
   'about.filter.current': 'Current',
   'about.noFilteredReleases': 'No versions in this filter',
   'about.noFilteredReleasesText': 'Change the filter or refresh the release list.',
@@ -1593,8 +1571,6 @@ Object.assign(dictionaries.uk, {
   'release.autoInstallOnly': 'Pullora підтримує portable EXE, архіви з EXE та setup/MSI інсталятори. Інсталятор може відкрити окремий майстер Windows.',
   'release.installerSupportedTitle': 'Інсталятор підтримується',
   'release.installerSupportedText': 'Pullora завантажить інсталятор, запустить майстер і після завершення спробує знайти встановлений EXE для бібліотеки.',
-  'release.installerSupportedHelp': 'Заверши майстер інсталяції у відкритому вікні. Якщо майстер просить шлях, обери власну папку застосунку або лиши шлях, який пропонує сам інсталятор.',
-  'download.stageRunningInstaller': 'Запуск інсталятора',
   'download.stageRunningInstallerText': 'Відкрито зовнішній майстер. Заверши інсталяцію, після цього Pullora знайде виконуваний файл.',
   'download.stageExtractingText': 'Розпаковуємо архів або переносимо portable EXE у папку застосунку.',
   'download.stageCompletedText': 'Версію встановлено. Можна запустити застосунок або відкрити його папку.',
@@ -1606,8 +1582,6 @@ Object.assign(dictionaries.en, {
   'release.autoInstallOnly': 'Pullora supports portable EXE files, archives with an EXE, and setup/MSI installers. An installer may open a separate Windows wizard.',
   'release.installerSupportedTitle': 'Installer supported',
   'release.installerSupportedText': 'Pullora will download the installer, run its wizard, then try to find the installed EXE for the library.',
-  'release.installerSupportedHelp': 'Finish the installer wizard in the opened window. If it asks for a path, choose your own app folder or keep the location offered by the installer.',
-  'download.stageRunningInstaller': 'Running installer',
   'download.stageRunningInstallerText': 'An external wizard is open. Finish the installation, then Pullora will locate the executable.',
   'download.stageExtractingText': 'Extracting the archive or moving the portable EXE into the app folder.',
   'download.stageCompletedText': 'The version is installed. You can launch the app or open its folder.',
@@ -1709,6 +1683,58 @@ Object.assign(dictionaries.en, {
   'library.folder.systemSections': 'System',
 })
 
+Object.assign(dictionaries.uk, {
+  'errors.commandFailed': 'Не вдалося виконати дію. Спробуй ще раз.',
+  'errors.invalidUrl': 'Посилання має неправильний формат.',
+  'errors.githubUrlOnly': 'Можна відкривати лише захищені посилання GitHub.',
+  'errors.invalidVersion': 'Версія застосунку має неправильний формат.',
+  'errors.unsupportedLauncherAsset': 'Для оновлення Pullora обери portable EXE або ZIP.',
+  'errors.releaseAssetSource': 'Файл релізу має належати вибраному GitHub-репозиторію.',
+  'errors.githubOwnerRequired': 'Вкажи власника GitHub-репозиторіїв.',
+  'errors.githubOwnerNotFound': 'Власника GitHub не знайдено.',
+  'errors.githubCacheUnavailable': 'GitHub не повернув дані й локальний кеш порожній.',
+  'errors.githubRateLimited': 'Ліміт запитів GitHub вичерпано. Спробуй пізніше.',
+  'errors.githubDownloadFailed': 'Не вдалося завантажити файл із GitHub.',
+  'errors.launcherDirectoryUnavailable': 'Не вдалося визначити папку Pullora.',
+  'errors.installPathNotDirectory': 'Шлях встановлення не є папкою.',
+  'errors.installPathUnavailable': 'Не вдалося підготувати папку встановлення.',
+  'errors.legacyInstallPathMissing': 'Для старої версії не збережено папку встановлення. Встанови її ще раз.',
+  'errors.appNotInstalled': 'Застосунок не встановлено.',
+  'errors.activeVersionNotFound': 'Активну версію не знайдено.',
+  'errors.versionNotFound': 'Версію не знайдено.',
+  'errors.executableNotFound': 'Файл запуску не знайдено. Віднови або перевстанови версію.',
+  'errors.launchFailed': 'Не вдалося запустити застосунок. Перевір, чи файл не заблокований Windows.',
+  'errors.exportPathRequired': 'Обери шлях для експорту.',
+  'errors.importPathRequired': 'Обери файл для імпорту.',
+  'errors.installFailed': 'Не вдалося встановити застосунок. Спробуй ще раз або обери інший файл.',
+})
+
+Object.assign(dictionaries.en, {
+  'errors.commandFailed': 'Could not complete the action. Try again.',
+  'errors.invalidUrl': 'The link has an invalid format.',
+  'errors.githubUrlOnly': 'Only secure GitHub links can be opened.',
+  'errors.invalidVersion': 'The application version has an invalid format.',
+  'errors.unsupportedLauncherAsset': 'Choose a portable EXE or ZIP to update Pullora.',
+  'errors.releaseAssetSource': 'The release file must belong to the selected GitHub repository.',
+  'errors.githubOwnerRequired': 'Enter the GitHub repository owner.',
+  'errors.githubOwnerNotFound': 'The GitHub owner was not found.',
+  'errors.githubCacheUnavailable': 'GitHub returned no data and the local cache is empty.',
+  'errors.githubRateLimited': 'The GitHub request limit is exhausted. Try again later.',
+  'errors.githubDownloadFailed': 'Could not download the file from GitHub.',
+  'errors.launcherDirectoryUnavailable': 'Could not locate the Pullora folder.',
+  'errors.installPathNotDirectory': 'The install path is not a folder.',
+  'errors.installPathUnavailable': 'Could not prepare the install folder.',
+  'errors.legacyInstallPathMissing': 'The install folder was not saved for this older version. Install it again.',
+  'errors.appNotInstalled': 'The app is not installed.',
+  'errors.activeVersionNotFound': 'The active version was not found.',
+  'errors.versionNotFound': 'The version was not found.',
+  'errors.executableNotFound': 'The executable was not found. Repair or reinstall the version.',
+  'errors.launchFailed': 'Could not launch the app. Check whether Windows blocked the file.',
+  'errors.exportPathRequired': 'Choose an export path.',
+  'errors.importPathRequired': 'Choose a file to import.',
+  'errors.installFailed': 'Could not install the app. Try again or choose another file.',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void
@@ -1716,6 +1742,18 @@ interface LanguageContextValue {
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
+
+export function translate(
+  language: AppLanguage,
+  key: string,
+  values?: Record<string, string | number>,
+) {
+  let text = dictionaries[language][key] ?? dictionaries.uk[key] ?? key
+  Object.entries(values ?? {}).forEach(([name, value]) => {
+    text = text.split(`{${name}}`).join(String(value))
+  })
+  return text
+}
 
 function normalizeLanguage(language: string | null | undefined): AppLanguage {
   return language === 'en' ? 'en' : 'uk'
@@ -1761,13 +1799,7 @@ export function LanguageProvider({
   const value = useMemo<LanguageContextValue>(() => ({
     language,
     setLanguage: setLanguageState,
-    t: (key, values) => {
-      let text = dictionaries[language][key] ?? dictionaries.uk[key] ?? key
-      Object.entries(values ?? {}).forEach(([name, value]) => {
-        text = text.split(`{${name}}`).join(String(value))
-      })
-      return text
-    },
+    t: (key, values) => translate(language, key, values),
   }), [language])
 
   return (

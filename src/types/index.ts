@@ -100,7 +100,6 @@ export interface AppAppearanceSettings {
 export interface InstallPathValidation {
   ok: boolean
   status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'
-  message: string
 }
 
 // Installed app types
@@ -125,7 +124,6 @@ export interface InstalledApp {
 export interface InstalledAppHealth {
   ok: boolean
   status: 'ready' | 'missingExecutable' | 'needsRepair'
-  message: string
   executablePath?: string | null
 }
 

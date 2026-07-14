@@ -733,7 +733,7 @@ function SettingsPage({
                 </div>
                 <div>
                   <dt>{t('settings.cleanupSize')}</dt>
-                  <dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes) : t('settings.notChecked')}</dd>
+                  <dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes, language) : t('settings.notChecked')}</dd>
                 </div>
               </dl>
               <div className="settings-maintenance-actions settings-storage-actions">

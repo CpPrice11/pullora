@@ -11,7 +11,7 @@ import { validateInstallationPath } from '../../services/settings'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
-import { compareVersionTags, formatBytes } from '../../utils/format'
+import { compareVersionTags, formatBytes, formatDate } from '../../utils/format'
 import {
   classifyReleaseAsset,
   releaseAssetKindLabelKey,
@@ -195,7 +195,7 @@ function ReleaseSelector({
   }, [visibleReleases])
 
   const selectedReleaseDate = selectedRelease?.published_at
-    ? new Date(selectedRelease.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+    ? formatDate(selectedRelease.published_at, language)
     : t('about.noDate')
   const selectedReleaseStatus = selectedRelease
     ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
@@ -266,7 +266,9 @@ function ReleaseSelector({
     try {
       const validation = await validateInstallationPath(targetInstallPath)
       if (!validation.ok) {
-        setDownloadError(validation.message || t('release.installPathUnavailable'))
+        setDownloadError(validation.status === 'missing'
+          ? t('release.installPathRequired')
+          : t('release.installPathUnavailable'))
         setStep('confirm')
         return
       }
@@ -429,7 +431,7 @@ function ReleaseSelector({
                       {visibleReleases.map((release) => {
                         const isSelected = selectedRelease?.id === release.id
                         const releaseDate = release.published_at
-                          ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+                          ? formatDate(release.published_at, language)
                           : t('about.noDate')
 
                         return (
@@ -508,7 +510,7 @@ function ReleaseSelector({
                             >
                               <span className="release-asset-main">
                                 <strong>{asset.name}</strong>
-                                <span>{formatBytes(asset.size)}</span>
+                                <span>{formatBytes(asset.size, language)}</span>
                               </span>
                               <span className="release-asset-badges">
                                 <span className="asset-kind">{t(assetKindKey(kind))}</span>
@@ -589,7 +591,7 @@ function ReleaseSelector({
                       </div>
                       <div>
                         <span>{t('release.size')}</span>
-                        <strong>{formatBytes(selectedAsset.size)}</strong>
+                        <strong>{formatBytes(selectedAsset.size, language)}</strong>
                       </div>
                       <div>
                         <span>{t('release.currentVersion')}</span>

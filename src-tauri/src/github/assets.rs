@@ -19,7 +19,7 @@ const ARCHIVE_EXTENSIONS: [&str; 5] = [".zip", ".tar.gz", ".tgz", ".tar.xz", ".t
 const SOURCE_ARCHIVE_NAMES: [&str; 3] = ["source code", "source-code", "source_code"];
 
 pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<(), String> {
-    let parsed = reqwest::Url::parse(url).map_err(|_| "Invalid release asset URL".to_string())?;
+    let parsed = reqwest::Url::parse(url).map_err(|_| command_error("errors.invalidUrl"))?;
     let segments = parsed
         .path_segments()
         .map(|segments| segments.collect::<Vec<_>>())
@@ -36,7 +36,7 @@ pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<
 
     trusted
         .then_some(())
-        .ok_or_else(|| "Release asset URL must point to the selected GitHub repository".to_string())
+        .ok_or_else(|| command_error("errors.releaseAssetSource"))
 }
 
 pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> {
@@ -145,3 +145,4 @@ mod tests {
         .is_err());
     }
 }
+use crate::error::command_error;

@@ -3,6 +3,7 @@ import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../type
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
+import { formatDate, formatNumber } from '../../../utils/format'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -209,7 +210,7 @@ function RepoCard({
     onPreview?.()
   }
 
-  const updatedDate = new Date(repo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+  const updatedDate = formatDate(repo.updated_at, language)
   const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
   const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.available')
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
@@ -263,7 +264,7 @@ function RepoCard({
         )}
 
         <div className="repo-meta">
-          <span>{t('repo.stars', { count: repo.stargazers_count.toLocaleString() })}</span>
+          <span>{t('repo.stars', { count: formatNumber(repo.stargazers_count, language) })}</span>
           {repo.language && (
             <span className="repo-lang">{repo.language}</span>
           )}

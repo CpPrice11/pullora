@@ -2,6 +2,8 @@ use serde::Serialize;
 use std::io::Write;
 use tauri::AppHandle;
 
+use crate::error::command_error;
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LauncherStorageInfo {
@@ -43,12 +45,12 @@ pub async fn open_dir(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), String> {
-    let parsed = reqwest::Url::parse(&url).map_err(|_| "Invalid URL".to_string())?;
+    let parsed = reqwest::Url::parse(&url).map_err(|_| command_error("errors.invalidUrl"))?;
     if parsed.scheme() != "https"
         || parsed.host_str() != Some("github.com")
         || parsed.port_or_known_default() != Some(443)
     {
-        return Err("Only secure GitHub URLs can be opened.".to_string());
+        return Err(command_error("errors.githubUrlOnly"));
     }
 
     #[cfg(target_os = "windows")]
@@ -115,7 +117,7 @@ pub async fn install_launcher_release(
             .chars()
             .any(|ch| !(ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_')))
     {
-        return Err("Invalid launcher version".to_string());
+        return Err(command_error("errors.invalidVersion"));
     }
 
     let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
@@ -172,7 +174,7 @@ fn prepare_portable_launcher_asset(
         .to_lowercase();
 
     if is_installer_asset(&asset_name) {
-        return Err("Setup/installer assets are not supported for launcher self-update. Use portable EXE or ZIP.".to_string());
+        return Err(command_error("errors.unsupportedLauncherAsset"));
     }
 
     if asset_name.ends_with(".exe") {
@@ -192,12 +194,12 @@ fn prepare_portable_launcher_asset(
         archive.extract(&extract_dir).map_err(|e| e.to_string())?;
 
         let portable_exe = find_portable_launcher_exe(&extract_dir)
-            .ok_or("Portable ZIP does not contain a launcher EXE")?;
+            .ok_or_else(|| command_error("errors.unsupportedLauncherAsset"))?;
         std::fs::copy(portable_exe, destination_exe).map_err(|e| e.to_string())?;
         return Ok(());
     }
 
-    Err("Unsupported launcher asset. Use portable EXE or ZIP.".to_string())
+    Err(command_error("errors.unsupportedLauncherAsset"))
 }
 
 fn is_installer_asset(name: &str) -> bool {
@@ -245,7 +247,7 @@ async fn download_launcher_asset(url: &str, destination: &std::path::Path) -> Re
     let response = client.get(url).send().await.map_err(|e| e.to_string())?;
 
     if !response.status().is_success() {
-        return Err(format!("GitHub download failed: {}", response.status()));
+        return Err(command_error("errors.githubDownloadFailed"));
     }
 
     let bytes = response.bytes().await.map_err(|e| e.to_string())?;
@@ -260,7 +262,7 @@ fn write_launcher_update_script(
 ) -> Result<(), String> {
     let backup_dir = target_exe
         .parent()
-        .ok_or("Cannot resolve launcher directory")?
+        .ok_or_else(|| command_error("errors.launcherDirectoryUnavailable"))?
         .join(".pullora-backups");
     std::fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
     let backup_exe = backup_dir.join(format!(
@@ -309,7 +311,7 @@ fn collect_launcher_storage_info() -> Result<LauncherStorageInfo, String> {
     let launcher_dir = std::env::current_exe()
         .map_err(|e| e.to_string())?
         .parent()
-        .ok_or("Cannot resolve launcher directory")?
+        .ok_or_else(|| command_error("errors.launcherDirectoryUnavailable"))?
         .display()
         .to_string();
 
@@ -327,7 +329,7 @@ fn launcher_backup_dir() -> Result<std::path::PathBuf, String> {
     Ok(std::env::current_exe()
         .map_err(|e| e.to_string())?
         .parent()
-        .ok_or("Cannot resolve launcher directory")?
+        .ok_or_else(|| command_error("errors.launcherDirectoryUnavailable"))?
         .join(".pullora-backups"))
 }
 

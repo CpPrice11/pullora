@@ -1,5 +1,6 @@
 import type { DownloadProgress as DL, DownloadStage } from '../../types'
 import { useI18n } from '../../i18n'
+import { getLocalizedErrorMessage } from '../../services/tauri'
 import { formatBytes } from '../../utils/format'
 import './Install.css'
 
@@ -79,7 +80,7 @@ function DownloadProgressPanel({
   onChooseAnother,
   onCleanup,
 }: DownloadProgressProps) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
 
   if (downloads.length === 0) return null
 
@@ -154,7 +155,7 @@ function DownloadProgressPanel({
               <div className="download-meta">
                 {download.totalSize > 0 && (
                   <span>
-                    {formatBytes(download.downloadedSize)} / {formatBytes(download.totalSize)}
+                    {formatBytes(download.downloadedSize, language)} / {formatBytes(download.totalSize, language)}
                   </span>
                 )}
                 {download.installPath && <span>{download.installPath}</span>}
@@ -193,7 +194,7 @@ function DownloadProgressPanel({
                   {download.error && (
                     <details className="download-error-details">
                       <summary>{t('download.details')}</summary>
-                      <pre>{download.error}</pre>
+                      <pre>{getLocalizedErrorMessage(download.error)}</pre>
                     </details>
                   )}
                   <div className="download-actions">

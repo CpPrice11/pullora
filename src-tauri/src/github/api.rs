@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::error::{command_error, command_error_with_detail};
+
 use super::cache::ApiCache;
 use super::models::{OwnerRepositoriesResponse, Release, Repository};
 
@@ -92,10 +94,9 @@ impl GitHubClient {
         };
 
         if bucket.remaining.unwrap_or(u32::MAX) <= reserve && bucket.reset_at.unwrap_or(0) > now {
-            return Err(format!(
-                "GitHub {} API rate limit is nearly exhausted; reset at {}.",
-                resource,
-                bucket.reset_at.unwrap_or(0)
+            return Err(command_error_with_detail(
+                "errors.githubRateLimited",
+                bucket.reset_at.unwrap_or(0),
             ));
         }
 
@@ -148,12 +149,9 @@ impl GitHubClient {
                 .get(resource)
                 .and_then(|bucket| bucket.reset_at)
                 .unwrap_or(0);
-            return format!(
-                "GitHub {} API rate limit exceeded; reset at {}. {}",
-                resource, reset_at, body
-            );
+            return command_error_with_detail("errors.githubRateLimited", reset_at);
         }
-        format!("GitHub API error {}: {}", status, body)
+        command_error_with_detail("errors.commandFailed", format!("HTTP {}: {}", status, body))
     }
 
     fn response_etag(headers: &reqwest::header::HeaderMap) -> Option<String> {
@@ -172,7 +170,7 @@ impl GitHubClient {
     ) -> Result<OwnerRepositoriesResponse, String> {
         let normalized_owner = owner.trim().to_lowercase();
         if normalized_owner.is_empty() {
-            return Err("GitHub owner is required.".to_string());
+            return Err(command_error("errors.githubOwnerRequired"));
         }
 
         let cache_key = format!("owner:{}:{}", normalized_owner, page);
@@ -230,7 +228,7 @@ impl GitHubClient {
             cache.touch_owner_repositories(&cache_key);
             return cached
                 .map(remove_launcher_repository)
-                .ok_or_else(|| "GitHub returned 304 without cached data.".to_string());
+                .ok_or_else(|| command_error("errors.githubCacheUnavailable"));
         }
         let etag = Self::response_etag(response.headers());
 
@@ -238,7 +236,7 @@ impl GitHubClient {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
             if status.as_u16() == 404 {
-                return Err(format!("GitHub owner \"{}\" was not found.", owner.trim()));
+                return Err(command_error("errors.githubOwnerNotFound"));
             }
             return Err(self.github_error("core", status, body));
         }
@@ -324,7 +322,7 @@ impl GitHubClient {
             let mut cache = self.cache.lock().unwrap();
             let cached = cache.get_releases_stale(&cache_key).cloned();
             cache.touch_releases(&cache_key);
-            return cached.ok_or_else(|| "GitHub returned 304 without cached data.".to_string());
+            return cached.ok_or_else(|| command_error("errors.githubCacheUnavailable"));
         }
         let etag = Self::response_etag(response.headers());
 
