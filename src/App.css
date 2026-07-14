@@ -453,6 +453,24 @@ p {
   --material-border-strong: rgba(31, 31, 31, 0.18);
 }
 
+.skip-link {
+  background: var(--color-primary);
+  border-radius: 0 0 8px 8px;
+  color: #061018;
+  font-weight: 700;
+  left: 16px;
+  padding: 10px 14px;
+  position: fixed;
+  top: 0;
+  transform: translateY(-120%);
+  transition: transform var(--motion-fast);
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 html,
 body,
 #root {
