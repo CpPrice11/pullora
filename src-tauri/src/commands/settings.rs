@@ -1,6 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 
+use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::settings::{save_settings, AppSettings};
 use crate::AppState;
@@ -10,7 +11,6 @@ use crate::AppState;
 pub struct InstallPathValidation {
     pub ok: bool,
     pub status: String,
-    pub message: String,
 }
 
 #[tauri::command]
@@ -65,7 +65,6 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
         return Ok(InstallPathValidation {
             ok: false,
             status: "missing".to_string(),
-            message: "Папку встановлення не вибрано.".to_string(),
         });
     }
 
@@ -76,14 +75,12 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
                 return Ok(InstallPathValidation {
                     ok: true,
                     status: "requiresElevation".to_string(),
-                    message: "Папку можна створити тільки з правами адміністратора.".to_string(),
                 });
             }
 
             return Ok(InstallPathValidation {
                 ok: false,
                 status: "inaccessible".to_string(),
-                message: format!("Не вдалося створити папку встановлення: {}", error),
             });
         }
     }
@@ -92,7 +89,6 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
         return Ok(InstallPathValidation {
             ok: false,
             status: "inaccessible".to_string(),
-            message: "Шлях встановлення не є папкою.".to_string(),
         });
     }
 
@@ -103,13 +99,11 @@ pub async fn validate_installation_path(path: String) -> Result<InstallPathValid
             Ok(InstallPathValidation {
                 ok: true,
                 status: "ok".to_string(),
-                message: "Папка доступна для запису.".to_string(),
             })
         }
         Err(_) => Ok(InstallPathValidation {
             ok: true,
             status: "requiresElevation".to_string(),
-            message: "Папка існує, але для запису потрібні права адміністратора.".to_string(),
         }),
     }
 }
@@ -125,7 +119,7 @@ fn prepare_installation_path_setting(path: &str) -> Result<(), String> {
         if folder.is_dir() {
             return Ok(());
         }
-        return Err("Шлях встановлення не є папкою".to_string());
+        return Err(command_error("errors.installPathNotDirectory"));
     }
 
     if let Err(error) = std::fs::create_dir_all(&folder) {
@@ -133,10 +127,7 @@ fn prepare_installation_path_setting(path: &str) -> Result<(), String> {
             return Ok(());
         }
 
-        return Err(format!(
-            "Не вдалося підготувати папку встановлення: {}",
-            error
-        ));
+        return Err(command_error("errors.installPathUnavailable"));
     }
 
     Ok(())

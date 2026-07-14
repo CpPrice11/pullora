@@ -10,9 +10,9 @@ import {
   validateInstalledApp,
 } from '../../../services/installed'
 import { useSettings } from '../../../hooks/useSettings'
-import { useI18n } from '../../../i18n'
+import { useI18n, type AppLanguage } from '../../../i18n'
 import { useModalFocus } from '../../../hooks/useModalFocus'
-import { formatBytes } from '../../../utils/format'
+import { formatBytes, formatDate } from '../../../utils/format'
 import UninstallConfirmModal from './UninstallConfirmModal'
 import SwitchVersionConfirmModal from './SwitchVersionConfirmModal'
 import './SearchComponents.css'
@@ -61,8 +61,8 @@ function compareVersionTags(left: string, right: string) {
   return left.localeCompare(right)
 }
 
-function versionDate(version: VersionInfo, language: string) {
-  return new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA', {
+function versionDate(version: VersionInfo, language: AppLanguage) {
+  return formatDate(version.installedAt, language, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -129,11 +129,10 @@ function AppDetailsModal({
     try {
       const nextHealth = await validateInstalledApp(installedApp.owner, installedApp.repo)
       setHealth(nextHealth)
-    } catch (err) {
+    } catch {
       setHealth({
         ok: false,
         status: 'needsRepair',
-        message: err instanceof Error ? err.message : t('installed.healthRepair'),
         executablePath: null,
       })
     } finally {
@@ -329,7 +328,11 @@ function AppDetailsModal({
               </div>
             </div>
             {health && !health.ok && (
-              <p className="app-details-health-message">{health.message}</p>
+              <p className="app-details-health-message">
+                {health.status === 'missingExecutable'
+                  ? t('installed.healthMissingExe')
+                  : t('installed.healthRepair')}
+              </p>
             )}
             <div className="app-details-actions">
               <button type="button" className="hero-primary-btn" onClick={handleLaunch} disabled={busyTag !== null} data-autofocus="true">
@@ -478,9 +481,9 @@ function AppDetailsModal({
                         <strong>{version.tag}</strong>
                         <em>{stateLabel}</em>
                       </div>
-                      <span>{versionDate(version, language)} · {formatBytes(version.sizeBytes)} · {kindLabel}</span>
+                      <span>{versionDate(version, language)} · {formatBytes(version.sizeBytes, language)} · {kindLabel}</span>
                       <span>{version.assetName || t('details.assetNameUnknown')}</span>
-                      {isMissing && <span className="app-details-version-warning">{health?.message}</span>}
+                      {isMissing && <span className="app-details-version-warning">{t('installed.healthMissingExe')}</span>}
                     </div>
                     <div className="app-details-version-actions">
                       {isActive ? (

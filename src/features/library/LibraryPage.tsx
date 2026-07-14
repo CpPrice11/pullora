@@ -23,6 +23,7 @@ import {
 } from '../../services/projectArt'
 import type { DownloadProgress, FavoriteApp, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
+import { formatDate, formatNumber } from '../../utils/format'
 import '../../pages/PageStyles.css'
 
 type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
@@ -1339,8 +1340,8 @@ function LibraryPage({
             <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
             <span>
               {t('library.trust.visible')}: {t(`${pageKey}.count`, {
-                visible: visibleRepositories.length.toLocaleString(),
-                total: modeRepositoryCount.toLocaleString(),
+                visible: formatNumber(visibleRepositories.length, language),
+                total: formatNumber(modeRepositoryCount, language),
               })}
             </span>
             {formattedLatestVersionsTime && (
@@ -1508,7 +1509,7 @@ function LibraryPage({
             <p className="library-hero-description">{featuredRepo.description}</p>
           )}
           <div className="library-hero-meta">
-            <span>{t('repo.stars', { count: featuredRepo.stargazers_count.toLocaleString() })}</span>
+            <span>{t('repo.stars', { count: formatNumber(featuredRepo.stargazers_count, language) })}</span>
             {installedApp && (
               <span>{t('repo.active', { version: installedApp.activeVersion })}</span>
             )}
@@ -1607,7 +1608,7 @@ function LibraryPage({
       latestVersion &&
       latestVersion !== installedApp.activeVersion,
     )
-    const updatedDate = new Date(featuredRepo.updated_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+    const updatedDate = formatDate(featuredRepo.updated_at, language)
     const localVersionCount = installedApp?.versions.length ?? 0
     const installPath = settings.installationPath && installedApp
       ? `${settings.installationPath}\\${installedApp.owner}-${installedApp.repo}`
@@ -1638,13 +1639,13 @@ function LibraryPage({
           </div>
           <div>
             <span>{t('details.localVersions')}</span>
-            <strong>{localVersionCount.toLocaleString()}</strong>
+            <strong>{formatNumber(localVersionCount, language)}</strong>
           </div>
         </div>
         <div className="library-inline-version-list">
           {localVersions.length > 0 ? localVersions.map((version) => {
             const isActive = version.tag === installedApp?.activeVersion
-            const versionDate = new Date(version.installedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+            const versionDate = formatDate(version.installedAt, language)
             return (
               <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
                 <div>
@@ -1689,7 +1690,7 @@ function LibraryPage({
             </div>
             <div>
               <span>{t('library.ops.stars')}</span>
-              <strong>{featuredRepo.stargazers_count.toLocaleString()}</strong>
+              <strong>{formatNumber(featuredRepo.stargazers_count, language)}</strong>
             </div>
             <div>
               <span>{t('release.installPath')}</span>

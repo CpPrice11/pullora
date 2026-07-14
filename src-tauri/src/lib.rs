@@ -3,6 +3,7 @@ use tokio::sync::Mutex;
 
 mod commands;
 mod download;
+mod error;
 mod github;
 mod storage;
 

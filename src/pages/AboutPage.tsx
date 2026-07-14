@@ -13,13 +13,13 @@ import StatePanel from '../components/State/StatePanel'
 import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { compareVersionTags } from '../utils/format'
+import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.2.44'
+const FALLBACK_CURRENT_VERSION = 'v5.3.0'
 
 type PendingLauncherAction = {
   release: GitHubRelease
@@ -74,20 +74,6 @@ function compactReleaseNotes(body: string | null | undefined) {
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^[\s>*-]+/gm, '')
     .trim()
-}
-
-function formatBytes(bytes: number, language: string) {
-  if (!bytes) return language === 'en' ? '0 MB' : '0 МБ'
-  const units = language === 'en'
-    ? ['B', 'KB', 'MB', 'GB']
-    : ['Б', 'КБ', 'МБ', 'ГБ']
-  let value = bytes
-  let unitIndex = 0
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024
-    unitIndex += 1
-  }
-  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 function AboutPage() {
@@ -447,7 +433,7 @@ function AboutPage() {
                       </div>
                       <span className="about-release-date">
                         {release.published_at
-                          ? new Date(release.published_at).toLocaleDateString(language === 'en' ? 'en-US' : 'uk-UA')
+                          ? formatDate(release.published_at, language)
                           : t('about.noDate')}
                         {portableAsset ? ` · ${portableAsset.name}` : ''}
                       </span>

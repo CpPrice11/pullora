@@ -10,6 +10,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use super::extractor;
+use crate::error::normalize_command_error;
 
 const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
 const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
@@ -155,11 +156,12 @@ impl DownloadManager {
                     }
 
                     log_download_event(&owner, &repo, &tag, &format!("download failed: {}", e));
+                    let user_error = normalize_command_error(&e, "errors.installFailed");
                     let mut list = active_clone.lock().await;
                     if let Some(p) = list.iter_mut().find(|p| p.id == id_clone) {
                         p.status = DownloadStatus::Failed;
                         p.stage = DownloadStage::Failed;
-                        p.error = Some(e);
+                        p.error = Some(user_error);
                         let _ = app.emit("download-progress", p.clone());
                     }
                 }

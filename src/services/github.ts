@@ -1,4 +1,4 @@
-import { callTauri } from './tauri'
+import { callTauri, TauriCommandError } from './tauri'
 import type {
   GitHubQueueStatus,
   GitHubRateLimitStatus,
@@ -159,10 +159,12 @@ function readRateLimitBlockedUntil(bucket: GitHubRateLimitBucket) {
 }
 
 function rememberRateLimit(error: unknown, bucket: GitHubRateLimitBucket) {
-  const message = error instanceof Error ? error.message : String(error)
-  if (!/rate limit|api limit|status 403/i.test(message)) return
+  const message = error instanceof TauriCommandError
+    ? `${error.code}|${error.rawMessage}`
+    : error instanceof Error ? error.message : String(error)
+  if (!/githubRateLimited|rate limit|api limit|status 403/i.test(message)) return
 
-  const resetMatch = message.match(/reset(?:s)?(?: at| in)?\s*(\d{10,13})/i)
+  const resetMatch = message.match(/(?:reset(?:s)?(?: at| in)?\s*|\|)(\d{10,13})/i)
   const rawReset = resetMatch ? Number(resetMatch[1]) : 0
   const resetAt = rawReset > 0
     ? rawReset < 10_000_000_000 ? rawReset * 1000 : rawReset

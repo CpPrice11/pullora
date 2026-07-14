@@ -1,6 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 
+use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::installed::{
     export_registry, import_registry, list_installed, remove_app, remove_version,
@@ -13,7 +14,6 @@ use crate::AppState;
 pub struct InstalledAppHealth {
     pub ok: bool,
     pub status: String,
-    pub message: String,
     pub executable_path: Option<String>,
 }
 
@@ -147,7 +147,7 @@ fn version_install_dir(
         return Ok(fallback);
     }
 
-    Err("Для старого запису не збережено папку встановлення. Встанови версію ще раз або вкажи папку в Налаштуваннях.".to_string())
+    Err(command_error("errors.legacyInstallPathMissing"))
 }
 
 fn version_executable_path(version_dir: &std::path::Path, executable: &str) -> std::path::PathBuf {
@@ -192,13 +192,13 @@ fn resolve_active_app(
     let app = apps
         .into_iter()
         .find(|a| format!("{}/{}", a.owner, a.repo) == key)
-        .ok_or("Застосунок не встановлено")?;
+        .ok_or_else(|| command_error("errors.appNotInstalled"))?;
 
     let version = app
         .versions
         .iter()
         .find(|v| v.tag == app.active_version)
-        .ok_or("Активну версію не знайдено")?;
+        .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
     let version_dir = version_install_dir(install_path, owner, repo, version)?;
     Ok((app, version_dir))
@@ -214,7 +214,7 @@ pub async fn get_installed_apps(_state: State<'_, AppState>) -> Result<Vec<Insta
 pub async fn export_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
     let target_path = std::path::PathBuf::from(path);
     if target_path.as_os_str().is_empty() {
-        return Err("Шлях експорту не вибрано".to_string());
+        return Err(command_error("errors.exportPathRequired"));
     }
 
     let config_dir = get_config_dir();
@@ -225,7 +225,7 @@ pub async fn export_installed_registry(path: String) -> Result<InstalledRegistry
 pub async fn import_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
     let source_path = std::path::PathBuf::from(path);
     if source_path.as_os_str().is_empty() {
-        return Err("Файл імпорту не вибрано".to_string());
+        return Err(command_error("errors.importPathRequired"));
     }
 
     let config_dir = get_config_dir();
@@ -259,12 +259,12 @@ pub async fn uninstall_version(
     let app = apps
         .iter()
         .find(|item| item.owner == owner && item.repo == repo)
-        .ok_or("Застосунок не встановлено")?;
+        .ok_or_else(|| command_error("errors.appNotInstalled"))?;
     let version = app
         .versions
         .iter()
         .find(|item| item.tag == tag)
-        .ok_or("Версію не знайдено")?;
+        .ok_or_else(|| command_error("errors.versionNotFound"))?;
     let app_dir = version_install_dir(&install_path, &owner, &repo, version)?;
 
     if app_dir.exists() {
@@ -322,7 +322,7 @@ pub async fn validate_installed_app(
         .versions
         .iter()
         .find(|v| v.tag == app.active_version)
-        .ok_or("Активну версію не знайдено")?;
+        .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
     let expected_exe = version_executable_path(&version_dir, &version.executable);
     if expected_exe.exists() {
@@ -330,7 +330,6 @@ pub async fn validate_installed_app(
             ok: true,
             status: "ready".to_string(),
             executable_path: Some(expected_exe.display().to_string()),
-            message: "Готово до запуску".to_string(),
         });
     }
 
@@ -339,7 +338,6 @@ pub async fn validate_installed_app(
             ok: true,
             status: "ready".to_string(),
             executable_path: Some(found_exe.display().to_string()),
-            message: "Ready to launch".to_string(),
         });
     }
 
@@ -347,10 +345,6 @@ pub async fn validate_installed_app(
         ok: false,
         status: "missingExecutable".to_string(),
         executable_path: None,
-        message: format!(
-            "Файл запуску для {} {} не знайдено. Віднови або перевстанови версію.",
-            repo, version.tag
-        ),
     })
 }
 
@@ -370,7 +364,7 @@ pub async fn open_installed_app_dir(
                 .versions
                 .iter()
                 .find(|v| v.tag == app.active_version)
-                .ok_or("Активну версію не знайдено")?;
+                .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
             let executable = version_executable_path(&version_dir, &version.executable);
             if std::path::PathBuf::from(&version.executable).is_absolute() {
                 executable
@@ -494,7 +488,7 @@ pub async fn launch_app(
         .versions
         .iter()
         .find(|v| v.tag == app.active_version)
-        .ok_or("Активну версію не знайдено")?;
+        .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
     let exe_path = version_executable_path(&version_dir, &version.executable);
 
@@ -508,10 +502,7 @@ pub async fn launch_app(
                 &version.tag,
                 "launch failed: no executable found",
             );
-            format!(
-                "Файл запуску для {} {} не знайдено. Натисни «Відновити» або встанови версію ще раз.",
-                repo, version.tag
-            )
+            command_error("errors.executableNotFound")
         })?
     };
 
@@ -525,10 +516,7 @@ pub async fn launch_app(
                 &version.tag,
                 &format!("launch failed: {}", e),
             );
-            format!(
-                "Не вдалося запустити {} {}. Перевір, чи файл існує і не заблокований Windows: {}",
-                repo, version.tag, e
-            )
+            command_error("errors.launchFailed")
         })?;
 
     log_launch_event(
