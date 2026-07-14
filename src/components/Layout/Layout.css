@@ -53,6 +53,13 @@
   z-index: 1;
 }
 
+.cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 68% 18%, rgba(91, 215, 255, 0.08), transparent 32%),
+    linear-gradient(90deg, rgba(8, 10, 14, 0.78) 0%, rgba(8, 10, 14, 0.56) 42%, rgba(8, 10, 14, 0.26) 100%),
+    linear-gradient(0deg, rgba(8, 10, 14, 0.84) 0%, rgba(8, 10, 14, 0.24) 52%, rgba(8, 10, 14, 0.58) 100%);
+}
+
 .cinematic-shell.settings-open .cinematic-background {
   filter: blur(18px) saturate(0.95);
   opacity: 0.52;
@@ -260,6 +267,7 @@
 }
 
 .sam-shell.layout {
+  background: #171a21;
   color: #e7eef6;
 }
 
@@ -288,8 +296,11 @@
 
 .sam-titlebar {
   align-items: center;
+  background: #171a21;
+  border-bottom: 1px solid #0d141b;
   display: flex;
   flex: 0 0 48px;
+  min-height: 48px;
   padding: 0;
   position: relative;
   z-index: 3;
@@ -301,6 +312,7 @@
   gap: 0;
   height: 100%;
   min-width: 0;
+  padding: 0 18px 0 24px;
   width: 100%;
 }
 
@@ -484,6 +496,7 @@
   align-items: center;
   display: flex;
   flex-direction: row;
+  gap: 24px;
   height: 100%;
   justify-content: flex-start;
   min-width: 0;
@@ -503,7 +516,10 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  color: #d6d7d9;
   display: grid;
+  gap: 7px;
+  grid-template-columns: auto minmax(0, max-content);
   height: 100%;
   min-height: 0;
   min-width: max-content;
@@ -519,6 +535,7 @@
 
 .sam-shell .nav-item.active {
   background: transparent;
+  color: #1a9fff;
 }
 
 .sam-shell .nav-item.active::before {
@@ -526,6 +543,7 @@
   border-radius: 0;
   box-shadow: none;
   content: '';
+  height: 3px;
   inset: auto 0 0 0;
   position: absolute;
   width: auto;
@@ -550,8 +568,16 @@
   transform: none;
 }
 
+.sam-shell .nav-label {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .sam-shell .layout-content {
   align-items: stretch;
+  background: #0d141b;
   padding: 0;
 }
 
@@ -596,16 +622,28 @@
 @media (max-width: 760px) {
   .sam-titlebar {
     flex-basis: auto;
+    min-height: 48px;
     padding-right: 0;
   }
 
+  .sam-background,
+  .sam-backdrop {
+    top: 48px;
+  }
+
+  .sam-header-sidebar {
+    padding: 0 10px;
+  }
+
   .sam-shell .sam-header-nav {
+    gap: 18px;
     justify-content: flex-start;
   }
 
   .sam-shell .nav-item,
   .sam-shell .nav-item:hover,
   .sam-shell .nav-item.active {
+    grid-template-columns: 18px;
     min-width: 28px;
   }
 
@@ -711,92 +749,4 @@
   .sam-shell .nav-item.active {
     grid-template-columns: 18px;
   }
-}
-
-/* v5.2.39: global Acrylic/Mica foundation for the whole application shell. */
-.layout,
-.cinematic-shell.layout,
-.sam-shell.layout {
-  background: transparent;
-}
-
-.cinematic-shell {
-  --color-mica: var(--material-mica);
-}
-
-.cinematic-shell .cinematic-background,
-.sam-background {
-  filter: blur(20px) saturate(1.12);
-  inset: -24px;
-  opacity: 0;
-  transform: scale(1.04);
-}
-
-.cinematic-shell .cinematic-background.is-visible,
-.sam-background.is-visible {
-  opacity: 0.82;
-}
-
-.cinematic-backdrop,
-.sam-backdrop {
-  backdrop-filter: blur(22px) saturate(1.18);
-  -webkit-backdrop-filter: blur(22px) saturate(1.18);
-  background:
-    radial-gradient(circle at 66% 12%, rgba(90, 200, 250, 0.08), transparent 30%),
-    linear-gradient(90deg, rgba(10, 10, 10, 0.38), rgba(10, 10, 10, 0.16) 48%, rgba(10, 10, 10, 0.06)),
-    linear-gradient(180deg, rgba(10, 10, 10, 0.38), rgba(10, 10, 10, 0.1));
-  pointer-events: none;
-}
-
-.cinematic-shell.has-custom-background .cinematic-backdrop {
-  background:
-    radial-gradient(circle at 66% 12%, rgba(90, 200, 250, 0.065), transparent 30%),
-    linear-gradient(90deg, rgba(10, 10, 10, 0.3), rgba(10, 10, 10, 0.1) 48%, rgba(10, 10, 10, 0.02)),
-    linear-gradient(180deg, rgba(10, 10, 10, 0.26), rgba(10, 10, 10, 0.04));
-}
-
-:root[data-theme='light'] .cinematic-backdrop,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
-  background:
-    linear-gradient(90deg, rgba(243, 243, 243, 0.5), rgba(243, 243, 243, 0.24) 48%, rgba(243, 243, 243, 0.08)),
-    linear-gradient(180deg, rgba(243, 243, 243, 0.56), rgba(243, 243, 243, 0.12));
-}
-
-.cinematic-shell .header,
-.sam-titlebar {
-  backdrop-filter: blur(28px) saturate(1.18);
-  -webkit-backdrop-filter: blur(28px) saturate(1.18);
-  background: var(--material-acrylic);
-  border-bottom-color: var(--material-border);
-}
-
-.layout-container,
-.cinematic-shell .layout-content,
-.sam-shell .layout-content {
-  background: transparent;
-}
-
-.sidebar,
-.cinematic-shell .sidebar,
-.sam-shell .sidebar {
-  backdrop-filter: blur(30px) saturate(1.16);
-  -webkit-backdrop-filter: blur(30px) saturate(1.16);
-  background: var(--material-acrylic-subtle);
-  border-right-color: var(--material-border);
-}
-
-.nav-icon,
-.cinematic-shell .nav-icon {
-  backdrop-filter: blur(18px) saturate(1.16);
-  -webkit-backdrop-filter: blur(18px) saturate(1.16);
-  background: var(--material-acrylic-subtle);
-  border-color: var(--material-border);
-}
-
-.nav-item.active .nav-icon,
-.cinematic-shell .nav-item.active .nav-icon {
-  background:
-    linear-gradient(180deg, rgba(90, 200, 250, 0.2), rgba(90, 200, 250, 0.08)),
-    var(--material-acrylic-subtle);
-  border-color: rgba(90, 200, 250, 0.48);
 }

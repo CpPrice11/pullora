@@ -415,38 +415,3 @@
   background: #1b2d3c;
   border-radius: 2px;
 }
-
-/* v5.2.39: state and skeleton panels should be translucent Acrylic. */
-.cinematic-shell .state-panel,
-.state-panel {
-  background: var(--material-acrylic-subtle);
-  border-color: var(--material-border);
-  color: var(--color-text-secondary);
-  backdrop-filter: blur(28px) saturate(1.2);
-  -webkit-backdrop-filter: blur(28px) saturate(1.2);
-}
-
-.cinematic-shell .state-panel h3,
-.state-panel h3 {
-  color: var(--color-text);
-}
-
-.cinematic-shell .state-panel-mark,
-.state-panel-mark,
-.cinematic-shell .state-panel-action,
-.state-panel-action,
-.cinematic-shell .state-details pre,
-.state-details pre,
-.cinematic-shell .state-skeleton-card,
-.state-skeleton-card,
-.cinematic-shell .state-skeleton-icon,
-.state-skeleton-icon,
-.cinematic-shell .state-skeleton-line,
-.state-skeleton-line,
-.cinematic-shell .state-skeleton-action,
-.state-skeleton-action {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.014)),
-    rgba(255, 255, 255, 0.035);
-  border-color: var(--material-border);
-}
