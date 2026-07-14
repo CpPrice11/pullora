@@ -456,5 +456,11 @@ p {
 html,
 body,
 #root {
-  background: transparent !important;
+  background: #0b1118 !important;
+}
+
+:root[data-theme='light'],
+:root[data-theme='light'] body,
+:root[data-theme='light'] #root {
+  background: #eef2f6 !important;
 }

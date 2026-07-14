@@ -1244,6 +1244,8 @@ Object.assign(dictionaries.en, {
 Object.assign(dictionaries.uk, {
   'nav.navigation': 'Навігація',
   'nav.workspace': 'Робоча область',
+  'nav.desktopLibrary': 'Бібліотека застосунків',
+  'nav.skipToContent': 'Перейти до вмісту',
   'nav.source': 'Джерело',
   'nav.githubReleases': 'GitHub Releases',
   'nav.online': 'Онлайн',
@@ -1282,6 +1284,8 @@ Object.assign(dictionaries.uk, {
 Object.assign(dictionaries.en, {
   'nav.navigation': 'Navigation',
   'nav.workspace': 'Workspace',
+  'nav.desktopLibrary': 'Application library',
+  'nav.skipToContent': 'Skip to content',
   'nav.source': 'Source',
   'nav.githubReleases': 'GitHub Releases',
   'nav.online': 'Online',

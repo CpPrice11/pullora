@@ -49,6 +49,35 @@ type UninstallTarget = {
   installedApp: InstalledApp
 }
 
+type LibraryIconName = 'clock' | 'play' | 'star' | 'more'
+
+function LibraryIcon({ name, filled = false }: { name: LibraryIconName; filled?: boolean }) {
+  return (
+    <svg className="library-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+      {name === 'clock' && (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 7.5v5l3.25 2" />
+        </>
+      )}
+      {name === 'play' && <path className="icon-fill" d="m9 7 8 5-8 5Z" />}
+      {name === 'star' && (
+        <path
+          className={filled ? 'icon-fill' : undefined}
+          d="m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9Z"
+        />
+      )}
+      {name === 'more' && (
+        <>
+          <circle className="icon-fill" cx="5" cy="12" r="1.5" />
+          <circle className="icon-fill" cx="12" cy="12" r="1.5" />
+          <circle className="icon-fill" cx="19" cy="12" r="1.5" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 function repoLookupKey(owner: string, repo: string) {
   return `${owner}/${repo}`.toLowerCase()
 }
@@ -1470,7 +1499,7 @@ function LibraryPage({
               title={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
               aria-label={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
             >
-              {isFavorite ? '\u2605' : '\u2606'}
+              <LibraryIcon name="star" filled={isFavorite} />
             </button>
           </div>
           <h2>{featuredRepo.name}</h2>
@@ -1506,7 +1535,7 @@ function LibraryPage({
               aria-label={t('projectActions.open')}
               onClick={() => setHeroActionsOpen((current) => !current)}
             >
-              ...
+              <LibraryIcon name="more" />
             </button>
             {heroActionsOpen && (
               <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
@@ -1787,7 +1816,7 @@ function LibraryPage({
                   aria-pressed={viewMode === 'recent'}
                   onClick={openRecentView}
                 >
-                  <span aria-hidden="true">◷</span>
+                  <LibraryIcon name="clock" />
                 </button>
                 <button
                   type="button"
@@ -1797,7 +1826,7 @@ function LibraryPage({
                   aria-pressed={viewMode === 'ready'}
                   onClick={openReadyView}
                 >
-                  <span aria-hidden="true">▶</span>
+                  <LibraryIcon name="play" />
                 </button>
               </div>
 
