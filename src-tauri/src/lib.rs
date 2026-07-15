@@ -24,6 +24,28 @@ pub fn run() {
     let settings = load_runtime_settings(&config_dir).unwrap_or_default();
     let token = settings.github_token.clone();
 
+    match commands::installed::cleanup_incomplete_installs_at(
+        settings.installation_path.as_deref(),
+        &config_dir,
+    ) {
+        Ok(removed) if removed > 0 => {
+            let _ = storage::logs::append_log(
+                &config_dir,
+                &format!(
+                    "startup cleanup recovered or removed {} incomplete items",
+                    removed
+                ),
+            );
+        }
+        Err(error) => {
+            let _ = storage::logs::append_log(
+                &config_dir,
+                &format!("startup cleanup failed: {}", error),
+            );
+        }
+        _ => {}
+    }
+
     let state = AppState {
         github_client: Arc::new(GitHubClient::new(
             token,

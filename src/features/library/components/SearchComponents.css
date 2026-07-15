@@ -609,6 +609,7 @@
 }
 
 .asset-kind,
+.asset-architecture,
 .asset-recommended {
   border-radius: 999px;
   font-size: 12px;
@@ -621,6 +622,11 @@
   background: var(--color-primary-light);
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
+}
+
+.asset-architecture {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 .asset-recommended {
@@ -990,6 +996,33 @@
   margin-top: 10px;
 }
 
+.release-notes-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  margin-top: 10px;
+  min-width: 0;
+  padding: 11px 12px;
+}
+
+.release-notes-card h3 {
+  color: var(--color-text);
+  font-size: 13px;
+  margin: 0;
+}
+
+.release-notes-content {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  margin-top: 7px;
+  max-height: 180px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding-right: 4px;
+  white-space: pre-wrap;
+}
+
 .release-nav-actions {
   align-items: center;
   background:
@@ -1044,6 +1077,7 @@
 
 :root[data-theme='light'] .release-confirm-grid > div,
 :root[data-theme='light'] .release-install-path,
+:root[data-theme='light'] .release-notes-card,
 :root[data-theme='light'] .release-secondary-btn,
 :root[data-theme='light'] .download-action-btn {
   background: rgba(255, 255, 255, 0.72);
