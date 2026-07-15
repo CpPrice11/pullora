@@ -168,9 +168,8 @@ export type DownloadStage =
   | 'downloading'
   | 'verifying'
   | 'extracting'
-  | 'runningInstaller'
-  | 'detectingExecutable'
-  | 'registering'
+  | 'installing'
+  | 'launchChecking'
   | 'completed'
   | 'failed'
 

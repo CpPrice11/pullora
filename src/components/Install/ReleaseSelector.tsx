@@ -14,6 +14,7 @@ import { useI18n } from '../../i18n'
 import { compareVersionTags, formatBytes, formatDate } from '../../utils/format'
 import {
   classifyReleaseAsset,
+  classifyReleaseAssetArchitecture,
   releaseAssetKindLabelKey,
   type ReleaseAssetKind,
 } from '../../features/library/releaseAssetClassifier'
@@ -182,6 +183,9 @@ function ReleaseSelector({
   )
 
   const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
+  const selectedAssetArchitecture = selectedAsset
+    ? classifyReleaseAssetArchitecture(selectedAsset)
+    : 'unknown'
   const selectedAssetAutoInstallable = isAutoInstallable(selectedAssetKind)
   const activeDownload = activeDownloadId
     ? downloads.find((item) => item.id === activeDownloadId)
@@ -496,6 +500,7 @@ function ReleaseSelector({
                       <div className="release-asset-list">
                         {sortedAssets.map((asset) => {
                           const kind = getAssetKind(asset)
+                          const architecture = classifyReleaseAssetArchitecture(asset)
                           const isSelected = selectedAsset?.id === asset.id
                           const disabled = kind === 'unsupported'
 
@@ -510,7 +515,9 @@ function ReleaseSelector({
                             >
                               <span className="release-asset-main">
                                 <strong>{asset.name}</strong>
-                                <span>{formatBytes(asset.size, language)}</span>
+                                <span>
+                                  {formatBytes(asset.size, language)} · {t(`store.architecture.${architecture}`)}
+                                </span>
                               </span>
                               <span className="release-asset-badges">
                                 <span className="asset-kind">{t(assetKindKey(kind))}</span>
@@ -532,6 +539,9 @@ function ReleaseSelector({
                       <div>
                         <span className="asset-kind">
                           {selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}
+                        </span>
+                        <span className="asset-architecture">
+                          {t(`store.architecture.${selectedAssetArchitecture}`)}
                         </span>
                         {recommendedAsset?.id === selectedAsset.id && (
                           <span className="asset-recommended">{t('release.recommended')}</span>
@@ -586,8 +596,12 @@ function ReleaseSelector({
                         <strong>{selectedAsset.name}</strong>
                       </div>
                       <div>
-                        <span>{t('release.fileType')}</span>
-                        <strong>{selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}</strong>
+                        <span>{t('release.fileDetails')}</span>
+                        <strong>
+                          {selectedAssetKind ? t(assetKindKey(selectedAssetKind)) : t('release.assetTypeUnsupported')}
+                          {' · '}
+                          {t(`store.architecture.${selectedAssetArchitecture}`)}
+                        </strong>
                       </div>
                       <div>
                         <span>{t('release.size')}</span>
@@ -602,6 +616,12 @@ function ReleaseSelector({
                         <strong>{t(intentKey(installIntent))}</strong>
                       </div>
                     </div>
+                    <section className="release-notes-card" aria-labelledby="release-notes-title">
+                      <h3 id="release-notes-title">{t('release.notesTitle')}</h3>
+                      <div className="release-notes-content">
+                        {selectedRelease.body?.trim() || t('release.notesEmpty')}
+                      </div>
+                    </section>
                     <div className="release-install-path">
                       <span>{t('release.installPath')}</span>
                       <strong>{installPath || t('release.installPathNotSelected')}</strong>

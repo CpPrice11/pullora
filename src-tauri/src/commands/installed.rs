@@ -371,38 +371,42 @@ pub async fn open_installed_app_dir(
 #[tauri::command]
 pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<usize, String> {
     let settings = state.settings.lock().await;
-    let install_path = settings.installation_path.clone().unwrap_or_default();
+    let install_path = settings.installation_path.clone();
     drop(settings);
 
-    if install_path.trim().is_empty() {
-        return cleanup_install_caches(0);
-    }
-    let root = crate::storage::path_scope::installation_root(&install_path)?;
-    if !root.exists() {
-        return cleanup_install_caches(0);
+    cleanup_incomplete_installs_at(install_path.as_deref(), &get_config_dir())
+}
+
+pub fn cleanup_incomplete_installs_at(
+    install_path: Option<&str>,
+    config_dir: &std::path::Path,
+) -> Result<usize, String> {
+    let mut removed = 0;
+    if let Some(install_path) = install_path.filter(|path| !path.trim().is_empty()) {
+        let root = crate::storage::path_scope::installation_root(install_path)?;
+        removed += cleanup_install_root(&root)?;
     }
 
-    let mut removed = 0;
-    let download_dir = root.join(".pullora-downloads");
-    if download_dir.exists() {
-        for entry in std::fs::read_dir(&download_dir)
-            .map_err(|e| e.to_string())?
-            .flatten()
-        {
-            let path = entry.path();
-            let file_type = entry.file_type().map_err(|e| e.to_string())?;
-            if file_type.is_symlink() {
-                continue;
-            }
-            if file_type.is_file() {
-                std::fs::remove_file(&path).map_err(|e| e.to_string())?;
-                removed += 1;
-            } else if file_type.is_dir() {
-                std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
-                removed += 1;
-            }
+    for cache_name in ["installer-cache", "package-cache"] {
+        let cache_dir = config_dir.join(cache_name);
+        if cache_dir.exists() {
+            let cache_dir =
+                crate::storage::path_scope::ensure_within(&cache_dir, config_dir, false)?;
+            removed += cleanup_install_root(&cache_dir)?;
         }
     }
+
+    Ok(removed)
+}
+
+fn cleanup_install_root(root: &std::path::Path) -> Result<usize, String> {
+    if !root.exists() {
+        return Ok(0);
+    }
+
+    let mut removed = cleanup_dir_contents(&root.join(".pullora-downloads"), 0)?;
+    let download_dir = root.join(".pullora-downloads");
+    let _ = std::fs::remove_dir(download_dir);
 
     let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
     for app_entry in entries.flatten() {
@@ -414,40 +418,73 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
         let Ok(version_entries) = std::fs::read_dir(&app_path) else {
             continue;
         };
-        for version_entry in version_entries.flatten() {
+        let version_entries = version_entries.flatten().collect::<Vec<_>>();
+
+        for version_entry in &version_entries {
+            let path = version_entry.path();
+            let name = version_entry.file_name().to_string_lossy().to_string();
+            if !version_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
+                continue;
+            }
+            let Some((version_name, transaction_id)) = transaction_parts(&name, ".backup-") else {
+                continue;
+            };
+
+            let version_dir = app_path.join(version_name);
+            let partial_dir = app_path.join(format!("{}.partial-{}", version_name, transaction_id));
+            if partial_dir.exists() || !version_dir.exists() {
+                remove_path(&version_dir)?;
+                std::fs::rename(&path, &version_dir).map_err(|e| e.to_string())?;
+            } else {
+                std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+            }
+            removed += 1;
+        }
+
+        for version_entry in version_entries {
             let path = version_entry.path();
             let name = version_entry.file_name().to_string_lossy().to_string();
             if version_entry.file_type().is_ok_and(|kind| kind.is_dir())
-                && (name.contains(".partial-") || name.contains(".backup-"))
+                && transaction_parts(&name, ".partial-").is_some()
+                && path.exists()
             {
-                std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+                std::fs::remove_dir_all(path).map_err(|e| e.to_string())?;
                 removed += 1;
             }
         }
     }
 
-    cleanup_install_caches(removed)
-}
-
-fn cleanup_install_caches(initial_removed: usize) -> Result<usize, String> {
-    let mut removed = initial_removed;
-    for cache_dir in [
-        get_config_dir().join("installer-cache"),
-        get_config_dir().join("package-cache"),
-    ] {
-        removed = cleanup_cache_dir(&cache_dir, removed)?;
-    }
-
     Ok(removed)
 }
 
-fn cleanup_cache_dir(cache_dir: &std::path::Path, initial_removed: usize) -> Result<usize, String> {
+fn transaction_parts<'a>(name: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
+    let (version, transaction_id) = name.rsplit_once(marker)?;
+    (!version.is_empty()
+        && !transaction_id.is_empty()
+        && crate::storage::path_scope::safe_component(version) == version
+        && crate::storage::path_scope::safe_component(transaction_id) == transaction_id)
+        .then_some((version, transaction_id))
+}
+
+fn remove_path(path: &std::path::Path) -> Result<(), String> {
+    let Ok(metadata) = std::fs::symlink_metadata(path) else {
+        return Ok(());
+    };
+    if metadata.is_dir() && !metadata.file_type().is_symlink() {
+        std::fs::remove_dir_all(path).map_err(|e| e.to_string())
+    } else {
+        std::fs::remove_file(path).map_err(|e| e.to_string())
+    }
+}
+
+fn cleanup_dir_contents(
+    cache_dir: &std::path::Path,
+    initial_removed: usize,
+) -> Result<usize, String> {
     let mut removed = initial_removed;
     if !cache_dir.exists() {
         return Ok(removed);
     }
-    let config_dir = get_config_dir();
-    let cache_dir = crate::storage::path_scope::ensure_within(cache_dir, &config_dir, false)?;
 
     for entry in std::fs::read_dir(cache_dir)
         .map_err(|e| e.to_string())?
@@ -532,4 +569,48 @@ fn log_launch_event(owner: &str, repo: &str, tag: &str, message: &str) {
         &config_dir,
         &format!("launch {}/{}@{}: {}", owner, repo, tag, message),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::cleanup_install_root;
+
+    #[test]
+    fn cleanup_restores_interrupted_replacement_and_removes_leftovers() {
+        let root =
+            std::env::temp_dir().join(format!("pullora-install-cleanup-{}", uuid::Uuid::new_v4()));
+        let app = root.join("owner-repo");
+        let current = app.join("v1");
+        let backup = app.join("v1.backup-job");
+        let partial = app.join("v1.partial-job");
+        let orphan = app.join("v2.partial-orphan");
+        let finished_backup = app.join("v3.backup-finished");
+        let download_dir = root.join(".pullora-downloads");
+
+        for dir in [
+            &current,
+            &backup,
+            &partial,
+            &orphan,
+            &finished_backup,
+            &download_dir,
+            &app.join("v3"),
+        ] {
+            std::fs::create_dir_all(dir).unwrap();
+        }
+        std::fs::write(current.join("broken.exe"), b"broken").unwrap();
+        std::fs::write(backup.join("working.exe"), b"working").unwrap();
+        std::fs::write(download_dir.join("asset.tmp"), b"partial").unwrap();
+
+        assert_eq!(cleanup_install_root(&root).unwrap(), 5);
+        assert!(current.join("working.exe").exists());
+        assert!(!current.join("broken.exe").exists());
+        assert!(!backup.exists());
+        assert!(!partial.exists());
+        assert!(!orphan.exists());
+        assert!(!finished_backup.exists());
+        assert!(!download_dir.exists());
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

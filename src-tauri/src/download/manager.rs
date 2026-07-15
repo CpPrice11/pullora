@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use tauri::{AppHandle, Emitter};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 
 use super::extractor;
 use crate::error::normalize_command_error;
@@ -15,6 +15,8 @@ use crate::error::normalize_command_error;
 const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
 const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
 const INSTALLER_PROCESS_WAIT_TIMEOUT: Duration = Duration::from_secs(20);
+const DOWNLOAD_ATTEMPTS: u8 = 3;
+const MAX_PARALLEL_DOWNLOADS: usize = 3;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,9 +53,8 @@ pub enum DownloadStage {
     Downloading,
     Verifying,
     Extracting,
-    RunningInstaller,
-    DetectingExecutable,
-    Registering,
+    Installing,
+    LaunchChecking,
     Completed,
     Failed,
 }
@@ -76,6 +77,7 @@ struct DownloadTask {
 pub struct DownloadManager {
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
+    download_slots: Arc<Semaphore>,
 }
 
 impl DownloadManager {
@@ -83,6 +85,7 @@ impl DownloadManager {
         Self {
             active: Arc::new(Mutex::new(vec![])),
             cancelled: Arc::new(Mutex::new(HashSet::new())),
+            download_slots: Arc::new(Semaphore::new(MAX_PARALLEL_DOWNLOADS)),
         }
     }
 
@@ -94,6 +97,7 @@ impl DownloadManager {
         let install_kind = install_kind_for_asset(&request.file_name)?;
         let active = self.active.clone();
         let cancelled = self.cancelled.clone();
+        let download_slots = self.download_slots.clone();
         let id = request.id.clone();
 
         let progress = DownloadProgress {
@@ -135,13 +139,18 @@ impl DownloadManager {
             let tag = task.request.tag.clone();
             log_download_event(&owner, &repo, &tag, "download started");
 
-            let result = download_task(
-                app.clone(),
-                task,
-                active_clone.clone(),
-                cancelled_clone.clone(),
-            )
-            .await;
+            let result = match download_slots.acquire_owned().await {
+                Ok(_permit) => {
+                    download_task(
+                        app.clone(),
+                        task,
+                        active_clone.clone(),
+                        cancelled_clone.clone(),
+                    )
+                    .await
+                }
+                Err(error) => Err(error.to_string()),
+            };
 
             match result {
                 Ok(()) => {
@@ -266,19 +275,22 @@ async fn download_task(
         install_kind,
     } = task;
 
+    stop_if_cancelled(&cancelled, &id).await?;
+
     let client = Client::builder()
         .user_agent("Pullora/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
 
-    // HEAD request to get content length
-    let head = client.head(&url).send().await.map_err(|e| e.to_string())?;
-    let total_size = head
-        .headers()
-        .get(reqwest::header::CONTENT_LENGTH)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(0);
+    let total_size = match client.head(&url).send().await {
+        Ok(head) => head
+            .headers()
+            .get(reqwest::header::CONTENT_LENGTH)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(0),
+        Err(_) => 0,
+    };
 
     stop_if_cancelled(&cancelled, &id).await?;
 
@@ -295,51 +307,41 @@ async fn download_task(
     std::fs::create_dir_all(&download_dir)
         .map_err(|e| format!("Не вдалося підготувати кеш завантаження Pullora: {}", e))?;
     let tmp_path = download_dir.join(format!("{}-{}", id, safe_file_name(&file_name)));
+    let attempt_context = DownloadAttemptContext {
+        app: &app,
+        active: &active,
+        cancelled: &cancelled,
+        id: &id,
+        total_size,
+    };
 
-    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
-    if !response.status().is_success() {
-        return Err(format!("HTTP {}", response.status()));
-    }
-
-    let mut stream = response.bytes_stream();
-    let mut out = tokio::fs::File::create(&tmp_path)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let mut downloaded: u64 = 0;
-
-    while let Some(chunk) = stream.next().await {
-        if is_cancelled(&cancelled, &id).await {
-            let _ = fs::remove_file(&tmp_path);
-            return Err("Download canceled".to_string());
-        }
-
-        let chunk = match chunk {
-            Ok(chunk) => chunk,
-            Err(error) => {
-                let _ = fs::remove_file(&tmp_path);
-                return Err(error.to_string());
+    let mut attempt = 1;
+    let downloaded = loop {
+        match download_asset_once(&client, &url, &tmp_path, &attempt_context).await {
+            Ok(downloaded) => break downloaded,
+            Err(DownloadAttemptError::Cancelled) => {
+                return Err("Download canceled".to_string());
             }
-        };
-        if let Err(error) = tokio::io::AsyncWriteExt::write_all(&mut out, &chunk).await {
-            let _ = fs::remove_file(&tmp_path);
-            return Err(error.to_string());
+            Err(DownloadAttemptError::Fatal(error)) => return Err(error),
+            Err(DownloadAttemptError::Retryable(error)) if attempt < DOWNLOAD_ATTEMPTS => {
+                log_download_event(
+                    &owner,
+                    &repo,
+                    &tag,
+                    &format!("download attempt {} failed, retrying: {}", attempt, error),
+                );
+                tokio::time::sleep(Duration::from_millis(500 * u64::from(attempt))).await;
+                stop_if_cancelled(&cancelled, &id).await?;
+                attempt += 1;
+                emit_progress(&app, &active, &id, |p| {
+                    p.downloaded_size = 0;
+                    p.progress = 0.0;
+                })
+                .await;
+            }
+            Err(DownloadAttemptError::Retryable(error)) => return Err(error),
         }
-        downloaded += chunk.len() as u64;
-
-        let progress = if total_size > 0 {
-            (downloaded as f64 / total_size as f64) * 100.0
-        } else {
-            0.0
-        };
-
-        emit_progress(&app, &active, &id, |p| {
-            p.downloaded_size = downloaded;
-            p.progress = progress;
-        })
-        .await;
-    }
-    drop(out);
+    };
 
     if is_cancelled(&cancelled, &id).await {
         let _ = fs::remove_file(&tmp_path);
@@ -384,7 +386,7 @@ async fn download_task(
 
         emit_progress(&app, &active, &id, |p| {
             p.status = DownloadStatus::Extracting;
-            p.stage = DownloadStage::RunningInstaller;
+            p.stage = DownloadStage::Installing;
             p.progress = 100.0;
         })
         .await;
@@ -424,7 +426,7 @@ async fn download_task(
         };
 
         emit_progress(&app, &active, &id, |p| {
-            p.stage = DownloadStage::DetectingExecutable;
+            p.stage = DownloadStage::LaunchChecking;
             p.progress = 100.0;
         })
         .await;
@@ -458,7 +460,6 @@ async fn download_task(
         };
 
         emit_progress(&app, &active, &id, |p| {
-            p.stage = DownloadStage::Registering;
             p.executable_path = Some(executable_path.display().to_string());
             p.progress = 100.0;
         })
@@ -525,12 +526,6 @@ async fn download_task(
         return Err("Download canceled".to_string());
     }
 
-    emit_progress(&app, &active, &id, |p| {
-        p.stage = DownloadStage::DetectingExecutable;
-        p.progress = 100.0;
-    })
-    .await;
-
     let resolved_executable = if executable.trim().is_empty()
         || !partial_dir.join(&executable).exists()
     {
@@ -548,11 +543,23 @@ async fn download_task(
         executable.clone()
     };
 
+    emit_progress(&app, &active, &id, |p| {
+        p.stage = DownloadStage::Installing;
+        p.progress = 100.0;
+    })
+    .await;
+
     if let Err(error) = install_version_dir(&partial_dir, &version_dir, &backup_dir) {
         let _ = fs::remove_file(&tmp_path);
         let _ = cleanup_path(&partial_dir);
         return Err(error);
     }
+
+    emit_progress(&app, &active, &id, |p| {
+        p.stage = DownloadStage::LaunchChecking;
+        p.progress = 100.0;
+    })
+    .await;
 
     let executable_path = version_dir.join(&resolved_executable);
     if !executable_path.exists() {
@@ -570,7 +577,6 @@ async fn download_task(
         let fallback_executable_path = fallback_executable.display().to_string();
 
         emit_progress(&app, &active, &id, |p| {
-            p.stage = DownloadStage::Registering;
             p.executable_path = Some(fallback_executable_path);
             p.progress = 100.0;
         })
@@ -612,7 +618,6 @@ async fn download_task(
     }
 
     emit_progress(&app, &active, &id, |p| {
-        p.stage = DownloadStage::Registering;
         p.executable_path = Some(executable_path.display().to_string());
         p.progress = 100.0;
     })
@@ -651,6 +656,95 @@ async fn download_task(
     .await;
 
     Ok(())
+}
+
+enum DownloadAttemptError {
+    Retryable(String),
+    Fatal(String),
+    Cancelled,
+}
+
+struct DownloadAttemptContext<'a> {
+    app: &'a AppHandle,
+    active: &'a Arc<Mutex<Vec<DownloadProgress>>>,
+    cancelled: &'a Arc<Mutex<HashSet<String>>>,
+    id: &'a str,
+    total_size: u64,
+}
+
+async fn download_asset_once(
+    client: &Client,
+    url: &str,
+    tmp_path: &Path,
+    context: &DownloadAttemptContext<'_>,
+) -> Result<u64, DownloadAttemptError> {
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|error| DownloadAttemptError::Retryable(error.to_string()))?;
+    let status = response.status();
+    if !status.is_success() {
+        let error = format!("HTTP {}", status);
+        return Err(if retryable_download_status(status) {
+            DownloadAttemptError::Retryable(error)
+        } else {
+            DownloadAttemptError::Fatal(error)
+        });
+    }
+
+    let expected_size = response.content_length();
+    let mut stream = response.bytes_stream();
+    let mut out = tokio::fs::File::create(tmp_path)
+        .await
+        .map_err(|error| DownloadAttemptError::Fatal(error.to_string()))?;
+    let mut downloaded = 0;
+
+    while let Some(chunk) = stream.next().await {
+        if is_cancelled(context.cancelled, context.id).await {
+            let _ = fs::remove_file(tmp_path);
+            return Err(DownloadAttemptError::Cancelled);
+        }
+
+        let chunk = chunk.map_err(|error| {
+            let _ = fs::remove_file(tmp_path);
+            DownloadAttemptError::Retryable(error.to_string())
+        })?;
+        tokio::io::AsyncWriteExt::write_all(&mut out, &chunk)
+            .await
+            .map_err(|error| {
+                let _ = fs::remove_file(tmp_path);
+                DownloadAttemptError::Fatal(error.to_string())
+            })?;
+        downloaded += chunk.len() as u64;
+
+        let progress = if context.total_size > 0 {
+            (downloaded as f64 / context.total_size as f64) * 100.0
+        } else {
+            0.0
+        };
+        emit_progress(context.app, context.active, context.id, |p| {
+            p.downloaded_size = downloaded;
+            p.progress = progress;
+        })
+        .await;
+    }
+    drop(out);
+
+    if expected_size.is_some_and(|size| size != downloaded) {
+        let _ = fs::remove_file(tmp_path);
+        return Err(DownloadAttemptError::Retryable(
+            "Incomplete download".to_string(),
+        ));
+    }
+
+    Ok(downloaded)
+}
+
+fn retryable_download_status(status: reqwest::StatusCode) -> bool {
+    status == reqwest::StatusCode::REQUEST_TIMEOUT
+        || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+        || status.is_server_error()
 }
 
 fn record_installed_version(
@@ -1325,4 +1419,48 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     let mut best = None;
     scan(dir, &mut best);
     best
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{retryable_download_status, DownloadStage, MAX_PARALLEL_DOWNLOADS};
+
+    #[tokio::test]
+    async fn caps_parallel_download_slots() {
+        let slots = tokio::sync::Semaphore::new(MAX_PARALLEL_DOWNLOADS);
+        let mut permits = Vec::new();
+        for _ in 0..MAX_PARALLEL_DOWNLOADS {
+            permits.push(slots.acquire().await.unwrap());
+        }
+        assert!(slots.try_acquire().is_err());
+        permits.pop();
+        assert!(slots.try_acquire().is_ok());
+    }
+
+    #[test]
+    fn retries_only_temporary_http_failures() {
+        assert!(retryable_download_status(
+            reqwest::StatusCode::REQUEST_TIMEOUT
+        ));
+        assert!(retryable_download_status(
+            reqwest::StatusCode::TOO_MANY_REQUESTS
+        ));
+        assert!(retryable_download_status(reqwest::StatusCode::BAD_GATEWAY));
+        assert!(!retryable_download_status(reqwest::StatusCode::NOT_FOUND));
+        assert!(!retryable_download_status(
+            reqwest::StatusCode::UNAUTHORIZED
+        ));
+    }
+
+    #[test]
+    fn serializes_public_installation_stages_for_the_frontend() {
+        assert_eq!(
+            serde_json::to_string(&DownloadStage::Installing).unwrap(),
+            "\"installing\""
+        );
+        assert_eq!(
+            serde_json::to_string(&DownloadStage::LaunchChecking).unwrap(),
+            "\"launchChecking\""
+        );
+    }
 }

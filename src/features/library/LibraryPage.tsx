@@ -153,6 +153,7 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
 const favoritesFolderId = 'favorites'
 const uncategorizedFolderId = 'uncategorized'
 const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
+const dismissedUpdatesStorageKey = 'pullora-dismissed-update-versions-v1'
 
 function normalizeRepoKey(owner: string, repo: string) {
   return projectArtKey(owner, repo)
@@ -212,6 +213,18 @@ function loadCollapsedFolderIds() {
     const parsed = JSON.parse(rawIds) as unknown
     if (!Array.isArray(parsed)) return new Set<string>()
     return new Set(parsed.filter((id): id is string => typeof id === 'string'))
+  } catch {
+    return new Set<string>()
+  }
+}
+
+function loadDismissedUpdateKeys() {
+  if (typeof window === 'undefined') return new Set<string>()
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(dismissedUpdatesStorageKey) ?? '[]') as unknown
+    if (!Array.isArray(parsed)) return new Set<string>()
+    return new Set(parsed.filter((key): key is string => typeof key === 'string').slice(-500))
   } catch {
     return new Set<string>()
   }
@@ -319,7 +332,9 @@ function LibraryPage({
   const [artError, setArtError] = useState<string | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
-  const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(new Set())
+  const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
+    loadDismissedUpdateKeys,
+  )
   const [batchUpdating, setBatchUpdating] = useState(false)
   const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
   const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
@@ -468,6 +483,18 @@ function LibraryPage({
       JSON.stringify(Array.from(collapsedFolderIds)),
     )
   }, [collapsedFolderIds])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(
+        dismissedUpdatesStorageKey,
+        JSON.stringify(Array.from(dismissedUpdateKeys)),
+      )
+    } catch {
+      // Пропуск у поточному сеансі працює навіть без доступу до сховища.
+    }
+  }, [dismissedUpdateKeys])
 
   useEffect(() => {
     const favoriteRepoKeys = favorites
@@ -896,6 +923,13 @@ function LibraryPage({
     })
   }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
 
+  const activeDismissedUpdateCount = useMemo(() => libraryRepositories.reduce((count, repo) => {
+    const latestVersion = getLatestVersion(repo)
+    return latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion))
+      ? count + 1
+      : count
+  }, 0), [dismissedUpdateKeys, getLatestVersion, libraryRepositories])
+
   const displayFolders = useMemo(() => cleanLibraryFolders(libraryFolders), [libraryFolders])
   const favoritesByRepoKey = useMemo(() => {
     return new Map(
@@ -1194,7 +1228,7 @@ function LibraryPage({
   const renderUpdatesCenter = () => {
     if (filter !== 'updates') return null
 
-    const skippedCount = dismissedUpdateKeys.size
+    const skippedCount = activeDismissedUpdateCount
     const updatesEmptyKey = checkingUpdates
       ? 'updates.emptyChecking'
       : latestVersionErrorCount > 0
