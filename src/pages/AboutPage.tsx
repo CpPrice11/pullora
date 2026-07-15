@@ -19,11 +19,13 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.3.0'
+const FALLBACK_CURRENT_VERSION = 'v5.4.0'
+const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
   release: GitHubRelease
   asset: GitHubAsset
+  checksumAsset: GitHubAsset
   action: 'update' | 'rollback'
 }
 
@@ -54,6 +56,10 @@ function pickPortableLauncherAsset(assets: GitHubAsset[]) {
   return candidates.find((asset) => asset.name.toLowerCase().endsWith('.zip')) ??
     candidates.find((asset) => asset.name.toLowerCase().endsWith('.exe')) ??
     null
+}
+
+function pickChecksumAsset(assets: GitHubAsset[]) {
+  return assets.find((asset) => asset.name === CHECKSUM_MANIFEST_NAME) ?? null
 }
 
 function releaseFilterLabelKey(filter: AboutReleaseFilter) {
@@ -171,16 +177,18 @@ function AboutPage() {
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
   const rollbackCount = releases.filter((release) =>
     pickPortableLauncherAsset(release.assets) &&
+    pickChecksumAsset(release.assets) &&
     release.tag_name !== currentVersion &&
     compareVersionTags(release.tag_name, currentVersion) < 0
   ).length
   const filteredReleases = useMemo(() => {
     return releases.filter((release) => {
       const hasPortable = Boolean(pickPortableLauncherAsset(release.assets))
+      const hasChecksum = Boolean(pickChecksumAsset(release.assets))
       const isCurrent = release.tag_name === currentVersion
       const comparison = compareVersionTags(release.tag_name, currentVersion)
 
-      if (releaseFilter === 'rollback') return hasPortable && !isCurrent && comparison < 0
+      if (releaseFilter === 'rollback') return hasPortable && hasChecksum && !isCurrent && comparison < 0
       if (releaseFilter === 'current') return isCurrent
       return true
     })
@@ -193,9 +201,10 @@ function AboutPage() {
     })
     : null
 
-  const getReleaseStatus = (tagName: string, hasPortableAsset: boolean) => {
-    if (!hasPortableAsset) return t('about.portableUnavailableStatus')
+  const getReleaseStatus = (tagName: string, hasPortableAsset: boolean, hasChecksum: boolean) => {
     if (tagName === currentVersion) return t('about.currentStatus')
+    if (!hasPortableAsset) return t('about.portableUnavailableStatus')
+    if (!hasChecksum) return t('about.checksumUnavailableStatus')
     return compareVersionTags(tagName, currentVersion) > 0
       ? t('about.newerStatus')
       : t('about.olderStatus')
@@ -203,9 +212,15 @@ function AboutPage() {
 
   const requestActivateRelease = (release: GitHubRelease) => {
     const asset = pickPortableLauncherAsset(release.assets)
+    const checksumAsset = pickChecksumAsset(release.assets)
 
     if (!asset) {
       setInstallError(t('about.noPortableAsset'))
+      return
+    }
+
+    if (!checksumAsset) {
+      setInstallError(t('about.noChecksumManifest'))
       return
     }
 
@@ -213,6 +228,7 @@ function AboutPage() {
     setPendingAction({
       release,
       asset,
+      checksumAsset,
       action: compareVersionTags(release.tag_name, currentVersion) > 0 ? 'update' : 'rollback',
     })
   }
@@ -227,6 +243,7 @@ function AboutPage() {
         pendingAction.release.tag_name,
         pendingAction.asset.browser_download_url,
         pendingAction.asset.name,
+        pendingAction.checksumAsset.browser_download_url,
       )
     } catch (err) {
       setInstallError(
@@ -397,15 +414,16 @@ function AboutPage() {
             <div className="about-release-list">
               {filteredReleases.map((release) => {
                 const portableAsset = pickPortableLauncherAsset(release.assets)
+                const checksumAsset = pickChecksumAsset(release.assets)
                 const isCurrent = release.tag_name === currentVersion
-                const canActivate = Boolean(portableAsset) && !isCurrent
-                const statusClass = !portableAsset
+                const canActivate = Boolean(portableAsset && checksumAsset) && !isCurrent
+                const statusClass = isCurrent
+                  ? 'current'
+                  : !portableAsset || !checksumAsset
                   ? 'missing'
-                  : isCurrent
-                    ? 'current'
-                    : compareVersionTags(release.tag_name, currentVersion) > 0
-                      ? 'newer'
-                      : 'older'
+                  : compareVersionTags(release.tag_name, currentVersion) > 0
+                    ? 'newer'
+                    : 'older'
                 const menuOpen = menuReleaseId === release.id
 
                 return (
@@ -414,7 +432,7 @@ function AboutPage() {
                     className={`about-release-link about-release-link--${statusClass} ${
                       isCurrent ? 'active' : ''
                     }`}
-                    aria-label={`${release.tag_name}, ${getReleaseStatus(release.tag_name, Boolean(portableAsset))}`}
+                    aria-label={`${release.tag_name}, ${getReleaseStatus(release.tag_name, Boolean(portableAsset), Boolean(checksumAsset))}`}
                   >
                     <div className="about-release-orb" aria-hidden="true">
                       <span>{release.tag_name.replace(/^v/i, '').split('.')[0] ?? 'v'}</span>
@@ -428,7 +446,7 @@ function AboutPage() {
                           </span>
                         )}
                         <span className={`about-release-status ${statusClass}`}>
-                          {getReleaseStatus(release.tag_name, Boolean(portableAsset))}
+                          {getReleaseStatus(release.tag_name, Boolean(portableAsset), Boolean(checksumAsset))}
                         </span>
                       </div>
                       <span className="about-release-date">
@@ -440,6 +458,11 @@ function AboutPage() {
                       {!portableAsset && (
                         <span className="about-release-warning">
                           {t('about.portableMissing')}
+                        </span>
+                      )}
+                      {portableAsset && !checksumAsset && !isCurrent && (
+                        <span className="about-release-warning">
+                          {t('about.checksumManifestMissing')}
                         </span>
                       )}
                     </div>

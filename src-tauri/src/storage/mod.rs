@@ -2,7 +2,9 @@ pub mod favorites;
 pub mod installed;
 pub mod library_folders;
 pub mod logs;
+pub mod path_scope;
 pub mod project_art;
+pub mod secret_store;
 pub mod settings;
 
 #[derive(Debug)]

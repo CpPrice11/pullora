@@ -1698,6 +1698,8 @@ Object.assign(dictionaries.uk, {
   'errors.launcherDirectoryUnavailable': 'Не вдалося визначити папку Pullora.',
   'errors.installPathNotDirectory': 'Шлях встановлення не є папкою.',
   'errors.installPathUnavailable': 'Не вдалося підготувати папку встановлення.',
+  'errors.installPathUnsafe': 'Обери окрему абсолютну папку встановлення, а не корінь диска.',
+  'errors.pathOutsideAllowedRoots': 'Pullora заблокувала шлях поза своїми папками та вибраною папкою встановлення.',
   'errors.legacyInstallPathMissing': 'Для старої версії не збережено папку встановлення. Встанови її ще раз.',
   'errors.appNotInstalled': 'Застосунок не встановлено.',
   'errors.activeVersionNotFound': 'Активну версію не знайдено.',
@@ -1707,6 +1709,7 @@ Object.assign(dictionaries.uk, {
   'errors.exportPathRequired': 'Обери шлях для експорту.',
   'errors.importPathRequired': 'Обери файл для імпорту.',
   'errors.installFailed': 'Не вдалося встановити застосунок. Спробуй ще раз або обери інший файл.',
+  'errors.secretStoreUnavailable': 'Системне сховище секретів недоступне. Перевір налаштування облікових даних системи.',
 })
 
 Object.assign(dictionaries.en, {
@@ -1724,6 +1727,8 @@ Object.assign(dictionaries.en, {
   'errors.launcherDirectoryUnavailable': 'Could not locate the Pullora folder.',
   'errors.installPathNotDirectory': 'The install path is not a folder.',
   'errors.installPathUnavailable': 'Could not prepare the install folder.',
+  'errors.installPathUnsafe': 'Choose a dedicated absolute install folder, not a drive root.',
+  'errors.pathOutsideAllowedRoots': 'Pullora blocked a path outside its folders and the selected install folder.',
   'errors.legacyInstallPathMissing': 'The install folder was not saved for this older version. Install it again.',
   'errors.appNotInstalled': 'The app is not installed.',
   'errors.activeVersionNotFound': 'The active version was not found.',
@@ -1733,6 +1738,23 @@ Object.assign(dictionaries.en, {
   'errors.exportPathRequired': 'Choose an export path.',
   'errors.importPathRequired': 'Choose a file to import.',
   'errors.installFailed': 'Could not install the app. Try again or choose another file.',
+  'errors.secretStoreUnavailable': 'The system credential store is unavailable. Check the operating system credential settings.',
+})
+
+Object.assign(dictionaries.uk, {
+  'errors.launcherChecksumInvalid': 'Маніфест SHA-256 релізу відсутній або має неправильний формат. Оновлення скасовано.',
+  'errors.launcherChecksumMismatch': 'SHA-256 завантаженого файлу не збігається з релізом. Оновлення скасовано.',
+  'about.checksumUnavailableStatus': 'Немає SHA-256',
+  'about.noChecksumManifest': 'У релізі немає SHA256SUMS.txt, тому цю версію неможливо безпечно активувати.',
+  'about.checksumManifestMissing': 'Маніфест SHA-256 відсутній',
+})
+
+Object.assign(dictionaries.en, {
+  'errors.launcherChecksumInvalid': 'The release SHA-256 manifest is missing or malformed. The update was cancelled.',
+  'errors.launcherChecksumMismatch': 'The downloaded file SHA-256 does not match the release. The update was cancelled.',
+  'about.checksumUnavailableStatus': 'SHA-256 unavailable',
+  'about.noChecksumManifest': 'This release has no SHA256SUMS.txt, so this version cannot be activated safely.',
+  'about.checksumManifestMissing': 'SHA-256 manifest missing',
 })
 
 interface LanguageContextValue {

@@ -9,18 +9,19 @@ mod storage;
 
 use download::DownloadManager;
 use github::GitHubClient;
-use storage::{get_config_dir, settings::load_settings};
+use storage::{get_config_dir, settings::load_runtime_settings};
 
 pub struct AppState {
     pub github_client: Arc<GitHubClient>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
     pub download_manager: Arc<DownloadManager>,
+    pub launcher_update_lock: Mutex<()>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config_dir = get_config_dir();
-    let settings = load_settings(&config_dir).unwrap_or_default();
+    let settings = load_runtime_settings(&config_dir).unwrap_or_default();
     let token = settings.github_token.clone();
 
     let state = AppState {
@@ -30,6 +31,7 @@ pub fn run() {
         )),
         settings: Arc::new(Mutex::new(settings)),
         download_manager: Arc::new(DownloadManager::new()),
+        launcher_update_lock: Mutex::new(()),
     };
 
     tauri::Builder::default()

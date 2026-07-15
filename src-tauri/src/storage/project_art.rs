@@ -124,20 +124,23 @@ fn image_mime(path: &Path) -> Option<&'static str> {
     }
 }
 
-fn path_to_data_url(path: &str) -> Option<String> {
-    let path = PathBuf::from(path);
+fn path_to_data_url(path: &str, config_dir: &Path) -> Option<String> {
+    let path = super::path_scope::ensure_within(Path::new(path), config_dir, false).ok()?;
     let mime = image_mime(&path)?;
     let bytes = std::fs::read(path).ok()?;
     let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
     Some(format!("data:{};base64,{}", mime, encoded))
 }
 
-fn hydrate_project_art(mut project: ProjectArt) -> ProjectArt {
-    project.cover_data_url = project.cover_path.as_deref().and_then(path_to_data_url);
+fn hydrate_project_art(mut project: ProjectArt, config_dir: &Path) -> ProjectArt {
+    project.cover_data_url = project
+        .cover_path
+        .as_deref()
+        .and_then(|path| path_to_data_url(path, config_dir));
     project.background_data_url = project
         .background_path
         .as_deref()
-        .and_then(path_to_data_url);
+        .and_then(|path| path_to_data_url(path, config_dir));
     project
 }
 
@@ -146,7 +149,7 @@ pub fn list_project_art(config_dir: &Path) -> Result<Vec<ProjectArt>, StorageErr
     Ok(store
         .projects
         .into_iter()
-        .map(hydrate_project_art)
+        .map(|project| hydrate_project_art(project, config_dir))
         .collect())
 }
 
@@ -161,7 +164,7 @@ pub fn get_project_art(
         .projects
         .into_iter()
         .find(|project| project_key(&project.owner, &project.repo) == key)
-        .map(hydrate_project_art))
+        .map(|project| hydrate_project_art(project, config_dir)))
 }
 
 pub fn set_project_art_asset(
@@ -196,6 +199,8 @@ pub fn set_project_art_asset(
     std::fs::create_dir_all(&project_dir)?;
 
     let target = project_dir.join(format!("{}.{}", normalized_kind, extension));
+    super::path_scope::ensure_within(&target, config_dir, false)
+        .map_err(StorageError::InvalidData)?;
     std::fs::copy(&source, &target)?;
 
     let mut store = load_store(config_dir)?;
@@ -213,12 +218,15 @@ pub fn set_project_art_asset(
 
     if let Some(path) = updated.1 {
         if path != target_string {
-            let _ = std::fs::remove_file(path);
+            if let Ok(path) = super::path_scope::ensure_within(Path::new(&path), config_dir, false)
+            {
+                let _ = std::fs::remove_file(path);
+            }
         }
     }
 
     save_store(config_dir, &store)?;
-    Ok(hydrate_project_art(updated.0))
+    Ok(hydrate_project_art(updated.0, config_dir))
 }
 
 pub fn clear_project_art_asset(
@@ -261,9 +269,11 @@ pub fn clear_project_art_asset(
     };
 
     for path in files_to_remove {
-        let _ = std::fs::remove_file(path);
+        if let Ok(path) = super::path_scope::ensure_within(Path::new(&path), config_dir, false) {
+            let _ = std::fs::remove_file(path);
+        }
     }
 
     save_store(config_dir, &store)?;
-    Ok(hydrate_project_art(updated))
+    Ok(hydrate_project_art(updated, config_dir))
 }

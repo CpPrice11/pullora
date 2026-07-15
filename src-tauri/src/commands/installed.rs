@@ -24,13 +24,20 @@ fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
         };
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_dir() {
+            let Ok(file_type) = entry.file_type() else {
+                continue;
+            };
+            if file_type.is_symlink() {
+                continue;
+            }
+            if file_type.is_dir() {
                 scan(&path, best);
-            } else if path
-                .extension()
-                .and_then(|e| e.to_str())
-                .map(|e| e.eq_ignore_ascii_case("exe"))
-                .unwrap_or(false)
+            } else if file_type.is_file()
+                && path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .map(|e| e.eq_ignore_ascii_case("exe"))
+                    .unwrap_or(false)
                 && is_launchable_exe(&path)
             {
                 // Prefer shorter paths (fewer directory levels = closer to root)
@@ -49,53 +56,11 @@ fn find_exe_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 }
 
 fn installed_app_dir(install_path: &str, owner: &str, repo: &str) -> std::path::PathBuf {
-    std::path::PathBuf::from(install_path).join(format!("{}-{}", owner, repo))
-}
-
-fn push_unique_path(paths: &mut Vec<std::path::PathBuf>, path: std::path::PathBuf) {
-    let key = path
-        .to_string_lossy()
-        .replace('/', "\\")
-        .to_ascii_lowercase();
-    let exists = paths.iter().any(|item| {
-        item.to_string_lossy()
-            .replace('/', "\\")
-            .to_ascii_lowercase()
-            == key
-    });
-
-    if !exists {
-        paths.push(path);
-    }
-}
-
-fn known_install_roots(current_install_path: &str) -> Vec<std::path::PathBuf> {
-    let mut roots = Vec::new();
-    let trimmed = current_install_path.trim();
-    if !trimmed.is_empty() {
-        push_unique_path(&mut roots, std::path::PathBuf::from(trimmed));
-    }
-
-    push_unique_path(
-        &mut roots,
-        std::path::PathBuf::from(crate::storage::settings::default_installation_path()),
-    );
-
-    if let Some(downloads) = dirs::download_dir() {
-        push_unique_path(&mut roots, downloads.join("Installers").join("apps"));
-    }
-
-    if let Some(documents) = dirs::document_dir() {
-        push_unique_path(&mut roots, documents.join("Pullora Apps"));
-    }
-
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            push_unique_path(&mut roots, exe_dir.join("apps"));
-        }
-    }
-
-    roots
+    std::path::PathBuf::from(install_path).join(format!(
+        "{}-{}",
+        crate::storage::path_scope::safe_component(owner),
+        crate::storage::path_scope::safe_component(repo)
+    ))
 }
 
 fn legacy_version_candidates(
@@ -104,10 +69,8 @@ fn legacy_version_candidates(
     repo: &str,
     tag: &str,
 ) -> Vec<std::path::PathBuf> {
-    known_install_roots(install_path)
-        .into_iter()
-        .map(|root| root.join(format!("{}-{}", owner, repo)).join(tag))
-        .collect()
+    vec![installed_app_dir(install_path, owner, repo)
+        .join(crate::storage::path_scope::safe_component(tag))]
 }
 
 fn version_dir_contains_app(
@@ -118,7 +81,8 @@ fn version_dir_contains_app(
         return false;
     }
 
-    version_executable_path(dir, &version.executable).exists() || find_exe_in_dir(dir).is_some()
+    version_executable_path(dir, &version.executable).is_ok_and(|path| path.exists())
+        || find_exe_in_dir(dir).is_some()
 }
 
 fn version_install_dir(
@@ -127,12 +91,18 @@ fn version_install_dir(
     repo: &str,
     version: &crate::storage::installed::VersionInfo,
 ) -> Result<std::path::PathBuf, String> {
+    let install_root = crate::storage::path_scope::installation_root(install_path)?;
+    let roots = [install_root.clone(), get_config_dir()];
     if let Some(path) = version
         .install_dir
         .as_ref()
         .filter(|path| !path.trim().is_empty())
     {
-        return Ok(std::path::PathBuf::from(path));
+        return crate::storage::path_scope::ensure_within_any(
+            std::path::Path::new(path),
+            &roots,
+            false,
+        );
     }
 
     let candidates = legacy_version_candidates(install_path, owner, repo, &version.tag);
@@ -140,23 +110,27 @@ fn version_install_dir(
         .iter()
         .find(|candidate| version_dir_contains_app(candidate, version))
     {
-        return Ok(found.clone());
+        return crate::storage::path_scope::ensure_within_any(found, &roots, false);
     }
 
     if let Some(fallback) = candidates.into_iter().next() {
-        return Ok(fallback);
+        return crate::storage::path_scope::ensure_within_any(&fallback, &roots, false);
     }
 
     Err(command_error("errors.legacyInstallPathMissing"))
 }
 
-fn version_executable_path(version_dir: &std::path::Path, executable: &str) -> std::path::PathBuf {
+fn version_executable_path(
+    version_dir: &std::path::Path,
+    executable: &str,
+) -> Result<std::path::PathBuf, String> {
     let path = std::path::PathBuf::from(executable);
-    if path.is_absolute() {
+    let path = if path.is_absolute() {
         path
     } else {
         version_dir.join(path)
-    }
+    };
+    crate::storage::path_scope::ensure_within(&path, version_dir, false)
 }
 
 fn is_launchable_exe(path: &std::path::Path) -> bool {
@@ -300,7 +274,10 @@ pub async fn uninstall_app(
 
         let legacy_app_dir = installed_app_dir(&install_path, &owner, &repo);
         if !install_path.trim().is_empty() && legacy_app_dir.exists() {
-            std::fs::remove_dir_all(&legacy_app_dir).map_err(|e| e.to_string())?;
+            let root = crate::storage::path_scope::installation_root(&install_path)?;
+            let legacy_app_dir =
+                crate::storage::path_scope::ensure_within(&legacy_app_dir, &root, false)?;
+            std::fs::remove_dir_all(legacy_app_dir).map_err(|e| e.to_string())?;
         }
     }
 
@@ -324,7 +301,7 @@ pub async fn validate_installed_app(
         .find(|v| v.tag == app.active_version)
         .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
-    let expected_exe = version_executable_path(&version_dir, &version.executable);
+    let expected_exe = version_executable_path(&version_dir, &version.executable)?;
     if expected_exe.exists() {
         return Ok(InstalledAppHealth {
             ok: true,
@@ -365,7 +342,7 @@ pub async fn open_installed_app_dir(
                 .iter()
                 .find(|v| v.tag == app.active_version)
                 .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
-            let executable = version_executable_path(&version_dir, &version.executable);
+            let executable = version_executable_path(&version_dir, &version.executable)?;
             if std::path::PathBuf::from(&version.executable).is_absolute() {
                 executable
                     .parent()
@@ -383,7 +360,12 @@ pub async fn open_installed_app_dir(
         }
     };
 
-    crate::commands::updates::open_dir(target_dir.display().to_string()).await
+    let roots = [
+        crate::storage::path_scope::installation_root(&install_path)?,
+        get_config_dir(),
+    ];
+    let target_dir = crate::storage::path_scope::ensure_within_any(&target_dir, &roots, false)?;
+    crate::commands::updates::open_directory(&target_dir)
 }
 
 #[tauri::command]
@@ -392,8 +374,11 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     let install_path = settings.installation_path.clone().unwrap_or_default();
     drop(settings);
 
-    let root = std::path::PathBuf::from(install_path);
-    if root.as_os_str().is_empty() || !root.exists() {
+    if install_path.trim().is_empty() {
+        return cleanup_install_caches(0);
+    }
+    let root = crate::storage::path_scope::installation_root(&install_path)?;
+    if !root.exists() {
         return cleanup_install_caches(0);
     }
 
@@ -405,10 +390,14 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
             .flatten()
         {
             let path = entry.path();
-            if path.is_file() {
+            let file_type = entry.file_type().map_err(|e| e.to_string())?;
+            if file_type.is_symlink() {
+                continue;
+            }
+            if file_type.is_file() {
                 std::fs::remove_file(&path).map_err(|e| e.to_string())?;
                 removed += 1;
-            } else if path.is_dir() {
+            } else if file_type.is_dir() {
                 std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
                 removed += 1;
             }
@@ -418,7 +407,7 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
     for app_entry in entries.flatten() {
         let app_path = app_entry.path();
-        if !app_path.is_dir() {
+        if !app_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
             continue;
         }
 
@@ -428,7 +417,9 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
         for version_entry in version_entries.flatten() {
             let path = version_entry.path();
             let name = version_entry.file_name().to_string_lossy().to_string();
-            if path.is_dir() && (name.contains(".partial-") || name.contains(".backup-")) {
+            if version_entry.file_type().is_ok_and(|kind| kind.is_dir())
+                && (name.contains(".partial-") || name.contains(".backup-"))
+            {
                 std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
                 removed += 1;
             }
@@ -455,16 +446,22 @@ fn cleanup_cache_dir(cache_dir: &std::path::Path, initial_removed: usize) -> Res
     if !cache_dir.exists() {
         return Ok(removed);
     }
+    let config_dir = get_config_dir();
+    let cache_dir = crate::storage::path_scope::ensure_within(cache_dir, &config_dir, false)?;
 
     for entry in std::fs::read_dir(cache_dir)
         .map_err(|e| e.to_string())?
         .flatten()
     {
         let path = entry.path();
-        if path.is_file() {
+        let file_type = entry.file_type().map_err(|e| e.to_string())?;
+        if file_type.is_symlink() {
+            continue;
+        }
+        if file_type.is_file() {
             std::fs::remove_file(&path).map_err(|e| e.to_string())?;
             removed += 1;
-        } else if path.is_dir() {
+        } else if file_type.is_dir() {
             std::fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
             removed += 1;
         }
@@ -490,7 +487,7 @@ pub async fn launch_app(
         .find(|v| v.tag == app.active_version)
         .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
-    let exe_path = version_executable_path(&version_dir, &version.executable);
+    let exe_path = version_executable_path(&version_dir, &version.executable)?;
 
     let resolved = if exe_path.exists() {
         exe_path
@@ -506,6 +503,7 @@ pub async fn launch_app(
         })?
     };
 
+    let resolved = crate::storage::path_scope::ensure_within(&resolved, &version_dir, false)?;
     std::process::Command::new(&resolved)
         .current_dir(resolved.parent().unwrap_or(&version_dir))
         .spawn()

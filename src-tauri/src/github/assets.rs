@@ -1,3 +1,5 @@
+use crate::error::command_error;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InstallAssetKind {
     Portable,
@@ -35,6 +37,25 @@ pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<
         && segments[3] == "download";
 
     trusted
+        .then_some(())
+        .ok_or_else(|| command_error("errors.releaseAssetSource"))
+}
+
+pub fn validate_versioned_release_asset_url(
+    url: &str,
+    owner: &str,
+    repo: &str,
+    version: &str,
+    asset_name: &str,
+) -> Result<(), String> {
+    validate_release_asset_url(url, owner, repo)?;
+    let parsed = reqwest::Url::parse(url).map_err(|_| command_error("errors.invalidUrl"))?;
+    let segments = parsed
+        .path_segments()
+        .map(|segments| segments.collect::<Vec<_>>())
+        .unwrap_or_default();
+
+    (segments.len() == 6 && segments[4] == version && segments[5] == asset_name)
         .then_some(())
         .ok_or_else(|| command_error("errors.releaseAssetSource"))
 }
@@ -78,7 +99,10 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_install_asset_name, validate_release_asset_url, InstallAssetKind};
+    use super::{
+        classify_install_asset_name, validate_release_asset_url,
+        validate_versioned_release_asset_url, InstallAssetKind,
+    };
 
     #[test]
     fn classifies_supported_windows_assets() {
@@ -144,5 +168,33 @@ mod tests {
         )
         .is_err());
     }
+
+    #[test]
+    fn versioned_asset_must_match_tag_and_file_name() {
+        let url = "https://github.com/CpPrice11/pullora/releases/download/v5.4.0/Pullora_5.4.0_portable_x64.exe";
+        assert!(validate_versioned_release_asset_url(
+            url,
+            "CpPrice11",
+            "pullora",
+            "v5.4.0",
+            "Pullora_5.4.0_portable_x64.exe",
+        )
+        .is_ok());
+        assert!(validate_versioned_release_asset_url(
+            url,
+            "CpPrice11",
+            "pullora",
+            "v5.3.0",
+            "Pullora_5.4.0_portable_x64.exe",
+        )
+        .is_err());
+        assert!(validate_versioned_release_asset_url(
+            url,
+            "CpPrice11",
+            "pullora",
+            "v5.4.0",
+            "other.exe",
+        )
+        .is_err());
+    }
 }
-use crate::error::command_error;
