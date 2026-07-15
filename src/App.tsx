@@ -6,7 +6,7 @@ import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import { useSettings } from './hooks/useSettings'
-import { applyAppearanceSettings, applyThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
+import { applyAppearanceSettings, applyThemePreference, resolveThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
 import { LanguageProvider } from './i18n'
 import { pickImageFile } from './services/dialog'
 import {
@@ -32,14 +32,14 @@ function App() {
 
   useEffect(() => {
     setThemePreference(settings.theme)
-    applyAppearanceSettings(settings.appearance)
-  }, [settings.theme, settings.appearance])
+  }, [settings.theme])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
 
     const applyTheme = () => {
-      applyThemePreference(themePreference)
+      const resolvedTheme = applyThemePreference(themePreference)
+      applyAppearanceSettings(settings.appearance, resolvedTheme)
     }
 
     const handleThemeChange = (event: Event) => {
@@ -47,6 +47,7 @@ function App() {
       if (nextTheme) {
         setThemePreference(nextTheme)
         applyThemePreference(nextTheme, true)
+        applyAppearanceSettings(settings.appearance, resolveThemePreference(nextTheme))
       }
     }
 
@@ -58,7 +59,7 @@ function App() {
       media.removeEventListener('change', applyTheme)
       window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
     }
-  }, [themePreference])
+  }, [themePreference, settings.appearance])
 
   useEffect(() => {
     setShowPathModal(isFirstLaunch)

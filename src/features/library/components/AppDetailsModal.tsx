@@ -13,6 +13,7 @@ import { useSettings } from '../../../hooks/useSettings'
 import { useI18n, type AppLanguage } from '../../../i18n'
 import { useModalFocus } from '../../../hooks/useModalFocus'
 import { formatBytes, formatDate } from '../../../utils/format'
+import { getLibraryAppStatus } from '../libraryStatus'
 import UninstallConfirmModal from './UninstallConfirmModal'
 import SwitchVersionConfirmModal from './SwitchVersionConfirmModal'
 import './SearchComponents.css'
@@ -98,7 +99,7 @@ function AppDetailsModal({
   const [switchError, setSwitchError] = useState<string | null>(null)
   const modalRef = useRef<HTMLDivElement | null>(null)
 
-  const hasUpdate = Boolean(latestVersion && latestVersion !== installedApp.activeVersion)
+  const hasUpdate = getLibraryAppStatus(installedApp, latestVersion) === 'update'
   const activeVersion = installedApp.versions.find((version) => version.tag === installedApp.activeVersion)
   const activeRelease = findRelease(releases, installedApp.activeVersion)
   const latestRelease = latestVersion ? findRelease(releases, latestVersion) : null

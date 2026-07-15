@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
 import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
@@ -13,8 +12,8 @@ import { exportInstalledRegistry, importInstalledRegistry } from '../services/in
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { appearanceCssText, applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
-import { APPEARANCE_PRESETS, DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
+import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
+import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import { formatBytes } from '../utils/format'
 import './PageStyles.css'
@@ -96,7 +95,6 @@ function SettingsPage({
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
   const [registryBusy, setRegistryBusy] = useState(false)
   const resetModalRef = useRef<HTMLElement | null>(null)
-  const themeImportRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     getSettings()
@@ -203,79 +201,6 @@ function SettingsPage({
       setError(err instanceof Error ? err.message : t('settings.themeError'))
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleAppearanceChange = async (patch: Partial<NonNullable<AppSettings['appearance']>>) => {
-    if (!settings) return
-    const appearance = normalizeAppearance({ ...settings.appearance, ...patch })
-    const savedSettings = await persistSettings({ ...settings, appearance }, settings)
-    if (savedSettings) {
-      applyAppearanceSettings(savedSettings.appearance)
-    }
-  }
-
-  const handleAppearancePresetChange = async (preset: NonNullable<AppSettings['appearance']>['preset']) => {
-    const base = APPEARANCE_PRESETS[preset]
-    await handleAppearanceChange({ ...base, preset })
-  }
-
-  const handleExportTheme = () => {
-    if (!settings) return
-    const payload = JSON.stringify({ theme: settings.theme, appearance }, null, 2)
-    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'pullora-theme.json'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImportTheme = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!settings) return
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-
-    try {
-      const payload = JSON.parse(await file.text()) as Partial<AppSettings>
-      const theme = payload.theme === 'light' || payload.theme === 'dark' || payload.theme === 'auto'
-        ? payload.theme
-        : settings.theme
-      const importedAppearance = normalizeAppearance(payload.appearance)
-      const savedSettings = await persistSettings({ ...settings, theme, appearance: importedAppearance }, settings)
-      if (savedSettings) {
-        applyThemePreference(savedSettings.theme, true)
-        notifyThemePreference(savedSettings.theme)
-        applyAppearanceSettings(savedSettings.appearance)
-        setActionMessage(t('settings.themeImported'))
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('settings.themeImportError'))
-    }
-  }
-
-  const handleResetTheme = async () => {
-    if (!settings) return
-    const savedSettings = await persistSettings({
-      ...settings,
-      theme: DEFAULT_SETTINGS.theme,
-      appearance: DEFAULT_SETTINGS.appearance,
-    }, settings)
-    if (savedSettings) {
-      applyThemePreference(savedSettings.theme, true)
-      notifyThemePreference(savedSettings.theme)
-      applyAppearanceSettings(savedSettings.appearance)
-      setActionMessage(t('settings.themeResetDone'))
-    }
-  }
-
-  const handleCopyCssVariables = async () => {
-    try {
-      await navigator.clipboard.writeText(appearanceCssText(appearance))
-      setActionMessage(t('settings.cssVariablesCopied'))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('settings.cssVariablesCopyError'))
     }
   }
 
@@ -498,7 +423,6 @@ function SettingsPage({
 
   const sections = [
     { id: 'general', label: t('settings.general') },
-    { id: 'appearance', label: t('settings.appearance') },
     { id: 'installation', label: t('settings.installation') },
     { id: 'updates', label: t('settings.updates') },
     { id: 'maintenance', label: t('settings.maintenance') },
@@ -506,19 +430,6 @@ function SettingsPage({
 
   const settingsPanelId = (sectionId: string) =>
     sectionId === 'installation' ? 'settings-folders' : `settings-${sectionId}`
-
-  const appearance = normalizeAppearance(settings.appearance)
-  const colorFields: Array<[keyof NonNullable<AppSettings['appearance']>, string]> = [
-    ['accent', t('settings.accent')],
-    ['accentHover', t('settings.accentHover')],
-    ['background', t('settings.background')],
-    ['surface', t('settings.surface')],
-    ['surface2', t('settings.surface2')],
-    ['sidebar', t('settings.sidebarColor')],
-    ['text', t('settings.textColor')],
-    ['muted', t('settings.mutedColor')],
-    ['border', t('settings.borderColor')],
-  ]
 
   const handleSectionSelect = (sectionId: string) => {
     setActiveSection(sectionId)
@@ -808,146 +719,6 @@ function SettingsPage({
                 <option value="manual">{t('settings.manual')}</option>
               </select>
               <p className="help-text">{t('settings.assetStrategyHelp')}</p>
-            </div>
-          </section>
-        )
-
-      case 'appearance':
-        return (
-          <section id="settings-appearance" className="settings-section appearance-settings-section">
-            <div className="settings-section-heading-row">
-              <div>
-                <h3>{t('settings.appearance')}</h3>
-                <p className="help-text">{t('settings.themeEditorHelp')}</p>
-              </div>
-              <div className="settings-inline-actions settings-theme-actions">
-                <button type="button" className="secondary-btn" onClick={handleExportTheme}>
-                  {t('settings.exportTheme')}
-                </button>
-                <button type="button" className="secondary-btn" onClick={() => themeImportRef.current?.click()}>
-                  {t('settings.importTheme')}
-                </button>
-                <button type="button" className="secondary-btn" onClick={handleCopyCssVariables}>
-                  {t('settings.copyCssVariables')}
-                </button>
-                <button type="button" className="secondary-btn" onClick={handleResetTheme}>
-                  {t('settings.resetTheme')}
-                </button>
-                <input
-                  ref={themeImportRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="settings-hidden-file-input"
-                  onChange={handleImportTheme}
-                />
-              </div>
-            </div>
-            <div className="settings-grid">
-              <div className="form-group compact-control">
-                <label htmlFor="themeAppearance">{t('settings.theme')}</label>
-                <select
-                  id="themeAppearance"
-                  value={settings.theme}
-                  onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
-                >
-                  <option value="light">{t('settings.light')}</option>
-                  <option value="dark">{t('settings.dark')}</option>
-                  <option value="auto">{t('settings.auto')}</option>
-                </select>
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="appearancePreset">{t('settings.appearancePreset')}</label>
-                <select
-                  id="appearancePreset"
-                  value={appearance.preset}
-                  onChange={(event) => handleAppearancePresetChange(event.target.value as NonNullable<AppSettings['appearance']>['preset'])}
-                >
-                  <option value="github">{t('settings.presetGithub')}</option>
-                  <option value="githubLight">{t('settings.presetGithubLight')}</option>
-                  <option value="midnight">{t('settings.presetMidnight')}</option>
-                  <option value="custom">{t('settings.presetCustom')}</option>
-                </select>
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="appearanceDensity">{t('settings.density')}</label>
-                <select
-                  id="appearanceDensity"
-                  value={appearance.density}
-                  onChange={(event) => handleAppearanceChange({ density: event.target.value as NonNullable<AppSettings['appearance']>['density'], preset: 'custom' })}
-                >
-                  <option value="compact">{t('settings.densityCompact')}</option>
-                  <option value="comfortable">{t('settings.densityComfortable')}</option>
-                  <option value="spacious">{t('settings.densitySpacious')}</option>
-                </select>
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="appearanceFontSize">{t('settings.fontSize')}</label>
-                <input
-                  id="appearanceFontSize"
-                  type="range"
-                  min="11"
-                  max="18"
-                  value={appearance.fontSize}
-                  style={{ '--range-progress': `${((appearance.fontSize - 11) / 7) * 100}%` } as CSSProperties}
-                  onChange={(event) => handleAppearanceChange({ fontSize: Number(event.target.value), preset: 'custom' })}
-                />
-                <span className="settings-range-value">{appearance.fontSize}px</span>
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="appearanceRadius">{t('settings.radius')}</label>
-                <input
-                  id="appearanceRadius"
-                  type="range"
-                  min="0"
-                  max="20"
-                  value={appearance.radius}
-                  style={{ '--range-progress': `${(appearance.radius / 20) * 100}%` } as CSSProperties}
-                  onChange={(event) => handleAppearanceChange({ radius: Number(event.target.value), preset: 'custom' })}
-                />
-                <span className="settings-range-value">{appearance.radius}px</span>
-              </div>
-
-              <div className="form-group compact-control settings-grid-wide">
-                <label htmlFor="appearanceFont">{t('settings.fontFamily')}</label>
-                <input
-                  id="appearanceFont"
-                  type="text"
-                  value={appearance.fontFamily}
-                  onChange={(event) => setSettings({ ...settings, appearance: { ...appearance, fontFamily: event.target.value, preset: 'custom' } })}
-                  onBlur={() => handleAppearanceChange({ fontFamily: settings.appearance?.fontFamily, preset: 'custom' })}
-                />
-              </div>
-            </div>
-
-            <div className="appearance-color-grid">
-              {colorFields.map(([key, label]) => (
-                <label className="appearance-color-field" key={key}>
-                  <span>{label}</span>
-                  <input
-                    type="color"
-                    value={String(appearance[key])}
-                    onChange={(event) => handleAppearanceChange({ [key]: event.target.value, preset: 'custom' } as Partial<NonNullable<AppSettings['appearance']>>)}
-                  />
-                  <code>{String(appearance[key])}</code>
-                </label>
-              ))}
-            </div>
-
-            <div className="form-group settings-grid-wide">
-              <label htmlFor="customCss">{t('settings.customCss')}</label>
-              <textarea
-                id="customCss"
-                className="settings-css-editor"
-                value={appearance.customCss}
-                onChange={(event) => setSettings({ ...settings, appearance: { ...appearance, customCss: event.target.value, preset: 'custom' } })}
-                onBlur={() => handleAppearanceChange({ customCss: settings.appearance?.customCss, preset: 'custom' })}
-                placeholder=":root { --color-primary: #66c0f4; }"
-              />
-              <p className="help-text">{t('settings.customCssHelp')}</p>
             </div>
           </section>
         )

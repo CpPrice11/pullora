@@ -19,8 +19,8 @@ Use this matrix before user-facing releases and after large roadmap patches.
 
 ## Settings And Maintenance
 
-- Theme dark/light/auto and all appearance presets.
-- Theme export/import/reset and CSS variable copy.
+- Темна, світла й автоматична теми.
+- Зміна, видимість і видалення власного фону Pullora.
 - GitHub owner change, recent owner chips, cache invalidation.
 - Install path validation: ok, missing, inaccessible, no write permission.
 - Maintenance diagnostics, cache clear, launcher update cleanup, diagnostics copy.
