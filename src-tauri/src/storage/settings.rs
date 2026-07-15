@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+use super::secret_store::{load_github_token, save_github_token};
 use super::StorageError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -140,10 +141,74 @@ pub fn load_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
     Ok(normalize_loaded_settings(settings))
 }
 
+pub fn load_runtime_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
+    let mut settings = load_settings(config_dir)?;
+    let legacy_token = settings
+        .github_token
+        .take()
+        .filter(|token| !token.trim().is_empty());
+    let had_legacy_token = legacy_token.is_some();
+
+    settings.github_token = if let Some(token) = legacy_token {
+        if let Err(error) = save_github_token(Some(&token)) {
+            log::error!("Failed to migrate GitHub token to the system credential store: {error}");
+        }
+        Some(token)
+    } else {
+        load_github_token().unwrap_or_else(|error| {
+            log::error!("Failed to read GitHub token from the system credential store: {error}");
+            None
+        })
+    };
+
+    if had_legacy_token {
+        save_settings(config_dir, &settings)?;
+    }
+
+    Ok(settings)
+}
+
 pub fn save_settings(config_dir: &Path, settings: &AppSettings) -> Result<(), StorageError> {
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("config.json");
-    let content = serde_json::to_string_pretty(settings)?;
+    let content = settings_json(settings)?;
     std::fs::write(&path, content)?;
     Ok(())
+}
+
+fn settings_json(settings: &AppSettings) -> Result<String, StorageError> {
+    let mut value = serde_json::to_value(settings)?;
+    if let Some(object) = value.as_object_mut() {
+        object.remove("githubToken");
+    }
+    Ok(serde_json::to_string_pretty(&value)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{settings_json, AppSettings};
+
+    #[test]
+    fn config_never_serializes_github_token() {
+        let settings = AppSettings {
+            github_token: Some("github_pat_secret".to_string()),
+            ..AppSettings::default()
+        };
+
+        let json = settings_json(&settings).unwrap();
+
+        assert!(!json.contains("githubToken"));
+        assert!(!json.contains("github_pat_secret"));
+    }
+
+    #[test]
+    fn legacy_config_token_remains_migratable() {
+        let json = serde_json::to_string(&AppSettings::default()).unwrap();
+        let mut value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        value["githubToken"] = "legacy-token".into();
+
+        let settings: AppSettings = serde_json::from_value(value).unwrap();
+
+        assert_eq!(settings.github_token.as_deref(), Some("legacy-token"));
+    }
 }

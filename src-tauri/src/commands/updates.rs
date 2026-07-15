@@ -1,8 +1,13 @@
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::io::Write;
-use tauri::AppHandle;
+use tauri::{AppHandle, State};
 
 use crate::error::command_error;
+use crate::AppState;
+
+const CHECKSUM_MANIFEST_NAME: &str = "SHA256SUMS.txt";
+const MAX_CHECKSUM_MANIFEST_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,22 +26,40 @@ pub async fn get_launcher_version() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn open_dir(path: String) -> Result<(), String> {
+pub async fn open_dir(path: String, state: State<'_, AppState>) -> Result<(), String> {
+    let mut roots = vec![crate::storage::get_config_dir()];
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            roots.push(dir.to_path_buf());
+        }
+    }
+    if let Some(path) = state.settings.lock().await.installation_path.as_deref() {
+        if let Ok(root) = crate::storage::path_scope::installation_root(path) {
+            roots.push(root);
+        }
+    }
+
+    let path =
+        crate::storage::path_scope::ensure_within_any(std::path::Path::new(&path), &roots, true)?;
+    open_directory(&path)
+}
+
+pub(crate) fn open_directory(path: &std::path::Path) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     std::process::Command::new("explorer")
-        .arg(&path)
+        .arg(path)
         .spawn()
         .map_err(|e| e.to_string())?;
 
     #[cfg(target_os = "linux")]
     std::process::Command::new("xdg-open")
-        .arg(&path)
+        .arg(path)
         .spawn()
         .map_err(|e| e.to_string())?;
 
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
-        .arg(&path)
+        .arg(path)
         .spawn()
         .map_err(|e| e.to_string())?;
 
@@ -108,8 +131,11 @@ pub async fn install_launcher_release(
     version: String,
     asset_url: String,
     asset_name: String,
+    checksum_url: String,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
-    crate::github::assets::validate_release_asset_url(&asset_url, "CpPrice11", "pullora")?;
+    let _update_guard = state.launcher_update_lock.lock().await;
+
     if version.is_empty()
         || version == "."
         || version == ".."
@@ -120,30 +146,78 @@ pub async fn install_launcher_release(
         return Err(command_error("errors.invalidVersion"));
     }
 
-    let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
-    let current_pid = std::process::id();
     let config_dir = crate::storage::get_config_dir();
     let update_dir = config_dir.join("launcher-updates").join(&version);
-    std::fs::create_dir_all(&update_dir).map_err(|e| e.to_string())?;
+    reset_update_dir(&update_dir)?;
 
-    let downloaded_asset = update_dir.join(sanitize_asset_name(&asset_name));
-    let downloaded_exe = update_dir.join("Pullora.exe");
-    let script_path = update_dir.join("apply-launcher-update.ps1");
-    download_launcher_asset(&asset_url, &downloaded_asset).await?;
-    prepare_portable_launcher_asset(&downloaded_asset, &downloaded_exe, &update_dir)?;
-    write_launcher_update_script(&script_path, &downloaded_exe, &current_exe, current_pid)?;
+    let preparation = async {
+        crate::github::assets::validate_versioned_release_asset_url(
+            &asset_url,
+            "CpPrice11",
+            "pullora",
+            &version,
+            &asset_name,
+        )?;
+        crate::github::assets::validate_versioned_release_asset_url(
+            &checksum_url,
+            "CpPrice11",
+            "pullora",
+            &version,
+            CHECKSUM_MANIFEST_NAME,
+        )?;
 
-    std::process::Command::new("powershell")
+        let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let downloaded_asset = update_dir.join(sanitize_asset_name(&asset_name));
+        let downloaded_exe = update_dir.join("Pullora.exe");
+        let script_path = update_dir.join("apply-launcher-update.ps1");
+        let checksum_manifest =
+            download_launcher_bytes(&checksum_url, Some(MAX_CHECKSUM_MANIFEST_BYTES)).await?;
+        let expected_checksum = parse_sha256_manifest(&checksum_manifest, &asset_name)
+            .ok_or_else(|| command_error("errors.launcherChecksumInvalid"))?;
+        let asset_bytes = download_launcher_bytes(&asset_url, None).await?;
+        verify_sha256(&asset_bytes, &expected_checksum)?;
+        std::fs::write(&downloaded_asset, asset_bytes).map_err(|e| e.to_string())?;
+        prepare_portable_launcher_asset(&downloaded_asset, &downloaded_exe, &update_dir)?;
+        let prepared_checksum = sha256_file(&downloaded_exe)?;
+        write_launcher_update_script(
+            &script_path,
+            &downloaded_exe,
+            &current_exe,
+            std::process::id(),
+            &prepared_checksum,
+        )?;
+        Ok::<_, String>(script_path)
+    }
+    .await;
+
+    let script_path = fail_closed(&update_dir, preparation)?;
+    let launch_result = std::process::Command::new("powershell")
         .arg("-NoProfile")
         .arg("-ExecutionPolicy")
         .arg("Bypass")
         .arg("-File")
         .arg(&script_path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
+        .spawn();
+    fail_closed(
+        &update_dir,
+        launch_result.map(|_| ()).map_err(|e| e.to_string()),
+    )?;
 
     app.exit(0);
     Ok(())
+}
+
+fn reset_update_dir(update_dir: &std::path::Path) -> Result<(), String> {
+    if update_dir.exists() {
+        std::fs::remove_dir_all(update_dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::create_dir_all(update_dir).map_err(|e| e.to_string())
+}
+
+fn fail_closed<T>(update_dir: &std::path::Path, result: Result<T, String>) -> Result<T, String> {
+    result.inspect_err(|_| {
+        let _ = std::fs::remove_dir_all(update_dir);
+    })
 }
 
 fn sanitize_asset_name(asset_name: &str) -> String {
@@ -239,19 +313,72 @@ fn find_portable_launcher_exe(dir: &std::path::Path) -> Option<std::path::PathBu
     fallback
 }
 
-async fn download_launcher_asset(url: &str, destination: &std::path::Path) -> Result<(), String> {
+async fn download_launcher_bytes(url: &str, max_bytes: Option<usize>) -> Result<Vec<u8>, String> {
     let client = reqwest::Client::builder()
         .user_agent("Pullora/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
-    let response = client.get(url).send().await.map_err(|e| e.to_string())?;
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|_| command_error("errors.githubDownloadFailed"))?;
 
     if !response.status().is_success() {
         return Err(command_error("errors.githubDownloadFailed"));
     }
 
-    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
-    std::fs::write(destination, bytes).map_err(|e| e.to_string())
+    if max_bytes.is_some_and(|limit| {
+        response
+            .content_length()
+            .is_some_and(|size| size > limit as u64)
+    }) {
+        return Err(command_error("errors.launcherChecksumInvalid"));
+    }
+
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|_| command_error("errors.githubDownloadFailed"))?;
+    if max_bytes.is_some_and(|limit| bytes.len() > limit) {
+        return Err(command_error("errors.launcherChecksumInvalid"));
+    }
+
+    Ok(bytes.to_vec())
+}
+
+fn parse_sha256_manifest(bytes: &[u8], asset_name: &str) -> Option<String> {
+    let manifest = std::str::from_utf8(bytes).ok()?;
+    manifest.lines().find_map(|line| {
+        let (checksum, file_name) = line.trim().split_once(char::is_whitespace)?;
+        let file_name = file_name.trim().trim_start_matches('*');
+        (file_name == asset_name
+            && checksum.len() == 64
+            && checksum.chars().all(|ch| ch.is_ascii_hexdigit()))
+        .then(|| checksum.to_ascii_lowercase())
+    })
+}
+
+fn verify_sha256(bytes: &[u8], expected_checksum: &str) -> Result<(), String> {
+    let actual_checksum = sha256_hex(bytes);
+    if actual_checksum == expected_checksum {
+        Ok(())
+    } else {
+        Err(command_error("errors.launcherChecksumMismatch"))
+    }
+}
+
+fn sha256_file(path: &std::path::Path) -> Result<String, String> {
+    std::fs::read(path)
+        .map(|bytes| sha256_hex(&bytes))
+        .map_err(|e| e.to_string())
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 fn write_launcher_update_script(
@@ -259,6 +386,7 @@ fn write_launcher_update_script(
     source_exe: &std::path::Path,
     target_exe: &std::path::Path,
     current_pid: u32,
+    expected_checksum: &str,
 ) -> Result<(), String> {
     let backup_dir = target_exe
         .parent()
@@ -267,7 +395,7 @@ fn write_launcher_update_script(
     std::fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
     let backup_exe = backup_dir.join(format!(
         "Pullora backup {}.exe",
-        chrono::Utc::now().format("%Y%m%d%H%M%S")
+        chrono::Utc::now().format("%Y%m%d%H%M%S%3f")
     ));
 
     let script = format!(
@@ -282,19 +410,52 @@ $target = @'
 $backup = @'
 {backup}
 '@
+$expectedHash = '{expected_hash}'
 try {{
   Wait-Process -Id $pidToWait -Timeout 30 -ErrorAction SilentlyContinue
 }} catch {{}}
-if (Test-Path -LiteralPath $target) {{
-  Copy-Item -LiteralPath $target -Destination $backup -Force
+$sourceHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($sourceHash -ne $expectedHash) {{
+  throw 'Pullora update checksum verification failed.'
 }}
-Copy-Item -LiteralPath $source -Destination $target -Force
-Start-Process -FilePath $target
+$backupCreated = $false
+$targetReplaced = $false
+$targetHash = $null
+try {{
+  if (Test-Path -LiteralPath $target) {{
+    $targetHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+    Copy-Item -LiteralPath $target -Destination $backup -Force
+    $backupHash = (Get-FileHash -LiteralPath $backup -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($backupHash -ne $targetHash) {{
+      throw 'Pullora backup verification failed.'
+    }}
+    $backupCreated = $true
+  }}
+  Copy-Item -LiteralPath $source -Destination $target -Force
+  $targetReplaced = $true
+  $installedHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($installedHash -ne $expectedHash) {{
+    throw 'Pullora installed update verification failed.'
+  }}
+  Start-Process -FilePath $target
+}} catch {{
+  $canRestart = -not $targetReplaced
+  if ($targetReplaced -and $backupCreated -and (Test-Path -LiteralPath $backup)) {{
+    Copy-Item -LiteralPath $backup -Destination $target -Force
+    $restoredHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+    $canRestart = $restoredHash -eq $targetHash
+  }}
+  if ($canRestart -and (Test-Path -LiteralPath $target)) {{
+    Start-Process -FilePath $target
+  }}
+  throw
+}}
 "#,
         pid = current_pid,
         source = source_exe.display(),
         target = target_exe.display(),
         backup = backup_exe.display(),
+        expected_hash = expected_checksum,
     );
 
     let mut file = std::fs::File::create(script_path).map_err(|e| e.to_string())?;
@@ -407,4 +568,78 @@ fn old_backup_size(path: &std::path::Path) -> Result<u64, String> {
     }
 
     Ok(total)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        fail_closed, parse_sha256_manifest, reset_update_dir, verify_sha256,
+        write_launcher_update_script,
+    };
+
+    #[test]
+    fn failed_verification_removes_the_entire_update_attempt() {
+        let dir =
+            std::env::temp_dir().join(format!("pullora-failed-update-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let stale_script = dir.join("apply-launcher-update.ps1");
+        std::fs::write(&stale_script, b"stale").unwrap();
+        reset_update_dir(&dir).unwrap();
+        assert!(!stale_script.exists());
+        std::fs::write(dir.join("candidate.exe"), b"invalid").unwrap();
+
+        let result = fail_closed::<()>(&dir, Err("verification failed".to_string()));
+
+        assert!(result.is_err());
+        assert!(!dir.exists());
+    }
+
+    #[test]
+    fn finds_named_asset_checksum() {
+        let manifest =
+            b"b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9  other.exe\n\
+b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9  Pullora.exe\n";
+        assert_eq!(
+            parse_sha256_manifest(manifest, "Pullora.exe").as_deref(),
+            Some("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9")
+        );
+        assert!(parse_sha256_manifest(manifest, "missing.exe").is_none());
+    }
+
+    #[test]
+    fn rejects_malformed_or_mismatched_checksum() {
+        assert!(parse_sha256_manifest(b"not-a-hash  Pullora.exe\n", "Pullora.exe").is_none());
+        assert!(verify_sha256(
+            b"hello world",
+            "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+        )
+        .is_ok());
+        assert!(verify_sha256(b"tampered", &"0".repeat(64)).is_err());
+    }
+
+    #[test]
+    fn apply_script_rechecks_sha256_and_restores_backup() {
+        let dir =
+            std::env::temp_dir().join(format!("pullora-update-script-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let script_path = dir.join("apply.ps1");
+        write_launcher_update_script(
+            &script_path,
+            &dir.join("candidate.exe"),
+            &dir.join("Pullora.exe"),
+            1,
+            &"0".repeat(64),
+        )
+        .unwrap();
+
+        let script = std::fs::read_to_string(&script_path).unwrap();
+        assert!(
+            script.find("$sourceHash").unwrap()
+                < script.find("Copy-Item -LiteralPath $source").unwrap()
+        );
+        assert!(script.contains("$backupCreated = $true"));
+        assert!(script.contains("Copy-Item -LiteralPath $backup -Destination $target -Force"));
+        assert!(script.contains("$restoredHash"));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }

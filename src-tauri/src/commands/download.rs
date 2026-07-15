@@ -2,6 +2,7 @@ use tauri::{AppHandle, State};
 use uuid::Uuid;
 
 use crate::download::manager::{DownloadProgress, DownloadRequest};
+use crate::error::command_error;
 use crate::AppState;
 
 #[tauri::command]
@@ -16,7 +17,9 @@ pub async fn start_download(
     install_path: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    crate::github::assets::validate_release_asset_url(&url, &owner, &repo)?;
+    crate::github::assets::validate_versioned_release_asset_url(
+        &url, &owner, &repo, &tag, &file_name,
+    )?;
 
     let install_path = match install_path {
         Some(path) if !path.trim().is_empty() => path.trim().to_string(),
@@ -26,13 +29,13 @@ pub async fn start_download(
                 .installation_path
                 .as_ref()
                 .filter(|path| !path.trim().is_empty())
-                .ok_or("Папку встановлення не вибрано. Обери папку перед встановленням.")?
+                .ok_or_else(|| command_error("errors.installPathUnavailable"))?
                 .clone()
         }
     };
 
     let id = Uuid::new_v4().to_string();
-    let dest_dir = std::path::PathBuf::from(&install_path);
+    let dest_dir = crate::storage::path_scope::installation_root(&install_path)?;
 
     state
         .download_manager

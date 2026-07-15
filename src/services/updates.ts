@@ -25,6 +25,7 @@ export async function installLauncherRelease(
   version: string,
   assetUrl: string,
   assetName: string,
+  checksumUrl: string,
 ): Promise<void> {
-  return callTauri('install_launcher_release', { version, assetUrl, assetName })
+  return callTauri('install_launcher_release', { version, assetUrl, assetName, checksumUrl })
 }

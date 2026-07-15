@@ -359,16 +359,22 @@ async fn download_task(
     })
     .await;
 
-    let staging_app_dir = workspace_dir.join(format!("{}-{}", owner, repo));
-    let final_app_dir = dest_dir.join(format!("{}-{}", owner, repo));
+    let app_dir_name = format!(
+        "{}-{}",
+        crate::storage::path_scope::safe_component(&owner),
+        crate::storage::path_scope::safe_component(&repo)
+    );
+    let staging_app_dir = workspace_dir.join(&app_dir_name);
+    let final_app_dir = dest_dir.join(app_dir_name);
     let app_dir = if install_kind == "installer" {
         staging_app_dir.clone()
     } else {
         final_app_dir
     };
-    let version_dir = app_dir.join(&tag);
-    let partial_dir = staging_app_dir.join(format!("{}.partial-{}", tag, id));
-    let backup_dir = app_dir.join(format!("{}.backup-{}", tag, id));
+    let version_name = crate::storage::path_scope::safe_component(&tag);
+    let version_dir = app_dir.join(&version_name);
+    let partial_dir = staging_app_dir.join(format!("{}.partial-{}", version_name, id));
+    let backup_dir = app_dir.join(format!("{}.backup-{}", version_name, id));
 
     if install_kind == "installer" {
         cleanup_path(&backup_dir)?;

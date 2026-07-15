@@ -19,10 +19,11 @@ Store details-вікно відкривається з hero, карток, brows
 
 ## Файли Релізу
 
-Кожен GitHub release Pullora має містити тільки два завантажувані assets:
+Кожен GitHub release Pullora має містити три завантажувані assets:
 
 - `Pullora_<version>_portable_x64.exe` - portable-версія та шлях self-update.
 - `Pullora_<version>_x64-setup.exe` - setup installer.
+- `SHA256SUMS.txt` - контрольні суми обох EXE.
 
 MSI та portable ZIP assets не публікуються без окремого рішення.
 
@@ -49,7 +50,7 @@ npm run check:release -- -Version 5.2.1 -RcReadiness -SkipArtifacts
 - Build artifacts не зберігаються в Git.
 - Релізні файли зберігаються у `C:\Users\sasha\OneDrive\Документи\Projects\Pullora Builds\<version>`.
 - Перед user-facing release виконуються `npm run build`, `cargo check`, `npm run tauri-build`, release-check і smoke-test portable EXE.
-- GitHub release після публікації перевіряється на наявність тільки portable EXE і setup EXE.
+- GitHub release після публікації перевіряється на наявність portable EXE, setup EXE і `SHA256SUMS.txt`.
 
 Поточний напрям розвитку описаний у [ROADMAP.md](ROADMAP.md).
 

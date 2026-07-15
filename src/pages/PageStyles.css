@@ -4680,7 +4680,7 @@
 
 .cinematic-shell .library-page .library-sam-list-pane {
   border-right: 1px solid var(--library-fluent-border);
-  max-height: calc(100vh - 164px);
+  max-height: none;
   overflow: hidden;
 }
 
@@ -4896,7 +4896,7 @@
   border: 1px solid var(--library-fluent-border);
   border-radius: 18px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
-  margin: 14px 0 0;
+  margin: 14px 14px 0;
   overflow: hidden;
 }
 
@@ -5007,6 +5007,10 @@
 
   .cinematic-shell .library-page .library-sam-details-pane {
     padding: 12px;
+  }
+
+  .cinematic-shell .library-page .library-ops-panel {
+    margin: 14px 10px 0;
   }
 
   .cinematic-shell .library-page .library-hero {

@@ -35,6 +35,19 @@ function Assert-Equal($Name, $Actual, $Expected) {
   Write-Host "[ok] $Name = $Actual"
 }
 
+function Write-Sha256Manifest($Paths, $Destination) {
+  $lines = @($Paths | ForEach-Object {
+    $file = Get-Item -LiteralPath $_
+    $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$hash  $($file.Name)"
+  })
+  [System.IO.File]::WriteAllText(
+    $Destination,
+    (($lines -join "`n") + "`n"),
+    [System.Text.UTF8Encoding]::new($false)
+  )
+}
+
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrWhiteSpace($BuildRoot)) {
   $BuildRoot = Join-Path (Split-Path $root -Parent) "Pullora Builds"
@@ -139,7 +152,6 @@ try {
     if ($installedStore -notmatch "asset_name\.is_none" -or $installedStore -notmatch "install_kind\.is_none") {
       Fail "installed store migration must backfill asset_name and install_kind"
     }
-
     Write-Host "[ok] RC readiness checks passed"
   }
 
@@ -153,6 +165,8 @@ try {
     $setupName = "Pullora_${Version}_x64-setup.exe"
     $portablePath = Join-Path $buildDir $portableName
     $setupPath = Join-Path $buildDir $setupName
+    $checksumName = "SHA256SUMS.txt"
+    $checksumPath = Join-Path $buildDir $checksumName
 
     if (-not (Test-Path -LiteralPath $portablePath)) {
       Fail "Portable EXE not found: $portablePath"
@@ -161,12 +175,15 @@ try {
       Fail "Setup EXE not found: $setupPath"
     }
 
+    Write-Sha256Manifest @($portablePath, $setupPath) $checksumPath
+    Write-Host "[ok] SHA-256 manifest: $checksumName"
+
     $files = @(Get-ChildItem -LiteralPath $buildDir -File)
     $assetNames = @($files | ForEach-Object { $_.Name })
-    $expectedNames = @($portableName, $setupName)
+    $expectedNames = @($portableName, $setupName, $checksumName)
     $unexpected = @($assetNames | Where-Object { $_ -notin $expectedNames })
-    if ($files.Count -ne 2 -or $unexpected.Count -gt 0) {
-      Fail "Build folder must contain only portable EXE and setup EXE. Found: $($assetNames -join ', ')"
+    if ($files.Count -ne 3 -or $unexpected.Count -gt 0) {
+      Fail "Build folder must contain portable EXE, setup EXE, and SHA256SUMS.txt. Found: $($assetNames -join ', ')"
     }
 
     $blocked = @($files | Where-Object { $_.Extension -match '^\.(msi|zip)$' })
@@ -200,11 +217,12 @@ try {
     $releaseAssets = @($json.assets | ForEach-Object { $_.name })
     $expectedReleaseAssets = @(
       "Pullora_${Version}_portable_x64.exe",
-      "Pullora_${Version}_x64-setup.exe"
+      "Pullora_${Version}_x64-setup.exe",
+      "SHA256SUMS.txt"
     )
     $unexpectedReleaseAssets = @($releaseAssets | Where-Object { $_ -notin $expectedReleaseAssets })
-    if ($releaseAssets.Count -ne 2 -or $unexpectedReleaseAssets.Count -gt 0) {
-      Fail "GitHub release must contain only portable EXE and setup EXE. Found: $($releaseAssets -join ', ')"
+    if ($releaseAssets.Count -ne 3 -or $unexpectedReleaseAssets.Count -gt 0) {
+      Fail "GitHub release must contain portable EXE, setup EXE, and SHA256SUMS.txt. Found: $($releaseAssets -join ', ')"
     }
     Write-Host "[ok] GitHub release assets: $($releaseAssets -join ', ')"
   }
