@@ -4,6 +4,7 @@ import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../s
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
 import { formatDate, formatNumber } from '../../../utils/format'
+import { getLibraryAppStatus } from '../libraryStatus'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -61,12 +62,9 @@ function RepoCard({
   const [removeFolderMenuOpen, setRemoveFolderMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
-  const isInstalled = Boolean(installedApp)
-  const hasUpdate = Boolean(
-    installedApp &&
-    latestVersion &&
-    latestVersion !== installedApp.activeVersion,
-  )
+  const status = getLibraryAppStatus(installedApp, latestVersion)
+  const isInstalled = status !== 'available'
+  const hasUpdate = status === 'update'
 
   useEffect(() => {
     if (typeof isFavorite === 'boolean') {
@@ -211,8 +209,7 @@ function RepoCard({
   }
 
   const updatedDate = formatDate(repo.updated_at, language)
-  const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
-  const statusLabel = hasUpdate ? t('repo.update') : isInstalled ? t('repo.installed') : t('repo.available')
+  const statusLabel = t(`repo.${status}`)
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleInstall
 
@@ -220,7 +217,7 @@ function RepoCard({
 
   return (
     <article
-      className={`repo-card repo-card--${statusClass} ${isSelected ? 'selected' : ''}`}
+      className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''}`}
       onClick={handlePreview}
       onContextMenu={handleContextMenu}
       tabIndex={0}
@@ -252,7 +249,7 @@ function RepoCard({
       <div className="repo-info">
         <div className="repo-title-line">
           <h3 className="repo-name" title={repo.name}>{repo.name}</h3>
-          <span className={`repo-status ${statusClass}`}>
+          <span className={`repo-status ${status}`}>
             {statusLabel}
           </span>
         </div>

@@ -7,6 +7,150 @@
   width: 100%;
 }
 
+/* Світлі поверхні бібліотеки та читабельний власний фон. */
+:root[data-theme='light'] .cinematic-shell .library-page {
+  --library-fluent-surface: rgba(255, 255, 255, 0.86);
+  --library-fluent-surface-strong: rgba(248, 250, 252, 0.92);
+  --library-fluent-surface-soft: rgba(15, 23, 42, 0.045);
+  --library-fluent-border: rgba(15, 23, 42, 0.13);
+  --library-fluent-border-strong: rgba(0, 103, 192, 0.34);
+  --library-fluent-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+  --library-fluent-accent: #0067c0;
+  --library-fluent-accent-strong: #005a9e;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sam-list-pane,
+:root[data-theme='light'] .cinematic-shell .library-page .library-sam-details-pane {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: var(--library-fluent-border);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(0, 103, 192, 0.08), transparent 30%),
+    rgba(248, 250, 252, 0.88);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-toolstrip,
+:root[data-theme='light'] .cinematic-shell .library-page .library-ops-panel,
+:root[data-theme='light'] .cinematic-shell .library-page .library-inline-panel {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: var(--library-fluent-border);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sidebar-nav-btn {
+  background: linear-gradient(180deg, #ffffff, #f1f5f9);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+  color: #1e293b;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sidebar-nav-btn.active {
+  background: linear-gradient(180deg, rgba(0, 103, 192, 0.14), rgba(0, 103, 192, 0.07));
+  border-color: rgba(0, 103, 192, 0.44);
+  box-shadow: inset 0 -2px 0 #0067c0;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-toolstrip .search-input,
+:root[data-theme='light'] .cinematic-shell .library-page .library-folder-section-header,
+:root[data-theme='light'] .cinematic-shell .library-page .library-play-status,
+:root[data-theme='light'] .cinematic-shell .library-page .library-ops-grid > div,
+:root[data-theme='light'] .cinematic-shell .library-page .library-inline-summary > div,
+:root[data-theme='light'] .cinematic-shell .library-page .library-inline-summary > button,
+:root[data-theme='light'] .cinematic-shell .library-page .library-inline-version-row,
+:root[data-theme='light'] .cinematic-shell .library-page .library-inline-empty {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-folder-section-header:hover,
+:root[data-theme='light'] .cinematic-shell .library-page .library-folder-section-items .repo-card:hover {
+  background: rgba(0, 103, 192, 0.07);
+  border-color: rgba(0, 103, 192, 0.18);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-folder-section-items .repo-card.selected {
+  background: linear-gradient(90deg, rgba(0, 103, 192, 0.16), rgba(0, 103, 192, 0.07));
+  box-shadow: inset 3px 0 0 #0067c0;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-folder-group-label {
+  color: #64748b;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: var(--library-fluent-border);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.94) 0%, rgba(248, 250, 252, 0.78) 54%, rgba(248, 250, 252, 0.44) 100%),
+    var(--library-hero-background, transparent);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero::after {
+  background: radial-gradient(circle at 82% 18%, rgba(0, 103, 192, 0.11), transparent 30%);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero-cover,
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero--fallback .library-hero-cover,
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero--art .library-hero-cover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-github-header h2 {
+  color: #0f172a;
+  text-shadow: none;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-github-header .library-hero-repo,
+:root[data-theme='light'] .cinematic-shell .library-page .library-github-header .library-hero-description {
+  color: #475569;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-hero-meta {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.cinematic-shell.has-custom-background .library-page {
+  --library-fluent-surface: rgba(7, 14, 21, 0.68);
+  --library-fluent-surface-strong: rgba(8, 16, 24, 0.76);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(102, 192, 244, 0.08), transparent 30%),
+    rgba(6, 13, 20, 0.68);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(4, 10, 16, 0.78) 0%, rgba(4, 10, 16, 0.52) 54%, rgba(4, 10, 16, 0.22) 100%),
+    var(--library-hero-background, transparent);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page {
+  --library-fluent-surface: rgba(255, 255, 255, 0.74);
+  --library-fluent-surface-strong: rgba(248, 250, 252, 0.82);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(0, 103, 192, 0.07), transparent 30%),
+    rgba(248, 250, 252, 0.76);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.84) 0%, rgba(248, 250, 252, 0.62) 54%, rgba(248, 250, 252, 0.28) 100%),
+    var(--library-hero-background, transparent);
+}
+
 .library-page {
   gap: 12px;
 }
@@ -4659,6 +4803,10 @@
   --library-fluent-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
   --library-fluent-accent: #42c7f4;
   --library-fluent-accent-strong: #2ea8df;
+  --library-card-min-height: 32px;
+  --library-card-max-height: 40px;
+  --library-panel-min-height: 166px;
+  --library-panel-max-height: 360px;
 }
 
 .cinematic-shell .library-page .library-sam-workspace {
@@ -4780,7 +4928,10 @@
 
 .cinematic-shell .library-page .library-folder-section-items .repo-card {
   border-radius: 10px;
-  min-height: 32px;
+  height: clamp(var(--library-card-min-height), 3.4vh, var(--library-card-max-height));
+  max-height: var(--library-card-max-height);
+  min-height: var(--library-card-min-height);
+  overflow: hidden;
   padding: 4px 8px;
 }
 
@@ -4805,8 +4956,9 @@
   box-shadow: var(--library-fluent-shadow);
   gap: 26px;
   grid-template-columns: 132px minmax(0, 1fr);
-  height: 306px;
-  min-height: 306px;
+  height: clamp(280px, 32vh, 360px);
+  max-height: 360px;
+  min-height: 280px;
   padding: 28px 30px;
 }
 
@@ -4959,11 +5111,15 @@
   border: 1px solid var(--library-fluent-border);
   border-radius: 18px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  max-width: 100%;
+  min-width: 0;
   padding: 16px 18px 18px;
 }
 
 .cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
-  min-height: 166px;
+  max-height: var(--library-panel-max-height);
+  min-height: var(--library-panel-min-height);
+  overflow: auto;
 }
 
 .cinematic-shell .library-page .library-inline-panel-head span {
@@ -5016,6 +5172,7 @@
   .cinematic-shell .library-page .library-hero {
     grid-template-columns: 82px minmax(0, 1fr);
     height: auto;
+    max-height: none;
     min-height: 0;
     padding: 18px;
   }
@@ -5041,5 +5198,9 @@
 
   .cinematic-shell .library-page .library-inline-summary--details {
     grid-template-rows: none;
+  }
+
+  .cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
+    max-height: none;
   }
 }

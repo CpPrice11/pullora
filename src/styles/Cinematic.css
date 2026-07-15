@@ -28,6 +28,96 @@
     #070b10;
 }
 
+/* Вибрана тема має пріоритет над застарілими пресетами оформлення. */
+:root[data-theme='light'] .cinematic-shell {
+  --color-primary: #0067c0;
+  --color-primary-dark: #005a9e;
+  --color-primary-light: rgba(0, 103, 192, 0.14);
+  --color-bg: #eef3f8;
+  --color-bg-elevated: #ffffff;
+  --color-bg-secondary: #f3f6fa;
+  --color-mica: rgba(255, 255, 255, 0.9);
+  --color-control: rgba(255, 255, 255, 0.84);
+  --color-control-hover: #edf4fb;
+  --color-nav-active: rgba(0, 103, 192, 0.1);
+  --color-text: #111827;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+  --color-border: rgba(15, 23, 42, 0.16);
+  --color-border-subtle: rgba(15, 23, 42, 0.1);
+  --color-success: #107c10;
+  --color-error: #b42318;
+  --color-warning: #8a5d00;
+  --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
+  background: #eef3f8;
+}
+
+:root[data-theme='light'] .cinematic-shell .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 69% 6%, rgba(0, 103, 192, 0.1), transparent 32%),
+    linear-gradient(180deg, rgba(238, 243, 248, 0.72), rgba(238, 243, 248, 0.92));
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
+  background:
+    radial-gradient(circle at 72% 14%, rgba(0, 103, 192, 0.09), transparent 34%),
+    linear-gradient(90deg, rgba(238, 243, 248, 0.7) 0%, rgba(238, 243, 248, 0.48) 44%, rgba(238, 243, 248, 0.28) 100%),
+    linear-gradient(0deg, rgba(238, 243, 248, 0.74) 0%, rgba(238, 243, 248, 0.3) 54%, rgba(238, 243, 248, 0.5) 100%);
+}
+
+:root[data-theme='light'] .cinematic-shell .header {
+  background: rgba(248, 250, 252, 0.88);
+  border-bottom-color: rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme='light'] .cinematic-shell .nav-item,
+:root[data-theme='light'] .cinematic-shell .nav-item:hover,
+:root[data-theme='light'] .cinematic-shell .nav-item.active {
+  color: #334155;
+}
+
+:root[data-theme='light'] .cinematic-shell .nav-item.active::before {
+  background: #0067c0;
+  box-shadow: 0 0 12px rgba(0, 103, 192, 0.28);
+}
+
+:root[data-theme='light'] .cinematic-shell .nav-icon {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+:root[data-theme='light'] .cinematic-shell .nav-item.active .nav-icon {
+  background: rgba(0, 103, 192, 0.1);
+  border-color: rgba(0, 103, 192, 0.38);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+  color: #0067c0;
+}
+
+:root[data-theme='light'] .cinematic-shell .page-header h2,
+:root[data-theme='light'] .cinematic-shell .library-page .page-header h2 {
+  color: #0f172a;
+}
+
+:root[data-theme='light'] .cinematic-shell button {
+  background: linear-gradient(180deg, #ffffff, #f5f7fa);
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #1e293b;
+}
+
+:root[data-theme='light'] .cinematic-shell button:hover {
+  background: #edf4fb;
+  border-color: rgba(0, 103, 192, 0.34);
+}
+
+:root[data-theme='light'] .cinematic-shell input,
+:root[data-theme='light'] .cinematic-shell select,
+:root[data-theme='light'] .cinematic-shell textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #111827;
+}
+
 .cinematic-shell .cinematic-background {
   filter: blur(18px) saturate(0.75);
   opacity: 0;

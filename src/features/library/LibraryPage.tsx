@@ -2,14 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
-import { useDownload } from '../../hooks/useDownload'
+import { useLibrarySelection } from './hooks/useLibrarySelection'
+import { useLibraryFiltering } from './hooks/useLibraryFiltering'
+import { useBatchUpdates } from './hooks/useBatchUpdates'
 import RepoCard from './components/RepoCard'
+import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
+import LibraryHero from './components/LibraryHero'
+import VersionPanel from './components/VersionPanel'
+import ApplicationDetails from './components/ApplicationDetails'
+import FolderManager from './components/FolderManager'
+import BatchUpdatePanel, { type BatchUpdateItem } from './components/BatchUpdatePanel'
 import ReleaseSelector from '../../components/Install/ReleaseSelector'
 import UninstallConfirmModal from './components/UninstallConfirmModal'
 import DownloadProgressPanel from '../../components/Install/DownloadProgress'
 import StatePanel from '../../components/State/StatePanel'
-import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir, uninstallApp } from '../../services/installed'
-import { getReleases } from '../../services/github'
+import { launchApp, openInstalledAppDir, uninstallApp } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
 import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
 import { pickImageFile } from '../../services/dialog'
@@ -21,62 +28,17 @@ import {
   projectArtKey,
   setProjectArt,
 } from '../../services/projectArt'
-import type { DownloadProgress, FavoriteApp, GitHubAsset, GitHubRelease, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
+import type { FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
 import { formatDate, formatNumber } from '../../utils/format'
+import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
 import '../../pages/PageStyles.css'
 
-type LibraryFilter = 'all' | 'installed' | 'favorites' | 'updates' | 'available'
-type LibrarySort = 'updated' | 'name' | 'status'
-type LibraryViewMode = 'home' | 'recent' | 'ready'
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
-type HeroPanel = 'overview' | 'versions' | 'details'
-type LibrarySection = {
-  id: string
-  title: string
-  repositories: GitHubSearchResult[]
-  pinned?: boolean
-}
-type BatchUpdateJob = {
-  url: string
-  fileName: string
-  owner: string
-  repo: string
-  tag: string
-}
 type UninstallTarget = {
   repo: GitHubSearchResult
   installedApp: InstalledApp
-}
-
-type LibraryIconName = 'clock' | 'play' | 'star' | 'more'
-
-function LibraryIcon({ name, filled = false }: { name: LibraryIconName; filled?: boolean }) {
-  return (
-    <svg className="library-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-      {name === 'clock' && (
-        <>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 7.5v5l3.25 2" />
-        </>
-      )}
-      {name === 'play' && <path className="icon-fill" d="m9 7 8 5-8 5Z" />}
-      {name === 'star' && (
-        <path
-          className={filled ? 'icon-fill' : undefined}
-          d="m12 3 2.75 5.57 6.15.9-4.45 4.33 1.05 6.12L12 17.03l-5.5 2.89 1.05-6.12L3.1 9.47l6.15-.9Z"
-        />
-      )}
-      {name === 'more' && (
-        <>
-          <circle className="icon-fill" cx="5" cy="12" r="1.5" />
-          <circle className="icon-fill" cx="12" cy="12" r="1.5" />
-          <circle className="icon-fill" cx="19" cy="12" r="1.5" />
-        </>
-      )}
-    </svg>
-  )
 }
 
 function repoLookupKey(owner: string, repo: string) {
@@ -161,10 +123,6 @@ function normalizeRepoKey(owner: string, repo: string) {
 
 function toCssUrl(value: string) {
   return `url("${value.replace(/\\/g, '/').replace(/"/g, '\\"')}")`
-}
-
-function normalizeFolderName(name: string) {
-  return name.trim().replace(/\s+/g, ' ')
 }
 
 function createFavoritesFolder(repoKeys: string[] = []): LibraryFolder {
@@ -265,38 +223,6 @@ function libraryErrorTextKey(kind: LibraryErrorKind) {
   }
 }
 
-function updateDismissKey(repo: GitHubSearchResult, latestVersion: string) {
-  return `${repo.owner.login}/${repo.name}@${latestVersion}`.toLowerCase()
-}
-
-function assetIsPortableInstall(asset: GitHubAsset) {
-  const name = asset.name.toLowerCase()
-  const isInstaller = name.includes('setup') ||
-    name.includes('installer') ||
-    name.endsWith('.msi')
-  if (isInstaller) return false
-
-  return name.includes('portable') ||
-    name.endsWith('.exe') ||
-    name.endsWith('.appimage') ||
-    name.endsWith('.zip') ||
-    name.endsWith('.tar.gz') ||
-    name.endsWith('.tgz') ||
-    name.endsWith('.tar.xz') ||
-    name.endsWith('.tar.bz2')
-}
-
-function pickPortableUpdateAsset(release: GitHubRelease | null) {
-  if (!release) return null
-  return [...release.assets]
-    .sort((left, right) => {
-      const leftPortable = left.name.toLowerCase().includes('portable') ? 0 : 1
-      const rightPortable = right.name.toLowerCase().includes('portable') ? 0 : 1
-      return leftPortable - rightPortable || left.name.localeCompare(right.name)
-    })
-    .find(assetIsPortableInstall) ?? null
-}
-
 interface LibraryPageProps {
   onOpenSettings?: () => void
   onPreviewBackground?: (url: string | null) => void
@@ -310,48 +236,26 @@ function LibraryPage({
 }: LibraryPageProps) {
   const { language, t } = useI18n()
   const pageKey = 'library'
-  const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<LibraryFilter>('all')
-  const [sort, setSort] = useState<LibrarySort>('updated')
-  const [viewMode, setViewMode] = useState<LibraryViewMode>('home')
   const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => ensureFavoritesFolder([]))
-  const [folderDialogOpen, setFolderDialogOpen] = useState(false)
   const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
-  const [folderName, setFolderName] = useState('')
-  const [folderError, setFolderError] = useState<string | null>(null)
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => loadCollapsedFolderIds())
-  const [selectedRepo, setSelectedRepo] = useState<GitHubSearchResult | null>(null)
-  const [featuredRepo, setFeaturedRepo] = useState<GitHubSearchResult | null>(null)
-  const [heroPanel, setHeroPanel] = useState<HeroPanel>('overview')
   const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<FavoriteApp[]>([])
   const [favoriteBusy, setFavoriteBusy] = useState(false)
-  const [heroActionsOpen, setHeroActionsOpen] = useState(false)
   const [artError, setArtError] = useState<string | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
     loadDismissedUpdateKeys,
   )
-  const [batchUpdating, setBatchUpdating] = useState(false)
-  const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
-  const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
-  const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
-  const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
   const [libraryTrustExpanded, setLibraryTrustExpanded] = useState(false)
   const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
   const [uninstallBusy, setUninstallBusy] = useState(false)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
   const [libraryActionMessage, setLibraryActionMessage] = useState<string | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
-  const {
-    downloads: batchDownloads,
-    download: startBatchDownload,
-    cancel: cancelBatchDownload,
-  } = useDownload()
-  const heroActionsRef = useRef<HTMLDivElement | null>(null)
   const libraryFoldersLoadedRef = useRef(false)
   const owner = settings.githubOwner?.trim()
   const {
@@ -390,7 +294,7 @@ function LibraryPage({
     if (selectedRepo) {
       const key = projectArtKey(selectedRepo.owner.login, selectedRepo.name)
       setRecentlyInstalledKey(key)
-      setFeaturedRepo(selectedRepo)
+      selectFeaturedRepo(selectedRepo)
       window.setTimeout(() => {
         setRecentlyInstalledKey((current) => current === key ? null : current)
       }, 6500)
@@ -406,7 +310,6 @@ function LibraryPage({
     const installedApp = getInstalledApp(repo)
     if (!installedApp) return
 
-    setHeroActionsOpen(false)
     setUninstallError(null)
     setUninstallTarget({ repo, installedApp })
   }
@@ -433,20 +336,13 @@ function LibraryPage({
     if (!latestVersion) return
     setDismissedUpdateKeys((current) => {
       const next = new Set(current)
-      next.add(updateDismissKey(repo, latestVersion))
+      next.add(getUpdateDismissKey(repo.owner.login, repo.name, latestVersion))
       return next
     })
   }
 
   const handleClearSkippedUpdates = () => {
     setDismissedUpdateKeys(new Set())
-  }
-
-  const handleResetLibraryFilters = () => {
-    setQuery('')
-    setFilter('all')
-    setSort('updated')
-    setViewMode('home')
   }
 
   useEffect(() => {
@@ -520,36 +416,12 @@ function LibraryPage({
     })
   }, [favorites])
 
-  const openHomeView = () => {
-    setViewMode('home')
-    setFilter('all')
-    setSort('updated')
-  }
-
-  const openRecentView = () => {
-    setViewMode('recent')
-    setFilter('all')
-    setSort('updated')
-  }
-
-  const openReadyView = () => {
-    setViewMode('ready')
-    setFilter('installed')
-    setSort('status')
-  }
-
   const openCreateFolderDialog = (repo: GitHubSearchResult) => {
     setFolderDialogRepo(repo)
-    setFolderName('')
-    setFolderError(null)
-    setFolderDialogOpen(true)
   }
 
   const closeCreateFolderDialog = () => {
-    setFolderDialogOpen(false)
     setFolderDialogRepo(null)
-    setFolderName('')
-    setFolderError(null)
   }
 
   const toggleFolderSection = (sectionId: string) => {
@@ -564,23 +436,7 @@ function LibraryPage({
     })
   }
 
-  const handleConfirmCreateFolder = () => {
-    const name = normalizeFolderName(folderName)
-    if (!name) {
-      setFolderError(t('library.folder.emptyName'))
-      return
-    }
-
-    const normalizedName = name.toLowerCase()
-    const duplicate = displayFolders.some((folder) =>
-      folder.name.toLowerCase() === normalizedName ||
-      (folder.id === favoritesFolderId && t('library.folder.favorites').toLowerCase() === normalizedName)
-    )
-    if (duplicate) {
-      setFolderError(t('library.folder.duplicateName'))
-      return
-    }
-
+  const handleConfirmCreateFolder = (name: string) => {
     const repoKey = folderDialogRepo
       ? normalizeRepoKey(folderDialogRepo.owner.login, folderDialogRepo.name)
       : null
@@ -682,114 +538,6 @@ function LibraryPage({
     }))))
   }
 
-  const selectFeaturedRepo = useCallback((repo: GitHubSearchResult, panel: HeroPanel = 'overview') => {
-    setHeroActionsOpen(false)
-    setFeaturedRepo(repo)
-    setHeroPanel(panel)
-  }, [])
-
-  const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
-    const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
-    setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
-    return id
-  }, [startBatchDownload])
-
-  const handleUpdateAllPortable = async () => {
-    setBatchUpdateError(null)
-    setBatchUpdateMessage(null)
-    setBatchCleanupMessage(null)
-
-    if (updateRepositories.length === 0) {
-      setBatchUpdateMessage(t('updates.noneReady'))
-      return
-    }
-
-    setBatchUpdating(true)
-    let started = 0
-    let skipped = 0
-
-    const results = await Promise.all(updateRepositories.map(async (repo) => {
-      const latestVersion = getLatestVersion(repo)
-      if (!latestVersion) {
-        skipped += 1
-        return
-      }
-
-      try {
-        const releases = await getReleases(repo.owner.login, repo.name)
-        const release = releases.find((item) => item.tag_name === latestVersion)
-          ?? releases.find((item) => !item.draft && !item.prerelease)
-          ?? null
-        const asset = pickPortableUpdateAsset(release)
-        if (!release || !asset) {
-          skipped += 1
-          return
-        }
-
-        await startBatchUpdateJob({
-          url: asset.browser_download_url,
-          fileName: asset.name,
-          owner: repo.owner.login,
-          repo: repo.name,
-          tag: release.tag_name,
-        })
-        started += 1
-      } catch (err) {
-        skipped += 1
-        return err instanceof Error ? err.message : t('updates.batchFailed')
-      }
-    }))
-
-    const errors = results.filter((item): item is string => typeof item === 'string')
-    if (started === 0) {
-      setBatchUpdating(false)
-      setBatchUpdateError(errors[0] ?? t('updates.noPortableAssets'))
-      return
-    }
-
-    setBatchUpdateMessage(t('updates.batchStarted', { started, skipped }))
-    if (errors.length > 0) {
-      setBatchUpdateError(errors[0])
-    }
-  }
-
-  const handleBatchRetry = async (download: DownloadProgress) => {
-    const job = batchUpdateJobs[download.id]
-    if (!job) return
-
-    setBatchUpdateError(null)
-    setBatchUpdating(true)
-    try {
-      const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
-      setBatchUpdateJobs((current) => {
-        const next = { ...current }
-        delete next[download.id]
-        next[id] = job
-        return next
-      })
-    } catch (err) {
-      setBatchUpdating(false)
-      setBatchUpdateError(err instanceof Error ? err.message : t('updates.batchFailed'))
-    }
-  }
-
-  const handleBatchOpenFolder = (download: DownloadProgress) => {
-    if (!download.owner || !download.repo) return
-    openInstalledAppDir(download.owner, download.repo)
-      .catch((err) => setBatchUpdateError(
-        err instanceof Error ? err.message : t('installed.openFolderError'),
-      ))
-  }
-
-  const handleBatchCleanup = async () => {
-    try {
-      const count = await cleanupIncompleteInstalls()
-      setBatchCleanupMessage(t('download.cleanupDone', { count }))
-    } catch (err) {
-      setBatchCleanupMessage(err instanceof Error ? err.message : t('download.cleanupError'))
-    }
-  }
-
   const formatTime = (date: Date | null) => date
     ? date.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
       hour: '2-digit',
@@ -837,51 +585,10 @@ function LibraryPage({
   }, [])
 
   useEffect(() => {
-    if (!heroActionsOpen) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!heroActionsRef.current?.contains(event.target as Node)) {
-        setHeroActionsOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setHeroActionsOpen(false)
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [heroActionsOpen])
-
-  useEffect(() => {
     if (!libraryActionMessage) return
     const timer = window.setTimeout(() => setLibraryActionMessage(null), 4200)
     return () => window.clearTimeout(timer)
   }, [libraryActionMessage])
-
-  useEffect(() => {
-    if (!batchUpdating) return
-    const batchIds = Object.keys(batchUpdateJobs)
-    if (batchIds.length === 0) return
-
-    const relevantDownloads = batchDownloads.filter((download) => batchUpdateJobs[download.id])
-    const allStarted = relevantDownloads.length === batchIds.length
-    const allSettled = allStarted && relevantDownloads.every((download) =>
-      download.status === 'completed' || download.status === 'failed',
-    )
-
-    if (!allSettled) return
-
-    setBatchUpdating(false)
-    void refreshLocalStatus()
-  }, [batchDownloads, batchUpdateJobs, batchUpdating, refreshLocalStatus])
 
   const libraryRepositories = useMemo(() => {
     const reposByKey = new Map(
@@ -918,122 +625,65 @@ function LibraryPage({
     return libraryRepositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
-      if (!installedApp || !latestVersion || latestVersion === installedApp.activeVersion) return false
-      return !dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion))
+      if (getLibraryAppStatus(installedApp, latestVersion) !== 'update' || !latestVersion) return false
+      return !dismissedUpdateKeys.has(
+        getUpdateDismissKey(repo.owner.login, repo.name, latestVersion),
+      )
     })
   }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
 
+  const {
+    batchDownloads,
+    cancelBatchDownload,
+    batchUpdating,
+    batchUpdateMessage,
+    batchUpdateError,
+    batchCleanupMessage,
+    handleUpdateAllPortable,
+    handleBatchRetry,
+    handleBatchOpenFolder,
+    handleBatchCleanup,
+  } = useBatchUpdates({
+    repositories: updateRepositories,
+    getLatestVersion,
+    refreshLocalStatus,
+  })
+
   const activeDismissedUpdateCount = useMemo(() => libraryRepositories.reduce((count, repo) => {
     const latestVersion = getLatestVersion(repo)
-    return latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion))
+    return latestVersion && dismissedUpdateKeys.has(
+      getUpdateDismissKey(repo.owner.login, repo.name, latestVersion),
+    )
       ? count + 1
       : count
   }, 0), [dismissedUpdateKeys, getLatestVersion, libraryRepositories])
 
   const displayFolders = useMemo(() => cleanLibraryFolders(libraryFolders), [libraryFolders])
-  const favoritesByRepoKey = useMemo(() => {
-    return new Map(
-      favorites
-        .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
-        .map((favorite) => [normalizeRepoKey(favorite.owner, favorite.repo), favorite]),
-    )
-  }, [favorites])
-
-  const visibleRepositories = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    const filtered = libraryRepositories.filter((repo) => {
-      const installedApp = getInstalledApp(repo)
-      const latestVersion = getLatestVersion(repo)
-      const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
-      const isFavorite = favoriteKeys.has(repoKey)
-      const hasUpdate = Boolean(
-        installedApp &&
-        latestVersion &&
-        latestVersion !== installedApp.activeVersion,
-      )
-      const updateDismissed = Boolean(
-        latestVersion && dismissedUpdateKeys.has(updateDismissKey(repo, latestVersion)),
-      )
-
-      if (viewMode === 'ready' && !installedApp) return false
-      if (filter === 'installed' && !installedApp) return false
-      if (filter === 'favorites' && !isFavorite) return false
-      if (filter === 'updates' && (!hasUpdate || updateDismissed)) return false
-      if (filter === 'available' && installedApp) return false
-
-      if (!normalizedQuery) return true
-
-      const searchableText = [
-        repo.name,
-        repo.full_name,
-        repo.description ?? '',
-        repo.language ?? '',
-        ...(repo.topics ?? []),
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return searchableText.includes(normalizedQuery)
-    })
-
-    return [...filtered].sort((a, b) => {
-      const repoActivityTimestamp = (repo: GitHubSearchResult) => {
-        const repoKey = normalizeRepoKey(repo.owner.login, repo.name)
-        const installedApp = getInstalledApp(repo)
-        const favorite = favoritesByRepoKey.get(repoKey)
-        return Math.max(
-          new Date(repo.updated_at).getTime(),
-          installedApp ? new Date(latestInstalledAt(installedApp)).getTime() : 0,
-          favorite?.lastChecked ? new Date(favorite.lastChecked).getTime() : 0,
-        )
-      }
-
-      if (viewMode === 'recent') {
-        return repoActivityTimestamp(b) - repoActivityTimestamp(a) || a.name.localeCompare(b.name)
-      }
-
-      if (sort === 'name') {
-        return a.name.localeCompare(b.name)
-      }
-
-      if (sort === 'status') {
-        const statusRank = (repo: GitHubSearchResult) => {
-          const installedApp = getInstalledApp(repo)
-          const latestVersion = getLatestVersion(repo)
-          if (
-            installedApp &&
-            latestVersion &&
-            latestVersion !== installedApp.activeVersion
-          ) {
-            return 0
-          }
-          if (installedApp) return 1
-          return 2
-        }
-
-        return statusRank(a) - statusRank(b) || a.name.localeCompare(b.name)
-      }
-
-      const favoriteRank = (repo: GitHubSearchResult) =>
-        favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) ? 0 : 1
-      const favoriteDifference = favoriteRank(a) - favoriteRank(b)
-      if (favoriteDifference !== 0) return favoriteDifference
-
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    })
-  }, [
-    dismissedUpdateKeys,
-    favoriteKeys,
-    favoritesByRepoKey,
+  const {
+    query,
+    setQuery,
     filter,
+    viewMode,
+    visibleRepositories,
+    resetFilters: handleResetLibraryFilters,
+    changeViewMode: handleViewModeChange,
+  } = useLibraryFiltering({
+    repositories: libraryRepositories,
+    favorites,
+    favoriteKeys,
+    dismissedUpdateKeys,
     getInstalledApp,
     getLatestVersion,
-    libraryRepositories,
-    query,
-    sort,
-    viewMode,
-  ])
+  })
+
+  const {
+    selectedRepo,
+    setSelectedRepo,
+    featuredRepo,
+    heroPanel,
+    setHeroPanel,
+    selectFeaturedRepo,
+  } = useLibrarySelection(visibleRepositories)
 
   const visibleRepositorySections = useMemo<LibrarySection[]>(() => {
     if (visibleRepositories.length === 0) return []
@@ -1081,26 +731,6 @@ function LibraryPage({
 
   const modeRepositoryCount = libraryRepositories.length
 
-  useEffect(() => {
-    if (visibleRepositories.length === 0) {
-      setFeaturedRepo(null)
-      setHeroPanel('overview')
-      return
-    }
-
-    if (
-      !featuredRepo ||
-      !visibleRepositories.some((repo) => repo.id === featuredRepo.id)
-    ) {
-      setFeaturedRepo(visibleRepositories[0])
-      setHeroPanel('overview')
-    }
-  }, [featuredRepo, visibleRepositories])
-
-  useEffect(() => {
-    setHeroActionsOpen(false)
-  }, [featuredRepo?.id])
-
   const featuredArt = featuredRepo
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
@@ -1130,7 +760,6 @@ function LibraryPage({
   const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
-    setHeroActionsOpen(false)
     setArtError(null)
     const imagePath = await pickImageFile()
     if (!imagePath) return
@@ -1154,7 +783,6 @@ function LibraryPage({
   const handleClearArt = async (targetRepo = featuredRepo, kind: 'cover' | 'background' = 'cover') => {
     if (!targetRepo) return
 
-    setHeroActionsOpen(false)
     setArtError(null)
     try {
       const updatedArt = await clearProjectArt(
@@ -1228,14 +856,13 @@ function LibraryPage({
   const renderUpdatesCenter = () => {
     if (filter !== 'updates') return null
 
-    const skippedCount = activeDismissedUpdateCount
-    const updatesEmptyKey = checkingUpdates
-      ? 'updates.emptyChecking'
-      : latestVersionErrorCount > 0
-        ? 'updates.emptyPartial'
-        : latestVersionsCheckedAt
-          ? 'updates.emptyCurrent'
-          : 'updates.emptyNotChecked'
+    const items = updateRepositories.flatMap((repo): BatchUpdateItem[] => {
+      const installedApp = getInstalledApp(repo)
+      const latestVersion = getLatestVersion(repo)
+      return installedApp && latestVersion
+        ? [{ repo, currentVersion: installedApp.activeVersion, latestVersion }]
+        : []
+    })
     const failedDownload = batchDownloads.find((download) => download.status === 'failed')
     const chooseAnotherRepo = failedDownload
       ? state.repositories.find((repo) =>
@@ -1244,98 +871,23 @@ function LibraryPage({
       : updateRepositories[0]
 
     return (
-      <section className="updates-center" aria-label={t('updates.centerTitle')}>
-        <div className="updates-center-main">
-          <div>
-            <span className="updates-center-kicker">{t('updates.kicker')}</span>
-            <h3>{t('updates.centerTitle')}</h3>
-            <p>{t('updates.centerText')}</p>
-          </div>
-          <div className="updates-center-actions">
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={handleCheckUpdates}
-              disabled={checkingUpdates || batchUpdating}
-            >
-              {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
-            </button>
-            <button
-              type="button"
-              className="hero-primary-btn"
-              onClick={handleUpdateAllPortable}
-              disabled={updateRepositories.length === 0 || checkingUpdates || batchUpdating}
-            >
-              {batchUpdating ? t('updates.updatingAll') : t('updates.updateAllPortable')}
-            </button>
-          </div>
-        </div>
-
-        <div className="updates-center-stats">
-          <div>
-            <span>{t('updates.available')}</span>
-            <strong>{updateRepositories.length}</strong>
-          </div>
-          <div>
-            <span>{t('updates.skipped')}</span>
-            <strong>{skippedCount}</strong>
-          </div>
-          <div>
-            <span>{t('updates.lastChecked')}</span>
-            <strong>{formattedLatestVersionsTime ?? t('details.unknown')}</strong>
-          </div>
-        </div>
-
-        {skippedCount > 0 && (
-          <button
-            type="button"
-            className="updates-clear-skipped"
-            onClick={handleClearSkippedUpdates}
-          >
-            {t('updates.showSkipped')}
-          </button>
-        )}
-
-        {batchUpdateMessage && <div className="release-cleanup-note">{batchUpdateMessage}</div>}
-        {batchCleanupMessage && <div className="release-cleanup-note">{batchCleanupMessage}</div>}
-        {batchUpdateError && <div className="error-message">{batchUpdateError}</div>}
-
-        {updateRepositories.length > 0 ? (
-          <div className="updates-center-list">
-            {updateRepositories.slice(0, 6).map((repo) => {
-              const installedApp = getInstalledApp(repo)
-              const latestVersion = getLatestVersion(repo)
-              if (!installedApp || !latestVersion) return null
-
-              return (
-                <div key={`${repo.owner.login}/${repo.name}`} className="updates-center-row">
-                  <div>
-                    <strong>{repo.name}</strong>
-                    <span>
-                      {installedApp.activeVersion} {'->'} {latestVersion}
-                    </span>
-                  </div>
-                  <div className="updates-center-row-actions">
-                    <button type="button" className="secondary-btn" onClick={() => setSelectedRepo(repo)}>
-                      {t('repo.updateAction')}
-                    </button>
-                    <button type="button" className="secondary-btn" onClick={() => selectFeaturedRepo(repo, 'details')}>
-                      {t('details.open')}
-                    </button>
-                    <button type="button" className="secondary-btn" onClick={() => handleSkipUpdate(repo)}>
-                      {t('updates.skip')}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="updates-center-empty">
-            {t(updatesEmptyKey, { count: latestVersionErrorCount })}
-          </p>
-        )}
-
+      <BatchUpdatePanel
+        items={items}
+        skippedCount={activeDismissedUpdateCount}
+        lastChecked={formattedLatestVersionsTime}
+        checking={checkingUpdates}
+        updating={batchUpdating}
+        versionErrorCount={latestVersionErrorCount}
+        updateMessage={batchUpdateMessage}
+        cleanupMessage={batchCleanupMessage}
+        error={batchUpdateError}
+        onCheck={handleCheckUpdates}
+        onUpdateAll={handleUpdateAllPortable}
+        onClearSkipped={handleClearSkippedUpdates}
+        onUpdate={setSelectedRepo}
+        onShowDetails={(repo) => selectFeaturedRepo(repo, 'details')}
+        onSkip={handleSkipUpdate}
+      >
         <DownloadProgressPanel
           downloads={batchDownloads}
           onCancel={cancelBatchDownload}
@@ -1348,7 +900,7 @@ function LibraryPage({
           onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
           onCleanup={handleBatchCleanup}
         />
-      </section>
+      </BatchUpdatePanel>
     )
   }
 
@@ -1481,154 +1033,36 @@ function LibraryPage({
 
     const installedApp = getInstalledApp(featuredRepo)
     const latestVersion = getLatestVersion(featuredRepo)
-    const hasUpdate = Boolean(
-      installedApp &&
-      latestVersion &&
-      latestVersion !== installedApp.activeVersion,
-    )
-    const isInstalled = Boolean(installedApp)
-    const isFavorite = favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))
-    const statusClass = hasUpdate ? 'update' : isInstalled ? 'installed' : 'available'
-    const statusLabel = hasUpdate
-      ? t('repo.update')
-      : isInstalled
-        ? t('repo.installed')
-        : t('repo.available')
-    const primaryLabel = hasUpdate
-      ? t('repo.updateAction')
-      : isInstalled
-        ? t('repo.launch')
-        : t('repo.install')
-    const primaryAction = isInstalled && !hasUpdate
-      ? () => handleLaunch(featuredRepo)
-      : () => setSelectedRepo(featuredRepo)
-    const handleOpenFolder = () => {
-      openInstalledAppDir(featuredRepo.owner.login, featuredRepo.name)
-        .catch((err) => setLaunchError(
-          err instanceof Error ? err.message : t('installed.openFolderError'),
-        ))
-    }
+
     return (
-      <section
-        className={`library-hero library-github-header ${featuredCover ? 'library-hero--art' : 'library-hero--fallback'}`}
-        aria-label={featuredRepo.name}
-        style={featuredBackgroundStyle}
-      >
-        <div className="library-hero-cover">
-          {featuredCover ? (
-            <img src={featuredCover} alt="" />
-          ) : (
-            <img src={featuredRepo.owner.avatar_url} alt="" />
-          )}
-        </div>
-
-        <div className="library-hero-main">
-          <div className="repo-status-row">
-            <span className={`repo-status ${statusClass}`}>{statusLabel}</span>
-            {featuredRepo.language && <span className="repo-lang">{featuredRepo.language}</span>}
-            <button
-              type="button"
-              className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
-              onClick={handleToggleFeaturedFavorite}
-              disabled={favoriteBusy}
-              title={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
-              aria-label={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
-            >
-              <LibraryIcon name="star" filled={isFavorite} />
-            </button>
-          </div>
-          <h2>{featuredRepo.name}</h2>
-          <p className="library-hero-repo">{featuredRepo.owner.login}/{featuredRepo.name}</p>
-          {featuredRepo.description && (
-            <p className="library-hero-description">{featuredRepo.description}</p>
-          )}
-          <div className="library-hero-meta">
-            <span>{t('repo.stars', { count: formatNumber(featuredRepo.stargazers_count, language) })}</span>
-            {installedApp && (
-              <span>{t('repo.active', { version: installedApp.activeVersion })}</span>
-            )}
-            {hasUpdate && latestVersion && (
-              <span>{t('repo.new', { version: latestVersion })}</span>
-            )}
-          </div>
-          {artError && <p className="library-hero-error">{artError}</p>}
-        </div>
-
-        <div className="library-hero-actions library-github-actions">
-          <button type="button" className="hero-primary-btn" onClick={primaryAction}>
-            {primaryLabel}
-          </button>
-          <div
-            className={`project-actions-menu hero-actions-menu ${heroActionsOpen ? 'open' : ''}`}
-            ref={heroActionsRef}
-          >
-            <button
-              type="button"
-              className="project-actions-trigger"
-              aria-haspopup="menu"
-              aria-expanded={heroActionsOpen}
-              aria-label={t('projectActions.open')}
-              onClick={() => setHeroActionsOpen((current) => !current)}
-            >
-              <LibraryIcon name="more" />
-            </button>
-            {heroActionsOpen && (
-              <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
-                {isInstalled && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setHeroActionsOpen(false)
-                      setHeroPanel('details')
-                    }}
-                  >
-                    {t('details.open')}
-                  </button>
-                )}
-                {isInstalled && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setHeroActionsOpen(false)
-                      handleOpenFolder()
-                    }}
-                  >
-                    {t('installed.folder')}
-                  </button>
-                )}
-                <button type="button" role="menuitem" onClick={() => handlePickArt('cover')}>
-                  {t('art.changeCover')}
-                </button>
-                <button type="button" role="menuitem" onClick={() => handlePickArt('background')}>
-                  {t('art.changeBackground')}
-                </button>
-                {featuredArt?.coverPath && (
-                  <button type="button" role="menuitem" onClick={() => handleClearArt()}>
-                    {t('art.resetCover')}
-                  </button>
-                )}
-                {featuredArt?.backgroundPath && (
-                  <button type="button" role="menuitem" onClick={() => handleClearArt(featuredRepo, 'background')}>
-                    {t('art.resetBackground')}
-                  </button>
-                )}
-                {isInstalled && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="danger-menu-item"
-                    onClick={() => handleRequestUninstall(featuredRepo)}
-                  >
-                    {t('installed.uninstallApp')}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      <LibraryHero
+        key={featuredRepo.id}
+        repo={featuredRepo}
+        installedApp={installedApp}
+        latestVersion={latestVersion}
+        cover={featuredCover}
+        backgroundStyle={featuredBackgroundStyle}
+        isFavorite={favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))}
+        favoriteBusy={favoriteBusy}
+        artError={artError}
+        canResetCover={Boolean(featuredArt?.coverPath)}
+        canResetBackground={Boolean(featuredArt?.backgroundPath)}
+        onInstall={() => setSelectedRepo(featuredRepo)}
+        onLaunch={() => handleLaunch(featuredRepo)}
+        onToggleFavorite={handleToggleFeaturedFavorite}
+        onShowDetails={() => setHeroPanel('details')}
+        onOpenFolder={() => {
+          openInstalledAppDir(featuredRepo.owner.login, featuredRepo.name)
+            .catch((err) => setLaunchError(
+              err instanceof Error ? err.message : t('installed.openFolderError'),
+            ))
+        }}
+        onChangeCover={() => handlePickArt('cover')}
+        onChangeBackground={() => handlePickArt('background')}
+        onResetCover={() => handleClearArt()}
+        onResetBackground={() => handleClearArt(featuredRepo, 'background')}
+        onUninstall={() => handleRequestUninstall(featuredRepo)}
+      />
     )
   }
 
@@ -1637,128 +1071,41 @@ function LibraryPage({
 
     const installedApp = getInstalledApp(featuredRepo)
     const latestVersion = getLatestVersion(featuredRepo)
-    const hasUpdate = Boolean(
-      installedApp &&
-      latestVersion &&
-      latestVersion !== installedApp.activeVersion,
-    )
+    const status = getLibraryAppStatus(installedApp, latestVersion)
+    const hasUpdate = status === 'update'
     const updatedDate = formatDate(featuredRepo.updated_at, language)
-    const localVersionCount = installedApp?.versions.length ?? 0
     const installPath = settings.installationPath && installedApp
       ? `${settings.installationPath}\\${installedApp.owner}-${installedApp.repo}`
       : null
-    const localVersions = installedApp?.versions ?? []
-
-    const renderVersionsInlinePanel = (isDefaultView = false) => (
-      <section className={`library-inline-panel library-inline-panel--versions ${isDefaultView ? 'library-inline-panel--default' : ''}`} aria-label={t('repo.versions')}>
-        <div className="library-inline-panel-head">
-          <div>
-            <span>{t('repo.versions')}</span>
-            <strong>{featuredRepo.name}</strong>
-          </div>
-          {!isDefaultView && (
-            <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
-              {t('library.trust.collapse')}
-            </button>
-          )}
-        </div>
-        <div className="library-inline-summary">
-          <div>
-            <span>{t('details.activeVersion')}</span>
-            <strong>{installedApp?.activeVersion ?? t('release.notInstalled')}</strong>
-          </div>
-          <div>
-            <span>{t('details.latestVersion')}</span>
-            <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
-          </div>
-          <div>
-            <span>{t('details.localVersions')}</span>
-            <strong>{formatNumber(localVersionCount, language)}</strong>
-          </div>
-        </div>
-        <div className="library-inline-version-list">
-          {localVersions.length > 0 ? localVersions.map((version) => {
-            const isActive = version.tag === installedApp?.activeVersion
-            const versionDate = formatDate(version.installedAt, language)
-            return (
-              <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
-                <div>
-                  <strong>{version.tag}</strong>
-                  <span>{versionDate}</span>
-                </div>
-                <span>{isActive ? t('installed.active') : t('details.versionStateOlder')}</span>
-              </div>
-            )
-          }) : (
-            <p className="library-inline-empty">{t('release.notInstalled')}</p>
-          )}
-        </div>
-      </section>
-    )
-
-    const renderDetailsInlinePanel = (isDefaultView = false) => (
-      <section className={`library-inline-panel library-inline-panel--details ${isDefaultView ? 'library-inline-panel--default' : ''}`} aria-label={t('details.open')}>
-          <div className="library-inline-panel-head">
-            <div>
-              <span>{t('details.kicker')}</span>
-              <strong>{featuredRepo.full_name}</strong>
-            </div>
-            {!isDefaultView && (
-              <button type="button" className="secondary-btn" onClick={() => setHeroPanel('overview')}>
-                {t('library.trust.collapse')}
-              </button>
-            )}
-          </div>
-          <div className="library-inline-summary library-inline-summary--details">
-            <div>
-              <span>{t('library.ops.owner')}</span>
-              <strong>{featuredRepo.owner.login}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.updated')}</span>
-              <strong>{updatedDate}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.language')}</span>
-              <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
-            </div>
-            <div>
-              <span>{t('library.ops.stars')}</span>
-              <strong>{formatNumber(featuredRepo.stargazers_count, language)}</strong>
-            </div>
-            <div>
-              <span>{t('release.installPath')}</span>
-              <strong className="library-inline-install-path" title={installPath ?? t('details.unknown')}>
-                {installPath ?? t('details.unknown')}
-              </strong>
-            </div>
-            <div>
-              <span>{t('library.ops.latest')}</span>
-              <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
-            </div>
-          </div>
-        </section>
-    )
 
     const renderInlinePanel = () => {
       return (
         <div className="library-inline-overview-grid">
-          {renderVersionsInlinePanel(true)}
-          {renderDetailsInlinePanel(true)}
+          <VersionPanel
+            repoName={featuredRepo.name}
+            installedApp={installedApp}
+            latestVersion={latestVersion}
+          />
+          <ApplicationDetails
+            repo={featuredRepo}
+            updatedDate={updatedDate}
+            latestVersion={latestVersion}
+            installPath={installPath}
+          />
         </div>
       )
     }
 
     return (
       <>
-        <section className={`library-ops-panel ${hasUpdate ? 'update' : installedApp ? 'installed' : 'available'}`} aria-label={t('library.ops.title')}>
+        <section className={`library-ops-panel ${status}`} aria-label={t('library.ops.title')}>
           <div className="library-ops-header">
             <div>
               <span className="library-ops-kicker">{t('library.ops.kicker')}</span>
               <h3>{t('library.ops.title')}</h3>
             </div>
-            <span className={`library-ops-state ${hasUpdate ? 'update' : installedApp ? 'installed' : 'available'}`}>
-              {hasUpdate ? t('repo.update') : installedApp ? t('repo.installed') : t('repo.available')}
+            <span className={`library-ops-state ${status}`}>
+              {t(`repo.${status}`)}
             </span>
           </div>
 
@@ -1805,15 +1152,6 @@ function LibraryPage({
       ? onOpenSettings
       : handleRefresh
     : handleResetLibraryFilters
-  const normalizedFolderName = normalizeFolderName(folderName)
-  const folderNameDuplicate = Boolean(normalizedFolderName) && displayFolders.some((folder) =>
-    folder.name.toLowerCase() === normalizedFolderName.toLowerCase() ||
-    (folder.id === favoritesFolderId &&
-      t('library.folder.favorites').toLowerCase() === normalizedFolderName.toLowerCase())
-  )
-  const folderDialogError = folderError ||
-    (folderNameDuplicate ? t('library.folder.duplicateName') : null)
-  const canCreateFolder = Boolean(normalizedFolderName) && !folderNameDuplicate
   const sidebarSectionGroups = [
     {
       id: 'custom',
@@ -1831,205 +1169,106 @@ function LibraryPage({
     },
   ].filter((group) => group.sections.length > 0)
 
+  const renderSidebarRepository = (repo: GitHubSearchResult) => {
+    const key = projectArtKey(repo.owner.login, repo.name)
+    const addableFolders = displayFolders
+      .filter((folder) => !folder.repoKeys.includes(key))
+      .map((folder) => ({
+        id: folder.id,
+        name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+      }))
+    const removableFolders = displayFolders
+      .filter((folder) => folder.repoKeys.includes(key))
+      .map((folder) => ({
+        id: folder.id,
+        name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
+      }))
+
+    return (
+      <RepoCard
+        key={repo.id}
+        repo={repo}
+        installedApp={getInstalledApp(repo)}
+        latestVersion={getLatestVersion(repo)}
+        art={projectArt[key]}
+        isFavorite={favoriteKeys.has(key)}
+        isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
+        onPreview={() => selectFeaturedRepo(repo)}
+        onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
+        onPickArt={() => handlePickArt('cover', repo)}
+        onPickBackground={() => handlePickArt('background', repo)}
+        onClearArt={() => handleClearArt(repo, 'cover')}
+        onClearBackground={() => handleClearArt(repo, 'background')}
+        onUninstall={() => handleRequestUninstall(repo)}
+        onInstall={() => setSelectedRepo(repo)}
+        onLaunch={() => handleLaunch(repo)}
+        folders={addableFolders}
+        removableFolders={removableFolders}
+        onCreateFolder={() => openCreateFolderDialog(repo)}
+        onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
+        onRemoveFromFolder={(folderId) => handleRemoveFromFolder(repo, folderId)}
+        onMoveToUncategorized={removableFolders.length > 0
+          ? () => handleMoveToUncategorized(repo)
+          : undefined}
+      />
+    )
+  }
+
   return (
     <div className="page library-page" style={featuredBackgroundStyle}>
       <div className="library-sam-workspace">
-          <section className="library-sam-list-pane" aria-label={t(`${pageKey}.title`)}>
-            <section className="library-toolstrip" aria-label={t(`${pageKey}.filterLabel`)}>
-              <div className="library-sidebar-nav" aria-label={t('library.sidebar.navigation')}>
-                <button
-                  type="button"
-                  className={`library-sidebar-nav-btn library-sidebar-nav-home ${viewMode === 'home' ? 'active' : ''}`}
-                  aria-pressed={viewMode === 'home'}
-                  onClick={openHomeView}
-                >
-                  {t('library.nav.home')}
-                </button>
-                <button
-                  type="button"
-                  className={`library-sidebar-nav-btn library-sidebar-nav-icon ${viewMode === 'recent' ? 'active' : ''}`}
-                  aria-label={t('library.nav.recent')}
-                  title={t('library.nav.recent')}
-                  aria-pressed={viewMode === 'recent'}
-                  onClick={openRecentView}
-                >
-                  <LibraryIcon name="clock" />
-                </button>
-                <button
-                  type="button"
-                  className={`library-sidebar-nav-btn library-sidebar-nav-icon ${viewMode === 'ready' ? 'active' : ''}`}
-                  aria-label={t('library.nav.ready')}
-                  title={t('library.nav.ready')}
-                  aria-pressed={viewMode === 'ready'}
-                  onClick={openReadyView}
-                >
-                  <LibraryIcon name="play" />
-                </button>
-              </div>
-
-              <div className="search-form">
-                <label className="visually-hidden" htmlFor="library-search">
-                  {t(`${pageKey}.searchLabel`)}
-                </label>
-                <input
-                  id="library-search"
-                  type="text"
-                  placeholder={t(`${pageKey}.searchPlaceholder`)}
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="search-input"
-                  aria-label={t(`${pageKey}.searchLabel`)}
-                />
-              </div>
-
-            </section>
-
-            <div className="search-results">
-              {state.error && !state.isStale && !suppressDiagnostics && (
-                <StatePanel
-                  kind="error"
-                  title={t(libraryErrorTitleKey(libraryErrorKind))}
-                  message={t(libraryErrorTextKey(libraryErrorKind))}
-                  details={state.error}
-                  detailsLabel={t('state.details')}
-                  actionLabel={t('library.tryAgain')}
-                  onAction={handleRefresh}
-                />
-              )}
-
-              {installedLoadError && !suppressDiagnostics && (
-                <StatePanel
-                  kind="error"
-                  title={t('state.installedErrorTitle')}
-                  message={t('library.installedStatusErrorText')}
-                  details={installedLoadError}
-                  detailsLabel={t('state.details')}
-                  actionLabel={t('library.tryAgain')}
-                  onAction={() => refreshInstalledApps()}
-                />
-              )}
-
-              {launchError && (
-                <StatePanel
-                  kind="error"
-                  title={t('state.launchErrorTitle')}
-                  message={launchError}
-                />
-              )}
-
-              <div className="library-results-header" aria-hidden="true">
-                <span>{t('library.name')}</span>
-                <span>{t('nav.source')}</span>
-                <span>{t('library.status')}</span>
-                <span>{t('library.action')}</span>
-              </div>
-
-              {showLoadingState && (
-                <StatePanel kind="loading" title={t(`${pageKey}.loading`)} skeletonCount={3} />
-              )}
-
-              {visibleRepositories.length === 0 && !state.loading && (
-                <StatePanel
-                  kind="empty"
-                  title={t(emptyTitleKey)}
-                  message={t(emptyTextKey)}
-                  actionLabel={emptyActionLabel}
-                  onAction={emptyAction}
-                />
-              )}
-
-              {sidebarSectionGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className={`library-folder-group library-folder-group--${group.id}`}
-                  aria-label={group.label}
-                >
-                  <div className="library-folder-group-label">{group.label}</div>
-                  {group.sections.map((section) => {
-                    const isCollapsed = collapsedFolderIds.has(section.id)
-                    const sectionKind = section.id === favoritesFolderId || section.id === uncategorizedFolderId
-                      ? 'system'
-                      : 'custom'
-
-                    return (
-                      <section
-                        key={section.id}
-                        className={`library-folder-section ${sectionKind} ${section.pinned ? 'pinned' : ''} ${isCollapsed ? 'collapsed' : ''}`}
-                      >
-                        <button
-                          type="button"
-                          className="library-folder-section-header"
-                          aria-expanded={!isCollapsed}
-                          onClick={() => toggleFolderSection(section.id)}
-                        >
-                          <span className="library-folder-section-title">
-                            <span className="library-folder-section-chevron" aria-hidden="true" />
-                            <span className="library-folder-section-icon" aria-hidden="true" />
-                            <span>{section.title}</span>
-                          </span>
-                          <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
-                        </button>
-                        {!isCollapsed && (
-                          <div className="library-folder-section-items">
-                            {section.repositories.map((repo) => {
-                              const key = projectArtKey(repo.owner.login, repo.name)
-                              const addableFolders = displayFolders
-                                .filter((folder) => !folder.repoKeys.includes(key))
-                                .map((folder) => ({
-                                  id: folder.id,
-                                  name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                                }))
-                              const removableFolders = displayFolders
-                                .filter((folder) => folder.repoKeys.includes(key))
-                                .map((folder) => ({
-                                  id: folder.id,
-                                  name: folder.id === favoritesFolderId ? t('library.folder.favorites') : folder.name,
-                                }))
-
-                              return (
-                                <RepoCard
-                                  key={repo.id}
-                                  repo={repo}
-                                  installedApp={getInstalledApp(repo)}
-                                  latestVersion={getLatestVersion(repo)}
-                                  art={projectArt[key]}
-                                  isFavorite={favoriteKeys.has(key)}
-                                  isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-                                  onPreview={() => selectFeaturedRepo(repo)}
-                                  onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
-                                  onPickArt={() => handlePickArt('cover', repo)}
-                                  onPickBackground={() => handlePickArt('background', repo)}
-                                  onClearArt={() => handleClearArt(repo, 'cover')}
-                                  onClearBackground={() => handleClearArt(repo, 'background')}
-                                  onUninstall={() => handleRequestUninstall(repo)}
-                                  onInstall={() => setSelectedRepo(repo)}
-                                  onLaunch={() => handleLaunch(repo)}
-                                  folders={addableFolders}
-                                  removableFolders={removableFolders}
-                                  onCreateFolder={() => openCreateFolderDialog(repo)}
-                                  onMoveToFolder={(folderId) => handleMoveToFolder(repo, folderId)}
-                                  onRemoveFromFolder={(folderId) => handleRemoveFromFolder(repo, folderId)}
-                                  onMoveToUncategorized={removableFolders.length > 0
-                                    ? () => handleMoveToUncategorized(repo)
-                                    : undefined}
-                                />
-                              )
-                            })}
-                          </div>
-                        )}
-                      </section>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {state.hasMore && (
-              <button type="button" onClick={loadMore} className="load-more-btn" disabled={state.loading}>
-                {state.loading ? t('library.loadingMore') : t('library.loadMore')}
-              </button>
+          <LibrarySidebar
+            viewMode={viewMode}
+            query={query}
+            groups={sidebarSectionGroups}
+            collapsedFolderIds={collapsedFolderIds}
+            notices={(
+              <>
+                {state.error && !state.isStale && !suppressDiagnostics && (
+                  <StatePanel
+                    kind="error"
+                    title={t(libraryErrorTitleKey(libraryErrorKind))}
+                    message={t(libraryErrorTextKey(libraryErrorKind))}
+                    details={state.error}
+                    detailsLabel={t('state.details')}
+                    actionLabel={t('library.tryAgain')}
+                    onAction={handleRefresh}
+                  />
+                )}
+                {installedLoadError && !suppressDiagnostics && (
+                  <StatePanel
+                    kind="error"
+                    title={t('state.installedErrorTitle')}
+                    message={t('library.installedStatusErrorText')}
+                    details={installedLoadError}
+                    detailsLabel={t('state.details')}
+                    actionLabel={t('library.tryAgain')}
+                    onAction={() => refreshInstalledApps()}
+                  />
+                )}
+                {launchError && (
+                  <StatePanel
+                    kind="error"
+                    title={t('state.launchErrorTitle')}
+                    message={launchError}
+                  />
+                )}
+              </>
             )}
-          </section>
+            showLoading={showLoadingState}
+            showEmpty={visibleRepositories.length === 0 && !state.loading}
+            emptyTitle={t(emptyTitleKey)}
+            emptyMessage={t(emptyTextKey)}
+            emptyActionLabel={emptyActionLabel}
+            loading={state.loading}
+            hasMore={state.hasMore}
+            onViewModeChange={handleViewModeChange}
+            onQueryChange={setQuery}
+            onToggleSection={toggleFolderSection}
+            onEmptyAction={emptyAction}
+            onLoadMore={loadMore}
+            renderRepository={renderSidebarRepository}
+          />
 
           <aside
             className="library-sam-details-pane"
@@ -2074,64 +1313,17 @@ function LibraryPage({
         />
       )}
 
-      {folderDialogOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={closeCreateFolderDialog}>
-          <div
-            className="confirm-modal library-folder-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="library-folder-modal-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="confirm-modal-header">
-              <div>
-                <span className="confirm-modal-kicker">{t('library.folder.title')}</span>
-                <h3 id="library-folder-modal-title">{t('library.folder.modalTitle')}</h3>
-              </div>
-              <button
-                type="button"
-                className="secondary-btn confirm-close-btn"
-                aria-label={t('library.folder.cancel')}
-                onClick={closeCreateFolderDialog}
-              >
-                ×
-              </button>
-            </div>
-            <div className="library-folder-form">
-              <label htmlFor="library-folder-name">{t('library.folder.nameLabel')}</label>
-              <input
-                id="library-folder-name"
-                type="text"
-                value={folderName}
-                placeholder={t('library.folder.namePlaceholder')}
-                autoFocus
-                onChange={(event) => {
-                  setFolderName(event.target.value)
-                  setFolderError(null)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && canCreateFolder) {
-                    handleConfirmCreateFolder()
-                  }
-                }}
-              />
-              {folderDialogRepo && (
-                <p>{t('library.folder.targetApp', { name: folderDialogRepo.name })}</p>
-              )}
-              {folderDialogError && (
-                <span className="library-folder-error" role="alert">{folderDialogError}</span>
-              )}
-            </div>
-            <div className="confirm-actions">
-              <button type="button" className="secondary-btn" onClick={closeCreateFolderDialog}>
-                {t('library.folder.cancel')}
-              </button>
-              <button type="button" onClick={handleConfirmCreateFolder} disabled={!canCreateFolder}>
-                {t('library.folder.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+      {folderDialogRepo && (
+        <FolderManager
+          key={folderDialogRepo.id}
+          targetName={folderDialogRepo.name}
+          existingNames={[
+            ...displayFolders.map((folder) => folder.name),
+            t('library.folder.favorites'),
+          ]}
+          onCancel={closeCreateFolderDialog}
+          onConfirm={handleConfirmCreateFolder}
+        />
       )}
 
       {libraryActionMessage && (

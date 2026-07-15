@@ -3118,3 +3118,17 @@
 .library-sam-list-pane .repo-card.selected .repo-name {
   color: #ffffff;
 }
+
+:root[data-theme='light'] .library-sam-list-pane .repo-name {
+  color: #1f2937;
+}
+
+:root[data-theme='light'] .library-sam-list-pane .repo-card--available .repo-name {
+  color: #64748b;
+}
+
+:root[data-theme='light'] .library-sam-list-pane .repo-card--installed .repo-name,
+:root[data-theme='light'] .library-sam-list-pane .repo-card--update .repo-name,
+:root[data-theme='light'] .library-sam-list-pane .repo-card.selected .repo-name {
+  color: #0f172a;
+}

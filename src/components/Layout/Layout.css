@@ -56,13 +56,13 @@
 .cinematic-shell.has-custom-background .cinematic-backdrop {
   background:
     radial-gradient(circle at 72% 14%, rgba(91, 215, 255, 0.08), transparent 34%),
-    linear-gradient(90deg, rgba(5, 9, 14, 0.82) 0%, rgba(5, 9, 14, 0.66) 44%, rgba(5, 9, 14, 0.5) 100%),
-    linear-gradient(0deg, rgba(5, 9, 14, 0.86) 0%, rgba(5, 9, 14, 0.48) 54%, rgba(5, 9, 14, 0.7) 100%);
+    linear-gradient(90deg, rgba(5, 9, 14, 0.58) 0%, rgba(5, 9, 14, 0.4) 44%, rgba(5, 9, 14, 0.26) 100%),
+    linear-gradient(0deg, rgba(5, 9, 14, 0.66) 0%, rgba(5, 9, 14, 0.3) 54%, rgba(5, 9, 14, 0.48) 100%);
 }
 
 .cinematic-shell.has-custom-background .cinematic-background.is-visible {
-  filter: blur(9px) brightness(0.72) saturate(0.95);
-  opacity: 0.38;
+  filter: blur(7px) brightness(0.78) saturate(1.02);
+  opacity: 0.72;
   transform: scale(1.035);
 }
 
@@ -98,9 +98,14 @@
 
 :root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
   background:
-    radial-gradient(circle at 72% 14%, rgba(91, 215, 255, 0.08), transparent 34%),
-    linear-gradient(90deg, rgba(5, 9, 14, 0.82) 0%, rgba(5, 9, 14, 0.66) 44%, rgba(5, 9, 14, 0.5) 100%),
-    linear-gradient(0deg, rgba(5, 9, 14, 0.86) 0%, rgba(5, 9, 14, 0.48) 54%, rgba(5, 9, 14, 0.7) 100%);
+    radial-gradient(circle at 72% 14%, rgba(0, 103, 192, 0.09), transparent 34%),
+    linear-gradient(90deg, rgba(238, 243, 248, 0.7) 0%, rgba(238, 243, 248, 0.48) 44%, rgba(238, 243, 248, 0.28) 100%),
+    linear-gradient(0deg, rgba(238, 243, 248, 0.74) 0%, rgba(238, 243, 248, 0.3) 54%, rgba(238, 243, 248, 0.5) 100%);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-background.is-visible {
+  filter: blur(7px) brightness(1.04) saturate(0.88);
+  opacity: 0.54;
 }
 
 .layout-container {

@@ -2,7 +2,7 @@ import type { AppSettings } from '../types'
 import { APPEARANCE_PRESETS, normalizeAppearance } from './settingsDefaults'
 
 export type ThemePreference = AppSettings['theme']
-type ResolvedTheme = 'light' | 'dark'
+export type ResolvedTheme = 'light' | 'dark'
 
 export const THEME_CHANGE_EVENT = 'pullora-theme-change'
 
@@ -25,6 +25,7 @@ export function applyThemePreference(theme: ThemePreference, animate = false) {
 
   root.dataset.theme = resolvedTheme
   root.dataset.themePreference = theme
+  return resolvedTheme
 }
 
 export function notifyThemePreference(theme: ThemePreference) {
@@ -79,16 +80,23 @@ export function appearanceCssText(appearance: AppSettings['appearance'] | undefi
     .join('\n')}\n}`
 }
 
-export function applyAppearanceSettings(appearance: AppSettings['appearance'] | undefined) {
+export function applyAppearanceSettings(
+  appearance: AppSettings['appearance'] | undefined,
+  theme: ResolvedTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
+) {
   const root = document.documentElement
   const normalized = normalizeAppearance(appearance)
-  const effectiveAppearance = normalized.preset === 'custom'
-    ? normalized
-    : APPEARANCE_PRESETS[normalized.preset]
+  const effectiveAppearance = theme === 'light'
+    ? APPEARANCE_PRESETS.githubLight
+    : normalized.preset === 'custom'
+      ? normalized
+      : normalized.preset === 'githubLight'
+        ? APPEARANCE_PRESETS.github
+        : APPEARANCE_PRESETS[normalized.preset]
   const variables = appearanceCssVariables(effectiveAppearance)
 
   Object.entries(variables).forEach(([key, value]) => root.style.setProperty(key, value))
-  root.dataset.appearancePreset = normalized.preset
+  root.dataset.appearancePreset = effectiveAppearance.preset
 
   let style = document.getElementById(CUSTOM_THEME_STYLE_ID) as HTMLStyleElement | null
   if (!style) {
