@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
 import { formatDate, formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -103,7 +105,7 @@ function RepoCard({
 
     document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
-    actionsRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
+    focusFirstMenuItem(actionsRef.current?.querySelector<HTMLElement>('[role="menu"]') ?? null)
 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
@@ -112,30 +114,10 @@ function RepoCard({
   }, [actionsOpen])
 
   const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
+    handleMenuKeyboard(event, () => {
       setActionsOpen(false)
       cardRef.current?.focus()
-      return
-    }
-
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
-    const items = Array.from(
-      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'),
-    )
-    if (items.length === 0) return
-
-    event.preventDefault()
-    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
-    const nextIndex = event.key === 'Home'
-      ? 0
-      : event.key === 'End'
-        ? items.length - 1
-        : event.key === 'ArrowUp'
-          ? (currentIndex - 1 + items.length) % items.length
-          : (currentIndex + 1) % items.length
-    items[nextIndex]?.focus()
+    })
   }
 
   const toggleFavorite = async (event: React.MouseEvent) => {
@@ -327,11 +309,15 @@ function RepoCard({
         </div>
       </div>
 
-      {actionsOpen && menuPosition && (
+      {actionsOpen && menuPosition && createPortal(
         <div
           className="project-actions-menu repo-actions-menu repo-context-menu open"
           ref={actionsRef}
-          style={{ left: menuPosition.x, top: menuPosition.y }}
+          style={{
+            left: Math.max(8, Math.min(menuPosition.x, window.innerWidth - 288)),
+            top: Math.max(8, Math.min(menuPosition.y, window.innerHeight - 8)),
+            transform: menuPosition.y > window.innerHeight / 2 ? 'translateY(-100%)' : undefined,
+          }}
           onClick={(event) => event.stopPropagation()}
         >
           <div
@@ -506,7 +492,8 @@ function RepoCard({
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </article>
   )

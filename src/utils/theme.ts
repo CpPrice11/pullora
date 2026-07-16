@@ -40,19 +40,25 @@ const CUSTOM_THEME_STYLE_ID = 'pullora-custom-theme'
 
 export function appearanceCssVariables(appearance: AppSettings['appearance'] | undefined) {
   const normalized = normalizeAppearance(appearance)
+  const isLight = normalized.preset === 'githubLight'
   const densityScale = normalized.density === 'compact' ? 0.86 : normalized.density === 'spacious' ? 1.12 : 1
+  const surfaceOpacity = 100 - normalized.surfaceTransparency
+  const shellOpacity = isLight ? Math.min(96, surfaceOpacity + 16) : surfaceOpacity
+  const nestedOpacity = Math.round(shellOpacity * 0.55)
+  const insetOpacity = Math.round(shellOpacity * 0.72)
+  const strongOpacity = Math.min(100, shellOpacity + 12)
 
   return {
     '--color-primary': normalized.accent,
     '--color-primary-dark': normalized.accentHover,
     '--color-primary-light': `${normalized.accent}24`,
-    '--color-bg': `color-mix(in srgb, ${normalized.background} 58%, transparent)`,
-    '--color-bg-elevated': `color-mix(in srgb, ${normalized.surface} 52%, transparent)`,
-    '--color-bg-secondary': `color-mix(in srgb, ${normalized.surface2} 42%, transparent)`,
-    '--color-mica': `color-mix(in srgb, ${normalized.surface} 42%, transparent)`,
-    '--color-sidebar': `color-mix(in srgb, ${normalized.sidebar} 48%, transparent)`,
-    '--color-control': `color-mix(in srgb, ${normalized.surface2} 34%, transparent)`,
-    '--color-control-hover': `color-mix(in srgb, ${normalized.surface2} 52%, transparent)`,
+    '--color-bg': isLight ? normalized.background : `color-mix(in srgb, ${normalized.background} 58%, transparent)`,
+    '--color-bg-elevated': isLight ? normalized.surface : `color-mix(in srgb, ${normalized.surface} 52%, transparent)`,
+    '--color-bg-secondary': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 42%, transparent)`,
+    '--color-mica': isLight ? `color-mix(in srgb, ${normalized.surface} 94%, transparent)` : `color-mix(in srgb, ${normalized.surface} 42%, transparent)`,
+    '--color-sidebar': isLight ? `color-mix(in srgb, ${normalized.sidebar} 94%, transparent)` : `color-mix(in srgb, ${normalized.sidebar} 48%, transparent)`,
+    '--color-control': isLight ? normalized.surface : `color-mix(in srgb, ${normalized.surface2} 34%, transparent)`,
+    '--color-control-hover': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 52%, transparent)`,
     '--color-text': normalized.text,
     '--color-text-secondary': normalized.muted,
     '--color-text-tertiary': `${normalized.muted}cc`,
@@ -63,13 +69,27 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--border-radius': `${normalized.radius}px`,
     '--border-radius-lg': `${normalized.radius + 6}px`,
     '--density-scale': String(densityScale),
-    '--material-mica': `color-mix(in srgb, ${normalized.surface} 38%, transparent)`,
-    '--material-mica-strong': `color-mix(in srgb, ${normalized.surface} 52%, transparent)`,
-    '--material-acrylic': `linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)), color-mix(in srgb, ${normalized.surface} 36%, transparent)`,
-    '--material-acrylic-strong': `linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.034)), color-mix(in srgb, ${normalized.surface} 50%, transparent)`,
-    '--material-acrylic-subtle': `linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.014)), color-mix(in srgb, ${normalized.surface} 24%, transparent)`,
-    '--material-border': `color-mix(in srgb, ${normalized.border} 58%, transparent)`,
-    '--material-border-strong': `color-mix(in srgb, ${normalized.border} 78%, transparent)`,
+    '--surface-opacity': `${surfaceOpacity}%`,
+    '--surface-opacity-strong': `${strongOpacity}%`,
+    '--surface-blur': `${normalized.surfaceBlur}px`,
+    '--surface-canvas': normalized.background,
+    '--surface-1': `color-mix(in srgb, ${normalized.surface} ${shellOpacity}%, transparent)`,
+    '--surface-2': `color-mix(in srgb, ${normalized.surface2} ${nestedOpacity}%, transparent)`,
+    '--surface-3': `color-mix(in srgb, ${normalized.background} ${insetOpacity}%, transparent)`,
+    '--surface-border': `color-mix(in srgb, ${normalized.border} 58%, transparent)`,
+    '--surface-border-strong': `color-mix(in srgb, ${normalized.border} 78%, transparent)`,
+    '--surface-shadow': isLight
+      ? `0 18px 48px color-mix(in srgb, ${normalized.border} 24%, transparent)`
+      : `0 18px 48px color-mix(in srgb, ${normalized.background} 58%, transparent)`,
+    '--surface-material': 'var(--surface-1)',
+    '--surface-material-strong': `color-mix(in srgb, ${normalized.surface} ${strongOpacity}%, transparent)`,
+    '--material-mica': 'var(--surface-1)',
+    '--material-mica-strong': 'var(--surface-material-strong)',
+    '--material-acrylic': 'linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)), var(--surface-1)',
+    '--material-acrylic-strong': 'linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.034)), var(--surface-material-strong)',
+    '--material-acrylic-subtle': 'linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.014)), var(--surface-2)',
+    '--material-border': 'var(--surface-border)',
+    '--material-border-strong': 'var(--surface-border-strong)',
   }
 }
 
@@ -86,13 +106,18 @@ export function applyAppearanceSettings(
 ) {
   const root = document.documentElement
   const normalized = normalizeAppearance(appearance)
-  const effectiveAppearance = theme === 'light'
+  const themeAppearance = theme === 'light'
     ? APPEARANCE_PRESETS.githubLight
     : normalized.preset === 'custom'
       ? normalized
       : normalized.preset === 'githubLight'
         ? APPEARANCE_PRESETS.github
         : APPEARANCE_PRESETS[normalized.preset]
+  const effectiveAppearance = {
+    ...themeAppearance,
+    surfaceTransparency: normalized.surfaceTransparency,
+    surfaceBlur: normalized.surfaceBlur,
+  }
   const variables = appearanceCssVariables(effectiveAppearance)
 
   Object.entries(variables).forEach(([key, value]) => root.style.setProperty(key, value))

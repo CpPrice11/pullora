@@ -351,7 +351,7 @@ function AppDetailsModal({
                 </button>
               )}
             </div>
-            {actionError && <div className="error-message">{actionError}</div>}
+            {actionError && <div className="error-message" role="alert">{actionError}</div>}
           </section>
 
           <section className="app-details-panel">

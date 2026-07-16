@@ -14,12 +14,13 @@ import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../utils/menuKeyboard'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.7.0'
+const FALLBACK_CURRENT_VERSION = 'v5.8.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
@@ -101,6 +102,8 @@ function AboutPage() {
   const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
   const confirmModalRef = useRef<HTMLDivElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
+  const releaseMenuRef = useRef<HTMLDivElement | null>(null)
+  const releaseMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
 
   const loadLauncherStorageInfo = async () => {
     try {
@@ -162,6 +165,7 @@ function AboutPage() {
     }
 
     document.addEventListener('click', closeMenu)
+    focusFirstMenuItem(releaseMenuRef.current)
     return () => document.removeEventListener('click', closeMenu)
   }, [menuReleaseId])
 
@@ -326,7 +330,12 @@ function AboutPage() {
       </section>
 
       {(actionMessage || actionError) && (
-        <div className={actionError ? 'about-toast about-toast--error' : 'about-toast about-toast--success'} role="status">
+        <div
+          className={actionError ? 'about-toast about-toast--error' : 'about-toast about-toast--success'}
+          role={actionError ? 'alert' : 'status'}
+          aria-live={actionError ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
           {actionError ?? actionMessage}
         </div>
       )}
@@ -485,6 +494,7 @@ function AboutPage() {
                       )}
                       <div className={`project-actions-menu about-release-menu ${menuOpen ? 'open' : ''}`}>
                         <button
+                          ref={menuOpen ? releaseMenuTriggerRef : undefined}
                           type="button"
                           className="project-actions-trigger"
                           aria-haspopup="menu"
@@ -495,7 +505,16 @@ function AboutPage() {
                           ...
                         </button>
                         {menuOpen && (
-                          <div className="project-actions-popover" role="menu" aria-label={t('about.moreActions')}>
+                          <div
+                            ref={releaseMenuRef}
+                            className="project-actions-popover"
+                            role="menu"
+                            aria-label={t('about.moreActions')}
+                            onKeyDown={(event) => handleMenuKeyboard(event, () => {
+                              setMenuReleaseId(null)
+                              releaseMenuTriggerRef.current?.focus()
+                            })}
+                          >
                             <button
                               type="button"
                               role="menuitem"

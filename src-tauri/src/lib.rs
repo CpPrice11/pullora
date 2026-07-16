@@ -103,6 +103,7 @@ pub fn run() {
             commands::download::get_downloads,
             commands::download::cancel_download,
             commands::updates::get_launcher_version,
+            commands::updates::get_event_log,
             commands::updates::open_dir,
             commands::updates::open_external_url,
             commands::updates::get_launcher_storage_info,

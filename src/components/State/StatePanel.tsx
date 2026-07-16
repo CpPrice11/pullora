@@ -25,7 +25,13 @@ function StatePanel({
 }: StatePanelProps) {
   if (kind === 'loading') {
     return (
-      <div className="state-panel state-panel--loading" aria-label={title ?? message}>
+      <div
+        className="state-panel state-panel--loading"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        aria-label={title ?? message}
+      >
         {Array.from({ length: skeletonCount }).map((_, index) => (
           <div className="state-skeleton-card" key={index}>
             <span className="state-skeleton-icon" />
@@ -39,7 +45,12 @@ function StatePanel({
   }
 
   return (
-    <div className={`state-panel state-panel--${kind}`} role={kind === 'error' ? 'alert' : 'status'}>
+    <div
+      className={`state-panel state-panel--${kind}`}
+      role={kind === 'error' ? 'alert' : 'status'}
+      aria-live={kind === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
       <div className="state-panel-mark" aria-hidden="true">
         <span>{kind === 'error' ? '!' : ''}</span>
       </div>

@@ -14,7 +14,10 @@ const server = await createServer({
       if (id.endsWith('.css')) return 'export default {}'
     },
   }],
-  server: { middlewareMode: true },
+  server: {
+    middlewareMode: true,
+    watch: { ignored: ['**/src-tauri/target/**'] },
+  },
 })
 
 try {
@@ -25,9 +28,15 @@ try {
   const { default: ApplicationDetails } = await server.ssrLoadModule('/src/features/library/components/ApplicationDetails.tsx')
   const { default: FolderManager } = await server.ssrLoadModule('/src/features/library/components/FolderManager.tsx')
   const { default: BatchUpdatePanel, BatchUpdateConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/BatchUpdatePanel.tsx')
+  const { default: DownloadProgressPanel } = await server.ssrLoadModule('/src/components/Install/DownloadProgress.tsx')
+  const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
   const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
   const { sortLibraryRepositories } = await server.ssrLoadModule('/src/features/library/hooks/useLibraryFiltering.ts')
   const { parseLibraryViewState } = await server.ssrLoadModule('/src/features/library/libraryViewState.ts')
+  const { nextMenuItemIndex } = await server.ssrLoadModule('/src/utils/menuKeyboard.ts')
+  const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
+  const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
+  const { APPEARANCE_PRESETS } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
 
   const noop = () => {}
   const repo = {
@@ -72,6 +81,24 @@ try {
   assert.equal(getLibraryAppStatus(installedApp, 'v2.0.0'), 'update')
   assert.deepEqual(['update', 'installed', 'available'].map(getLibraryStatusRank), [0, 1, 2])
   assert.equal(getUpdateDismissKey('CpPrice11', 'Demo-App', 'V2'), 'cpprice11/demo-app@v2')
+  assert.deepEqual(
+    ['ArrowDown', 'ArrowUp', 'Home', 'End'].map((key) => nextMenuItemIndex(key, 0, 4)),
+    [1, 3, 0, 3],
+  )
+  assert.equal(nextMenuItemIndex('ArrowDown', -1, 4), 0)
+  assert.equal(nextMenuItemIndex('ArrowDown', 0, 0), -1)
+  const diagnostics = redactSensitiveText(
+    'token=secret github=ghp_private C:\\Users\\sasha\\Downloads unix=/home/alex/apps',
+  )
+  assert.equal(
+    diagnostics,
+    'token=<redacted> github=<redacted> C:\\Users\\<user>\\Downloads unix=/home/<user>/apps',
+  )
+
+  const darkSurfaces = appearanceCssVariables({ ...APPEARANCE_PRESETS.github, surfaceTransparency: 40 })
+  assert.equal(darkSurfaces['--surface-1'], 'color-mix(in srgb, #111820 60%, transparent)')
+  assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
+  assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')
 
   const olderRepo = { ...repo, id: 2, name: 'alpha-app', updated_at: '2026-07-14T10:00:00Z' }
   const newerInstall = {
@@ -178,7 +205,9 @@ try {
   assert.match(versionPanel, /library-inline-panel--versions/)
   assert.match(versionPanel, /1 КБ/)
   assert.match(render(ApplicationDetails, { repo, updatedDate: '16.07.2026', latestVersion: 'v2.0.0', installPath: 'C:\\Apps\\demo-app' }), /library-inline-panel--details/)
-  assert.match(render(FolderManager, { targetName: repo.name, existingNames: [], onCancel: noop, onConfirm: noop }), /role="dialog"/)
+  const folderManager = render(FolderManager, { targetName: repo.name, existingNames: [], onCancel: noop, onConfirm: noop })
+  assert.match(folderManager, /role="dialog"/)
+  assert.match(folderManager, /tabindex="-1"/)
   const batchPanel = render(BatchUpdatePanel, {
     items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
     skippedCount: 0,
@@ -194,6 +223,47 @@ try {
   })
   assert.match(batchPanel, /updates-center-row/)
   assert.match(batchPanel, /aria-haspopup="dialog"/)
+  assert.match(batchPanel, /aria-busy="false"/)
+
+  const busyBatchPanel = render(BatchUpdatePanel, {
+    items: [],
+    skippedCount: 0,
+    checking: true,
+    updating: false,
+    versionErrorCount: 0,
+    updateMessage: 'Updated',
+    error: 'Failed',
+    onCheck: noop,
+    onUpdateAll: noop,
+    onClearSkipped: noop,
+    onUpdate: noop,
+    onShowDetails: noop,
+    onSkip: noop,
+  })
+  assert.match(busyBatchPanel, /aria-busy="true"/)
+  assert.match(busyBatchPanel, /role="status" aria-live="polite"/)
+  assert.match(busyBatchPanel, /role="alert"/)
+
+  const download = render(DownloadProgressPanel, {
+    downloads: [{
+      id: 'download-1',
+      fileName: 'demo.zip',
+      progress: 48.4,
+      totalSize: 1024,
+      downloadedSize: 512,
+      status: 'downloading',
+      stage: 'downloading',
+    }],
+    onCancel: noop,
+  })
+  assert.match(download, /role="progressbar"/)
+  assert.match(download, /aria-valuenow="48"/)
+  assert.match(download, /role="status" aria-live="polite"/)
+  assert.match(download, /aria-busy="true"/)
+
+  const errorState = render(StatePanel, { kind: 'error', title: 'Failed' })
+  assert.match(errorState, /role="alert" aria-live="assertive"/)
+  assert.match(render(StatePanel, { kind: 'loading', title: 'Loading' }), /role="status" aria-live="polite" aria-busy="true"/)
 
   const batchConfirmation = render(BatchUpdateConfirmDialog, {
     items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],

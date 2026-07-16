@@ -259,27 +259,25 @@
 }
 
 :root[data-theme='light'] .cinematic-shell .state-panel {
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.66)),
-    rgba(255, 255, 255, 0.72);
-  border-color: rgba(17, 24, 39, 0.12);
-  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
-  color: rgba(17, 24, 39, 0.68);
+  background: var(--surface-2);
+  border-color: var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  color: var(--color-text-secondary);
 }
 
 :root[data-theme='light'] .cinematic-shell .state-panel h3 {
-  color: #111827;
+  color: var(--color-text);
 }
 
 :root[data-theme='light'] .cinematic-shell .state-panel-mark {
   background:
-    radial-gradient(circle at 70% 20%, rgba(0, 120, 212, 0.18), transparent 38%),
-    rgba(255, 255, 255, 0.74);
-  border-color: rgba(17, 24, 39, 0.1);
+    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 38%),
+    var(--surface-3);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .state-panel-mark span {
-  color: #111827;
+  color: var(--color-text);
 }
 
 :root[data-theme='light'] .cinematic-shell .state-panel--error h3 {
@@ -288,16 +286,16 @@
 
 :root[data-theme='light'] .cinematic-shell .state-skeleton-card {
   background:
-    linear-gradient(90deg, transparent, rgba(17, 24, 39, 0.08), transparent),
-    rgba(255, 255, 255, 0.72);
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-text) 8%, transparent), transparent),
+    var(--surface-3);
   background-size: 220px 100%, 100% 100%;
-  border-color: rgba(17, 24, 39, 0.1);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .state-skeleton-icon,
 :root[data-theme='light'] .cinematic-shell .state-skeleton-line,
 :root[data-theme='light'] .cinematic-shell .state-skeleton-action {
-  background: rgba(17, 24, 39, 0.1);
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 .sam-shell .state-panel {

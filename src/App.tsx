@@ -6,7 +6,7 @@ import SettingsPage from './pages/SettingsPage'
 import AboutPage from './pages/AboutPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import { useSettings } from './hooks/useSettings'
-import { applyAppearanceSettings, applyThemePreference, resolveThemePreference, THEME_CHANGE_EVENT, type ThemePreference } from './utils/theme'
+import { applyAppearanceSettings, applyThemePreference, resolveThemePreference, THEME_CHANGE_EVENT, type ResolvedTheme, type ThemePreference } from './utils/theme'
 import { LanguageProvider } from './i18n'
 import { pickImageFile } from './services/dialog'
 import {
@@ -25,10 +25,13 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveThemePreference(settings.theme))
   const [showPathModal, setShowPathModal] = useState(false)
-  const [launcherBackground, setLauncherBackground] = useState<string | null>(null)
+  const [launcherBackgrounds, setLauncherBackgrounds] = useState<Record<ResolvedTheme, string | null>>({
+    light: null,
+    dark: null,
+  })
   const [searchPreviewBackground, setSearchPreviewBackground] = useState<string | null>(null)
-  const [hasLauncherBackground, setHasLauncherBackground] = useState(false)
 
   useEffect(() => {
     setThemePreference(settings.theme)
@@ -39,6 +42,7 @@ function App() {
 
     const applyTheme = () => {
       const resolvedTheme = applyThemePreference(themePreference)
+      setResolvedTheme(resolvedTheme)
       applyAppearanceSettings(settings.appearance, resolvedTheme)
     }
 
@@ -46,8 +50,9 @@ function App() {
       const nextTheme = (event as CustomEvent<{ theme: ThemePreference }>).detail?.theme
       if (nextTheme) {
         setThemePreference(nextTheme)
-        applyThemePreference(nextTheme, true)
-        applyAppearanceSettings(settings.appearance, resolveThemePreference(nextTheme))
+        const resolvedTheme = applyThemePreference(nextTheme, true)
+        setResolvedTheme(resolvedTheme)
+        applyAppearanceSettings(settings.appearance, resolvedTheme)
       }
     }
 
@@ -75,15 +80,18 @@ function App() {
   }, [activeTab])
 
   useEffect(() => {
-    getLauncherBackgroundArt()
-      .then((art) => {
-        const url = projectArtBackgroundUrl(art, { fallbackToCover: false })
-        setLauncherBackground(url)
-        setHasLauncherBackground(Boolean(url))
+    Promise.all([
+      getLauncherBackgroundArt('light'),
+      getLauncherBackgroundArt('dark'),
+    ])
+      .then(([light, dark]) => {
+        setLauncherBackgrounds({
+          light: projectArtBackgroundUrl(light, { fallbackToCover: false }),
+          dark: projectArtBackgroundUrl(dark, { fallbackToCover: false }),
+        })
       })
       .catch(() => {
-        setLauncherBackground(null)
-        setHasLauncherBackground(false)
+        setLauncherBackgrounds({ light: null, dark: null })
       })
   }, [])
 
@@ -92,20 +100,18 @@ function App() {
     setShowPathModal(false)
   }
 
-  const handleChangeLauncherBackground = async () => {
+  const handleChangeLauncherBackground = async (theme: ResolvedTheme) => {
     const imagePath = await pickImageFile()
     if (!imagePath) return
 
-    const art = await setLauncherBackgroundArt(imagePath)
+    const art = await setLauncherBackgroundArt(theme, imagePath)
     const url = projectArtBackgroundUrl(art, { fallbackToCover: false })
-    setLauncherBackground(url)
-    setHasLauncherBackground(Boolean(url))
+    setLauncherBackgrounds((current) => ({ ...current, [theme]: url }))
   }
 
-  const handleClearLauncherBackground = async () => {
-    await clearLauncherBackgroundArt()
-    setLauncherBackground(null)
-    setHasLauncherBackground(false)
+  const handleClearLauncherBackground = async (theme: ResolvedTheme) => {
+    await clearLauncherBackgroundArt(theme)
+    setLauncherBackgrounds((current) => ({ ...current, [theme]: null }))
   }
 
   const handleTabChange = (tab: NavigationTab) => {
@@ -118,9 +124,9 @@ function App() {
     setActiveTab(tab)
   }
 
-  const visibleBackground = activeTab === 'library' && searchPreviewBackground
+  const visibleBackground = !settingsOpen && activeTab === 'library' && searchPreviewBackground
     ? searchPreviewBackground
-    : launcherBackground
+    : launcherBackgrounds[resolvedTheme]
 
   const shouldRenderTab = (tab: ContentTab) => visitedTabs.has(tab) || activeTab === tab
   const tabPanelProps = (tab: ContentTab) => ({
@@ -161,7 +167,10 @@ function App() {
 
         {settingsOpen && (
           <SettingsPage
-            hasLauncherBackground={hasLauncherBackground}
+            hasLauncherBackground={{
+              light: Boolean(launcherBackgrounds.light),
+              dark: Boolean(launcherBackgrounds.dark),
+            }}
             onChangeLauncherBackground={handleChangeLauncherBackground}
             onClearLauncherBackground={handleClearLauncherBackground}
             onClose={() => setSettingsOpen(false)}

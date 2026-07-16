@@ -50,8 +50,7 @@
 
 /* GitHub + Pullora direction: dense dark workstation, flat controls, blue selection. */
 :root,
-:root[data-theme='dark'],
-:root[data-theme='light'] {
+:root[data-theme='dark'] {
   color-scheme: dark;
   --color-primary: #66c0f4;
   --color-primary-dark: #8fd3ff;
@@ -80,13 +79,6 @@
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.34);
-}
-
-:root[data-theme='light'] button,
-:root[data-theme='light'] input,
-:root[data-theme='light'] textarea,
-:root[data-theme='light'] select {
-  color-scheme: dark;
 }
 
 :root.theme-transition *,
@@ -214,12 +206,17 @@ button:active {
   filter: brightness(0.98);
 }
 
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 48%, transparent);
-  outline-offset: 2px;
+:where(
+  button,
+  input,
+  select,
+  textarea,
+  a[href],
+  summary,
+  [tabindex]:not([tabindex='-1'])
+):focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 button:disabled {
@@ -270,7 +267,6 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
@@ -378,22 +374,25 @@ p {
   *,
   *::before,
   *::after {
+    animation-delay: 0s !important;
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+    transition-delay: 0s !important;
     transition-duration: 0.001ms !important;
   }
 
   button:hover,
   button:active,
-  a:hover {
+  a:hover,
+  [role='button']:hover,
+  [role='button']:active {
     transform: none !important;
   }
 }
 
 :root,
-:root[data-theme='dark'],
-:root[data-theme='light'] {
+:root[data-theme='dark'] {
   color-scheme: dark;
   --color-primary: #4ba3df;
   --color-primary-dark: #6db9ec;
@@ -448,7 +447,7 @@ body,
 :root[data-theme='light'],
 :root[data-theme='light'] body,
 :root[data-theme='light'] #root {
-  background: #eef2f6;
+  background: var(--surface-canvas, #eef3f8);
 }
 
 :root[data-theme='light'] {

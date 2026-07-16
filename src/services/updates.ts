@@ -1,8 +1,13 @@
 import { callTauri } from './tauri'
 import type { LauncherStorageInfo } from '../types'
+import { redactSensitiveText } from '../utils/redactSensitiveText'
 
 export async function getLauncherVersion(): Promise<string> {
   return callTauri<string>('get_launcher_version')
+}
+
+export async function getEventLog(): Promise<string[]> {
+  return (await callTauri<string[]>('get_event_log')).map(redactSensitiveText)
 }
 
 export async function openDir(path: string): Promise<void> {

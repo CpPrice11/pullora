@@ -289,3 +289,41 @@
 .error-message {
   border-radius: 0;
 }
+
+/* Light dialogs must win over the legacy dark workstation fallbacks above. */
+:root[data-theme='light'] .modal-overlay {
+  background: color-mix(in srgb, var(--surface-canvas) 66%, transparent);
+  backdrop-filter: blur(10px) brightness(1.02);
+}
+
+:root[data-theme='light'] .modal-content {
+  background: var(--surface-material-strong);
+  border-color: var(--surface-border-strong);
+  box-shadow: var(--surface-shadow);
+  color: var(--color-text);
+}
+
+:root[data-theme='light'] .modal-header,
+:root[data-theme='light'] .modal-actions {
+  background: var(--surface-2);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme='light'] .modal-header h2,
+:root[data-theme='light'] .form-group label {
+  color: var(--color-text);
+}
+
+:root[data-theme='light'] .modal-description,
+:root[data-theme='light'] .modal-footer-text {
+  color: var(--color-text-secondary);
+}
+
+:root[data-theme='light'] .path-input-group {
+  background: var(--surface-3);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme='light'] .path-input-group input {
+  background: var(--color-control);
+}
