@@ -119,6 +119,7 @@ export interface InstalledApp {
   repo: string
   versions: VersionInfo[]
   activeVersion: string
+  lastLaunchedAt?: string | null
 }
 
 export interface InstalledAppHealth {

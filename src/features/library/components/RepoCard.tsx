@@ -27,6 +27,8 @@ interface RepoCardProps {
   onClearArt?: () => void
   onClearBackground?: () => void
   onUninstall?: () => void
+  onOpenFolder?: () => void
+  onShowVersions?: () => void
   onInstall?: () => void
   onLaunch?: () => void
 }
@@ -51,6 +53,8 @@ function RepoCard({
   onClearArt,
   onClearBackground,
   onUninstall,
+  onOpenFolder,
+  onShowVersions,
   onInstall,
   onLaunch,
 }: RepoCardProps) {
@@ -61,6 +65,7 @@ function RepoCard({
   const [folderMenuOpen, setFolderMenuOpen] = useState(false)
   const [removeFolderMenuOpen, setRemoveFolderMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const cardRef = useRef<HTMLElement | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const isInstalled = status !== 'available'
@@ -98,12 +103,40 @@ function RepoCard({
 
     document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
+    actionsRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
 
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [actionsOpen])
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      setActionsOpen(false)
+      cardRef.current?.focus()
+      return
+    }
+
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+    const items = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'),
+    )
+    if (items.length === 0) return
+
+    event.preventDefault()
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? items.length - 1
+        : event.key === 'ArrowUp'
+          ? (currentIndex - 1 + items.length) % items.length
+          : (currentIndex + 1) % items.length
+    items[nextIndex]?.focus()
+  }
 
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation()
@@ -179,6 +212,18 @@ function RepoCard({
     onUninstall?.()
   }
 
+  const handleOpenFolder = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onOpenFolder?.()
+  }
+
+  const handleShowVersions = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setActionsOpen(false)
+    onShowVersions?.()
+  }
+
   const handleMoveToFolder = (event: React.MouseEvent, folderId: string) => {
     event.stopPropagation()
     setActionsOpen(false)
@@ -217,6 +262,7 @@ function RepoCard({
 
   return (
     <article
+      ref={cardRef}
       className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''}`}
       onClick={handlePreview}
       onContextMenu={handleContextMenu}
@@ -224,6 +270,8 @@ function RepoCard({
       role="button"
       aria-label={`${repo.name}, ${statusLabel}`}
       onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return
+
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           handlePreview()
@@ -286,7 +334,12 @@ function RepoCard({
           style={{ left: menuPosition.x, top: menuPosition.y }}
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
+          <div
+            className="project-actions-popover"
+            role="menu"
+            aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
+            onKeyDown={handleMenuKeyDown}
+          >
             <button
               type="button"
               role="menuitem"
@@ -294,6 +347,21 @@ function RepoCard({
             >
               {primaryLabel}
             </button>
+            {isInstalled && hasUpdate && (
+              <button type="button" role="menuitem" onClick={handleLaunch}>
+                {t('repo.launch')}
+              </button>
+            )}
+            {isInstalled && onOpenFolder && (
+              <button type="button" role="menuitem" onClick={handleOpenFolder}>
+                {t('download.openFolder')}
+              </button>
+            )}
+            {isInstalled && onShowVersions && (
+              <button type="button" role="menuitem" onClick={handleShowVersions}>
+                {t('repo.versions')}
+              </button>
+            )}
             <button
               type="button"
               role="menuitem"
@@ -398,15 +466,6 @@ function RepoCard({
                   </div>
                 )}
               </div>
-            )}
-            {isInstalled && hasUpdate && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleLaunch}
-              >
-                {t('repo.launch')}
-              </button>
             )}
             {onPickArt && (
               <button

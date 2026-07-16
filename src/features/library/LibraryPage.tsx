@@ -6,7 +6,7 @@ import { useLibrarySelection } from './hooks/useLibrarySelection'
 import { useLibraryFiltering } from './hooks/useLibraryFiltering'
 import { useBatchUpdates } from './hooks/useBatchUpdates'
 import RepoCard from './components/RepoCard'
-import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
+import LibrarySidebar, { type LibraryDensity, type LibrarySection } from './components/LibrarySidebar'
 import LibraryHero from './components/LibraryHero'
 import VersionPanel from './components/VersionPanel'
 import ApplicationDetails from './components/ApplicationDetails'
@@ -32,6 +32,11 @@ import type { FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, Proj
 import { useI18n } from '../../i18n'
 import { formatDate, formatNumber } from '../../utils/format'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
+import {
+  loadLibraryViewState,
+  saveLibraryViewState,
+  type LibraryViewState,
+} from './libraryViewState'
 import '../../pages/PageStyles.css'
 
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
@@ -236,6 +241,8 @@ function LibraryPage({
 }: LibraryPageProps) {
   const { language, t } = useI18n()
   const pageKey = 'library'
+  const [initialLibraryView] = useState(loadLibraryViewState)
+  const [libraryDensity, setLibraryDensity] = useState<LibraryDensity>(initialLibraryView.density)
   const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => ensureFavoritesFolder([]))
   const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => loadCollapsedFolderIds())
@@ -663,17 +670,20 @@ function LibraryPage({
     query,
     setQuery,
     filter,
-    viewMode,
+    sort,
     visibleRepositories,
     resetFilters: handleResetLibraryFilters,
-    changeViewMode: handleViewModeChange,
+    changeFilter: handleFilterChange,
+    changeSort: handleSortChange,
   } = useLibraryFiltering({
     repositories: libraryRepositories,
-    favorites,
     favoriteKeys,
     dismissedUpdateKeys,
     getInstalledApp,
     getLatestVersion,
+    initialQuery: initialLibraryView.query,
+    initialFilter: initialLibraryView.filter,
+    initialSort: initialLibraryView.sort,
   })
 
   const {
@@ -683,7 +693,82 @@ function LibraryPage({
     heroPanel,
     setHeroPanel,
     selectFeaturedRepo,
-  } = useLibrarySelection(visibleRepositories)
+  } = useLibrarySelection(visibleRepositories, initialLibraryView.featuredRepoKey)
+
+  const sidebarResultsRef = useRef<HTMLDivElement>(null)
+  const detailsPaneRef = useRef<HTMLElement>(null)
+  const sidebarScrollTopRef = useRef(initialLibraryView.sidebarScrollTop)
+  const detailsScrollTopRef = useRef(initialLibraryView.detailsScrollTop)
+  const lastFeaturedRepoKeyRef = useRef(initialLibraryView.featuredRepoKey)
+  const viewPersistenceTimerRef = useRef<number | null>(null)
+  const scrollRestoredRef = useRef(false)
+  const featuredRepoKey = featuredRepo
+    ? projectArtKey(featuredRepo.owner.login, featuredRepo.name)
+    : null
+  const libraryViewSnapshotRef = useRef<LibraryViewState>(initialLibraryView)
+
+  if (featuredRepoKey) lastFeaturedRepoKeyRef.current = featuredRepoKey
+  libraryViewSnapshotRef.current = {
+    version: 1,
+    query,
+    filter,
+    sort,
+    density: libraryDensity,
+    featuredRepoKey: lastFeaturedRepoKeyRef.current,
+    sidebarScrollTop: sidebarScrollTopRef.current,
+    detailsScrollTop: detailsScrollTopRef.current,
+  }
+
+  const persistLibraryView = useCallback(() => {
+    saveLibraryViewState({
+      ...libraryViewSnapshotRef.current,
+      sidebarScrollTop: sidebarScrollTopRef.current,
+      detailsScrollTop: detailsScrollTopRef.current,
+    })
+  }, [])
+
+  const scheduleLibraryViewPersistence = useCallback(() => {
+    if (viewPersistenceTimerRef.current !== null) {
+      window.clearTimeout(viewPersistenceTimerRef.current)
+    }
+    viewPersistenceTimerRef.current = window.setTimeout(() => {
+      viewPersistenceTimerRef.current = null
+      persistLibraryView()
+    }, 150)
+  }, [persistLibraryView])
+
+  useEffect(() => {
+    scheduleLibraryViewPersistence()
+  }, [featuredRepoKey, filter, libraryDensity, query, scheduleLibraryViewPersistence, sort])
+
+  useEffect(() => {
+    const dataReady = !settingsLoading && !state.loading && (
+      Boolean(state.lastLoadedAt) || Boolean(state.error) || !owner
+    )
+    if (
+      scrollRestoredRef.current ||
+      !dataReady ||
+      (visibleRepositories.length > 0 && !featuredRepo)
+    ) return
+
+    scrollRestoredRef.current = true
+    const frame = window.requestAnimationFrame(() => {
+      if (sidebarResultsRef.current) {
+        sidebarResultsRef.current.scrollTop = initialLibraryView.sidebarScrollTop
+      }
+      if (detailsPaneRef.current) {
+        detailsPaneRef.current.scrollTop = initialLibraryView.detailsScrollTop
+      }
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [featuredRepo, initialLibraryView, owner, settingsLoading, state.error, state.lastLoadedAt, state.loading, visibleRepositories.length])
+
+  useEffect(() => () => {
+    if (viewPersistenceTimerRef.current !== null) {
+      window.clearTimeout(viewPersistenceTimerRef.current)
+    }
+    persistLibraryView()
+  }, [persistLibraryView])
 
   const visibleRepositorySections = useMemo<LibrarySection[]>(() => {
     if (visibleRepositories.length === 0) return []
@@ -752,6 +837,7 @@ function LibraryPage({
     setLaunchError(null)
     try {
       await launchApp(repo.owner.login, repo.name)
+      await refreshInstalledApps()
     } catch (err) {
       setLaunchError(err instanceof Error ? err.message : t('library.launchError'))
     }
@@ -824,6 +910,15 @@ function LibraryPage({
         }
       })
     })
+  }
+
+  const handleOpenFolder = async (repo: GitHubSearchResult) => {
+    setLaunchError(null)
+    try {
+      await openInstalledAppDir(repo.owner.login, repo.name)
+    } catch (err) {
+      setLaunchError(err instanceof Error ? err.message : t('installed.openFolderError'))
+    }
   }
 
   const handleToggleFeaturedFavorite = async () => {
@@ -1051,12 +1146,7 @@ function LibraryPage({
         onLaunch={() => handleLaunch(featuredRepo)}
         onToggleFavorite={handleToggleFeaturedFavorite}
         onShowDetails={() => setHeroPanel('details')}
-        onOpenFolder={() => {
-          openInstalledAppDir(featuredRepo.owner.login, featuredRepo.name)
-            .catch((err) => setLaunchError(
-              err instanceof Error ? err.message : t('installed.openFolderError'),
-            ))
-        }}
+        onOpenFolder={() => handleOpenFolder(featuredRepo)}
         onChangeCover={() => handlePickArt('cover')}
         onChangeBackground={() => handlePickArt('background')}
         onResetCover={() => handleClearArt()}
@@ -1200,6 +1290,8 @@ function LibraryPage({
         onClearArt={() => handleClearArt(repo, 'cover')}
         onClearBackground={() => handleClearArt(repo, 'background')}
         onUninstall={() => handleRequestUninstall(repo)}
+        onOpenFolder={() => handleOpenFolder(repo)}
+        onShowVersions={() => selectFeaturedRepo(repo)}
         onInstall={() => setSelectedRepo(repo)}
         onLaunch={() => handleLaunch(repo)}
         folders={addableFolders}
@@ -1215,10 +1307,12 @@ function LibraryPage({
   }
 
   return (
-    <div className="page library-page" style={featuredBackgroundStyle}>
+    <div className={`page library-page library-density-${libraryDensity}`} style={featuredBackgroundStyle}>
       <div className="library-sam-workspace">
           <LibrarySidebar
-            viewMode={viewMode}
+            filter={filter}
+            sort={sort}
+            density={libraryDensity}
             query={query}
             groups={sidebarSectionGroups}
             collapsedFolderIds={collapsedFolderIds}
@@ -1262,17 +1356,29 @@ function LibraryPage({
             emptyActionLabel={emptyActionLabel}
             loading={state.loading}
             hasMore={state.hasMore}
-            onViewModeChange={handleViewModeChange}
+            onFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            onDensityChange={setLibraryDensity}
             onQueryChange={setQuery}
             onToggleSection={toggleFolderSection}
             onEmptyAction={emptyAction}
             onLoadMore={loadMore}
             renderRepository={renderSidebarRepository}
+            resultsRef={sidebarResultsRef}
+            onResultsScroll={(event) => {
+              sidebarScrollTopRef.current = event.currentTarget.scrollTop
+              scheduleLibraryViewPersistence()
+            }}
           />
 
           <aside
             className="library-sam-details-pane"
             aria-label={featuredRepo?.name ?? t('details.open')}
+            ref={detailsPaneRef}
+            onScroll={(event) => {
+              detailsScrollTopRef.current = event.currentTarget.scrollTop
+              scheduleLibraryViewPersistence()
+            }}
           >
             {renderDetailsEmpty()}
             {renderHero()}
