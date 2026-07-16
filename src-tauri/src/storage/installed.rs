@@ -27,6 +27,8 @@ pub struct InstalledApp {
     pub repo: String,
     pub versions: Vec<VersionInfo>,
     pub active_version: String,
+    #[serde(default)]
+    pub last_launched_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -214,6 +216,7 @@ pub fn add_version(
             repo: repo.to_string(),
             active_version: tag.clone(),
             versions: vec![version],
+            last_launched_at: None,
         });
     }
 
@@ -288,5 +291,16 @@ pub fn remove_app(config_dir: &Path, owner: &str, repo: &str) -> Result<(), Stor
         .apps
         .retain(|app| format!("{}/{}", app.owner, app.repo) != key);
 
+    save_store(config_dir, &store)
+}
+
+pub fn record_launch(config_dir: &Path, owner: &str, repo: &str) -> Result<(), StorageError> {
+    let mut store = load_store(config_dir)?;
+    let app = store
+        .apps
+        .iter_mut()
+        .find(|app| app.owner == owner && app.repo == repo)
+        .ok_or_else(|| StorageError::NotFound(format!("App {}/{} not found", owner, repo)))?;
+    app.last_launched_at = Some(Utc::now());
     save_store(config_dir, &store)
 }

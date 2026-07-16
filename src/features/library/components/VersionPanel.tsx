@@ -1,6 +1,6 @@
 import { useI18n } from '../../../i18n'
 import type { InstalledApp } from '../../../types'
-import { formatDate, formatNumber } from '../../../utils/format'
+import { formatBytes, formatDate, formatNumber } from '../../../utils/format'
 
 interface VersionPanelProps {
   repoName: string
@@ -11,6 +11,7 @@ interface VersionPanelProps {
 export default function VersionPanel({ repoName, installedApp, latestVersion }: VersionPanelProps) {
   const { language, t } = useI18n()
   const versions = installedApp?.versions ?? []
+  const totalSize = versions.reduce((sum, version) => sum + version.sizeBytes, 0)
 
   return (
     <section
@@ -23,7 +24,7 @@ export default function VersionPanel({ repoName, installedApp, latestVersion }: 
           <strong>{repoName}</strong>
         </div>
       </div>
-      <div className="library-inline-summary">
+      <div className="library-inline-summary library-inline-summary--versions">
         <div>
           <span>{t('details.activeVersion')}</span>
           <strong>{installedApp?.activeVersion ?? t('release.notInstalled')}</strong>
@@ -36,6 +37,10 @@ export default function VersionPanel({ repoName, installedApp, latestVersion }: 
           <span>{t('details.localVersions')}</span>
           <strong>{formatNumber(versions.length, language)}</strong>
         </div>
+        <div>
+          <span>{t('details.diskSize')}</span>
+          <strong>{versions.length > 0 ? formatBytes(totalSize, language) : t('release.notInstalled')}</strong>
+        </div>
       </div>
       <div className="library-inline-version-list">
         {versions.length > 0 ? versions.map((version) => {
@@ -44,7 +49,7 @@ export default function VersionPanel({ repoName, installedApp, latestVersion }: 
             <div key={version.tag} className={`library-inline-version-row ${isActive ? 'active' : ''}`}>
               <div>
                 <strong>{version.tag}</strong>
-                <span>{formatDate(version.installedAt, language)}</span>
+                <span>{formatDate(version.installedAt, language)} · {formatBytes(version.sizeBytes, language)}</span>
               </div>
               <span>{isActive ? t('installed.active') : t('details.versionStateOlder')}</span>
             </div>

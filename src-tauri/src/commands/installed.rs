@@ -4,7 +4,7 @@ use tauri::State;
 use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::installed::{
-    export_registry, import_registry, list_installed, remove_app, remove_version,
+    export_registry, import_registry, list_installed, record_launch, remove_app, remove_version,
     set_active_version, InstalledApp, InstalledRegistryTransfer,
 };
 use crate::AppState;
@@ -560,6 +560,7 @@ pub async fn launch_app(
         &version.tag,
         &format!("launched {}", resolved.display()),
     );
+    let _ = record_launch(&get_config_dir(), &owner, &repo);
     Ok(())
 }
 

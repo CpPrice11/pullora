@@ -1718,6 +1718,12 @@
   gap: 10px;
 }
 
+.batch-update-confirm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .updates-center-row {
   align-items: center;
   background: rgba(255, 255, 255, 0.06);

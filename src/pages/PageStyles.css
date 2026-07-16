@@ -3292,9 +3292,20 @@
 }
 
 .repo-context-menu .project-actions-popover {
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
   position: static;
   right: auto;
   top: auto;
+}
+
+.repo-context-menu .project-actions-popover button {
+  min-height: 44px;
+}
+
+.repo-context-menu .project-actions-popover button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
 }
 
 .hero-actions-menu {
@@ -4861,6 +4872,10 @@
   grid-template-columns: minmax(0, 1fr) 48px 48px;
 }
 
+.cinematic-shell .library-page .library-sidebar-filter-nav {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .cinematic-shell .library-page .library-sidebar-nav-btn {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.125), rgba(255, 255, 255, 0.048)),
@@ -4872,6 +4887,11 @@
     0 8px 22px rgba(0, 0, 0, 0.18);
   color: #f2f8fe;
   min-height: 40px;
+}
+
+.cinematic-shell .library-page .library-sidebar-filter-nav .library-sidebar-nav-btn {
+  min-height: 44px;
+  padding-inline: 10px;
 }
 
 .cinematic-shell .library-page .library-sidebar-nav-btn.active {
@@ -4928,6 +4948,8 @@
 
 .cinematic-shell .library-page .library-folder-section-items .repo-card {
   border-radius: 10px;
+  contain-intrinsic-size: auto var(--library-card-max-height);
+  content-visibility: auto;
   height: clamp(var(--library-card-min-height), 3.4vh, var(--library-card-max-height));
   max-height: var(--library-card-max-height);
   min-height: var(--library-card-min-height);
@@ -5130,6 +5152,10 @@
   gap: 10px;
 }
 
+.cinematic-shell .library-page .library-inline-summary--versions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .cinematic-shell .library-page .library-inline-version-row,
 .cinematic-shell .library-page .library-inline-empty {
   background: rgba(3, 9, 15, 0.7);
@@ -5202,5 +5228,200 @@
 
   .cinematic-shell .library-page .library-inline-overview-grid .library-inline-panel {
     max-height: none;
+  }
+}
+
+/* Keep custom artwork visible through the large library shells. */
+.cinematic-shell.has-custom-background .library-page {
+  --library-fluent-surface: rgba(7, 14, 21, 0.34);
+  --library-fluent-surface-strong: rgba(8, 16, 24, 0.56);
+  --library-fluent-shadow: 0 16px 42px rgba(0, 0, 0, 0.2);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-list-pane,
+.cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  backdrop-filter: blur(12px) saturate(1.08);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-list-pane {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.008)),
+    rgba(6, 13, 20, 0.34);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(102, 192, 244, 0.08), transparent 30%),
+    rgba(6, 13, 20, 0.3);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.01)),
+    rgba(7, 14, 21, 0.38);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(4, 10, 16, 0.64) 0%, rgba(4, 10, 16, 0.42) 54%, rgba(4, 10, 16, 0.18) 100%),
+    var(--library-hero-background, transparent);
+}
+
+.cinematic-shell.has-custom-background .library-page .library-toolstrip {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.012)),
+    rgba(4, 11, 17, 0.54);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page {
+  --library-fluent-surface: rgba(255, 255, 255, 0.48);
+  --library-fluent-surface-strong: rgba(248, 250, 252, 0.66);
+  --library-fluent-shadow: 0 16px 42px rgba(15, 23, 42, 0.1);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-sam-list-pane {
+  background: rgba(248, 250, 252, 0.48);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(0, 103, 192, 0.07), transparent 30%),
+    rgba(248, 250, 252, 0.42);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero {
+  background: rgba(248, 250, 252, 0.52);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero::before {
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.66) 0%, rgba(248, 250, 252, 0.46) 54%, rgba(248, 250, 252, 0.2) 100%),
+    var(--library-hero-background, transparent);
+}
+
+:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-toolstrip {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+/* v5.7.0: Explicit library list density without changing the details layout. */
+.cinematic-shell .library-page .library-sidebar-query-row {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(120px, 1fr) auto;
+}
+
+.cinematic-shell .library-page .library-sidebar-query-row .search-form {
+  min-width: 0;
+}
+
+.cinematic-shell .library-page .library-sidebar-query-row .search-input {
+  min-height: 50px;
+}
+
+.cinematic-shell .library-page .library-density-toggle {
+  background: rgba(6, 13, 20, 0.48);
+  border: 1px solid rgba(102, 192, 244, 0.16);
+  border-radius: 12px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(2, auto);
+  padding: 3px;
+}
+
+.cinematic-shell .library-page .library-density-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 9px;
+}
+
+.cinematic-shell .library-page .library-density-toggle button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-text);
+}
+
+.cinematic-shell .library-page .library-density-toggle button.active {
+  background: rgba(66, 199, 244, 0.18);
+  box-shadow: inset 0 -2px 0 var(--library-fluent-accent);
+  color: #f2f8fe;
+}
+
+.cinematic-shell .library-page .library-sort-control {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: grid;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.cinematic-shell .library-page .library-sort-control select {
+  background: rgba(6, 13, 20, 0.48);
+  border: 1px solid rgba(102, 192, 244, 0.18);
+  border-radius: 10px;
+  color: var(--color-text);
+  font: inherit;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.cinematic-shell .library-page.library-density-compact {
+  --library-card-max-height: 32px;
+  --library-card-min-height: 28px;
+}
+
+.cinematic-shell .library-page.library-density-compact .library-folder-section-items {
+  gap: 1px;
+  padding-block: 3px;
+}
+
+.cinematic-shell .library-page.library-density-compact .library-folder-section-items .repo-card {
+  border-radius: 7px;
+  padding-block: 2px;
+}
+
+.cinematic-shell .library-page.library-density-compact .library-folder-section-items .repo-card-media,
+.cinematic-shell .library-page.library-density-compact .library-folder-section-items .owner-avatar {
+  height: 22px;
+  width: 22px;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle {
+  background: rgba(241, 245, 249, 0.76);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-sort-control select {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #1e293b;
+}
+
+:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle button.active {
+  background: rgba(0, 103, 192, 0.12);
+  box-shadow: inset 0 -2px 0 #0067c0;
+  color: #0f2942;
+}
+
+@media (max-width: 560px) {
+  .cinematic-shell .library-page .library-sidebar-query-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cinematic-shell .library-page .library-density-toggle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cinematic-shell .library-page .library-sort-control {
+    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 }

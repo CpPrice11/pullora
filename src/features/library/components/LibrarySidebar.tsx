@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref, UIEventHandler } from 'react'
 import StatePanel from '../../../components/State/StatePanel'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
-import type { LibraryViewMode } from '../hooks/useLibraryFiltering'
+import type { LibraryFilter, LibrarySort } from '../hooks/useLibraryFiltering'
 
 export interface LibrarySection {
   id: string
@@ -11,6 +11,8 @@ export interface LibrarySection {
   pinned?: boolean
 }
 
+export type LibraryDensity = 'normal' | 'compact'
+
 interface LibrarySidebarGroup {
   id: string
   label: string
@@ -18,7 +20,9 @@ interface LibrarySidebarGroup {
 }
 
 interface LibrarySidebarProps {
-  viewMode: LibraryViewMode
+  filter: LibraryFilter
+  sort: LibrarySort
+  density: LibraryDensity
   query: string
   groups: LibrarySidebarGroup[]
   collapsedFolderIds: Set<string>
@@ -30,31 +34,22 @@ interface LibrarySidebarProps {
   emptyActionLabel: string
   loading: boolean
   hasMore: boolean
-  onViewModeChange: (mode: LibraryViewMode) => void
+  onFilterChange: (filter: LibraryFilter) => void
+  onSortChange: (sort: LibrarySort) => void
+  onDensityChange: (density: LibraryDensity) => void
   onQueryChange: (query: string) => void
   onToggleSection: (sectionId: string) => void
   onEmptyAction: () => void
   onLoadMore: () => void
   renderRepository: (repo: GitHubSearchResult) => ReactNode
-}
-
-function SidebarIcon({ name }: { name: 'clock' | 'play' }) {
-  return (
-    <svg className="library-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-      {name === 'clock' ? (
-        <>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M12 7.5v5l3.25 2" />
-        </>
-      ) : (
-        <path className="icon-fill" d="m9 7 8 5-8 5Z" />
-      )}
-    </svg>
-  )
+  resultsRef?: Ref<HTMLDivElement>
+  onResultsScroll?: UIEventHandler<HTMLDivElement>
 }
 
 export default function LibrarySidebar({
-  viewMode,
+  filter,
+  sort,
+  density,
   query,
   groups,
   collapsedFolderIds,
@@ -66,59 +61,81 @@ export default function LibrarySidebar({
   emptyActionLabel,
   loading,
   hasMore,
-  onViewModeChange,
+  onFilterChange,
+  onSortChange,
+  onDensityChange,
   onQueryChange,
   onToggleSection,
   onEmptyAction,
   onLoadMore,
   renderRepository,
+  resultsRef,
+  onResultsScroll,
 }: LibrarySidebarProps) {
   const { t } = useI18n()
 
   return (
     <section className="library-sam-list-pane" aria-label={t('library.title')}>
       <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
-        <div className="library-sidebar-nav" aria-label={t('library.sidebar.navigation')}>
-          <button
-            type="button"
-            className={`library-sidebar-nav-btn library-sidebar-nav-home ${viewMode === 'home' ? 'active' : ''}`}
-            aria-pressed={viewMode === 'home'}
-            onClick={() => onViewModeChange('home')}
-          >
-            {t('library.nav.home')}
-          </button>
-          {(['recent', 'ready'] as const).map((mode) => (
+        <div className="library-sidebar-nav library-sidebar-filter-nav" aria-label={t('library.sidebar.navigation')}>
+          {(['all', 'installed', 'updates', 'favorites'] as const).map((mode) => (
             <button
               key={mode}
               type="button"
-              className={`library-sidebar-nav-btn library-sidebar-nav-icon ${viewMode === mode ? 'active' : ''}`}
-              aria-label={t(`library.nav.${mode}`)}
-              title={t(`library.nav.${mode}`)}
-              aria-pressed={viewMode === mode}
-              onClick={() => onViewModeChange(mode)}
+              className={`library-sidebar-nav-btn ${filter === mode ? 'active' : ''}`}
+              aria-pressed={filter === mode}
+              onClick={() => onFilterChange(mode)}
             >
-              <SidebarIcon name={mode === 'recent' ? 'clock' : 'play'} />
+              {t(`library.${mode}`)}
             </button>
           ))}
         </div>
 
-        <div className="search-form">
-          <label className="visually-hidden" htmlFor="library-search">
-            {t('library.searchLabel')}
-          </label>
-          <input
-            id="library-search"
-            type="text"
-            placeholder={t('library.searchPlaceholder')}
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            className="search-input"
-            aria-label={t('library.searchLabel')}
-          />
+        <div className="library-sidebar-query-row">
+          <div className="search-form">
+            <label className="visually-hidden" htmlFor="library-search">
+              {t('library.searchLabel')}
+            </label>
+            <input
+              id="library-search"
+              type="text"
+              placeholder={t('library.searchPlaceholder')}
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              className="search-input"
+              aria-label={t('library.searchLabel')}
+            />
+          </div>
+
+          <div className="library-density-toggle" role="group" aria-label={t('library.viewDensity')}>
+            {(['normal', 'compact'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={density === mode ? 'active' : ''}
+                aria-pressed={density === mode}
+                onClick={() => onDensityChange(mode)}
+              >
+                {t(mode === 'normal' ? 'library.viewNormal' : 'library.viewCompact')}
+              </button>
+            ))}
+          </div>
         </div>
+
+        <label className="library-sort-control">
+          <span>{t('library.sortLabel')}</span>
+          <select
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value as LibrarySort)}
+          >
+            {(['name', 'launched', 'installed', 'updated'] as const).map((mode) => (
+              <option key={mode} value={mode}>{t(`library.sort.${mode}`)}</option>
+            ))}
+          </select>
+        </label>
       </section>
 
-      <div className="search-results">
+      <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>
         {notices}
         <div className="library-results-header" aria-hidden="true">
           <span>{t('library.name')}</span>

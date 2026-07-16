@@ -150,7 +150,14 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'library.openSettings': 'Відкрити налаштування',
     'library.searchPlaceholder': 'Фільтр бібліотеки...',
     'library.filterLabel': 'Фільтр бібліотеки',
+    'library.viewDensity': 'Вигляд бібліотеки',
+    'library.viewNormal': 'Звичайний',
+    'library.viewCompact': 'Компактний',
     'library.sortLabel': 'Сортування',
+    'library.sort.name': 'За назвою',
+    'library.sort.launched': 'За останнім запуском',
+    'library.sort.installed': 'За встановленням',
+    'library.sort.updated': 'За оновленням',
     'library.all': 'Усі',
     'library.installed': 'Встановлені',
     'library.favorites': 'Обране',
@@ -569,7 +576,14 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'library.openSettings': 'Open settings',
     'library.searchPlaceholder': 'Filter library...',
     'library.filterLabel': 'Library filter',
+    'library.viewDensity': 'Library view',
+    'library.viewNormal': 'Standard',
+    'library.viewCompact': 'Compact',
     'library.sortLabel': 'Sort',
+    'library.sort.name': 'By name',
+    'library.sort.launched': 'By last launch',
+    'library.sort.installed': 'By installation',
+    'library.sort.updated': 'By update',
     'library.all': 'All',
     'library.installed': 'Installed',
     'library.favorites': 'Favorites',
@@ -1126,6 +1140,7 @@ Object.assign(dictionaries.uk, {
   'details.activeVersion': 'Активна версія',
   'details.latestVersion': 'Остання версія',
   'details.localVersions': 'Локальні версії',
+  'details.diskSize': 'На диску',
   'details.activeFile': 'Файл запуску',
   'details.paths': 'Шляхи',
   'details.executablePath': 'Шлях до EXE',
@@ -1161,6 +1176,7 @@ Object.assign(dictionaries.en, {
   'details.activeVersion': 'Active version',
   'details.latestVersion': 'Latest version',
   'details.localVersions': 'Local versions',
+  'details.diskSize': 'On disk',
   'details.activeFile': 'Launch file',
   'details.paths': 'Paths',
   'details.executablePath': 'EXE path',
@@ -1755,6 +1771,26 @@ Object.assign(dictionaries.en, {
   'about.checksumUnavailableStatus': 'SHA-256 unavailable',
   'about.noChecksumManifest': 'This release has no SHA256SUMS.txt, so this version cannot be activated safely.',
   'about.checksumManifestMissing': 'SHA-256 manifest missing',
+})
+
+Object.assign(dictionaries.uk, {
+  'updates.confirmKicker': 'Масове оновлення',
+  'updates.confirmTitle': 'Оновити застосунки: {count}?',
+  'updates.confirmText': 'Перевір список перед запуском паралельних завантажень.',
+  'updates.confirmMore': 'Ще застосунків: {count}',
+  'updates.confirmPortableOnly': 'Автоматично запустяться лише portable EXE або архіви. Setup і MSI буде пропущено.',
+  'updates.confirmCancel': 'Скасувати',
+  'updates.confirmStart': 'Почати оновлення',
+})
+
+Object.assign(dictionaries.en, {
+  'updates.confirmKicker': 'Batch update',
+  'updates.confirmTitle': 'Update apps: {count}?',
+  'updates.confirmText': 'Review the list before starting parallel downloads.',
+  'updates.confirmMore': 'More apps: {count}',
+  'updates.confirmPortableOnly': 'Only portable EXE files or archives start automatically. Setup and MSI files are skipped.',
+  'updates.confirmCancel': 'Cancel',
+  'updates.confirmStart': 'Start updates',
 })
 
 interface LanguageContextValue {
