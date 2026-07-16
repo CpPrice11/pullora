@@ -631,7 +631,7 @@ function ReleaseSelector({
                     </div>
                   </div>
 
-                  {downloadError && <div className="error-message">{downloadError}</div>}
+                  {downloadError && <div className="error-message" role="alert">{downloadError}</div>}
 
                   <div className="release-nav-actions">
                     <button type="button" className="release-secondary-btn" onClick={() => setStep('file')} disabled={downloading}>
@@ -656,7 +656,7 @@ function ReleaseSelector({
               {(step === 'progress' || step === 'result') && (
                 <>
                   {downloadError && (
-                    <div className="download-recovery release-result-card">
+                    <div className="download-recovery release-result-card" role="alert">
                       <strong>{t('release.failedTitle')}</strong>
                       <p>{downloadError}</p>
                       <div className="download-actions">
@@ -669,7 +669,11 @@ function ReleaseSelector({
                       </div>
                     </div>
                   )}
-                  {cleanupMessage && <div className="release-cleanup-note">{cleanupMessage}</div>}
+                  {cleanupMessage && (
+                    <div className="release-cleanup-note" role="status" aria-live="polite" aria-atomic="true">
+                      {cleanupMessage}
+                    </div>
+                  )}
                   <DownloadProgressPanel
                     downloads={shownDownloads}
                     onCancel={cancel}

@@ -1,3 +1,16 @@
+:root {
+  --surface-blur: 12px;
+  --surface-canvas: #070b10;
+  --surface-1: rgba(17, 24, 32, 0.58);
+  --surface-2: rgba(24, 34, 45, 0.32);
+  --surface-3: rgba(7, 11, 16, 0.42);
+  --surface-border: rgba(51, 68, 85, 0.58);
+  --surface-border-strong: rgba(51, 68, 85, 0.78);
+  --surface-shadow: 0 18px 48px rgba(2, 6, 10, 0.58);
+  --surface-material: var(--surface-1);
+  --surface-material-strong: rgba(17, 24, 32, 0.7);
+}
+
 .cinematic-shell {
   --color-primary: #55d6ff;
   --color-primary-dark: #32bce9;
@@ -50,7 +63,7 @@
   --color-warning: #8a5d00;
   --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
-  background: #eef3f8;
+  background: var(--surface-canvas);
 }
 
 :root[data-theme='light'] .cinematic-shell .cinematic-backdrop {
@@ -67,55 +80,55 @@
 }
 
 :root[data-theme='light'] .cinematic-shell .header {
-  background: rgba(248, 250, 252, 0.88);
-  border-bottom-color: rgba(15, 23, 42, 0.1);
+  background: var(--surface-material-strong);
+  border-bottom-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .nav-item,
 :root[data-theme='light'] .cinematic-shell .nav-item:hover,
 :root[data-theme='light'] .cinematic-shell .nav-item.active {
-  color: #334155;
+  color: var(--color-text-secondary);
 }
 
 :root[data-theme='light'] .cinematic-shell .nav-item.active::before {
-  background: #0067c0;
-  box-shadow: 0 0 12px rgba(0, 103, 192, 0.28);
+  background: var(--color-primary);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 :root[data-theme='light'] .cinematic-shell .nav-icon {
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(15, 23, 42, 0.14);
+  background: var(--surface-3);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .nav-item.active .nav-icon {
-  background: rgba(0, 103, 192, 0.1);
-  border-color: rgba(0, 103, 192, 0.38);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
-  color: #0067c0;
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-border));
+  box-shadow: var(--shadow-control-hover);
+  color: var(--color-primary);
 }
 
 :root[data-theme='light'] .cinematic-shell .page-header h2,
 :root[data-theme='light'] .cinematic-shell .library-page .page-header h2 {
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 :root[data-theme='light'] .cinematic-shell button {
-  background: linear-gradient(180deg, #ffffff, #f5f7fa);
-  border-color: rgba(15, 23, 42, 0.14);
-  color: #1e293b;
+  background: var(--color-control);
+  border-color: var(--surface-border);
+  color: var(--color-text);
 }
 
 :root[data-theme='light'] .cinematic-shell button:hover {
-  background: #edf4fb;
-  border-color: rgba(0, 103, 192, 0.34);
+  background: var(--color-control-hover);
+  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--surface-border));
 }
 
 :root[data-theme='light'] .cinematic-shell input,
 :root[data-theme='light'] .cinematic-shell select,
 :root[data-theme='light'] .cinematic-shell textarea {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(15, 23, 42, 0.16);
-  color: #111827;
+  background: var(--color-control);
+  border-color: var(--surface-border);
+  color: var(--color-text);
 }
 
 .cinematic-shell .cinematic-background {
@@ -1515,4 +1528,60 @@
     grid-template-columns: 1fr;
     width: 100%;
   }
+}
+
+/* One material layer for every page. Blur belongs to primary shells only. */
+:root[data-theme] .cinematic-shell .library-page .library-sam-list-pane,
+:root[data-theme] .cinematic-shell .library-page .library-sam-details-pane,
+:root[data-theme] .cinematic-shell .settings-workspace,
+:root[data-theme] .cinematic-shell .about-hero,
+:root[data-theme] .cinematic-shell .about-panel {
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border-color: var(--surface-border);
+  box-shadow: var(--surface-shadow);
+}
+
+:root[data-theme] .cinematic-shell .library-page .library-sam-details-pane {
+  background:
+    radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
+    var(--surface-1);
+}
+
+:root[data-theme] .cinematic-shell .library-page .library-toolstrip,
+:root[data-theme] .cinematic-shell .library-page .library-hero,
+:root[data-theme] .cinematic-shell .library-page .library-ops-panel,
+:root[data-theme] .cinematic-shell .library-page .library-inline-panel,
+:root[data-theme] .cinematic-shell .settings-page .settings-nav,
+:root[data-theme] .cinematic-shell .settings-page .settings-content {
+  backdrop-filter: none;
+  background: var(--surface-2);
+  border-color: var(--surface-border);
+  box-shadow: none;
+}
+
+:root[data-theme] .cinematic-shell .library-page .library-sam-pane-head,
+:root[data-theme] .cinematic-shell .library-page .library-sam-details-toolbar,
+:root[data-theme] .cinematic-shell .settings-page .settings-section,
+:root[data-theme] .cinematic-shell .settings-page .danger-zone,
+:root[data-theme] .cinematic-shell .settings-source-summary,
+:root[data-theme] .cinematic-shell .settings-diagnostics-card,
+:root[data-theme] .cinematic-shell .launcher-background-theme {
+  backdrop-filter: none;
+  background: var(--surface-3);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme] .cinematic-shell .library-page .library-ops-panel,
+:root[data-theme] .cinematic-shell .settings-page .settings-content {
+  background:
+    radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
+    var(--surface-2);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-nav button:hover,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-nav button.active {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--surface-border));
+  color: var(--color-primary-dark);
 }

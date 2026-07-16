@@ -351,29 +351,29 @@
 }
 
 :root[data-theme='light'] .cinematic-shell .download-panel {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(17, 24, 39, 0.12);
+  background: var(--surface-2);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .download-item {
-  background: rgba(255, 255, 255, 0.78);
-  border-color: rgba(17, 24, 39, 0.1);
+  background: var(--surface-3);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .download-panel-title,
 :root[data-theme='light'] .cinematic-shell .download-name {
-  color: #111827;
+  color: var(--color-text);
 }
 
 :root[data-theme='light'] .cinematic-shell .download-stage-mark {
   background:
-    radial-gradient(circle at 70% 20%, rgba(0, 120, 212, 0.18), transparent 38%),
-    rgba(255, 255, 255, 0.74);
-  border-color: rgba(17, 24, 39, 0.1);
+    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 38%),
+    var(--surface-3);
+  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .download-stage-mark span {
-  color: #111827;
+  color: var(--color-text);
 }
 
 @media (max-width: 680px) {

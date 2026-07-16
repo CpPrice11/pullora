@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../types'
 import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
-import { cleanupLauncherUpdateFiles, getLauncherStorageInfo, openDir } from '../services/updates'
+import { cleanupLauncherUpdateFiles, getEventLog, getLauncherStorageInfo, openDir } from '../services/updates'
 import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
 import {
   clearGithubCache,
@@ -12,16 +12,17 @@ import { exportInstalledRegistry, importInstalledRegistry } from '../services/in
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ThemePreference } from '../utils/theme'
-import { DEFAULT_SETTINGS, normalizeSettings } from '../utils/settingsDefaults'
+import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
+import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
 import { formatBytes } from '../utils/format'
+import { redactSensitiveText } from '../utils/redactSensitiveText'
 import './PageStyles.css'
 
 interface SettingsPageProps {
-  hasLauncherBackground: boolean
-  onChangeLauncherBackground: () => Promise<void> | void
-  onClearLauncherBackground: () => Promise<void> | void
+  hasLauncherBackground: Record<ResolvedTheme, boolean>
+  onChangeLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
+  onClearLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onClose: () => void
 }
 
@@ -94,7 +95,22 @@ function SettingsPage({
   const [githubQueue, setGithubQueue] = useState<GitHubQueueStatus>(() => getGithubQueueStatus())
   const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
   const [registryBusy, setRegistryBusy] = useState(false)
+  const [eventLog, setEventLog] = useState<string[]>([])
+  const [eventLogLoading, setEventLogLoading] = useState(false)
+  const [eventLogError, setEventLogError] = useState<string | null>(null)
   const resetModalRef = useRef<HTMLElement | null>(null)
+
+  const refreshEventLog = async () => {
+    setEventLogLoading(true)
+    setEventLogError(null)
+    try {
+      setEventLog(await getEventLog())
+    } catch (err) {
+      setEventLogError(err instanceof Error ? err.message : t('settings.eventLogErrorTitle'))
+    } finally {
+      setEventLogLoading(false)
+    }
+  }
 
   useEffect(() => {
     getSettings()
@@ -132,6 +148,10 @@ function SettingsPage({
     getLauncherStorageInfo()
       .then(setStorageInfo)
       .catch(() => {})
+  }, [activeSection])
+
+  useEffect(() => {
+    if (activeSection === 'events') void refreshEventLog()
   }, [activeSection])
 
   useEffect(() => {
@@ -315,7 +335,7 @@ function SettingsPage({
     ]
 
     try {
-      await navigator.clipboard.writeText(lines.join('\n'))
+      await navigator.clipboard.writeText(redactSensitiveText(lines.join('\n')))
       setActionMessage(t('settings.diagnosticsCopied'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.diagnosticsCopyError'))
@@ -413,6 +433,20 @@ function SettingsPage({
     }
   }
 
+  const previewSurfaceSetting = (
+    key: 'surfaceTransparency' | 'surfaceBlur',
+    value: number,
+  ) => {
+    if (!settings) return
+    const appearance = normalizeAppearance({ ...settings.appearance, [key]: value })
+    setSettings({ ...settings, appearance })
+    applyAppearanceSettings(appearance)
+  }
+
+  const saveSurfaceSettings = () => {
+    if (settings) void persistSettings(settings)
+  }
+
   if (loading || !settings) {
     return (
       <section className="page settings-page settings-page-loading" aria-label={t('settings.title')}>
@@ -425,6 +459,7 @@ function SettingsPage({
     { id: 'general', label: t('settings.general') },
     { id: 'installation', label: t('settings.installation') },
     { id: 'updates', label: t('settings.updates') },
+    { id: 'events', label: t('settings.eventLog') },
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
 
@@ -507,17 +542,63 @@ function SettingsPage({
 
               <div className="form-group launcher-background-control">
                 <label>{t('settings.launcherBackground')}</label>
-                <div className="settings-inline-actions">
-                  <button type="button" className="secondary-btn" onClick={onChangeLauncherBackground}>
-                    {t('art.changeLauncherBackground')}
-                  </button>
-                  {hasLauncherBackground && (
-                    <button type="button" className="secondary-btn" onClick={onClearLauncherBackground}>
-                      {t('art.resetLauncherBackground')}
-                    </button>
-                  )}
+                <div className="launcher-background-themes">
+                  {(['light', 'dark'] as const).map((theme) => (
+                    <div className="launcher-background-theme" key={theme}>
+                      <strong>{t(`settings.${theme}`)}</strong>
+                      <div className="settings-inline-actions">
+                        <button type="button" className="secondary-btn" onClick={() => onChangeLauncherBackground(theme)}>
+                          {t('art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
+                        </button>
+                        {hasLauncherBackground[theme] && (
+                          <button type="button" className="secondary-btn" onClick={() => onClearLauncherBackground(theme)}>
+                            {t('art.resetThemeBackground', { theme: t(`settings.${theme}`) })}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              <fieldset className="form-group underlay-controls">
+                <legend>{t('settings.underlayAppearance')}</legend>
+                <div className="underlay-control">
+                  <label htmlFor="surfaceTransparency">{t('settings.surfaceTransparency')}</label>
+                  <input
+                    id="surfaceTransparency"
+                    type="range"
+                    min="0"
+                    max="80"
+                    step="1"
+                    value={settings.appearance?.surfaceTransparency ?? 42}
+                    onChange={(event) => previewSurfaceSetting('surfaceTransparency', Number(event.target.value))}
+                    onKeyUp={saveSurfaceSettings}
+                    onPointerUp={saveSurfaceSettings}
+                  />
+                  <output htmlFor="surfaceTransparency">
+                    {settings.appearance?.surfaceTransparency ?? 42}%
+                  </output>
+                </div>
+                <div className="underlay-control">
+                  <label htmlFor="surfaceBlur">{t('settings.surfaceBlur')}</label>
+                  <input
+                    id="surfaceBlur"
+                    type="range"
+                    min="0"
+                    max="32"
+                    step="1"
+                    value={settings.appearance?.surfaceBlur ?? 12}
+                    onChange={(event) => previewSurfaceSetting('surfaceBlur', Number(event.target.value))}
+                    onKeyUp={saveSurfaceSettings}
+                    onPointerUp={saveSurfaceSettings}
+                  />
+                  <output htmlFor="surfaceBlur">
+                    {settings.appearance?.surfaceBlur ?? 12} px
+                  </output>
+                </div>
+                <p className="help-text">{t('settings.underlayAppearanceHelp')}</p>
+              </fieldset>
             </div>
           </section>
         )
@@ -685,6 +766,62 @@ function SettingsPage({
           </section>
         )
 
+      case 'events':
+        return (
+          <section
+            id="settings-events"
+            className="settings-section settings-event-log"
+            aria-labelledby="settings-event-log-title"
+            aria-busy={eventLogLoading}
+          >
+            <div className="settings-event-log-toolbar">
+              <div>
+                <h3 id="settings-event-log-title">{t('settings.eventLog')}</h3>
+                <p className="help-text">{t('settings.eventLogHelp')}</p>
+              </div>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => void refreshEventLog()}
+                disabled={eventLogLoading}
+              >
+                {eventLogLoading ? t('settings.eventLogLoading') : t('settings.eventLogRefresh')}
+              </button>
+            </div>
+
+            {eventLogLoading && eventLog.length === 0 ? (
+              <StatePanel kind="loading" title={t('settings.eventLogLoading')} skeletonCount={2} />
+            ) : eventLogError ? (
+              <StatePanel
+                kind="error"
+                title={t('settings.eventLogErrorTitle')}
+                message={eventLogError}
+                actionLabel={t('settings.eventLogRefresh')}
+                onAction={() => void refreshEventLog()}
+              />
+            ) : eventLog.length === 0 ? (
+              <StatePanel
+                kind="empty"
+                title={t('settings.eventLogEmptyTitle')}
+                message={t('settings.eventLogEmptyText')}
+              />
+            ) : (
+              <>
+                <p className="settings-event-log-summary" role="status" aria-live="polite">
+                  {t('settings.eventLogSummary', { count: eventLog.length })}
+                </p>
+                <ol className="settings-event-log-list">
+                  {eventLog.map((entry, index) => (
+                    <li key={`${entry}-${index}`}>
+                      <code>{entry}</code>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </section>
+        )
+
       case 'updates':
         return (
           <section id="settings-updates" className="settings-section">
@@ -845,7 +982,7 @@ function SettingsPage({
       </div>
     )}
     {actionMessage && (
-      <div className="library-toast library-toast--success" role="status">
+      <div className="library-toast library-toast--success" role="status" aria-live="polite" aria-atomic="true">
         {actionMessage}
       </div>
     )}

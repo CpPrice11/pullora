@@ -76,7 +76,7 @@ function InstallationPathModal({ onPathSelected, onSkip }: InstallationPathModal
             </div>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message" role="alert">{error}</div>}
 
           <div className="modal-actions">
             {onSkip && (

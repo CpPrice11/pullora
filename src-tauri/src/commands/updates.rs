@@ -104,6 +104,12 @@ pub async fn get_launcher_storage_info() -> Result<LauncherStorageInfo, String> 
 }
 
 #[tauri::command]
+pub async fn get_event_log() -> Result<Vec<String>, String> {
+    crate::storage::logs::read_recent_logs(&crate::storage::get_config_dir(), 200)
+        .map_err(|_| command_error("errors.eventLogReadFailed"))
+}
+
+#[tauri::command]
 pub async fn cleanup_launcher_update_files() -> Result<LauncherStorageInfo, String> {
     let config_dir = crate::storage::get_config_dir();
     let update_cache_dir = config_dir.join("launcher-updates");

@@ -1433,7 +1433,7 @@ function LibraryPage({
       )}
 
       {libraryActionMessage && (
-        <div className="library-toast library-toast--success" role="status">
+        <div className="library-toast library-toast--success" role="status" aria-live="polite" aria-atomic="true">
           {libraryActionMessage}
         </div>
       )}

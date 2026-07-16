@@ -38,7 +38,19 @@ pub struct AppAppearanceSettings {
     pub font_size: u32,
     pub radius: u32,
     pub density: String,
+    #[serde(default = "default_surface_transparency")]
+    pub surface_transparency: u32,
+    #[serde(default = "default_surface_blur")]
+    pub surface_blur: u32,
     pub custom_css: String,
+}
+
+fn default_surface_transparency() -> u32 {
+    42
+}
+
+fn default_surface_blur() -> u32 {
+    12
 }
 
 fn default_asset_strategy() -> String {

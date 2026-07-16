@@ -94,6 +94,8 @@ export interface AppAppearanceSettings {
   fontSize: number
   radius: number
   density: 'compact' | 'comfortable' | 'spacious'
+  surfaceTransparency: number
+  surfaceBlur: number
   customCss: string
 }
 

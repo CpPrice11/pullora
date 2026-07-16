@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useI18n } from '../../../i18n'
+import { useModalFocus } from '../../../hooks/useModalFocus'
 
 interface FolderManagerProps {
   targetName: string
@@ -19,6 +20,7 @@ export default function FolderManager({
   onConfirm,
 }: FolderManagerProps) {
   const { t } = useI18n()
+  const modalRef = useRef<HTMLDivElement | null>(null)
   const [name, setName] = useState('')
   const normalizedName = normalizeFolderName(name)
   const duplicate = Boolean(normalizedName) && existingNames.some(
@@ -31,13 +33,17 @@ export default function FolderManager({
     if (canConfirm) onConfirm(normalizedName)
   }
 
+  useModalFocus(modalRef, { onEscape: onCancel })
+
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
       <div
+        ref={modalRef}
         className="confirm-modal library-folder-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="library-folder-modal-title"
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="confirm-modal-header">

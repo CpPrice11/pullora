@@ -133,7 +133,11 @@ export default function BatchUpdatePanel({
 
   return (
     <>
-      <section className="updates-center" aria-label={t('updates.centerTitle')}>
+      <section
+        className="updates-center"
+        aria-label={t('updates.centerTitle')}
+        aria-busy={checking || updating}
+      >
       <div className="updates-center-main">
         <div>
           <span className="updates-center-kicker">{t('updates.kicker')}</span>
@@ -177,9 +181,17 @@ export default function BatchUpdatePanel({
         </button>
       )}
 
-      {updateMessage && <div className="release-cleanup-note">{updateMessage}</div>}
-      {cleanupMessage && <div className="release-cleanup-note">{cleanupMessage}</div>}
-      {error && <div className="error-message">{error}</div>}
+      {updateMessage && (
+        <div className="release-cleanup-note" role="status" aria-live="polite" aria-atomic="true">
+          {updateMessage}
+        </div>
+      )}
+      {cleanupMessage && (
+        <div className="release-cleanup-note" role="status" aria-live="polite" aria-atomic="true">
+          {cleanupMessage}
+        </div>
+      )}
+      {error && <div className="error-message" role="alert">{error}</div>}
 
       {items.length > 0 ? (
         <div className="updates-center-list">

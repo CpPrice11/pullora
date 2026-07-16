@@ -67,7 +67,7 @@ function SwitchVersionConfirmModal({
               <strong>{targetVersion}</strong>
             </div>
           </div>
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message" role="alert">{error}</div>}
           <div className="version-switch-actions">
             <button type="button" className="secondary-btn" onClick={onCancel} disabled={busy}>
               {t('installed.uninstallCancel')}

@@ -3,6 +3,7 @@ import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
 
 interface LibraryHeroProps {
   repo: GitHubSearchResult
@@ -71,6 +72,7 @@ export default function LibraryHero({
   const { language, t } = useI18n()
   const [actionsOpen, setActionsOpen] = useState(false)
   const actionsRef = useRef<HTMLDivElement | null>(null)
+  const actionsTriggerRef = useRef<HTMLButtonElement | null>(null)
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
   const isInstalled = status !== 'available'
@@ -83,15 +85,10 @@ export default function LibraryHero({
     const closeOutside = (event: PointerEvent) => {
       if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false)
     }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setActionsOpen(false)
-    }
-
     document.addEventListener('pointerdown', closeOutside)
-    document.addEventListener('keydown', closeOnEscape)
+    focusFirstMenuItem(actionsRef.current?.querySelector<HTMLElement>('[role="menu"]') ?? null)
     return () => {
       document.removeEventListener('pointerdown', closeOutside)
-      document.removeEventListener('keydown', closeOnEscape)
     }
   }, [actionsOpen])
 
@@ -115,6 +112,7 @@ export default function LibraryHero({
           <span className={`repo-status ${status}`}>{statusLabel}</span>
           {repo.language && <span className="repo-lang">{repo.language}</span>}
           <button
+            ref={actionsTriggerRef}
             type="button"
             className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
             onClick={onToggleFavorite}
@@ -152,7 +150,15 @@ export default function LibraryHero({
             <HeroIcon name="more" />
           </button>
           {actionsOpen && (
-            <div className="project-actions-popover" role="menu" aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}>
+            <div
+              className="project-actions-popover"
+              role="menu"
+              aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
+              onKeyDown={(event) => handleMenuKeyboard(event, () => {
+                setActionsOpen(false)
+                actionsTriggerRef.current?.focus()
+              })}
+            >
               {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
               {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
               <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>

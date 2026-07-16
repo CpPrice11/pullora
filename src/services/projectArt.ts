@@ -6,6 +6,11 @@ export type ProjectArtKind = 'cover' | 'background' | 'all'
 const LAUNCHER_ART_OWNER = '__pullora__'
 const LEGACY_LAUNCHER_ART_OWNER = '__air_launcher__'
 const LAUNCHER_ART_REPO = 'global'
+export type LauncherBackgroundTheme = 'light' | 'dark'
+
+function launcherThemeRepo(theme: LauncherBackgroundTheme) {
+  return `${LAUNCHER_ART_REPO}-${theme}`
+}
 
 export async function listProjectArt(): Promise<ProjectArt[]> {
   try {
@@ -71,17 +76,19 @@ export function projectArtBackgroundUrl(
   return options.fallbackToCover === false ? null : projectArtCoverUrl(art)
 }
 
-export async function getLauncherBackgroundArt(): Promise<ProjectArt | null> {
-  return await getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO) ??
+export async function getLauncherBackgroundArt(theme: LauncherBackgroundTheme): Promise<ProjectArt | null> {
+  return await getProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme)) ??
+    await getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO) ??
     getProjectArt(LEGACY_LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO)
 }
 
-export async function setLauncherBackgroundArt(sourcePath: string): Promise<ProjectArt> {
-  return setProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background', sourcePath)
+export async function setLauncherBackgroundArt(
+  theme: LauncherBackgroundTheme,
+  sourcePath: string,
+): Promise<ProjectArt> {
+  return setProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme), 'background', sourcePath)
 }
 
-export async function clearLauncherBackgroundArt(): Promise<ProjectArt> {
-  const result = await clearProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background')
-  await clearProjectArt(LEGACY_LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO, 'background').catch(() => null)
-  return result
+export async function clearLauncherBackgroundArt(theme: LauncherBackgroundTheme): Promise<ProjectArt> {
+  return clearProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme), 'background')
 }

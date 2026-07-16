@@ -102,7 +102,7 @@ function UninstallConfirmModal({
             {removesAll && <p>{t('installed.uninstallFolderWarning')}</p>}
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message" role="alert">{error}</div>}
 
           <div className="uninstall-confirm-actions">
             <button type="button" className="secondary-btn" onClick={onCancel} disabled={busy}>

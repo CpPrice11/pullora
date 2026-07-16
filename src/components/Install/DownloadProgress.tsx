@@ -80,9 +80,10 @@ function DownloadProgressPanel({
   const { language, t } = useI18n()
 
   if (downloads.length === 0) return null
+  const busy = downloads.some((download) => !['completed', 'failed'].includes(currentStage(download)))
 
   return (
-    <div className="download-panel">
+    <div className="download-panel" aria-busy={busy}>
       <div className="download-panel-head">
         <h3 className="download-panel-title">{t('download.title')}</h3>
         <span className="download-panel-count">{downloads.length}</span>
@@ -93,6 +94,7 @@ function DownloadProgressPanel({
           const stageIndex = installStages.indexOf(stage)
           const failed = download.status === 'failed' || stage === 'failed'
           const completed = download.status === 'completed' || stage === 'completed'
+          const progress = Math.max(0, Math.min(100, Math.round(download.progress)))
 
           return (
             <div
@@ -100,11 +102,18 @@ function DownloadProgressPanel({
               className={`download-item download-item--${download.status}`}
             >
               <div className="download-stage-mark" aria-hidden="true">
-                <span>{completed ? 'OK' : Math.round(download.progress)}</span>
+                <span>{completed ? 'OK' : progress}</span>
               </div>
               <div className="download-header">
                 <div className="download-title-block">
-                  <span className="download-status">{stageLabel(stage, t)}</span>
+                  <span
+                    className="download-status"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {stageLabel(stage, t)}
+                  </span>
                   <span className="download-name" title={download.fileName}>
                     {download.fileName}
                   </span>
@@ -124,10 +133,17 @@ function DownloadProgressPanel({
 
               <p className="download-stage-note">{stageDescription(stage, t)}</p>
 
-              <div className="progress-bar-wrap">
+              <div
+                className="progress-bar-wrap"
+                role="progressbar"
+                aria-label={`${download.fileName}: ${stageLabel(stage, t)}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progress}
+              >
                 <div
                   className="progress-bar-fill"
-                  style={{ width: `${Math.max(0, Math.min(100, download.progress))}%` }}
+                  style={{ width: `${progress}%` }}
                 />
               </div>
 
@@ -156,7 +172,7 @@ function DownloadProgressPanel({
                   </span>
                 )}
                 {download.installPath && <span>{download.installPath}</span>}
-                <span className="download-pct">{Math.round(download.progress)}%</span>
+                <span className="download-pct">{progress}%</span>
               </div>
 
               {completed && (
@@ -180,7 +196,7 @@ function DownloadProgressPanel({
               )}
 
               {failed && (
-                <div className="download-recovery">
+                <div className="download-recovery" role="alert">
                   <strong>{t('download.recoveryTitle')}</strong>
                   <p>{t('download.recoveryText')}</p>
                   <ul className="download-recovery-steps">
