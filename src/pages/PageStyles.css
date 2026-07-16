@@ -5376,7 +5376,7 @@
 :root[data-theme='light'] .cinematic-shell .library-page .library-hero::before,
 :root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero::before {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--surface-canvas) 90%, transparent) 0%, color-mix(in srgb, var(--surface-canvas) 76%, transparent) 58%, color-mix(in srgb, var(--surface-canvas) 52%, transparent) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--surface-canvas) 78%, transparent) 0%, color-mix(in srgb, var(--surface-canvas) 62%, transparent) 58%, color-mix(in srgb, var(--surface-canvas) 38%, transparent) 100%),
     var(--library-hero-background, transparent);
 }
 

@@ -46,18 +46,18 @@
   --color-primary: #0067c0;
   --color-primary-dark: #005a9e;
   --color-primary-light: rgba(0, 103, 192, 0.14);
-  --color-bg: #eef3f8;
+  --color-bg: #dfe8f2;
   --color-bg-elevated: #ffffff;
-  --color-bg-secondary: #f3f6fa;
-  --color-mica: rgba(255, 255, 255, 0.9);
-  --color-control: rgba(255, 255, 255, 0.84);
-  --color-control-hover: #edf4fb;
+  --color-bg-secondary: #e7eef6;
+  --color-mica: rgba(248, 250, 252, 0.82);
+  --color-control: rgba(248, 250, 252, 0.9);
+  --color-control-hover: rgba(231, 238, 246, 0.96);
   --color-nav-active: rgba(0, 103, 192, 0.1);
   --color-text: #111827;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #64748b;
-  --color-border: rgba(15, 23, 42, 0.16);
-  --color-border-subtle: rgba(15, 23, 42, 0.1);
+  --color-text-secondary: #40536a;
+  --color-text-tertiary: #52657a;
+  --color-border: rgba(58, 78, 101, 0.28);
+  --color-border-subtle: rgba(58, 78, 101, 0.2);
   --color-success: #107c10;
   --color-error: #b42318;
   --color-warning: #8a5d00;
@@ -1542,6 +1542,10 @@
   box-shadow: var(--surface-shadow);
 }
 
+:root[data-theme] .cinematic-shell.settings-open .settings-workspace {
+  background: color-mix(in srgb, var(--surface-1) 76%, transparent);
+}
+
 :root[data-theme] .cinematic-shell .library-page .library-sam-details-pane {
   background:
     radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
@@ -1584,4 +1588,230 @@
   background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-3));
   border-color: color-mix(in srgb, var(--color-primary) 28%, var(--surface-border));
   color: var(--color-primary-dark);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page-header h2,
+:root[data-theme='light'] .cinematic-shell .settings-page .settings-section h3,
+:root[data-theme='light'] .cinematic-shell .settings-page .danger-zone h3,
+:root[data-theme='light'] .cinematic-shell .settings-page .form-group > label,
+:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label,
+:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+  color: var(--color-text);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page-header p,
+:root[data-theme='light'] .cinematic-shell .settings-page .help-text,
+:root[data-theme='light'] .cinematic-shell .settings-content--appearance .appearance-color-field code,
+:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+  color: var(--color-text-secondary);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox'] {
+  background: var(--surface-3);
+  border-color: var(--surface-border-strong);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox']::after {
+  background: #ffffff;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--color-text) 24%, transparent);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary-dark);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg, var(--color-primary) 0 var(--range-progress), color-mix(in srgb, var(--color-text) 18%, transparent) var(--range-progress) 100%);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme='light'] .cinematic-shell .settings-page input[type='range']::-webkit-slider-thumb {
+  background: var(--color-primary);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent),
+    0 3px 8px color-mix(in srgb, var(--color-text) 24%, transparent);
+}
+
+/* v5.9 library bulk selection and actions */
+.cinematic-shell .library-sam-list-pane {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.cinematic-shell .library-sam-list-pane .repo-card.bulk-selected {
+  background: color-mix(in srgb, var(--color-primary) 20%, var(--surface-3));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 58%, transparent);
+}
+
+.cinematic-shell .repo-bulk-selection-mark {
+  align-items: center;
+  background: var(--color-primary);
+  border: 2px solid var(--surface-1);
+  border-radius: 50%;
+  color: #061018;
+  display: flex;
+  font-size: 9px;
+  font-weight: 900;
+  height: 17px;
+  justify-content: center;
+  left: 20px;
+  pointer-events: none;
+  position: absolute;
+  top: 2px;
+  width: 17px;
+  z-index: 2;
+}
+
+.cinematic-shell .library-bulk-actions {
+  background: var(--surface-material-strong);
+  border-top: 1px solid var(--surface-border-strong);
+  box-shadow: 0 -14px 30px color-mix(in srgb, #000 22%, transparent);
+  display: grid;
+  flex: none;
+  gap: 8px;
+  padding: 10px;
+  position: relative;
+  z-index: 8;
+}
+
+.cinematic-shell .library-bulk-summary,
+.cinematic-shell .library-bulk-summary > span,
+.cinematic-shell .library-bulk-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.cinematic-shell .library-bulk-summary {
+  justify-content: space-between;
+}
+
+.cinematic-shell .library-bulk-summary strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.cinematic-shell .library-bulk-summary button,
+.cinematic-shell .library-bulk-toolbar > button,
+.cinematic-shell .library-bulk-menu > summary,
+.cinematic-shell .library-bulk-menu-popover button {
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  min-height: 30px;
+  padding: 5px 8px;
+}
+
+.cinematic-shell .library-bulk-summary button:hover,
+.cinematic-shell .library-bulk-toolbar > button:hover,
+.cinematic-shell .library-bulk-menu > summary:hover,
+.cinematic-shell .library-bulk-menu-popover button:hover {
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-border));
+  color: var(--color-text);
+}
+
+.cinematic-shell .library-bulk-summary button:disabled,
+.cinematic-shell .library-bulk-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.cinematic-shell .library-bulk-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) repeat(3, minmax(0, 1fr));
+}
+
+.cinematic-shell .library-bulk-menu {
+  min-width: 0;
+  position: relative;
+}
+
+.cinematic-shell .library-bulk-menu > summary {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.cinematic-shell .library-bulk-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cinematic-shell .library-bulk-menu-popover {
+  background: var(--surface-material-strong);
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 10px;
+  bottom: calc(100% + 6px);
+  box-shadow: var(--surface-shadow);
+  display: grid;
+  gap: 4px;
+  left: 0;
+  min-width: 190px;
+  padding: 6px;
+  position: absolute;
+  z-index: 20;
+}
+
+.cinematic-shell .library-bulk-menu--more .library-bulk-menu-popover {
+  left: auto;
+  right: 0;
+}
+
+.cinematic-shell .library-bulk-menu-popover button {
+  text-align: left;
+  width: 100%;
+}
+
+.cinematic-shell .library-bulk-menu-popover .danger-menu-item {
+  color: var(--color-error);
+}
+
+.cinematic-shell .library-bulk-message,
+.cinematic-shell .library-bulk-error {
+  font-size: 10px;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.cinematic-shell .library-bulk-message {
+  color: var(--color-text-secondary);
+}
+
+.cinematic-shell .library-bulk-error {
+  color: var(--color-error);
+}
+
+.cinematic-shell .library-bulk-confirm .uninstall-confirm-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cinematic-shell .library-density-compact .library-bulk-actions {
+  gap: 6px;
+  padding: 7px;
+}
+
+.cinematic-shell .library-density-compact .library-bulk-summary button,
+.cinematic-shell .library-density-compact .library-bulk-toolbar > button,
+.cinematic-shell .library-density-compact .library-bulk-menu > summary {
+  min-height: 26px;
+  padding: 3px 6px;
+}
+
+@media (max-width: 1100px) {
+  .cinematic-shell .library-bulk-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

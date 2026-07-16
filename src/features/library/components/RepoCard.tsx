@@ -18,6 +18,8 @@ interface RepoCardProps {
   removableFolders?: Array<{ id: string; name: string }>
   isFavorite?: boolean
   isSelected?: boolean
+  isBulkSelected?: boolean
+  onBulkSelect?: (range: boolean) => void
   onPreview?: () => void
   onFavoriteChange?: (isFavorite: boolean) => void
   onCreateFolder?: () => void
@@ -44,6 +46,8 @@ function RepoCard({
   removableFolders = [],
   isFavorite,
   isSelected = false,
+  isBulkSelected = false,
+  onBulkSelect,
   onPreview,
   onFavoriteChange,
   onCreateFolder,
@@ -235,6 +239,15 @@ function RepoCard({
     onPreview?.()
   }
 
+  const handleCardClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (onBulkSelect && (event.ctrlKey || event.metaKey || event.shiftKey)) {
+      event.preventDefault()
+      onBulkSelect(event.shiftKey)
+      return
+    }
+    handlePreview()
+  }
+
   const updatedDate = formatDate(repo.updated_at, language)
   const statusLabel = t(`repo.${status}`)
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
@@ -245,14 +258,22 @@ function RepoCard({
   return (
     <article
       ref={cardRef}
-      className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''}`}
-      onClick={handlePreview}
+      className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''} ${isBulkSelected ? 'bulk-selected' : ''}`}
+      onClick={handleCardClick}
       onContextMenu={handleContextMenu}
       tabIndex={0}
       role="button"
-      aria-label={`${repo.name}, ${statusLabel}`}
+      aria-label={`${repo.name}, ${statusLabel}${onBulkSelect ? `. ${t('library.bulk.cardHint')}` : ''}`}
+      aria-pressed={onBulkSelect ? isBulkSelected : undefined}
+      aria-keyshortcuts={onBulkSelect ? 'Control+Space Meta+Space Shift+Space' : undefined}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return
+
+        if (event.key === ' ' && onBulkSelect && (event.ctrlKey || event.metaKey || event.shiftKey)) {
+          event.preventDefault()
+          onBulkSelect(event.shiftKey)
+          return
+        }
 
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
@@ -268,6 +289,9 @@ function RepoCard({
         }
       }}
     >
+      {isBulkSelected && (
+        <span className="repo-bulk-selection-mark" aria-hidden="true">✓</span>
+      )}
       <div className="repo-card-media">
         <img
           src={coverUrl ?? repo.owner.avatar_url}

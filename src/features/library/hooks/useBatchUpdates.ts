@@ -19,6 +19,16 @@ interface UseBatchUpdatesOptions {
   refreshLocalStatus: () => Promise<void>
 }
 
+export interface BatchUpdateStartResult {
+  startedKeys: string[]
+  skippedKeys: string[]
+  failedKeys: string[]
+}
+
+function repositoryKey(repo: GitHubSearchResult) {
+  return `${repo.owner.login}/${repo.name}`.toLowerCase()
+}
+
 function assetIsPortableInstall(asset: GitHubAsset) {
   const name = asset.name.toLowerCase()
   if (name.includes('setup') || name.includes('installer') || name.endsWith('.msi')) return false
@@ -67,24 +77,24 @@ export function useBatchUpdates({
     return id
   }, [startBatchDownload])
 
-  const handleUpdateAllPortable = async () => {
+  const handleUpdateAllPortable = async (
+    selectedRepositories: GitHubSearchResult[] = repositories,
+  ): Promise<BatchUpdateStartResult> => {
     setBatchUpdateError(null)
     setBatchUpdateMessage(null)
     setBatchCleanupMessage(null)
 
-    if (repositories.length === 0) {
+    if (selectedRepositories.length === 0) {
       setBatchUpdateMessage(t('updates.noneReady'))
-      return
+      return { startedKeys: [], skippedKeys: [], failedKeys: [] }
     }
 
     setBatchUpdating(true)
-    let started = 0
-    let skipped = 0
-    const results = await Promise.all(repositories.map(async (repo) => {
+    const results = await Promise.all(selectedRepositories.map(async (repo) => {
+      const key = repositoryKey(repo)
       const latestVersion = getLatestVersion(repo)
       if (!latestVersion) {
-        skipped += 1
-        return
+        return { key, status: 'skipped' as const }
       }
 
       try {
@@ -94,8 +104,7 @@ export function useBatchUpdates({
           ?? null
         const asset = pickPortableUpdateAsset(release)
         if (!release || !asset) {
-          skipped += 1
-          return
+          return { key, status: 'skipped' as const }
         }
 
         await startBatchUpdateJob({
@@ -105,22 +114,32 @@ export function useBatchUpdates({
           repo: repo.name,
           tag: release.tag_name,
         })
-        started += 1
+        return { key, status: 'started' as const }
       } catch (error) {
-        skipped += 1
-        return error instanceof Error ? error.message : t('updates.batchFailed')
+        return {
+          key,
+          status: 'failed' as const,
+          error: error instanceof Error ? error.message : t('updates.batchFailed'),
+        }
       }
     }))
 
-    const errors = results.filter((item): item is string => typeof item === 'string')
-    if (started === 0) {
+    const startedKeys = results.filter((item) => item.status === 'started').map((item) => item.key)
+    const skippedKeys = results.filter((item) => item.status === 'skipped').map((item) => item.key)
+    const failedResults = results.filter((item) => item.status === 'failed')
+    const failedKeys = failedResults.map((item) => item.key)
+    if (startedKeys.length === 0) {
       setBatchUpdating(false)
-      setBatchUpdateError(errors[0] ?? t('updates.noPortableAssets'))
-      return
+      setBatchUpdateError(failedResults[0]?.error ?? t('updates.noPortableAssets'))
+      return { startedKeys, skippedKeys, failedKeys }
     }
 
-    setBatchUpdateMessage(t('updates.batchStarted', { started, skipped }))
-    if (errors.length > 0) setBatchUpdateError(errors[0])
+    setBatchUpdateMessage(t('updates.batchStarted', {
+      started: startedKeys.length,
+      skipped: skippedKeys.length + failedKeys.length,
+    }))
+    if (failedResults.length > 0) setBatchUpdateError(failedResults[0].error)
+    return { startedKeys, skippedKeys, failedKeys }
   }
 
   const handleBatchRetry = async (download: DownloadProgress) => {

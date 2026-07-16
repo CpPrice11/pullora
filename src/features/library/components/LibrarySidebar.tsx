@@ -27,6 +27,7 @@ interface LibrarySidebarProps {
   groups: LibrarySidebarGroup[]
   collapsedFolderIds: Set<string>
   notices?: ReactNode
+  bulkActions?: ReactNode
   showLoading: boolean
   showEmpty: boolean
   emptyTitle: string
@@ -54,6 +55,7 @@ export default function LibrarySidebar({
   groups,
   collapsedFolderIds,
   notices,
+  bulkActions,
   showLoading,
   showEmpty,
   emptyTitle,
@@ -203,6 +205,7 @@ export default function LibrarySidebar({
           {loading ? t('library.loadingMore') : t('library.loadMore')}
         </button>
       )}
+      {bulkActions}
     </section>
   )
 }

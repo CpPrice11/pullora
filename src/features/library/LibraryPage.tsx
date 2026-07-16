@@ -5,8 +5,10 @@ import { useLibraryStatus } from './hooks/useLibraryStatus'
 import { useLibrarySelection } from './hooks/useLibrarySelection'
 import { useLibraryFiltering } from './hooks/useLibraryFiltering'
 import { useBatchUpdates } from './hooks/useBatchUpdates'
+import { useLibraryBulkSelection } from './hooks/useLibraryBulkSelection'
 import RepoCard from './components/RepoCard'
 import LibrarySidebar, { type LibraryDensity, type LibrarySection } from './components/LibrarySidebar'
+import { LibraryBulkActions, LibraryBulkConfirmDialog } from './components/LibraryBulkActions'
 import LibraryHero from './components/LibraryHero'
 import VersionPanel from './components/VersionPanel'
 import ApplicationDetails from './components/ApplicationDetails'
@@ -16,7 +18,7 @@ import ReleaseSelector from '../../components/Install/ReleaseSelector'
 import UninstallConfirmModal from './components/UninstallConfirmModal'
 import DownloadProgressPanel from '../../components/Install/DownloadProgress'
 import StatePanel from '../../components/State/StatePanel'
-import { launchApp, openInstalledAppDir, uninstallApp } from '../../services/installed'
+import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
 import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
 import { pickImageFile } from '../../services/dialog'
@@ -32,6 +34,7 @@ import type { FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, Proj
 import { useI18n } from '../../i18n'
 import { formatDate, formatNumber } from '../../utils/format'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
+import { getInactiveInstalledVersions, runSequentialBulk } from './libraryBulkOperations'
 import {
   loadLibraryViewState,
   saveLibraryViewState,
@@ -262,6 +265,10 @@ function LibraryPage({
   const [uninstallBusy, setUninstallBusy] = useState(false)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
   const [libraryActionMessage, setLibraryActionMessage] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkMessage, setBulkMessage] = useState<string | null>(null)
+  const [bulkError, setBulkError] = useState<string | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState<'cleanup' | 'uninstall' | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
   const libraryFoldersLoadedRef = useRef(false)
   const owner = settings.githubOwner?.trim()
@@ -814,6 +821,47 @@ function LibraryPage({
     return sections
   }, [displayFolders, t, visibleRepositories])
 
+  const orderedVisibleRepositories = useMemo(() => {
+    const seen = new Set<string>()
+    return visibleRepositorySections.flatMap((section) => section.repositories).filter((repo) => {
+      const key = normalizeRepoKey(repo.owner.login, repo.name)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [visibleRepositorySections])
+  const orderedVisibleKeys = useMemo(
+    () => orderedVisibleRepositories.map((repo) => normalizeRepoKey(repo.owner.login, repo.name)),
+    [orderedVisibleRepositories],
+  )
+  const bulkSelection = useLibraryBulkSelection(orderedVisibleKeys)
+  const bulkSelectedRepositories = useMemo(
+    () => libraryRepositories.filter((repo) =>
+      bulkSelection.selectedKeys.has(normalizeRepoKey(repo.owner.login, repo.name)),
+    ),
+    [bulkSelection.selectedKeys, libraryRepositories],
+  )
+  const bulkInstalledApps = useMemo(() => bulkSelectedRepositories.flatMap((repo) => {
+    const installedApp = getInstalledApp(repo)
+    return installedApp ? [installedApp] : []
+  }), [bulkSelectedRepositories, getInstalledApp])
+  const bulkUpdateRepositories = useMemo(() => bulkSelectedRepositories.filter((repo) => {
+    const latestVersion = getLatestVersion(repo)
+    return Boolean(latestVersion) && getLibraryAppStatus(getInstalledApp(repo), latestVersion) === 'update'
+  }), [bulkSelectedRepositories, getInstalledApp, getLatestVersion])
+  const bulkInactiveVersions = useMemo(
+    () => getInactiveInstalledVersions(bulkInstalledApps),
+    [bulkInstalledApps],
+  )
+  const bulkUninstallSize = useMemo(() => bulkInstalledApps.reduce(
+    (sum, app) => sum + app.versions.reduce((appSum, version) => appSum + version.sizeBytes, 0),
+    0,
+  ), [bulkInstalledApps])
+  const bulkCleanupSize = useMemo(() => bulkInactiveVersions.reduce(
+    (sum, item) => sum + item.version.sizeBytes,
+    0,
+  ), [bulkInactiveVersions])
+
   const modeRepositoryCount = libraryRepositories.length
 
   const featuredArt = featuredRepo
@@ -945,6 +993,152 @@ function LibraryPage({
       setArtError(t('art.saveError'))
     } finally {
       setFavoriteBusy(false)
+    }
+  }
+
+  const showBulkResult = (success: number, skipped: number, failed: number) => {
+    const message = t('library.bulk.result', { success, skipped, failed })
+    setBulkMessage(message)
+    setBulkError(failed > 0 ? t('library.bulk.retryFailed', { count: failed }) : null)
+    setLibraryActionMessage(message)
+  }
+
+  const handleBulkUpdate = async () => {
+    setBulkBusy(true)
+    setBulkError(null)
+    try {
+      const result = await handleUpdateAllPortable(bulkUpdateRepositories)
+      const eligibleKeys = new Set(bulkUpdateRepositories.map((repo) =>
+        normalizeRepoKey(repo.owner.login, repo.name),
+      ))
+      const unavailableKeys = [...bulkSelection.selectedKeys].filter((key) => !eligibleKeys.has(key))
+      bulkSelection.remove([...result.startedKeys, ...result.skippedKeys, ...unavailableKeys])
+      showBulkResult(
+        result.startedKeys.length,
+        result.skippedKeys.length + unavailableKeys.length,
+        result.failedKeys.length,
+      )
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const handleBulkMove = (folderId: string | null) => {
+    const selectedKeys = bulkSelection.selectedKeys
+    setLibraryFolders((current) => cleanLibraryFolders(ensureFavoritesFolder(current).map((folder) => {
+      if (folder.id === favoritesFolderId) return folder
+      const repoKeys = folder.repoKeys.filter((key) => !selectedKeys.has(key))
+      return folder.id === folderId
+        ? { ...folder, repoKeys: [...selectedKeys, ...repoKeys] }
+        : { ...folder, repoKeys }
+    })))
+    const count = selectedKeys.size
+    bulkSelection.clear()
+    showBulkResult(count, 0, 0)
+  }
+
+  const handleBulkFavorite = async (nextValue: boolean) => {
+    setBulkBusy(true)
+    setBulkError(null)
+    const skippedRepositories = bulkSelectedRepositories.filter((repo) =>
+      favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) === nextValue,
+    )
+    const actionableRepositories = bulkSelectedRepositories.filter((repo) =>
+      favoriteKeys.has(normalizeRepoKey(repo.owner.login, repo.name)) !== nextValue,
+    )
+    const result = await runSequentialBulk(
+      actionableRepositories,
+      (repo) => normalizeRepoKey(repo.owner.login, repo.name),
+      async (repo) => {
+        if (nextValue) {
+          await addToFavorites(repo.owner.login, repo.name, repo.name, repo.description ?? undefined)
+        } else {
+          await removeFromFavorites(repo.owner.login, repo.name)
+        }
+        handleFavoriteChange(repo, nextValue)
+      },
+    )
+    const skippedKeys = skippedRepositories.map((repo) =>
+      normalizeRepoKey(repo.owner.login, repo.name),
+    )
+    bulkSelection.remove([...result.succeededKeys, ...skippedKeys])
+    showBulkResult(result.succeededKeys.length, skippedKeys.length, result.failedKeys.length)
+    setBulkBusy(false)
+  }
+
+  const handleBulkCleanup = async () => {
+    setBulkBusy(true)
+    setBulkError(null)
+    const completedKeys: string[] = []
+    let success = 0
+    let skipped = 0
+    let failed = 0
+
+    for (const app of bulkInstalledApps) {
+      const key = normalizeRepoKey(app.owner, app.repo)
+      const inactive = app.versions.filter((version) => version.tag !== app.activeVersion)
+      if (inactive.length === 0) {
+        skipped += 1
+        completedKeys.push(key)
+        continue
+      }
+      let appFailed = false
+      for (const version of inactive) {
+        try {
+          await uninstallVersion(app.owner, app.repo, version.tag)
+        } catch {
+          appFailed = true
+        }
+      }
+      if (appFailed) {
+        failed += 1
+      } else {
+        success += 1
+        completedKeys.push(key)
+      }
+    }
+
+    const uninstalledKeys = new Set(bulkInstalledApps.map((app) => normalizeRepoKey(app.owner, app.repo)))
+    const notInstalledKeys = bulkSelectedRepositories
+      .map((repo) => normalizeRepoKey(repo.owner.login, repo.name))
+      .filter((key) => !uninstalledKeys.has(key))
+    skipped += notInstalledKeys.length
+    bulkSelection.remove([...completedKeys, ...notInstalledKeys])
+    await refreshLocalStatus().catch(() => {})
+    setBulkConfirm(null)
+    showBulkResult(success, skipped, failed)
+    setBulkBusy(false)
+  }
+
+  const handleBulkUninstall = async () => {
+    setBulkBusy(true)
+    setBulkError(null)
+    const result = await runSequentialBulk(
+      bulkInstalledApps,
+      (app) => normalizeRepoKey(app.owner, app.repo),
+      (app) => uninstallApp(app.owner, app.repo),
+    )
+
+    const installedKeys = new Set(bulkInstalledApps.map((app) => normalizeRepoKey(app.owner, app.repo)))
+    const notInstalledKeys = bulkSelectedRepositories
+      .map((repo) => normalizeRepoKey(repo.owner.login, repo.name))
+      .filter((key) => !installedKeys.has(key))
+    bulkSelection.remove([...result.succeededKeys, ...notInstalledKeys])
+    await refreshLocalStatus().catch(() => {})
+    setBulkConfirm(null)
+    showBulkResult(result.succeededKeys.length, notInstalledKeys.length, result.failedKeys.length)
+    setBulkBusy(false)
+  }
+
+  const handleLibraryKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement
+    if (target.closest('input, textarea, select, [contenteditable="true"]')) return
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault()
+      bulkSelection.selectAll()
+    } else if (event.key === 'Escape' && bulkSelection.selectedKeys.size > 0) {
+      event.preventDefault()
+      bulkSelection.clear()
     }
   }
 
@@ -1283,7 +1477,16 @@ function LibraryPage({
         art={projectArt[key]}
         isFavorite={favoriteKeys.has(key)}
         isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
-        onPreview={() => selectFeaturedRepo(repo)}
+        isBulkSelected={bulkSelection.selectedKeys.has(key)}
+        onBulkSelect={(range) => {
+          setBulkMessage(null)
+          setBulkError(null)
+          bulkSelection.select(key, range)
+        }}
+        onPreview={() => {
+          bulkSelection.clear()
+          selectFeaturedRepo(repo)
+        }}
         onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
         onPickArt={() => handlePickArt('cover', repo)}
         onPickBackground={() => handlePickArt('background', repo)}
@@ -1307,7 +1510,11 @@ function LibraryPage({
   }
 
   return (
-    <div className={`page library-page library-density-${libraryDensity}`} style={featuredBackgroundStyle}>
+    <div
+      className={`page library-page library-density-${libraryDensity}`}
+      style={featuredBackgroundStyle}
+      onKeyDown={handleLibraryKeyboard}
+    >
       <div className="library-sam-workspace">
           <LibrarySidebar
             filter={filter}
@@ -1349,6 +1556,35 @@ function LibraryPage({
                 )}
               </>
             )}
+            bulkActions={(
+              <LibraryBulkActions
+                selectedCount={bulkSelection.selectedKeys.size}
+                visibleCount={orderedVisibleKeys.length}
+                updateCount={bulkUpdateRepositories.length}
+                installedCount={bulkInstalledApps.length}
+                cleanupVersionCount={bulkInactiveVersions.length}
+                busy={bulkBusy}
+                folders={displayFolders
+                  .filter((folder) => folder.id !== favoritesFolderId)
+                  .map((folder) => ({ id: folder.id, name: folder.name }))}
+                message={bulkMessage}
+                error={bulkError}
+                onSelectAll={bulkSelection.selectAll}
+                onClear={bulkSelection.clear}
+                onUpdate={handleBulkUpdate}
+                onMoveToFolder={handleBulkMove}
+                onAddFavorite={() => handleBulkFavorite(true)}
+                onRemoveFavorite={() => handleBulkFavorite(false)}
+                onRequestCleanup={() => {
+                  setBulkError(null)
+                  setBulkConfirm('cleanup')
+                }}
+                onRequestUninstall={() => {
+                  setBulkError(null)
+                  setBulkConfirm('uninstall')
+                }}
+              />
+            )}
             showLoading={showLoadingState}
             showEmpty={visibleRepositories.length === 0 && !state.loading}
             emptyTitle={t(emptyTitleKey)}
@@ -1356,11 +1592,23 @@ function LibraryPage({
             emptyActionLabel={emptyActionLabel}
             loading={state.loading}
             hasMore={state.hasMore}
-            onFilterChange={handleFilterChange}
-            onSortChange={handleSortChange}
+            onFilterChange={(nextFilter) => {
+              bulkSelection.clear()
+              handleFilterChange(nextFilter)
+            }}
+            onSortChange={(nextSort) => {
+              bulkSelection.clear()
+              handleSortChange(nextSort)
+            }}
             onDensityChange={setLibraryDensity}
-            onQueryChange={setQuery}
-            onToggleSection={toggleFolderSection}
+            onQueryChange={(nextQuery) => {
+              bulkSelection.clear()
+              setQuery(nextQuery)
+            }}
+            onToggleSection={(sectionId) => {
+              bulkSelection.clear()
+              toggleFolderSection(sectionId)
+            }}
             onEmptyAction={emptyAction}
             onLoadMore={loadMore}
             renderRepository={renderSidebarRepository}
@@ -1429,6 +1677,23 @@ function LibraryPage({
           ]}
           onCancel={closeCreateFolderDialog}
           onConfirm={handleConfirmCreateFolder}
+        />
+      )}
+
+      {bulkConfirm && (
+        <LibraryBulkConfirmDialog
+          action={bulkConfirm}
+          appCount={bulkConfirm === 'cleanup'
+            ? new Set(bulkInactiveVersions.map((item) => normalizeRepoKey(item.app.owner, item.app.repo))).size
+            : bulkInstalledApps.length}
+          versionCount={bulkConfirm === 'cleanup'
+            ? bulkInactiveVersions.length
+            : bulkInstalledApps.reduce((sum, app) => sum + app.versions.length, 0)}
+          sizeBytes={bulkConfirm === 'cleanup' ? bulkCleanupSize : bulkUninstallSize}
+          busy={bulkBusy}
+          error={bulkError}
+          onCancel={() => !bulkBusy && setBulkConfirm(null)}
+          onConfirm={bulkConfirm === 'cleanup' ? handleBulkCleanup : handleBulkUninstall}
         />
       )}
 

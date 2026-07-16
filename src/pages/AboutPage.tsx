@@ -20,7 +20,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.8.0'
+const FALLBACK_CURRENT_VERSION = 'v5.9.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
