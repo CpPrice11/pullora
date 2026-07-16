@@ -24,6 +24,8 @@ try {
   const { LanguageProvider } = await server.ssrLoadModule('/src/i18n.tsx')
   const { default: LibraryHero } = await server.ssrLoadModule('/src/features/library/components/LibraryHero.tsx')
   const { default: LibrarySidebar } = await server.ssrLoadModule('/src/features/library/components/LibrarySidebar.tsx')
+  const { default: RepoCard } = await server.ssrLoadModule('/src/features/library/components/RepoCard.tsx')
+  const { LibraryBulkActions, LibraryBulkConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/LibraryBulkActions.tsx')
   const { default: VersionPanel } = await server.ssrLoadModule('/src/features/library/components/VersionPanel.tsx')
   const { default: ApplicationDetails } = await server.ssrLoadModule('/src/features/library/components/ApplicationDetails.tsx')
   const { default: FolderManager } = await server.ssrLoadModule('/src/features/library/components/FolderManager.tsx')
@@ -32,6 +34,16 @@ try {
   const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
   const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
   const { sortLibraryRepositories } = await server.ssrLoadModule('/src/features/library/hooks/useLibraryFiltering.ts')
+  const {
+    toggleSelectedKey,
+    selectKeyRange,
+    selectVisibleKeys,
+    clearSelectedKeys,
+  } = await server.ssrLoadModule('/src/features/library/hooks/useLibraryBulkSelection.ts')
+  const {
+    getInactiveInstalledVersions,
+    runSequentialBulk,
+  } = await server.ssrLoadModule('/src/features/library/libraryBulkOperations.ts')
   const { parseLibraryViewState } = await server.ssrLoadModule('/src/features/library/libraryViewState.ts')
   const { nextMenuItemIndex } = await server.ssrLoadModule('/src/utils/menuKeyboard.ts')
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
@@ -87,6 +99,33 @@ try {
   )
   assert.equal(nextMenuItemIndex('ArrowDown', -1, 4), 0)
   assert.equal(nextMenuItemIndex('ArrowDown', 0, 0), -1)
+  assert.deepEqual([...toggleSelectedKey(new Set(['a']), 'b')], ['a', 'b'])
+  assert.deepEqual([...toggleSelectedKey(new Set(['a', 'b']), 'a')], ['b'])
+  assert.deepEqual([...selectKeyRange(['a', 'b', 'c', 'd'], 'b', 'd')], ['b', 'c', 'd'])
+  assert.deepEqual([...selectKeyRange(['a', 'b', 'c', 'd'], 'd', 'b')], ['b', 'c', 'd'])
+  assert.deepEqual([...selectVisibleKeys(['a', 'b', 'c'])], ['a', 'b', 'c'])
+  assert.equal(clearSelectedKeys().size, 0)
+  assert.equal(getInactiveInstalledVersions([installedApp]).length, 0)
+  const appWithOldVersion = {
+    ...installedApp,
+    versions: [
+      installedApp.versions[0],
+      { ...installedApp.versions[0], tag: 'v0.9.0', sizeBytes: 512 },
+    ],
+  }
+  assert.deepEqual(
+    getInactiveInstalledVersions([installedApp, appWithOldVersion]).map((item) => item.version.tag),
+    ['v0.9.0'],
+  )
+  const partialBulk = await runSequentialBulk(
+    ['ok', 'failed', 'ok-2'],
+    (item) => item,
+    async (item) => {
+      if (item === 'failed') throw new Error('expected')
+    },
+  )
+  assert.deepEqual(partialBulk.succeededKeys, ['ok', 'ok-2'])
+  assert.deepEqual(partialBulk.failedKeys, ['failed'])
   const diagnostics = redactSensitiveText(
     'token=secret github=ghp_private C:\\Users\\sasha\\Downloads unix=/home/alex/apps',
   )
@@ -200,6 +239,54 @@ try {
   assert.match(sidebar, /library-density-toggle/)
   assert.match(sidebar, /library-sort-control/)
   assert.match(sidebar, /aria-pressed="true"/)
+
+  const bulkCard = render(RepoCard, {
+    repo,
+    installedApp,
+    latestVersion: 'v2.0.0',
+    isFavorite: false,
+    isBulkSelected: true,
+    onBulkSelect: noop,
+    onPreview: noop,
+  })
+  assert.match(bulkCard, /bulk-selected/)
+  assert.match(bulkCard, /aria-pressed="true"/)
+  assert.match(bulkCard, /aria-keyshortcuts="Control\+Space Meta\+Space Shift\+Space"/)
+
+  const bulkActions = render(LibraryBulkActions, {
+    selectedCount: 2,
+    visibleCount: 3,
+    updateCount: 1,
+    installedCount: 1,
+    cleanupVersionCount: 1,
+    busy: false,
+    folders: [{ id: 'tools', name: 'Tools' }],
+    message: 'Done',
+    error: 'Retry',
+    onSelectAll: noop,
+    onClear: noop,
+    onUpdate: noop,
+    onMoveToFolder: noop,
+    onAddFavorite: noop,
+    onRemoveFavorite: noop,
+    onRequestCleanup: noop,
+    onRequestUninstall: noop,
+  })
+  assert.match(bulkActions, /library-bulk-actions/)
+  assert.match(bulkActions, /aria-live="polite"/)
+  assert.match(bulkActions, /role="alert"/)
+
+  const bulkConfirm = render(LibraryBulkConfirmDialog, {
+    action: 'cleanup',
+    appCount: 2,
+    versionCount: 3,
+    sizeBytes: 2048,
+    busy: false,
+    onCancel: noop,
+    onConfirm: noop,
+  })
+  assert.match(bulkConfirm, /role="alertdialog"/)
+  assert.match(bulkConfirm, /aria-modal="true"/)
 
   const versionPanel = render(VersionPanel, { repoName: repo.name, installedApp, latestVersion: 'v2.0.0' })
   assert.match(versionPanel, /library-inline-panel--versions/)

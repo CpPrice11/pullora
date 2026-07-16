@@ -43,9 +43,9 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
   const isLight = normalized.preset === 'githubLight'
   const densityScale = normalized.density === 'compact' ? 0.86 : normalized.density === 'spacious' ? 1.12 : 1
   const surfaceOpacity = 100 - normalized.surfaceTransparency
-  const shellOpacity = isLight ? Math.min(96, surfaceOpacity + 16) : surfaceOpacity
-  const nestedOpacity = Math.round(shellOpacity * 0.55)
-  const insetOpacity = Math.round(shellOpacity * 0.72)
+  const shellOpacity = isLight ? Math.min(92, surfaceOpacity + 8) : surfaceOpacity
+  const nestedOpacity = Math.round(shellOpacity * (isLight ? 0.68 : 0.55))
+  const insetOpacity = Math.round(shellOpacity * (isLight ? 0.82 : 0.72))
   const strongOpacity = Math.min(100, shellOpacity + 12)
 
   return {
@@ -61,9 +61,9 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--color-control-hover': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 52%, transparent)`,
     '--color-text': normalized.text,
     '--color-text-secondary': normalized.muted,
-    '--color-text-tertiary': `${normalized.muted}cc`,
+    '--color-text-tertiary': isLight ? normalized.muted : `${normalized.muted}cc`,
     '--color-border': normalized.border,
-    '--color-border-subtle': `${normalized.border}99`,
+    '--color-border-subtle': isLight ? normalized.border : `${normalized.border}99`,
     '--font-family': normalized.fontFamily,
     '--font-size-base': `${normalized.fontSize}px`,
     '--border-radius': `${normalized.radius}px`,
@@ -76,8 +76,8 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--surface-1': `color-mix(in srgb, ${normalized.surface} ${shellOpacity}%, transparent)`,
     '--surface-2': `color-mix(in srgb, ${normalized.surface2} ${nestedOpacity}%, transparent)`,
     '--surface-3': `color-mix(in srgb, ${normalized.background} ${insetOpacity}%, transparent)`,
-    '--surface-border': `color-mix(in srgb, ${normalized.border} 58%, transparent)`,
-    '--surface-border-strong': `color-mix(in srgb, ${normalized.border} 78%, transparent)`,
+    '--surface-border': `color-mix(in srgb, ${normalized.border} ${isLight ? 82 : 58}%, transparent)`,
+    '--surface-border-strong': `color-mix(in srgb, ${normalized.border} ${isLight ? 100 : 78}%, transparent)`,
     '--surface-shadow': isLight
       ? `0 18px 48px color-mix(in srgb, ${normalized.border} 24%, transparent)`
       : `0 18px 48px color-mix(in srgb, ${normalized.background} 58%, transparent)`,
