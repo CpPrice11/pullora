@@ -292,6 +292,11 @@
   transform: translateY(-1px);
 }
 
+.dialog-close-icon {
+  height: 18px;
+  width: 18px;
+}
+
 .release-body {
   display: flex;
   flex-direction: column;
@@ -531,6 +536,7 @@
 }
 
 .release-version-main,
+.release-version-badges,
 .release-asset-main,
 .release-asset-badges {
   align-items: flex-start;
@@ -538,6 +544,12 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+.release-version-badges--summary {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
 .release-version-main strong,
@@ -557,6 +569,13 @@
   font-size: 12px;
 }
 
+.release-asset-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
 .release-status-pill {
   border: 1px solid var(--color-primary);
   border-radius: 999px;
@@ -572,6 +591,11 @@
 .release-status-pill.prerelease {
   border-color: color-mix(in srgb, var(--color-warning, #f4a261) 70%, var(--color-border));
   color: var(--color-warning, #f4a261);
+}
+
+.release-stability-pill:not(.prerelease) {
+  border-color: color-mix(in srgb, var(--color-success) 70%, var(--color-border));
+  color: var(--color-success);
 }
 
 .asset-summary {
@@ -611,6 +635,7 @@
 
 .asset-kind,
 .asset-architecture,
+.asset-compatibility,
 .asset-recommended {
   border-radius: 999px;
   font-size: 12px;
@@ -628,6 +653,21 @@
 .asset-architecture {
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
+}
+
+.asset-compatibility {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.asset-compatibility.compatible {
+  border-color: color-mix(in srgb, var(--color-success) 70%, var(--color-border));
+  color: var(--color-success);
+}
+
+.asset-compatibility.incompatible {
+  border-color: color-mix(in srgb, var(--color-error) 70%, var(--color-border));
+  color: var(--color-error);
 }
 
 .asset-recommended {
@@ -942,6 +982,17 @@
   font-size: 13px;
   font-weight: 760;
   padding: 11px 13px;
+}
+
+.release-cleanup-note.warning {
+  background: color-mix(in srgb, var(--color-warning, #f4a261) 10%, var(--color-control));
+  border-color: color-mix(in srgb, var(--color-warning, #f4a261) 46%, var(--color-border-subtle));
+}
+
+.release-confirm-warning {
+  box-shadow: none;
+  margin-top: 10px;
+  padding: 11px 12px;
 }
 
 .release-blocked-note {
@@ -2606,6 +2657,7 @@
 
 .sam-shell .release-status-pill,
 .sam-shell .asset-kind,
+.sam-shell .asset-compatibility,
 .sam-shell .asset-recommended {
   border-radius: 2px;
   font-size: 10px;
@@ -2771,6 +2823,7 @@
 .sam-shell .release-step-pill,
 .sam-shell .release-status-pill,
 .sam-shell .asset-kind,
+.sam-shell .asset-compatibility,
 .sam-shell .asset-recommended,
 .sam-shell .app-details-version-heading em {
   border-radius: 0;

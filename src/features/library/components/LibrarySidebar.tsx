@@ -1,8 +1,16 @@
 import type { ReactNode, Ref, UIEventHandler } from 'react'
 import StatePanel from '../../../components/State/StatePanel'
+import NativeSelect from '../../../components/Select/NativeSelect'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
-import type { LibraryFilter, LibrarySort } from '../hooks/useLibraryFiltering'
+import {
+  LIBRARY_DENSITIES,
+  LIBRARY_FILTERS,
+  LIBRARY_SORTS,
+  type LibraryDensity,
+  type LibraryFilter,
+  type LibrarySort,
+} from '../libraryViewControls'
 
 export interface LibrarySection {
   id: string
@@ -10,8 +18,6 @@ export interface LibrarySection {
   repositories: GitHubSearchResult[]
   pinned?: boolean
 }
-
-export type LibraryDensity = 'normal' | 'compact'
 
 interface LibrarySidebarGroup {
   id: string
@@ -47,6 +53,92 @@ interface LibrarySidebarProps {
   onResultsScroll?: UIEventHandler<HTMLDivElement>
 }
 
+type LibrarySidebarControlsProps = Pick<
+  LibrarySidebarProps,
+  | 'filter'
+  | 'sort'
+  | 'density'
+  | 'query'
+  | 'onFilterChange'
+  | 'onSortChange'
+  | 'onDensityChange'
+  | 'onQueryChange'
+>
+
+function LibrarySidebarControls({
+  filter,
+  sort,
+  density,
+  query,
+  onFilterChange,
+  onSortChange,
+  onDensityChange,
+  onQueryChange,
+}: LibrarySidebarControlsProps) {
+  const { t } = useI18n()
+
+  return (
+    <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
+      <div className="library-sidebar-nav library-sidebar-filter-nav" aria-label={t('library.sidebar.navigation')}>
+        {LIBRARY_FILTERS.map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            className={`library-sidebar-nav-btn ${filter === mode ? 'active' : ''}`}
+            aria-pressed={filter === mode}
+            onClick={() => onFilterChange(mode)}
+          >
+            {t(`library.${mode}`)}
+          </button>
+        ))}
+      </div>
+
+      <div className="library-sidebar-query-row">
+        <div className="search-form">
+          <label className="visually-hidden" htmlFor="library-search">
+            {t('library.searchLabel')}
+          </label>
+          <input
+            id="library-search"
+            type="text"
+            placeholder={t('library.searchPlaceholder')}
+            value={query}
+            onChange={(event) => onQueryChange(event.currentTarget.value)}
+            className="search-input"
+            aria-label={t('library.searchLabel')}
+          />
+        </div>
+
+        <div className="library-density-toggle" role="group" aria-label={t('library.viewDensity')}>
+          {LIBRARY_DENSITIES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={density === mode ? 'active' : ''}
+              aria-pressed={density === mode}
+              onClick={() => onDensityChange(mode)}
+            >
+              {t(mode === 'normal' ? 'library.viewNormal' : 'library.viewCompact')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="library-sort-control">
+        <span>{t('library.sortLabel')}</span>
+        <NativeSelect
+          value={sort}
+          onValueChange={onSortChange}
+          options={LIBRARY_SORTS.map((mode) => ({
+            value: mode,
+            label: t(`library.sort.${mode}`),
+          }))}
+        />
+      </label>
+    </section>
+  )
+}
+
 export default function LibrarySidebar({
   filter,
   sort,
@@ -78,64 +170,16 @@ export default function LibrarySidebar({
 
   return (
     <section className="library-sam-list-pane" aria-label={t('library.title')}>
-      <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
-        <div className="library-sidebar-nav library-sidebar-filter-nav" aria-label={t('library.sidebar.navigation')}>
-          {(['all', 'installed', 'updates', 'favorites'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`library-sidebar-nav-btn ${filter === mode ? 'active' : ''}`}
-              aria-pressed={filter === mode}
-              onClick={() => onFilterChange(mode)}
-            >
-              {t(`library.${mode}`)}
-            </button>
-          ))}
-        </div>
-
-        <div className="library-sidebar-query-row">
-          <div className="search-form">
-            <label className="visually-hidden" htmlFor="library-search">
-              {t('library.searchLabel')}
-            </label>
-            <input
-              id="library-search"
-              type="text"
-              placeholder={t('library.searchPlaceholder')}
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              className="search-input"
-              aria-label={t('library.searchLabel')}
-            />
-          </div>
-
-          <div className="library-density-toggle" role="group" aria-label={t('library.viewDensity')}>
-            {(['normal', 'compact'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={density === mode ? 'active' : ''}
-                aria-pressed={density === mode}
-                onClick={() => onDensityChange(mode)}
-              >
-                {t(mode === 'normal' ? 'library.viewNormal' : 'library.viewCompact')}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label className="library-sort-control">
-          <span>{t('library.sortLabel')}</span>
-          <select
-            value={sort}
-            onChange={(event) => onSortChange(event.target.value as LibrarySort)}
-          >
-            {(['name', 'launched', 'installed', 'updated'] as const).map((mode) => (
-              <option key={mode} value={mode}>{t(`library.sort.${mode}`)}</option>
-            ))}
-          </select>
-        </label>
-      </section>
+      <LibrarySidebarControls
+        filter={filter}
+        sort={sort}
+        density={density}
+        query={query}
+        onFilterChange={onFilterChange}
+        onSortChange={onSortChange}
+        onDensityChange={onDensityChange}
+        onQueryChange={onQueryChange}
+      />
 
       <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>
         {notices}

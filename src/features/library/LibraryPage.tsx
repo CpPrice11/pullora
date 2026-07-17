@@ -7,11 +7,10 @@ import { useLibraryFiltering } from './hooks/useLibraryFiltering'
 import { useBatchUpdates } from './hooks/useBatchUpdates'
 import { useLibraryBulkSelection } from './hooks/useLibraryBulkSelection'
 import RepoCard from './components/RepoCard'
-import LibrarySidebar, { type LibraryDensity, type LibrarySection } from './components/LibrarySidebar'
+import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
 import { LibraryBulkActions, LibraryBulkConfirmDialog } from './components/LibraryBulkActions'
 import LibraryHero from './components/LibraryHero'
-import VersionPanel from './components/VersionPanel'
-import ApplicationDetails from './components/ApplicationDetails'
+import LibraryOperationsPanel from './components/LibraryOperationsPanel'
 import FolderManager from './components/FolderManager'
 import BatchUpdatePanel, { type BatchUpdateItem } from './components/BatchUpdatePanel'
 import ReleaseSelector from '../../components/Install/ReleaseSelector'
@@ -32,7 +31,7 @@ import {
 } from '../../services/projectArt'
 import type { FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
-import { formatDate, formatNumber } from '../../utils/format'
+import { formatNumber } from '../../utils/format'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
 import { getInactiveInstalledVersions, runSequentialBulk } from './libraryBulkOperations'
 import {
@@ -40,6 +39,7 @@ import {
   saveLibraryViewState,
   type LibraryViewState,
 } from './libraryViewState'
+import type { LibraryDensity } from './libraryViewControls'
 import '../../pages/PageStyles.css'
 
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
@@ -233,13 +233,11 @@ function libraryErrorTextKey(kind: LibraryErrorKind) {
 
 interface LibraryPageProps {
   onOpenSettings?: () => void
-  onPreviewBackground?: (url: string | null) => void
   suppressDiagnostics?: boolean
 }
 
 function LibraryPage({
   onOpenSettings,
-  onPreviewBackground,
   suppressDiagnostics = false,
 }: LibraryPageProps) {
   const { language, t } = useI18n()
@@ -868,18 +866,10 @@ function LibraryPage({
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
   const featuredCover = projectArtCoverUrl(featuredArt)
-  const featuredBackground = projectArtBackgroundUrl(featuredArt)
+  const featuredBackground = projectArtBackgroundUrl(featuredArt, { fallbackToCover: false })
   const featuredBackgroundStyle = featuredBackground
     ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
     : undefined
-
-  useEffect(() => {
-    onPreviewBackground?.(featuredBackground)
-  }, [featuredBackground, onPreviewBackground])
-
-  useEffect(() => {
-    return () => onPreviewBackground?.(null)
-  }, [onPreviewBackground])
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
     setLaunchError(null)
@@ -1355,66 +1345,16 @@ function LibraryPage({
 
     const installedApp = getInstalledApp(featuredRepo)
     const latestVersion = getLatestVersion(featuredRepo)
-    const status = getLibraryAppStatus(installedApp, latestVersion)
-    const hasUpdate = status === 'update'
-    const updatedDate = formatDate(featuredRepo.updated_at, language)
-    const installPath = settings.installationPath && installedApp
-      ? `${settings.installationPath}\\${installedApp.owner}-${installedApp.repo}`
-      : null
-
-    const renderInlinePanel = () => {
-      return (
-        <div className="library-inline-overview-grid">
-          <VersionPanel
-            repoName={featuredRepo.name}
-            installedApp={installedApp}
-            latestVersion={latestVersion}
-          />
-          <ApplicationDetails
-            repo={featuredRepo}
-            updatedDate={updatedDate}
-            latestVersion={latestVersion}
-            installPath={installPath}
-          />
-        </div>
-      )
-    }
 
     return (
-      <>
-        <section className={`library-ops-panel ${status}`} aria-label={t('library.ops.title')}>
-          <div className="library-ops-header">
-            <div>
-              <span className="library-ops-kicker">{t('library.ops.kicker')}</span>
-              <h3>{t('library.ops.title')}</h3>
-            </div>
-            <span className={`library-ops-state ${status}`}>
-              {t(`repo.${status}`)}
-            </span>
-          </div>
-
-          <div className="library-ops-action-row" aria-label={t('library.action')}>
-            <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? () => handleLaunch(featuredRepo) : () => setSelectedRepo(featuredRepo)}>
-              {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
-            </button>
-            <div className="library-play-status">
-              <span>{t('library.ops.updated')}</span>
-              <strong>{updatedDate}</strong>
-            </div>
-            <div className="library-play-status">
-              <span>{t('library.ops.active')}</span>
-              <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
-            </div>
-            <div className="library-play-status">
-              <span>{t('library.ops.language')}</span>
-              <strong>{featuredRepo.language ?? t('details.unknown')}</strong>
-            </div>
-          </div>
-
-        </section>
-
-        {renderInlinePanel()}
-      </>
+      <LibraryOperationsPanel
+        repo={featuredRepo}
+        installedApp={installedApp}
+        latestVersion={latestVersion}
+        installationPath={settings.installationPath}
+        onInstall={() => setSelectedRepo(featuredRepo)}
+        onLaunch={() => handleLaunch(featuredRepo)}
+      />
     )
   }
 
@@ -1512,7 +1452,6 @@ function LibraryPage({
   return (
     <div
       className={`page library-page library-density-${libraryDensity}`}
-      style={featuredBackgroundStyle}
       onKeyDown={handleLibraryKeyboard}
     >
       <div className="library-sam-workspace">
