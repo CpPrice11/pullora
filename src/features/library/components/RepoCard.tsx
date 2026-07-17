@@ -7,6 +7,7 @@ import { useI18n } from '../../../i18n'
 import { formatDate, formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
+import { ChevronRightIcon } from '../../../components/ui/Icons'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -104,6 +105,7 @@ function RepoCard({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setActionsOpen(false)
+        cardRef.current?.focus()
       }
     }
 
@@ -264,6 +266,7 @@ function RepoCard({
       tabIndex={0}
       role="button"
       aria-label={`${repo.name}, ${statusLabel}${onBulkSelect ? `. ${t('library.bulk.cardHint')}` : ''}`}
+      aria-current={isSelected ? 'true' : undefined}
       aria-pressed={onBulkSelect ? isBulkSelected : undefined}
       aria-keyshortcuts={onBulkSelect ? 'Control+Space Meta+Space Shift+Space' : undefined}
       onKeyDown={(event) => {
@@ -404,7 +407,7 @@ function RepoCard({
                   }}
                 >
                   <span>{t('library.folder.addTo')}</span>
-                  <span aria-hidden="true">›</span>
+                  <ChevronRightIcon className="menu-chevron-icon" />
                 </button>
                 {folderMenuOpen && (
                   <div className="repo-actions-submenu-panel" role="menu">
@@ -459,7 +462,7 @@ function RepoCard({
                   }}
                 >
                   <span>{t('library.folder.removeFrom')}</span>
-                  <span aria-hidden="true">&gt;</span>
+                  <ChevronRightIcon className="menu-chevron-icon" />
                 </button>
                 {removeFolderMenuOpen && (
                   <div className="repo-actions-submenu-panel" role="menu">

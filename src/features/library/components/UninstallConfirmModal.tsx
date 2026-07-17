@@ -1,7 +1,9 @@
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { InstalledApp } from '../../../types'
 import { useI18n } from '../../../i18n'
 import { useModalFocus } from '../../../hooks/useModalFocus'
+import { CloseIcon } from '../../../components/ui/Icons'
 import '../../../components/Modal/Modal.css'
 import './SearchComponents.css'
 
@@ -28,26 +30,40 @@ function UninstallConfirmModal({
 }: UninstallConfirmModalProps) {
   const { t } = useI18n()
   const modalRef = useRef<HTMLDivElement | null>(null)
+  const titleId = useId()
+  const descriptionId = useId()
   const targetVersion = tag ?? installedApp.activeVersion
   const removesAll = scope === 'app'
 
-  useModalFocus(modalRef, { onEscape: busy ? undefined : onCancel })
+  useModalFocus(modalRef)
 
-  return (
-    <div className="modal-overlay uninstall-overlay" onClick={() => !busy && onCancel()}>
+  const dialog = (
+    <div
+      className="modal-overlay uninstall-overlay"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !busy) onCancel()
+      }}
+    >
       <div
         ref={modalRef}
         className="modal-content uninstall-confirm-modal"
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="uninstall-confirm-title"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        aria-busy={busy}
         tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape') return
+          event.preventDefault()
+          event.stopPropagation()
+          if (!busy) onCancel()
+        }}
       >
         <header className="uninstall-confirm-header">
           <div>
             <span className="uninstall-confirm-kicker">{t('installed.uninstallKicker')}</span>
-            <h2 id="uninstall-confirm-title">
+            <h2 id={titleId}>
               {t(removesAll ? 'installed.uninstallAppTitle' : 'installed.uninstallVersionTitle', {
                 name: installedApp.name,
                 version: targetVersion,
@@ -61,12 +77,12 @@ function UninstallConfirmModal({
             disabled={busy}
             onClick={onCancel}
           >
-            {'\u00d7'}
+            <CloseIcon className="dialog-close-icon" />
           </button>
         </header>
 
         <div className="uninstall-confirm-body">
-          <p className="uninstall-confirm-copy">
+          <p id={descriptionId} className="uninstall-confirm-copy">
             {t(removesAll ? 'installed.uninstallCopyApp' : 'installed.uninstallCopyVersion')}
           </p>
 
@@ -104,8 +120,12 @@ function UninstallConfirmModal({
 
           {error && <div className="error-message" role="alert">{error}</div>}
 
+          <span className="visually-hidden" role="status" aria-live="polite">
+            {busy ? t('installed.uninstalling') : ''}
+          </span>
+
           <div className="uninstall-confirm-actions">
-            <button type="button" className="secondary-btn" onClick={onCancel} disabled={busy}>
+            <button type="button" className="secondary-btn" onClick={onCancel} disabled={busy} data-autofocus="true">
               {t('installed.uninstallCancel')}
             </button>
             <button
@@ -113,7 +133,6 @@ function UninstallConfirmModal({
               className="uninstall-danger-btn"
               onClick={() => void onConfirm()}
               disabled={busy}
-              data-autofocus="true"
             >
               {busy
                 ? t('installed.uninstalling')
@@ -124,6 +143,10 @@ function UninstallConfirmModal({
       </div>
     </div>
   )
+
+  return typeof document === 'undefined'
+    ? dialog
+    : createPortal(dialog, document.querySelector('.layout') ?? document.body)
 }
 
 export default UninstallConfirmModal

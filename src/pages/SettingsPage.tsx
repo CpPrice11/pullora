@@ -11,6 +11,7 @@ import {
 import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
+import NativeSelect from '../components/Select/NativeSelect'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
@@ -517,27 +518,29 @@ function SettingsPage({
 
               <div className="form-group compact-control">
                 <label htmlFor="theme">{t('settings.theme')}</label>
-                <select
+                <NativeSelect
                   id="theme"
                   value={settings.theme}
-                  onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
-                >
-                  <option value="light">{t('settings.light')}</option>
-                  <option value="dark">{t('settings.dark')}</option>
-                  <option value="auto">{t('settings.auto')}</option>
-                </select>
+                  onValueChange={(value) => handleThemeChange(value as ThemePreference)}
+                  options={([
+                    ['light', t('settings.light')],
+                    ['dark', t('settings.dark')],
+                    ['auto', t('settings.auto')],
+                  ] as const).map(([value, label]) => ({ value, label }))}
+                />
               </div>
 
               <div className="form-group compact-control">
                 <label htmlFor="language">{t('settings.language')}</label>
-                <select
+                <NativeSelect
                   id="language"
                   value={settings.language}
-                  onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
-                >
-                  <option value="uk">{t('settings.ukrainian')}</option>
-                  <option value="en">{t('settings.english')}</option>
-                </select>
+                  onValueChange={(value) => handleLanguageChange(value as AppLanguage)}
+                  options={([
+                    ['uk', t('settings.ukrainian')],
+                    ['en', t('settings.english')],
+                  ] as const).map(([value, label]) => ({ value, label }))}
+                />
               </div>
 
               <div className="form-group launcher-background-control">
@@ -841,20 +844,21 @@ function SettingsPage({
 
             <div className="form-group compact-control">
               <label htmlFor="assetStrategy">{t('settings.assets')}</label>
-              <select
+              <NativeSelect
                 id="assetStrategy"
-                value={settings.assetStrategy}
-                onChange={(event) =>
+                value={settings.assetStrategy ?? 'portableFirst'}
+                onValueChange={(value) =>
                   persistSettings({
                     ...settings,
-                    assetStrategy: event.target.value as AppSettings['assetStrategy'],
+                    assetStrategy: value as AppSettings['assetStrategy'],
                   }, settings)
                 }
-              >
-                <option value="portableFirst">{t('settings.portableFirst')}</option>
-                <option value="installerFirst">{t('settings.installerFirst')}</option>
-                <option value="manual">{t('settings.manual')}</option>
-              </select>
+                options={([
+                  ['portableFirst', t('settings.portableFirst')],
+                  ['installerFirst', t('settings.installerFirst')],
+                  ['manual', t('settings.manual')],
+                ] as const).map(([value, label]) => ({ value, label }))}
+              />
               <p className="help-text">{t('settings.assetStrategyHelp')}</p>
             </div>
           </section>

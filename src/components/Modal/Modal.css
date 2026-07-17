@@ -327,3 +327,23 @@
 :root[data-theme='light'] .path-input-group input {
   background: var(--color-control);
 }
+
+/* Release wizard behavior contract: the frame stays fixed and only its body scrolls. */
+.modal-content.release-modal--wizard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.release-modal--wizard > .modal-header,
+.release-modal--wizard > .release-wizard-steps,
+.release-modal--wizard > .release-wizard-context {
+  flex: 0 0 auto;
+}
+
+.release-modal--wizard > .release-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}

@@ -1,5 +1,11 @@
-import type { LibraryDensity } from './components/LibrarySidebar'
-import type { LibraryFilter, LibrarySort } from './hooks/useLibraryFiltering'
+import {
+  LIBRARY_DENSITIES,
+  LIBRARY_FILTERS,
+  LIBRARY_SORTS,
+  type LibraryDensity,
+  type LibraryFilter,
+  type LibrarySort,
+} from './libraryViewControls'
 
 const storageKey = 'pullora-library-view-v1'
 
@@ -25,9 +31,9 @@ const defaults: LibraryViewState = {
   detailsScrollTop: 0,
 }
 
-const filters = new Set<LibraryFilter>(['all', 'installed', 'updates', 'favorites'])
-const sorts = new Set<LibrarySort>(['name', 'launched', 'installed', 'updated'])
-const densities = new Set<LibraryDensity>(['normal', 'compact'])
+const filters = new Set<LibraryFilter>(LIBRARY_FILTERS)
+const sorts = new Set<LibrarySort>(LIBRARY_SORTS)
+const densities = new Set<LibraryDensity>(LIBRARY_DENSITIES)
 
 function scrollTop(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0

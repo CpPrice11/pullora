@@ -1887,6 +1887,16 @@ Object.assign(dictionaries.en, {
   'library.bulk.cardHint': 'Ctrl+Space toggles selection; Shift+Space selects a range.',
 })
 
+Object.assign(dictionaries.uk, {
+  'release.confirmWarningTitle': 'Перевір перед стартом',
+  'release.confirmWarningText': 'Переконайся, що вибрано правильні версію, файл і папку. Відкат або повторне встановлення змінить активну версію застосунку.',
+})
+
+Object.assign(dictionaries.en, {
+  'release.confirmWarningTitle': 'Check before starting',
+  'release.confirmWarningText': 'Make sure the version, file, and folder are correct. A downgrade or reinstall will change the app’s active version.',
+})
+
 interface LanguageContextValue {
   language: AppLanguage
   setLanguage: (language: AppLanguage) => void

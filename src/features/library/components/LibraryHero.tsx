@@ -101,77 +101,82 @@ export default function LibraryHero({
     <section
       className={`library-hero library-github-header ${cover ? 'library-hero--art' : 'library-hero--fallback'}`}
       aria-label={repo.name}
-      style={backgroundStyle}
     >
-      <div className="library-hero-cover">
-        <img src={cover || repo.owner.avatar_url} alt="" />
-      </div>
+      <div className="library-hero-background" style={backgroundStyle} aria-hidden="true" />
+      <div className="library-hero-gradient" aria-hidden="true" />
+      <div className="library-hero-accent" aria-hidden="true" />
 
-      <div className="library-hero-main">
-        <div className="repo-status-row">
-          <span className={`repo-status ${status}`}>{statusLabel}</span>
-          {repo.language && <span className="repo-lang">{repo.language}</span>}
-          <button
-            ref={actionsTriggerRef}
-            type="button"
-            className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
-            onClick={onToggleFavorite}
-            disabled={favoriteBusy}
-            title={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
-            aria-label={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
-          >
-            <HeroIcon name="star" filled={isFavorite} />
-          </button>
+      <div className="library-hero-content">
+        <div className="library-hero-cover">
+          <img src={cover || repo.owner.avatar_url} alt="" />
         </div>
-        <h2>{repo.name}</h2>
-        <p className="library-hero-repo">{repo.owner.login}/{repo.name}</p>
-        {repo.description && <p className="library-hero-description">{repo.description}</p>}
-        <div className="library-hero-meta">
-          <span>{t('repo.stars', { count: formatNumber(repo.stargazers_count, language) })}</span>
-          {installedApp && <span>{t('repo.active', { version: installedApp.activeVersion })}</span>}
-          {hasUpdate && latestVersion && <span>{t('repo.new', { version: latestVersion })}</span>}
-        </div>
-        {artError && <p className="library-hero-error">{artError}</p>}
-      </div>
 
-      <div className="library-hero-actions library-github-actions">
-        <button type="button" className="hero-primary-btn" onClick={isInstalled && !hasUpdate ? onLaunch : onInstall}>
-          {primaryLabel}
-        </button>
-        <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
-          <button
-            type="button"
-            className="project-actions-trigger"
-            aria-haspopup="menu"
-            aria-expanded={actionsOpen}
-            aria-label={t('projectActions.open')}
-            onClick={() => setActionsOpen((current) => !current)}
-          >
-            <HeroIcon name="more" />
-          </button>
-          {actionsOpen && (
-            <div
-              className="project-actions-popover"
-              role="menu"
-              aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
-              onKeyDown={(event) => handleMenuKeyboard(event, () => {
-                setActionsOpen(false)
-                actionsTriggerRef.current?.focus()
-              })}
+        <div className="library-hero-main">
+          <div className="repo-status-row">
+            <span className={`repo-status ${status}`}>{statusLabel}</span>
+            {repo.language && <span className="repo-lang">{repo.language}</span>}
+            <button
+              ref={actionsTriggerRef}
+              type="button"
+              className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={onToggleFavorite}
+              disabled={favoriteBusy}
+              title={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
+              aria-label={isFavorite ? t('repo.removeFavorite') : t('repo.addFavorite')}
             >
-              {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
-              {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
-              <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
-              <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
-              {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
-              {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
-              {isInstalled && (
-                <button type="button" role="menuitem" className="danger-menu-item" onClick={() => runAction(onUninstall)}>
-                  {t('installed.uninstallApp')}
-                </button>
-              )}
-            </div>
-          )}
+              <HeroIcon name="star" filled={isFavorite} />
+            </button>
+          </div>
+          <h2>{repo.name}</h2>
+          <p className="library-hero-repo">{repo.owner.login}/{repo.name}</p>
+          {repo.description && <p className="library-hero-description">{repo.description}</p>}
+          <div className="library-hero-meta">
+            <span>{t('repo.stars', { count: formatNumber(repo.stargazers_count, language) })}</span>
+            {installedApp && <span>{t('repo.active', { version: installedApp.activeVersion })}</span>}
+            {hasUpdate && latestVersion && <span>{t('repo.new', { version: latestVersion })}</span>}
+          </div>
+          {artError && <p className="library-hero-error">{artError}</p>}
+        </div>
+
+        <div className="library-hero-actions library-github-actions">
+          <button type="button" className="hero-primary-btn" onClick={isInstalled && !hasUpdate ? onLaunch : onInstall}>
+            {primaryLabel}
+          </button>
+          <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
+            <button
+              type="button"
+              className="project-actions-trigger"
+              aria-haspopup="menu"
+              aria-expanded={actionsOpen}
+              aria-label={t('projectActions.open')}
+              onClick={() => setActionsOpen((current) => !current)}
+            >
+              <HeroIcon name="more" />
+            </button>
+            {actionsOpen && (
+              <div
+                className="project-actions-popover"
+                role="menu"
+                aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
+                onKeyDown={(event) => handleMenuKeyboard(event, () => {
+                  setActionsOpen(false)
+                  actionsTriggerRef.current?.focus()
+                })}
+              >
+                {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
+                {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
+                <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
+                <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
+                {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
+                {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
+                {isInstalled && (
+                  <button type="button" role="menuitem" className="danger-menu-item" onClick={() => runAction(onUninstall)}>
+                    {t('installed.uninstallApp')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>

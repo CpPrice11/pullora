@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
@@ -23,6 +24,7 @@ const server = await createServer({
 try {
   const { LanguageProvider } = await server.ssrLoadModule('/src/i18n.tsx')
   const { default: LibraryHero } = await server.ssrLoadModule('/src/features/library/components/LibraryHero.tsx')
+  const { default: LibraryOperationsPanel } = await server.ssrLoadModule('/src/features/library/components/LibraryOperationsPanel.tsx')
   const { default: LibrarySidebar } = await server.ssrLoadModule('/src/features/library/components/LibrarySidebar.tsx')
   const { default: RepoCard } = await server.ssrLoadModule('/src/features/library/components/RepoCard.tsx')
   const { LibraryBulkActions, LibraryBulkConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/LibraryBulkActions.tsx')
@@ -45,8 +47,14 @@ try {
     runSequentialBulk,
   } = await server.ssrLoadModule('/src/features/library/libraryBulkOperations.ts')
   const { parseLibraryViewState } = await server.ssrLoadModule('/src/features/library/libraryViewState.ts')
+  const {
+    LIBRARY_DENSITIES,
+    LIBRARY_FILTERS,
+    LIBRARY_SORTS,
+  } = await server.ssrLoadModule('/src/features/library/libraryViewControls.ts')
   const { nextMenuItemIndex } = await server.ssrLoadModule('/src/utils/menuKeyboard.ts')
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
+  const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
   const { APPEARANCE_PRESETS } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
 
@@ -139,6 +147,15 @@ try {
   assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
   assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')
 
+  const coverOnlyArt = { coverDataUrl: 'data:image/png;base64,cover' }
+  const independentArt = {
+    ...coverOnlyArt,
+    backgroundDataUrl: 'data:image/png;base64,background',
+  }
+  assert.equal(projectArtCoverUrl(coverOnlyArt), coverOnlyArt.coverDataUrl)
+  assert.equal(projectArtBackgroundUrl(coverOnlyArt, { fallbackToCover: false }), null)
+  assert.equal(projectArtBackgroundUrl(independentArt, { fallbackToCover: false }), independentArt.backgroundDataUrl)
+
   const olderRepo = { ...repo, id: 2, name: 'alpha-app', updated_at: '2026-07-14T10:00:00Z' }
   const newerInstall = {
     ...installedApp,
@@ -187,11 +204,21 @@ try {
     sidebarScrollTop: 0,
     detailsScrollTop: 0,
   })
+  assert.deepEqual([...LIBRARY_FILTERS], ['all', 'installed', 'updates', 'favorites'])
+  assert.deepEqual([...LIBRARY_SORTS], ['name', 'launched', 'installed', 'updated'])
+  assert.deepEqual([...LIBRARY_DENSITIES], ['normal', 'compact'])
+
+  const densityStyles = readFileSync('src/styles/features/LibraryDensity.css', 'utf8')
+  assert.equal((densityStyles.match(/library-density-compact/g) ?? []).length, 1)
+  for (const legacyStylesPath of ['src/pages/PageStyles.css', 'src/styles/Cinematic.css']) {
+    assert.doesNotMatch(readFileSync(legacyStylesPath, 'utf8'), /library-density-compact/)
+  }
 
   const hero = render(LibraryHero, {
     repo,
     installedApp,
     latestVersion: 'v2.0.0',
+    backgroundStyle: { '--library-hero-background': 'url("hero-background")' },
     isFavorite: false,
     favoriteBusy: false,
     canResetCover: false,
@@ -209,6 +236,24 @@ try {
   })
   assert.match(hero, /library-hero/)
   assert.match(hero, /repo-status update/)
+  assert.match(hero, /class="library-hero-background" style="--library-hero-background:url\(&quot;hero-background&quot;\)"/)
+  assert.match(hero, /class="library-hero-gradient"/)
+  assert.match(hero, /class="library-hero-accent"/)
+  assert.match(hero, /class="library-hero-content"/)
+  assert.doesNotMatch(hero, /<section[^>]+style=/)
+
+  const operationsPanel = render(LibraryOperationsPanel, {
+    repo,
+    installedApp,
+    latestVersion: 'v2.0.0',
+    installationPath: 'C:\\Pullora',
+    onInstall: noop,
+    onLaunch: noop,
+  })
+  assert.match(operationsPanel, /library-ops-panel update/)
+  assert.match(operationsPanel, /library-inline-panel--versions/)
+  assert.match(operationsPanel, /library-inline-panel--details/)
+  assert.match(operationsPanel, /C:\\Pullora\\CpPrice11-demo-app/)
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',
@@ -239,6 +284,9 @@ try {
   assert.match(sidebar, /library-density-toggle/)
   assert.match(sidebar, /library-sort-control/)
   assert.match(sidebar, /aria-pressed="true"/)
+  assert.equal((sidebar.match(/library-sidebar-nav-btn/g) ?? []).length, LIBRARY_FILTERS.length)
+  assert.equal((sidebar.match(/library-density-toggle/g) ?? []).length, 1)
+  assert.equal((sidebar.match(/<option/g) ?? []).length, LIBRARY_SORTS.length)
 
   const bulkCard = render(RepoCard, {
     repo,
@@ -287,6 +335,24 @@ try {
   })
   assert.match(bulkConfirm, /role="alertdialog"/)
   assert.match(bulkConfirm, /aria-modal="true"/)
+  assert.match(bulkConfirm, /aria-describedby=/)
+  assert.match(bulkConfirm, /aria-busy="false"/)
+  assert.match(bulkConfirm, /data-autofocus="true"/)
+  assert.match(bulkConfirm, /dialog-close-icon/)
+
+  const busyBulkConfirm = render(LibraryBulkConfirmDialog, {
+    action: 'uninstall',
+    appCount: 2,
+    versionCount: 3,
+    sizeBytes: 2048,
+    busy: true,
+    error: 'Test error',
+    onCancel: noop,
+    onConfirm: noop,
+  })
+  assert.match(busyBulkConfirm, /aria-busy="true"/)
+  assert.match(busyBulkConfirm, /role="alert"/)
+  assert.match(busyBulkConfirm, /role="status"/)
 
   const versionPanel = render(VersionPanel, { repoName: repo.name, installedApp, latestVersion: 'v2.0.0' })
   assert.match(versionPanel, /library-inline-panel--versions/)
@@ -347,6 +413,46 @@ try {
   assert.match(download, /aria-valuenow="48"/)
   assert.match(download, /role="status" aria-live="polite"/)
   assert.match(download, /aria-busy="true"/)
+  assert.match(download, /class="cancel-btn"/)
+  assert.doesNotMatch(download, /download-action-btn primary/)
+
+  const completedDownload = render(DownloadProgressPanel, {
+    downloads: [{
+      id: 'download-completed',
+      fileName: 'demo.zip',
+      progress: 100,
+      totalSize: 1024,
+      downloadedSize: 1024,
+      status: 'completed',
+      stage: 'completed',
+    }],
+    onCancel: noop,
+    onLaunch: noop,
+    onOpenFolder: noop,
+    onBackToLibrary: noop,
+  })
+  assert.match(completedDownload, /download-item--completed/)
+  assert.match(completedDownload, /aria-busy="false"/)
+  assert.equal((completedDownload.match(/download-action-btn primary/g) ?? []).length, 1)
+
+  const failedDownload = render(DownloadProgressPanel, {
+    downloads: [{
+      id: 'download-failed',
+      fileName: 'demo.zip',
+      progress: 50,
+      totalSize: 1024,
+      downloadedSize: 512,
+      status: 'failed',
+      stage: 'failed',
+    }],
+    onCancel: noop,
+    onRetry: noop,
+    onChooseAnother: noop,
+    onCleanup: noop,
+  })
+  assert.match(failedDownload, /download-item--failed/)
+  assert.match(failedDownload, /download-recovery" role="alert"/)
+  assert.equal((failedDownload.match(/download-action-btn primary/g) ?? []).length, 1)
 
   const errorState = render(StatePanel, { kind: 'error', title: 'Failed' })
   assert.match(errorState, /role="alert" aria-live="assertive"/)

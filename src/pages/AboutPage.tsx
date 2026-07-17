@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import appIcon from '../../src-tauri/icons/128x128.png'
 import { getReleases } from '../services/github'
 import {
@@ -20,7 +21,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.10.1'
+const FALLBACK_CURRENT_VERSION = 'v5.10.2'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
@@ -90,6 +91,7 @@ function AboutPage() {
   const [releaseFilter, setReleaseFilter] = useState<AboutReleaseFilter>('all')
   const [notesRelease, setNotesRelease] = useState<GitHubRelease | null>(null)
   const [menuReleaseId, setMenuReleaseId] = useState<number | null>(null)
+  const [releaseMenuPosition, setReleaseMenuPosition] = useState<{ x: number; y: number; openUp: boolean } | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [loadingReleases, setLoadingReleases] = useState(true)
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
@@ -159,14 +161,26 @@ function AboutPage() {
   useEffect(() => {
     if (menuReleaseId === null) return undefined
 
-    const closeMenu = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (!target.closest('.about-release-menu')) setMenuReleaseId(null)
+    const closeMenu = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!releaseMenuRef.current?.contains(target) && !releaseMenuTriggerRef.current?.contains(target)) {
+        setMenuReleaseId(null)
+      }
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuReleaseId(null)
+        releaseMenuTriggerRef.current?.focus()
+      }
     }
 
-    document.addEventListener('click', closeMenu)
-    focusFirstMenuItem(releaseMenuRef.current)
-    return () => document.removeEventListener('click', closeMenu)
+    document.addEventListener('pointerdown', closeMenu)
+    document.addEventListener('keydown', closeOnEscape)
+    focusFirstMenuItem(releaseMenuRef.current?.querySelector<HTMLElement>('[role="menu"]') ?? null)
+    return () => {
+      document.removeEventListener('pointerdown', closeMenu)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
   }, [menuReleaseId])
 
   useModalFocus(confirmModalRef, {
@@ -500,42 +514,66 @@ function AboutPage() {
                           aria-haspopup="menu"
                           aria-expanded={menuOpen}
                           aria-label={t('about.moreActions')}
-                          onClick={() => setMenuReleaseId(menuOpen ? null : release.id)}
+                          onClick={(event) => {
+                            if (menuOpen) {
+                              setMenuReleaseId(null)
+                              return
+                            }
+                            const bounds = event.currentTarget.getBoundingClientRect()
+                            setReleaseMenuPosition({
+                              x: Math.max(8, Math.min(bounds.right - 220, window.innerWidth - 228)),
+                              y: bounds.bottom + 7,
+                              openUp: bounds.bottom + 180 > window.innerHeight,
+                            })
+                            setMenuReleaseId(release.id)
+                          }}
                         >
                           ...
                         </button>
-                        {menuOpen && (
+                        {menuOpen && releaseMenuPosition && createPortal(
                           <div
                             ref={releaseMenuRef}
-                            className="project-actions-popover"
-                            role="menu"
-                            aria-label={t('about.moreActions')}
-                            onKeyDown={(event) => handleMenuKeyboard(event, () => {
-                              setMenuReleaseId(null)
-                              releaseMenuTriggerRef.current?.focus()
-                            })}
+                            className="project-actions-menu about-release-menu-portal open"
+                            style={{
+                              left: releaseMenuPosition.x,
+                              top: releaseMenuPosition.openUp
+                                ? Math.max(8, releaseMenuPosition.y - 14)
+                                : releaseMenuPosition.y,
+                              transform: releaseMenuPosition.openUp ? 'translateY(-100%)' : undefined,
+                            }}
                           >
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
+                            <div
+                              className="project-actions-popover"
+                              role="menu"
+                              aria-label={t('about.moreActions')}
+                              onKeyDown={(event) => handleMenuKeyboard(event, () => {
                                 setMenuReleaseId(null)
-                                setNotesRelease(release)
-                              }}
+                                releaseMenuTriggerRef.current?.focus()
+                              })}
                             >
-                              {t('about.showNotes')}
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuReleaseId(null)
-                                void openReleaseInBrowser(release)
-                              }}
-                            >
-                              {t('about.openGitHubReleaseShort')}
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuReleaseId(null)
+                                  setNotesRelease(release)
+                                }}
+                              >
+                                {t('about.showNotes')}
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuReleaseId(null)
+                                  void openReleaseInBrowser(release)
+                                }}
+                              >
+                                {t('about.openGitHubReleaseShort')}
+                              </button>
+                            </div>
+                          </div>,
+                          document.body,
                         )}
                       </div>
                     </div>

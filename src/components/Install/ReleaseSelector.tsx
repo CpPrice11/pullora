@@ -15,6 +15,7 @@ import { compareVersionTags, formatBytes, formatDate } from '../../utils/format'
 import {
   classifyReleaseAsset,
   classifyReleaseAssetArchitecture,
+  classifyReleaseAssetCompatibility,
   releaseAssetKindLabelKey,
   type ReleaseAssetKind,
 } from '../../features/library/releaseAssetClassifier'
@@ -36,6 +37,7 @@ type AssetKind = ReleaseAssetKind
 type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
 type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
 type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
+type CleanupResult = { tone: 'success' | 'warning'; message: string }
 
 const wizardSteps: WizardStep[] = ['version', 'file', 'confirm', 'progress', 'result']
 
@@ -49,10 +51,13 @@ function assetKindKey(kind: AssetKind) {
 
 function releaseStatusKey(release: GitHubRelease, latestTag: string | null, currentVersion?: string) {
   if (currentVersion && release.tag_name === currentVersion) return 'release.statusCurrent'
-  if (release.prerelease) return 'release.statusPrerelease'
   if (latestTag && release.tag_name === latestTag) return 'release.statusLatest'
   if (currentVersion && compareVersionTags(release.tag_name, currentVersion) < 0) return 'release.statusOlder'
   return 'release.statusVersion'
+}
+
+function releaseStabilityKey(release: GitHubRelease) {
+  return release.prerelease ? 'release.statusPrerelease' : 'release.statusStable'
 }
 
 function getInstallIntent(tag: string | undefined, currentVersion?: string): InstallIntent {
@@ -158,10 +163,11 @@ function ReleaseSelector({
   const [step, setStep] = useState<WizardStep>('version')
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
-  const [cleanupMessage, setCleanupMessage] = useState<string | null>(null)
+  const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null)
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
   const [installPath, setInstallPath] = useState(settings.installationPath ?? '')
   const modalRef = useRef<HTMLDivElement | null>(null)
+  const previousStepRef = useRef<WizardStep>(step)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
   const assetStrategy = settings.assetStrategy ?? 'portableFirst'
 
@@ -186,12 +192,29 @@ function ReleaseSelector({
   const selectedAssetArchitecture = selectedAsset
     ? classifyReleaseAssetArchitecture(selectedAsset)
     : 'unknown'
+  const selectedAssetCompatible = selectedAsset
+    ? classifyReleaseAssetCompatibility(selectedAsset).compatible
+    : false
   const selectedAssetAutoInstallable = isAutoInstallable(selectedAssetKind)
   const activeDownload = activeDownloadId
     ? downloads.find((item) => item.id === activeDownloadId)
     : null
   const shownDownloads = activeDownload ? [activeDownload] : downloads
   const failedResult = Boolean(downloadError || activeDownload?.status === 'failed')
+  const resultState = failedResult
+    ? 'error'
+    : cleanupResult?.tone === 'warning'
+      ? 'warning'
+      : activeDownload?.status === 'completed'
+        ? 'success'
+        : undefined
+  const installActive = downloading
+    || Boolean(activeDownload && !['completed', 'failed'].includes(activeDownload.status))
+    || (step === 'progress' && !activeDownload && !downloadError)
+
+  const requestClose = () => {
+    if (!installActive) onClose()
+  }
 
   const latestStableTag = useMemo(() => {
     const latest = visibleReleases.find((release) => !release.draft && !release.prerelease)
@@ -216,7 +239,22 @@ function ReleaseSelector({
     }
   }, [installPath, settings.installationPath])
 
-  useModalFocus(modalRef, { onEscape: downloading ? undefined : onClose })
+  useModalFocus(modalRef, { onEscape: installActive ? undefined : requestClose })
+
+  useEffect(() => {
+    if (previousStepRef.current === step) return
+    previousStepRef.current = step
+
+    const focusTimer = window.setTimeout(() => {
+      const currentStep = modalRef.current?.querySelector<HTMLButtonElement>(
+        `[data-wizard-step="${step}"]`,
+      )
+      const stepContext = modalRef.current?.querySelector<HTMLElement>('.release-wizard-context')
+      ;(currentStep && !currentStep.disabled ? currentStep : stepContext)?.focus()
+    }, 0)
+
+    return () => window.clearTimeout(focusTimer)
+  }, [step])
 
   useEffect(() => {
     if (visibleReleases.length > 0 && !selectedRelease) {
@@ -326,9 +364,12 @@ function ReleaseSelector({
   const handleCleanup = async () => {
     try {
       const count = await cleanupIncompleteInstalls()
-      setCleanupMessage(t('download.cleanupDone', { count }))
+      setCleanupResult({ tone: 'success', message: t('download.cleanupDone', { count }) })
     } catch (err) {
-      setCleanupMessage(err instanceof Error ? err.message : t('download.cleanupError'))
+      setCleanupResult({
+        tone: 'warning',
+        message: err instanceof Error ? err.message : t('download.cleanupError'),
+      })
     }
   }
 
@@ -346,13 +387,19 @@ function ReleaseSelector({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className="modal-overlay"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) requestClose()
+      }}
+    >
       <div
         ref={modalRef}
         className="modal-content release-modal release-modal--wizard"
         role="dialog"
         aria-modal="true"
         aria-labelledby="release-selector-title"
+        aria-busy={installActive}
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
@@ -370,7 +417,8 @@ function ReleaseSelector({
           <button
             type="button"
             className="close-btn"
-            onClick={onClose}
+            onClick={requestClose}
+            disabled={installActive}
             aria-label={t('release.close')}
           >
             {'\u00d7'}
@@ -385,9 +433,10 @@ function ReleaseSelector({
               <button
                 key={item}
                 type="button"
+                data-wizard-step={item}
                 className={`release-step-pill ${item === step ? 'active' : ''} ${itemIndex < currentIndex ? 'done' : ''}`}
                 onClick={() => itemIndex <= currentIndex && setStep(item)}
-                disabled={itemIndex > currentIndex || downloading}
+                disabled={itemIndex > currentIndex || installActive}
                 aria-current={item === step ? 'step' : undefined}
                 aria-label={`${stepLabel(item, t, failedResult)}. ${t(stepHelpKey(item))}`}
                 data-autofocus={item === step ? 'true' : undefined}
@@ -398,7 +447,7 @@ function ReleaseSelector({
           })}
         </div>
 
-        <div className="release-wizard-context">
+        <div className="release-wizard-context" tabIndex={-1}>
           <span>{stepLabel(step, t, failedResult)}</span>
           <p>{t(stepHelpKey(step))}</p>
         </div>
@@ -426,7 +475,10 @@ function ReleaseSelector({
           )}
 
           {!loading && !error && visibleReleases.length > 0 && (
-            <div className="release-wizard-panel">
+            <div
+              className="release-wizard-panel"
+              data-result-state={step === 'result' ? resultState : undefined}
+            >
               {step === 'version' && (
                 <>
                   <div className="release-picker">
@@ -450,8 +502,13 @@ function ReleaseSelector({
                               <strong>{release.tag_name}</strong>
                               <span>{releaseDate}</span>
                             </span>
-                            <span className={`release-status-pill ${release.prerelease ? 'prerelease' : ''}`}>
-                              {t(releaseStatusKey(release, latestStableTag, currentVersion))}
+                            <span className="release-version-badges">
+                              <span className={`release-status-pill release-stability-pill ${release.prerelease ? 'prerelease' : ''}`}>
+                                {t(releaseStabilityKey(release))}
+                              </span>
+                              <span className="release-status-pill">
+                                {t(releaseStatusKey(release, latestStableTag, currentVersion))}
+                              </span>
                             </span>
                           </button>
                         )
@@ -465,8 +522,13 @@ function ReleaseSelector({
                       <div className="release-summary-main">
                         <strong>{selectedRelease.tag_name}</strong>
                         {selectedReleaseStatus && (
-                          <span className={`release-status-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
-                            {selectedReleaseStatus}
+                          <span className="release-version-badges release-version-badges--summary">
+                            <span className={`release-status-pill release-stability-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
+                              {t(releaseStabilityKey(selectedRelease))}
+                            </span>
+                            <span className="release-status-pill">
+                              {selectedReleaseStatus}
+                            </span>
                           </span>
                         )}
                       </div>
@@ -499,10 +561,11 @@ function ReleaseSelector({
                       <p className="release-strategy-note">{t('release.autoInstallOnly')}</p>
                       <div className="release-asset-list">
                         {sortedAssets.map((asset) => {
-                          const kind = getAssetKind(asset)
-                          const architecture = classifyReleaseAssetArchitecture(asset)
+                          const compatibility = classifyReleaseAssetCompatibility(asset)
+                          const kind = compatibility.kind
+                          const architecture = compatibility.architecture
                           const isSelected = selectedAsset?.id === asset.id
-                          const disabled = kind === 'unsupported'
+                          const disabled = !compatibility.compatible
 
                           return (
                             <button
@@ -515,12 +578,19 @@ function ReleaseSelector({
                             >
                               <span className="release-asset-main">
                                 <strong>{asset.name}</strong>
-                                <span>
-                                  {formatBytes(asset.size, language)} · {t(`store.architecture.${architecture}`)}
+                                <span className="release-asset-meta">
+                                  <span className="release-asset-size">{formatBytes(asset.size, language)}</span>
+                                  <span aria-hidden="true">·</span>
+                                  <span className="release-asset-architecture">{t(`store.architecture.${architecture}`)}</span>
                                 </span>
                               </span>
                               <span className="release-asset-badges">
                                 <span className="asset-kind">{t(assetKindKey(kind))}</span>
+                                <span className={`asset-compatibility ${compatibility.compatible ? 'compatible' : 'incompatible'}`}>
+                                  {t(compatibility.compatible
+                                    ? 'store.compatibility.compatible'
+                                    : 'store.compatibility.incompatible')}
+                                </span>
                                 {recommendedAsset?.id === asset.id && (
                                   <span className="asset-recommended">{t('release.recommended')}</span>
                                 )}
@@ -542,6 +612,11 @@ function ReleaseSelector({
                         </span>
                         <span className="asset-architecture">
                           {t(`store.architecture.${selectedAssetArchitecture}`)}
+                        </span>
+                        <span className={`asset-compatibility ${selectedAssetCompatible ? 'compatible' : 'incompatible'}`}>
+                          {t(selectedAssetCompatible
+                            ? 'store.compatibility.compatible'
+                            : 'store.compatibility.incompatible')}
                         </span>
                         {recommendedAsset?.id === selectedAsset.id && (
                           <span className="asset-recommended">{t('release.recommended')}</span>
@@ -629,6 +704,13 @@ function ReleaseSelector({
                         {t('release.chooseInstallPath')}
                       </button>
                     </div>
+                    <div className="release-blocked-note release-confirm-warning" role="note">
+                      <strong>{t('release.confirmWarningTitle')}</strong>
+                      <p>{t('release.confirmWarningText')}</p>
+                      {selectedAssetKind === 'installer' && (
+                        <p>{t('release.installerSupportedHelp')}</p>
+                      )}
+                    </div>
                   </div>
 
                   {downloadError && <div className="error-message" role="alert">{downloadError}</div>}
@@ -669,9 +751,14 @@ function ReleaseSelector({
                       </div>
                     </div>
                   )}
-                  {cleanupMessage && (
-                    <div className="release-cleanup-note" role="status" aria-live="polite" aria-atomic="true">
-                      {cleanupMessage}
+                  {cleanupResult && (
+                    <div
+                      className={`release-cleanup-note ${cleanupResult.tone}`}
+                      role={cleanupResult.tone === 'warning' ? 'alert' : 'status'}
+                      aria-live={cleanupResult.tone === 'warning' ? 'assertive' : 'polite'}
+                      aria-atomic="true"
+                    >
+                      {cleanupResult.message}
                     </div>
                   )}
                   <DownloadProgressPanel

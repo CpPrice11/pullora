@@ -2,9 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { projectArtKey } from '../../../services/projectArt'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { getLibraryAppStatus, getUpdateDismissKey } from '../libraryStatus'
-
-export type LibraryFilter = 'all' | 'installed' | 'updates' | 'favorites'
-export type LibrarySort = 'name' | 'launched' | 'installed' | 'updated'
+import type { LibraryFilter, LibrarySort } from '../libraryViewControls'
 
 interface UseLibraryFilteringOptions {
   repositories: GitHubSearchResult[]
