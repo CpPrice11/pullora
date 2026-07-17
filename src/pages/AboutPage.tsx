@@ -10,17 +10,17 @@ import {
   openExternalUrl,
 } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
-import UiMenu from '../components/ui/UiMenu'
 import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../utils/menuKeyboard'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.10.0'
+const FALLBACK_CURRENT_VERSION = 'v5.10.1'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
@@ -90,7 +90,6 @@ function AboutPage() {
   const [releaseFilter, setReleaseFilter] = useState<AboutReleaseFilter>('all')
   const [notesRelease, setNotesRelease] = useState<GitHubRelease | null>(null)
   const [menuReleaseId, setMenuReleaseId] = useState<number | null>(null)
-  const [menuReleaseAnchor, setMenuReleaseAnchor] = useState<HTMLButtonElement | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [loadingReleases, setLoadingReleases] = useState(true)
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
@@ -103,6 +102,8 @@ function AboutPage() {
   const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
   const confirmModalRef = useRef<HTMLDivElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
+  const releaseMenuRef = useRef<HTMLDivElement | null>(null)
+  const releaseMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
 
   const loadLauncherStorageInfo = async () => {
     try {
@@ -154,6 +155,19 @@ function AboutPage() {
 
     return () => window.clearTimeout(timer)
   }, [actionError, actionMessage])
+
+  useEffect(() => {
+    if (menuReleaseId === null) return undefined
+
+    const closeMenu = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.about-release-menu')) setMenuReleaseId(null)
+    }
+
+    document.addEventListener('click', closeMenu)
+    focusFirstMenuItem(releaseMenuRef.current)
+    return () => document.removeEventListener('click', closeMenu)
+  }, [menuReleaseId])
 
   useModalFocus(confirmModalRef, {
     active: Boolean(pendingAction),
@@ -480,27 +494,27 @@ function AboutPage() {
                       )}
                       <div className={`project-actions-menu about-release-menu ${menuOpen ? 'open' : ''}`}>
                         <button
+                          ref={menuOpen ? releaseMenuTriggerRef : undefined}
                           type="button"
                           className="project-actions-trigger"
                           aria-haspopup="menu"
                           aria-expanded={menuOpen}
                           aria-label={t('about.moreActions')}
-                          onClick={(event) => {
-                            setMenuReleaseId(menuOpen ? null : release.id)
-                            setMenuReleaseAnchor(menuOpen ? null : event.currentTarget)
-                          }}
+                          onClick={() => setMenuReleaseId(menuOpen ? null : release.id)}
                         >
                           ...
                         </button>
-                        <UiMenu
-                          open={menuOpen}
-                          anchor={menuOpen ? menuReleaseAnchor : null}
-                          ariaLabel={t('about.moreActions')}
-                          onClose={() => {
-                            setMenuReleaseId(null)
-                            setMenuReleaseAnchor(null)
-                          }}
-                        >
+                        {menuOpen && (
+                          <div
+                            ref={releaseMenuRef}
+                            className="project-actions-popover"
+                            role="menu"
+                            aria-label={t('about.moreActions')}
+                            onKeyDown={(event) => handleMenuKeyboard(event, () => {
+                              setMenuReleaseId(null)
+                              releaseMenuTriggerRef.current?.focus()
+                            })}
+                          >
                             <button
                               type="button"
                               role="menuitem"
@@ -521,7 +535,8 @@ function AboutPage() {
                             >
                               {t('about.openGitHubReleaseShort')}
                             </button>
-                        </UiMenu>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

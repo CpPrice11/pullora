@@ -11,7 +11,6 @@ import {
 import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
-import UiSelect from '../components/ui/UiSelect'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
@@ -516,30 +515,30 @@ function SettingsPage({
                 <small>{t('settings.githubTokenHelp')}</small>
               </div>
 
-              <UiSelect
-                className="form-group compact-control"
-                id="theme"
-                value={settings.theme}
-                label={t('settings.theme')}
-                options={([
-                  ['light', t('settings.light')],
-                  ['dark', t('settings.dark')],
-                  ['auto', t('settings.auto')],
-                ] as const).map(([value, label]) => ({ value, label }))}
-                onChange={(theme: ThemePreference) => void handleThemeChange(theme)}
-              />
+              <div className="form-group compact-control">
+                <label htmlFor="theme">{t('settings.theme')}</label>
+                <select
+                  id="theme"
+                  value={settings.theme}
+                  onChange={(event) => handleThemeChange(event.target.value as ThemePreference)}
+                >
+                  <option value="light">{t('settings.light')}</option>
+                  <option value="dark">{t('settings.dark')}</option>
+                  <option value="auto">{t('settings.auto')}</option>
+                </select>
+              </div>
 
-              <UiSelect
-                className="form-group compact-control"
-                id="language"
-                value={settings.language as AppLanguage}
-                label={t('settings.language')}
-                options={([
-                  ['uk', t('settings.ukrainian')],
-                  ['en', t('settings.english')],
-                ] as const).map(([value, label]) => ({ value, label }))}
-                onChange={(nextLanguage: AppLanguage) => void handleLanguageChange(nextLanguage)}
-              />
+              <div className="form-group compact-control">
+                <label htmlFor="language">{t('settings.language')}</label>
+                <select
+                  id="language"
+                  value={settings.language}
+                  onChange={(event) => handleLanguageChange(event.target.value as AppLanguage)}
+                >
+                  <option value="uk">{t('settings.ukrainian')}</option>
+                  <option value="en">{t('settings.english')}</option>
+                </select>
+              </div>
 
               <div className="form-group launcher-background-control">
                 <label>{t('settings.launcherBackground')}</label>
@@ -840,21 +839,24 @@ function SettingsPage({
               </label>
             </div>
 
-            <UiSelect
-              className="form-group compact-control"
-              id="assetStrategy"
-              value={settings.assetStrategy ?? 'portableFirst'}
-              label={t('settings.assets')}
-              helpText={t('settings.assetStrategyHelp')}
-              options={([
-                ['portableFirst', t('settings.portableFirst')],
-                ['installerFirst', t('settings.installerFirst')],
-                ['manual', t('settings.manual')],
-              ] as const).map(([value, label]) => ({ value, label }))}
-              onChange={(assetStrategy: NonNullable<AppSettings['assetStrategy']>) => {
-                void persistSettings({ ...settings, assetStrategy }, settings)
-              }}
-            />
+            <div className="form-group compact-control">
+              <label htmlFor="assetStrategy">{t('settings.assets')}</label>
+              <select
+                id="assetStrategy"
+                value={settings.assetStrategy}
+                onChange={(event) =>
+                  persistSettings({
+                    ...settings,
+                    assetStrategy: event.target.value as AppSettings['assetStrategy'],
+                  }, settings)
+                }
+              >
+                <option value="portableFirst">{t('settings.portableFirst')}</option>
+                <option value="installerFirst">{t('settings.installerFirst')}</option>
+                <option value="manual">{t('settings.manual')}</option>
+              </select>
+              <p className="help-text">{t('settings.assetStrategyHelp')}</p>
+            </div>
           </section>
         )
 

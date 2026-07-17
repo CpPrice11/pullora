@@ -43,9 +43,7 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
   const isLight = normalized.preset === 'githubLight'
   const densityScale = normalized.density === 'compact' ? 0.86 : normalized.density === 'spacious' ? 1.12 : 1
   const surfaceOpacity = 100 - normalized.surfaceTransparency
-  const shellOpacity = isLight
-    ? Math.max(68, Math.min(92, surfaceOpacity + 8))
-    : Math.max(48, surfaceOpacity)
+  const shellOpacity = isLight ? Math.min(92, surfaceOpacity + 8) : surfaceOpacity
   const nestedOpacity = Math.round(shellOpacity * (isLight ? 0.68 : 0.55))
   const insetOpacity = Math.round(shellOpacity * (isLight ? 0.82 : 0.72))
   const strongOpacity = Math.min(100, shellOpacity + 12)
@@ -54,12 +52,6 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--color-primary': normalized.accent,
     '--color-primary-dark': normalized.accentHover,
     '--color-primary-light': `${normalized.accent}24`,
-    '--color-on-primary': isLight ? '#ffffff' : '#041019',
-    '--color-on-success': '#ffffff',
-    '--color-on-danger': '#ffffff',
-    '--color-success': isLight ? '#0b6a0b' : '#79d983',
-    '--color-error': isLight ? '#b42318' : '#ff9aaa',
-    '--color-warning': isLight ? '#8a5d00' : '#e7bd45',
     '--color-bg': isLight ? normalized.background : `color-mix(in srgb, ${normalized.background} 58%, transparent)`,
     '--color-bg-elevated': isLight ? normalized.surface : `color-mix(in srgb, ${normalized.surface} 52%, transparent)`,
     '--color-bg-secondary': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 42%, transparent)`,
@@ -69,7 +61,7 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--color-control-hover': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 52%, transparent)`,
     '--color-text': normalized.text,
     '--color-text-secondary': normalized.muted,
-    '--color-text-tertiary': isLight ? '#52657a' : `${normalized.muted}cc`,
+    '--color-text-tertiary': isLight ? normalized.muted : `${normalized.muted}cc`,
     '--color-border': normalized.border,
     '--color-border-subtle': isLight ? normalized.border : `${normalized.border}99`,
     '--font-family': normalized.fontFamily,
