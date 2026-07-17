@@ -1,9 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import './styles/DesignSystem.css'
 import './App.css'
-import './styles/PulloraShell.css'
+import './styles/Cinematic.css'
 import { SettingsProvider } from './hooks/useSettings.ts'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

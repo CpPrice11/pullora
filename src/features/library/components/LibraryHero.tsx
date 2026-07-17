@@ -1,10 +1,9 @@
-import { useRef, useState, type CSSProperties } from 'react'
-import UiMenu, { UiMenuSeparator } from '../../../components/ui/UiMenu'
-import { UiButton } from '../../../components/ui/UiPrimitives'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
 
 interface LibraryHeroProps {
   repo: GitHubSearchResult
@@ -72,12 +71,26 @@ export default function LibraryHero({
 }: LibraryHeroProps) {
   const { language, t } = useI18n()
   const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement | null>(null)
   const actionsTriggerRef = useRef<HTMLButtonElement | null>(null)
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
   const isInstalled = status !== 'available'
   const statusLabel = t(`repo.${status}`)
   const primaryLabel = t(hasUpdate ? 'repo.updateAction' : isInstalled ? 'repo.launch' : 'repo.install')
+
+  useEffect(() => {
+    if (!actionsOpen) return
+
+    const closeOutside = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    focusFirstMenuItem(actionsRef.current?.querySelector<HTMLElement>('[role="menu"]') ?? null)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+    }
+  }, [actionsOpen])
 
   const runAction = (action: () => void) => {
     setActionsOpen(false)
@@ -99,6 +112,7 @@ export default function LibraryHero({
           <span className={`repo-status ${status}`}>{statusLabel}</span>
           {repo.language && <span className="repo-lang">{repo.language}</span>}
           <button
+            ref={actionsTriggerRef}
             type="button"
             className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
             onClick={onToggleFavorite}
@@ -121,12 +135,11 @@ export default function LibraryHero({
       </div>
 
       <div className="library-hero-actions library-github-actions">
-        <UiButton variant="primary" className="hero-primary-btn" onClick={isInstalled && !hasUpdate ? onLaunch : onInstall}>
+        <button type="button" className="hero-primary-btn" onClick={isInstalled && !hasUpdate ? onLaunch : onInstall}>
           {primaryLabel}
-        </UiButton>
-        <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`}>
+        </button>
+        <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
           <button
-            ref={actionsTriggerRef}
             type="button"
             className="project-actions-trigger"
             aria-haspopup="menu"
@@ -136,27 +149,29 @@ export default function LibraryHero({
           >
             <HeroIcon name="more" />
           </button>
-          <UiMenu
-            open={actionsOpen}
-            anchor={actionsTriggerRef.current}
-            triggerRef={actionsTriggerRef}
-            ariaLabel={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
-            onClose={() => setActionsOpen(false)}
-          >
-            {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
-            {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
-            {isInstalled && <UiMenuSeparator />}
-            <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
-            <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
-            {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
-            {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
-            {isInstalled && <UiMenuSeparator />}
-            {isInstalled && (
-              <button type="button" role="menuitem" className="danger-menu-item" onClick={() => runAction(onUninstall)}>
-                {t('installed.uninstallApp')}
-              </button>
-            )}
-          </UiMenu>
+          {actionsOpen && (
+            <div
+              className="project-actions-popover"
+              role="menu"
+              aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
+              onKeyDown={(event) => handleMenuKeyboard(event, () => {
+                setActionsOpen(false)
+                actionsTriggerRef.current?.focus()
+              })}
+            >
+              {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
+              {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
+              <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
+              <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
+              {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
+              {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
+              {isInstalled && (
+                <button type="button" role="menuitem" className="danger-menu-item" onClick={() => runAction(onUninstall)}>
+                  {t('installed.uninstallApp')}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -1,8 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useI18n } from '../../../i18n'
 import { useModalFocus } from '../../../hooks/useModalFocus'
 import { formatBytes } from '../../../utils/format'
-import UiMenu, { UiMenuSeparator } from '../../../components/ui/UiMenu'
 
 interface LibraryBulkActionsProps {
   selectedCount: number
@@ -44,19 +43,7 @@ export function LibraryBulkActions({
   onRequestUninstall,
 }: LibraryBulkActionsProps) {
   const { t } = useI18n()
-  const [openMenu, setOpenMenu] = useState<'folder' | 'favorite' | 'more' | null>(null)
-  const [menuAnchor, setMenuAnchor] = useState<HTMLButtonElement | null>(null)
   if (selectedCount === 0) return null
-
-  const toggleMenu = (menu: 'folder' | 'favorite' | 'more', anchor: HTMLButtonElement) => {
-    setMenuAnchor(anchor)
-    setOpenMenu((current) => current === menu ? null : menu)
-  }
-
-  const runAction = (action: () => void) => {
-    setOpenMenu(null)
-    action()
-  }
 
   return (
     <section className="library-bulk-actions" aria-label={t('library.bulk.actions')} aria-busy={busy}>
@@ -80,95 +67,51 @@ export function LibraryBulkActions({
           {t('library.bulk.update', { count: updateCount })}
         </button>
 
-        <button
-          type="button"
-          className="library-bulk-menu-trigger"
-          aria-haspopup="menu"
-          aria-expanded={openMenu === 'folder'}
-          onClick={(event) => toggleMenu('folder', event.currentTarget)}
-          disabled={busy}
-        >
-          {t('library.bulk.folder')}
-        </button>
-
-        <button
-          type="button"
-          className="library-bulk-menu-trigger"
-          aria-haspopup="menu"
-          aria-expanded={openMenu === 'favorite'}
-          onClick={(event) => toggleMenu('favorite', event.currentTarget)}
-          disabled={busy}
-        >
-          {t('library.bulk.favorite')}
-        </button>
-
-        <button
-          type="button"
-          className="library-bulk-menu-trigger library-bulk-menu-trigger--more"
-          aria-label={t('library.bulk.more')}
-          aria-haspopup="menu"
-          aria-expanded={openMenu === 'more'}
-          onClick={(event) => toggleMenu('more', event.currentTarget)}
-          disabled={busy}
-        >
-          <span aria-hidden="true">•••</span>
-        </button>
-      </div>
-
-      <UiMenu
-        open={openMenu !== null}
-        anchor={menuAnchor}
-        ariaLabel={openMenu === 'folder'
-          ? t('library.bulk.folder')
-          : openMenu === 'favorite'
-            ? t('library.bulk.favorite')
-            : t('library.bulk.more')}
-        onClose={() => setOpenMenu(null)}
-      >
-        {openMenu === 'folder' && (
-          <>
-            <button type="button" role="menuitem" onClick={() => runAction(() => onMoveToFolder(null))} disabled={busy}>
+        <details className="library-bulk-menu">
+          <summary>{t('library.bulk.folder')}</summary>
+          <div className="library-bulk-menu-popover">
+            <button type="button" onClick={() => onMoveToFolder(null)} disabled={busy}>
               {t('library.folder.uncategorized')}
             </button>
-            {folders.length > 0 && <UiMenuSeparator />}
             {folders.map((folder) => (
-              <button key={folder.id} type="button" role="menuitem" onClick={() => runAction(() => onMoveToFolder(folder.id))} disabled={busy}>
+              <button key={folder.id} type="button" onClick={() => onMoveToFolder(folder.id)} disabled={busy}>
                 {folder.name}
               </button>
             ))}
-          </>
-        )}
-        {openMenu === 'favorite' && (
-          <>
-            <button type="button" role="menuitem" onClick={() => runAction(onAddFavorite)} disabled={busy}>{t('library.bulk.favoriteAdd')}</button>
-            <button type="button" role="menuitem" onClick={() => runAction(onRemoveFavorite)} disabled={busy}>{t('library.bulk.favoriteRemove')}</button>
-          </>
-        )}
-        {openMenu === 'more' && (
-          <>
+          </div>
+        </details>
+
+        <details className="library-bulk-menu">
+          <summary>{t('library.bulk.favorite')}</summary>
+          <div className="library-bulk-menu-popover">
+            <button type="button" onClick={onAddFavorite} disabled={busy}>{t('library.bulk.favoriteAdd')}</button>
+            <button type="button" onClick={onRemoveFavorite} disabled={busy}>{t('library.bulk.favoriteRemove')}</button>
+          </div>
+        </details>
+
+        <details className="library-bulk-menu library-bulk-menu--more">
+          <summary aria-label={t('library.bulk.more')}>•••</summary>
+          <div className="library-bulk-menu-popover">
             <button
               type="button"
-              role="menuitem"
-              onClick={() => runAction(onRequestCleanup)}
+              onClick={onRequestCleanup}
               disabled={busy || cleanupVersionCount === 0}
               title={cleanupVersionCount === 0 ? t('library.bulk.noInactiveVersions') : undefined}
             >
               {t('library.bulk.cleanup', { count: cleanupVersionCount })}
             </button>
-            <UiMenuSeparator />
             <button
               type="button"
-              role="menuitem"
               className="danger-menu-item"
-              onClick={() => runAction(onRequestUninstall)}
+              onClick={onRequestUninstall}
               disabled={busy || installedCount === 0}
               title={installedCount === 0 ? t('library.bulk.noInstalled') : undefined}
             >
               {t('library.bulk.uninstall', { count: installedCount })}
             </button>
-          </>
-        )}
-      </UiMenu>
+          </div>
+        </details>
+      </div>
 
       {message && <p className="library-bulk-message" role="status" aria-live="polite">{message}</p>}
       {error && <p className="library-bulk-error" role="alert">{error}</p>}
