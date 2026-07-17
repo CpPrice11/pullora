@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
 import { projectArtCoverUrl } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
 import { formatDate, formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
-import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
+import UiMenu, { UiMenuSeparator } from '../../../components/ui/UiMenu'
 import './SearchComponents.css'
 
 interface RepoCardProps {
@@ -71,8 +70,9 @@ function RepoCard({
   const [folderMenuOpen, setFolderMenuOpen] = useState(false)
   const [removeFolderMenuOpen, setRemoveFolderMenuOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const folderMenuId = useId()
+  const removeFolderMenuId = useId()
   const cardRef = useRef<HTMLElement | null>(null)
-  const actionsRef = useRef<HTMLDivElement | null>(null)
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const isInstalled = status !== 'available'
   const hasUpdate = status === 'update'
@@ -87,42 +87,6 @@ function RepoCard({
       .then(setIsFav)
       .catch(() => {})
   }, [isFavorite, repo.owner.login, repo.name])
-
-  useEffect(() => {
-    if (!actionsOpen) {
-      setFolderMenuOpen(false)
-      setRemoveFolderMenuOpen(false)
-      return
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!actionsRef.current?.contains(event.target as Node)) {
-        setActionsOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setActionsOpen(false)
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    focusFirstMenuItem(actionsRef.current?.querySelector<HTMLElement>('[role="menu"]') ?? null)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [actionsOpen])
-
-  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    handleMenuKeyboard(event, () => {
-      setActionsOpen(false)
-      cardRef.current?.focus()
-    })
-  }
 
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation()
@@ -333,23 +297,18 @@ function RepoCard({
         </div>
       </div>
 
-      {actionsOpen && menuPosition && createPortal(
-        <div
-          className="project-actions-menu repo-actions-menu repo-context-menu open"
-          ref={actionsRef}
-          style={{
-            left: Math.max(8, Math.min(menuPosition.x, window.innerWidth - 288)),
-            top: Math.max(8, Math.min(menuPosition.y, window.innerHeight - 8)),
-            transform: menuPosition.y > window.innerHeight / 2 ? 'translateY(-100%)' : undefined,
-          }}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div
-            className="project-actions-popover"
-            role="menu"
-            aria-label={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
-            onKeyDown={handleMenuKeyDown}
-          >
+      <UiMenu
+        open={actionsOpen}
+        anchor={menuPosition}
+        triggerRef={cardRef}
+        className="repo-context-menu"
+        ariaLabel={t(isInstalled ? 'installed.moreActions' : 'art.actions')}
+        onClose={() => {
+          setActionsOpen(false)
+          setFolderMenuOpen(false)
+          setRemoveFolderMenuOpen(false)
+        }}
+      >
             <button
               type="button"
               role="menuitem"
@@ -380,6 +339,7 @@ function RepoCard({
             >
               {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
             </button>
+            <UiMenuSeparator />
             {(onCreateFolder || onMoveToFolder || onMoveToUncategorized) && (
               <div
                 className={`repo-actions-submenu ${folderMenuOpen ? 'open' : ''}`}
@@ -394,6 +354,7 @@ function RepoCard({
                   className="repo-actions-submenu-trigger"
                   aria-haspopup="menu"
                   aria-expanded={folderMenuOpen}
+                  aria-controls={folderMenuOpen ? folderMenuId : undefined}
                   onClick={(event) => {
                     event.stopPropagation()
                     setFolderMenuOpen((current) => {
@@ -407,7 +368,7 @@ function RepoCard({
                   <span aria-hidden="true">›</span>
                 </button>
                 {folderMenuOpen && (
-                  <div className="repo-actions-submenu-panel" role="menu">
+                  <div id={folderMenuId} className="repo-actions-submenu-panel" role="menu" aria-label={t('library.folder.addTo')}>
                     {onCreateFolder && (
                       <button type="button" role="menuitem" onClick={handleCreateFolder}>
                         {t('library.folder.createNew')}
@@ -449,6 +410,7 @@ function RepoCard({
                   className="repo-actions-submenu-trigger"
                   aria-haspopup="menu"
                   aria-expanded={removeFolderMenuOpen}
+                  aria-controls={removeFolderMenuOpen ? removeFolderMenuId : undefined}
                   onClick={(event) => {
                     event.stopPropagation()
                     setRemoveFolderMenuOpen((current) => {
@@ -462,7 +424,7 @@ function RepoCard({
                   <span aria-hidden="true">&gt;</span>
                 </button>
                 {removeFolderMenuOpen && (
-                  <div className="repo-actions-submenu-panel" role="menu">
+                  <div id={removeFolderMenuId} className="repo-actions-submenu-panel" role="menu" aria-label={t('library.folder.removeFrom')}>
                     {removableFolders.map((folder) => (
                       <button
                         key={folder.id}
@@ -506,19 +468,19 @@ function RepoCard({
               </button>
             )}
             {isInstalled && onUninstall && (
-              <button
-                type="button"
-                role="menuitem"
-                className="danger-menu-item"
-                onClick={handleUninstall}
-              >
-                {t('installed.uninstallApp')}
-              </button>
+              <>
+                <UiMenuSeparator />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="danger-menu-item"
+                  onClick={handleUninstall}
+                >
+                  {t('installed.uninstallApp')}
+                </button>
+              </>
             )}
-          </div>
-        </div>,
-        document.body,
-      )}
+      </UiMenu>
     </article>
   )
 }

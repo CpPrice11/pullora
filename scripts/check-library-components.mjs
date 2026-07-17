@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import postcss from 'postcss'
 import { createServer } from 'vite'
 
 const server = await createServer({
@@ -32,6 +34,7 @@ try {
   const { default: BatchUpdatePanel, BatchUpdateConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/BatchUpdatePanel.tsx')
   const { default: DownloadProgressPanel } = await server.ssrLoadModule('/src/components/Install/DownloadProgress.tsx')
   const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
+  const { default: UiSelect } = await server.ssrLoadModule('/src/components/ui/UiSelect.tsx')
   const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
   const { sortLibraryRepositories } = await server.ssrLoadModule('/src/features/library/hooks/useLibraryFiltering.ts')
   const {
@@ -99,6 +102,110 @@ try {
   )
   assert.equal(nextMenuItemIndex('ArrowDown', -1, 4), 0)
   assert.equal(nextMenuItemIndex('ArrowDown', 0, 0), -1)
+
+  const uiSelect = render(UiSelect, {
+    value: 'uk',
+    label: 'Мова',
+    options: [{ value: 'uk', label: 'Українська' }, { value: 'en', label: 'English' }],
+    onChange: noop,
+  })
+  assert.match(uiSelect, /role="combobox"/)
+  assert.match(uiSelect, /aria-haspopup="listbox"/)
+  assert.match(uiSelect, /aria-expanded="false"/)
+
+  const appSource = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+  const layoutSource = await readFile(new URL('../src/components/Layout/Layout.tsx', import.meta.url), 'utf8')
+  const mainSource = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8')
+  const librarySource = await readFile(new URL('../src/features/library/LibraryPage.tsx', import.meta.url), 'utf8')
+  const heroSource = await readFile(new URL('../src/features/library/components/LibraryHero.tsx', import.meta.url), 'utf8')
+  const repoCardSource = await readFile(new URL('../src/features/library/components/RepoCard.tsx', import.meta.url), 'utf8')
+  const menuSource = await readFile(new URL('../src/components/ui/UiMenu.tsx', import.meta.url), 'utf8')
+  const menuKeyboardSource = await readFile(new URL('../src/utils/menuKeyboard.ts', import.meta.url), 'utf8')
+  const shellCssPaths = [
+    '../src/App.css',
+    '../src/components/Layout/Layout.css',
+    '../src/components/Install/Install.css',
+    '../src/components/Modal/Modal.css',
+    '../src/components/State/StatePanel.css',
+    '../src/components/ui/Ui.css',
+    '../src/features/library/components/SearchComponents.css',
+    '../src/pages/PageStyles.css',
+    '../src/styles/DesignSystem.css',
+    '../src/styles/PulloraShell.css',
+  ]
+  const shellCssSources = await Promise.all(
+    shellCssPaths.map((path) => readFile(new URL(path, import.meta.url), 'utf8')),
+  )
+  const structuralThemeProperties = new Set([
+    'display', 'position', 'inset', 'top', 'right', 'bottom', 'left',
+    'width', 'min-width', 'max-width', 'height', 'min-height', 'max-height',
+    'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+    'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    'gap', 'row-gap', 'column-gap',
+    'grid', 'grid-area', 'grid-template', 'grid-template-areas',
+    'grid-template-columns', 'grid-template-rows', 'grid-auto-flow',
+    'grid-column', 'grid-row',
+    'flex', 'flex-basis', 'flex-direction', 'flex-flow', 'flex-grow',
+    'flex-shrink', 'flex-wrap', 'align-content', 'align-items', 'align-self',
+    'justify-content', 'justify-items', 'justify-self', 'order',
+    'overflow', 'overflow-x', 'overflow-y', 'box-sizing',
+  ])
+  assert.doesNotMatch(appSource, /onPreviewBackground|searchPreviewBackground/)
+  assert.match(appSource, /launcherBackgrounds\[resolvedTheme\]/)
+  assert.match(layoutSource, /layout pullora-shell/)
+  assert.doesNotMatch(layoutSource, /cinematic-shell|sam-shell/)
+  assert.match(mainSource, /styles\/PulloraShell\.css/)
+  assert.match(heroSource, /ref=\{actionsTriggerRef\}[\s\S]{0,180}className="project-actions-trigger"/)
+  assert.doesNotMatch(heroSource, /ref=\{actionsTriggerRef\}[\s\S]{0,180}className=\{`hero-favorite-btn/)
+  assert.match(menuSource, /setAttribute\('aria-controls', menuId\)/)
+  assert.match(menuSource, /aria-orientation="vertical"/)
+  assert.match(repoCardSource, /event\.key === 'ContextMenu' \|\| \(event\.shiftKey && event\.key === 'F10'\)/)
+  assert.match(repoCardSource, /aria-controls=\{folderMenuOpen \? folderMenuId : undefined\}/)
+  for (const key of ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape']) {
+    assert.match(menuKeyboardSource, new RegExp(`['"]${key}['"]`))
+  }
+  assert.doesNotMatch(shellCssSources.join('\n'), /\.(?:cinematic|sam)-shell/)
+  for (const index of [1, 9]) {
+    assert.doesNotMatch(
+      shellCssSources[index],
+      /--color-(?:primary|bg|text|success|error|warning)(?:-[\w-]+)?\s*:/,
+      `${shellCssPaths[index]} must not override global theme tokens`,
+    )
+  }
+  assert.doesNotMatch(
+    shellCssSources[1],
+    /settings-open\s+\.cinematic-(?:background|backdrop)/,
+    'Settings must reuse the same launcher background treatment as other pages',
+  )
+  shellCssSources.forEach((source, index) => {
+    const root = postcss.parse(source, { from: shellCssPaths[index] })
+    const unlayered = root.nodes.filter((node) => (
+      node.type !== 'comment' && !(node.type === 'atrule' && node.name === 'layer')
+    ))
+    assert.equal(unlayered.length, 0, `${shellCssPaths[index]} contains unlayered CSS`)
+    const structuralLightOverrides = []
+    root.walkRules((rule) => {
+      if (!rule.selector.includes("data-theme='light'")) return
+      rule.walkDecls((declaration) => {
+        if (structuralThemeProperties.has(declaration.prop)) {
+          structuralLightOverrides.push(`${rule.selector} { ${declaration.prop}: ${declaration.value} }`)
+        }
+      })
+    })
+    assert.deepEqual(
+      structuralLightOverrides,
+      [],
+      `${shellCssPaths[index]} must keep component structure identical across themes`,
+    )
+    if ([2, 3, 4, 5].includes(index)) {
+      const lightRules = []
+      root.walkRules((rule) => {
+        if (rule.selector.includes("data-theme='light'")) lightRules.push(rule.selector)
+      })
+      assert.deepEqual(lightRules, [], `${shellCssPaths[index]} must use shared theme tokens`)
+    }
+  })
+  assert.match(librarySource, /projectArtBackgroundUrl\(featuredArt, \{ fallbackToCover: false \}\)/)
   assert.deepEqual([...toggleSelectedKey(new Set(['a']), 'b')], ['a', 'b'])
   assert.deepEqual([...toggleSelectedKey(new Set(['a', 'b']), 'a')], ['b'])
   assert.deepEqual([...selectKeyRange(['a', 'b', 'c', 'd'], 'b', 'd')], ['b', 'c', 'd'])
@@ -138,6 +245,21 @@ try {
   assert.equal(darkSurfaces['--surface-1'], 'color-mix(in srgb, #111820 60%, transparent)')
   assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
   assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')
+  const lightPalette = appearanceCssVariables(APPEARANCE_PRESETS.githubLight)
+  assert.equal(lightPalette['--color-on-primary'], '#ffffff')
+  assert.equal(lightPalette['--color-primary'], '#0067c0')
+  assert.equal(lightPalette['--color-primary-dark'], '#005a9e')
+  assert.equal(lightPalette['--color-text-tertiary'], '#52657a')
+  assert.equal(lightPalette['--color-success'], '#0b6a0b')
+  assert.equal(lightPalette['--color-error'], '#b42318')
+  assert.equal(
+    appearanceCssVariables({ ...APPEARANCE_PRESETS.githubLight, surfaceTransparency: 80 })['--surface-1'],
+    'color-mix(in srgb, #f8fafc 68%, transparent)',
+  )
+  assert.equal(
+    appearanceCssVariables({ ...APPEARANCE_PRESETS.github, surfaceTransparency: 80 })['--surface-1'],
+    'color-mix(in srgb, #111820 48%, transparent)',
+  )
 
   const olderRepo = { ...repo, id: 2, name: 'alpha-app', updated_at: '2026-07-14T10:00:00Z' }
   const newerInstall = {

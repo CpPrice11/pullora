@@ -1,0 +1,65 @@
+@layer tokens, base, components, features, utilities, custom;
+
+@layer tokens {
+  :root {
+    --ui-bg: var(--color-bg);
+    --ui-surface-1: var(--surface-1);
+    --ui-surface-2: var(--surface-2);
+    --ui-surface-3: var(--surface-3);
+    --ui-border: var(--surface-border);
+    --ui-text: var(--color-text);
+    --ui-text-secondary: var(--color-text-secondary);
+    --ui-text-muted: var(--color-text-tertiary);
+    --ui-text-inverse: var(--color-on-primary);
+    --ui-accent: var(--color-primary);
+    --ui-on-accent: var(--color-on-primary);
+    --ui-danger: var(--color-error);
+    --ui-success: var(--color-success);
+    --ui-warning: var(--color-warning);
+    --ui-update: var(--color-primary);
+    --ui-installed: var(--color-success);
+    --ui-blur: var(--surface-blur);
+    --ui-transparency: var(--surface-transparency);
+    --ui-focus: 0 0 0 3px color-mix(in srgb, var(--color-primary) 28%, transparent);
+    --ui-shadow-1: var(--shadow-md);
+    --ui-shadow-2: var(--surface-shadow);
+    --ui-space-1: 4px;
+    --ui-space-2: 8px;
+    --ui-space-3: 12px;
+    --ui-space-4: 16px;
+    --ui-space-5: 24px;
+    --ui-radius-control: max(8px, calc(var(--border-radius-md) * 0.72));
+    --ui-radius-panel: max(12px, var(--border-radius-lg));
+    --ui-z-dropdown: 60;
+    --ui-z-menu: 70;
+    --ui-z-dialog: 80;
+  }
+}
+
+@layer base {
+  .pullora-shell {
+    color: var(--ui-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pullora-shell :where(button, input, textarea, select) {
+    font: inherit;
+  }
+
+  .pullora-shell :where(button, [role='button'], [role='option']) {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: reduce) {
+    .pullora-shell *,
+    .pullora-shell *::before,
+    .pullora-shell *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

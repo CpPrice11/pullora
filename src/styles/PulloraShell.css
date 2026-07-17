@@ -1,4 +1,4 @@
-:root {
+@layer features {:root {
   --surface-blur: 12px;
   --surface-canvas: #070b10;
   --surface-1: rgba(17, 24, 32, 0.58);
@@ -9,144 +9,65 @@
   --surface-shadow: 0 18px 48px rgba(2, 6, 10, 0.58);
   --surface-material: var(--surface-1);
   --surface-material-strong: rgba(17, 24, 32, 0.7);
-}
-
-.cinematic-shell {
-  --color-primary: #55d6ff;
-  --color-primary-dark: #32bce9;
-  --color-primary-light: rgba(85, 214, 255, 0.16);
-  --color-bg: #070b10;
-  --color-bg-elevated: #15191f;
-  --color-bg-secondary: #10151b;
-  --color-mica: rgba(16, 20, 26, 0.94);
-  --color-control: rgba(255, 255, 255, 0.08);
-  --color-control-hover: rgba(255, 255, 255, 0.13);
-  --color-nav-active: rgba(85, 214, 255, 0.12);
-  --color-text: #f4f6f8;
-  --color-text-secondary: #a8adb5;
-  --color-text-tertiary: #717780;
-  --color-border: rgba(255, 255, 255, 0.15);
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
-  --color-success: #62dc78;
-  --color-error: #ff8797;
-  --color-warning: #e9c45e;
-  --border-radius: 9px;
-  --border-radius-lg: 14px;
-  --density-scale: 1;
-  --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
-  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.2);
-  --shadow-control-hover: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 24px rgba(0, 0, 0, 0.3);
+}.pullora-shell {
   background:
     radial-gradient(circle at 68% 4%, rgba(54, 186, 226, 0.12), transparent 32%),
     #070b10;
-}
-
-/* Вибрана тема має пріоритет над застарілими пресетами оформлення. */
-:root[data-theme='light'] .cinematic-shell {
-  --color-primary: #0067c0;
-  --color-primary-dark: #005a9e;
-  --color-primary-light: rgba(0, 103, 192, 0.14);
-  --color-bg: #dfe8f2;
-  --color-bg-elevated: #ffffff;
-  --color-bg-secondary: #e7eef6;
-  --color-mica: rgba(248, 250, 252, 0.82);
-  --color-control: rgba(248, 250, 252, 0.9);
-  --color-control-hover: rgba(231, 238, 246, 0.96);
-  --color-nav-active: rgba(0, 103, 192, 0.1);
-  --color-text: #111827;
-  --color-text-secondary: #40536a;
-  --color-text-tertiary: #52657a;
-  --color-border: rgba(58, 78, 101, 0.28);
-  --color-border-subtle: rgba(58, 78, 101, 0.2);
-  --color-success: #107c10;
-  --color-error: #b42318;
-  --color-warning: #8a5d00;
-  --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
-  --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
+}/* Вибрана тема має пріоритет над застарілими пресетами оформлення. */:root[data-theme='light'] .pullora-shell {
   background: var(--surface-canvas);
-}
-
-:root[data-theme='light'] .cinematic-shell .cinematic-backdrop {
+}:root[data-theme='light'] .pullora-shell .cinematic-backdrop {
   background:
     radial-gradient(circle at 69% 6%, rgba(0, 103, 192, 0.1), transparent 32%),
     linear-gradient(180deg, rgba(238, 243, 248, 0.72), rgba(238, 243, 248, 0.92));
-}
-
-:root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-backdrop {
+}:root[data-theme='light'] .pullora-shell.has-custom-background .cinematic-backdrop {
   background:
     radial-gradient(circle at 72% 14%, rgba(0, 103, 192, 0.09), transparent 34%),
     linear-gradient(90deg, rgba(238, 243, 248, 0.7) 0%, rgba(238, 243, 248, 0.48) 44%, rgba(238, 243, 248, 0.28) 100%),
     linear-gradient(0deg, rgba(238, 243, 248, 0.74) 0%, rgba(238, 243, 248, 0.3) 54%, rgba(238, 243, 248, 0.5) 100%);
-}
-
-:root[data-theme='light'] .cinematic-shell .header {
+}:root[data-theme='light'] .pullora-shell .header {
   background: var(--surface-material-strong);
   border-bottom-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .nav-item,
-:root[data-theme='light'] .cinematic-shell .nav-item:hover,
-:root[data-theme='light'] .cinematic-shell .nav-item.active {
+}:root[data-theme='light'] .pullora-shell .nav-item,
+:root[data-theme='light'] .pullora-shell .nav-item:hover,
+:root[data-theme='light'] .pullora-shell .nav-item.active {
   color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .cinematic-shell .nav-item.active::before {
+}:root[data-theme='light'] .pullora-shell .nav-item.active::before {
   background: var(--color-primary);
   box-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-:root[data-theme='light'] .cinematic-shell .nav-icon {
+}:root[data-theme='light'] .pullora-shell .nav-icon {
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .nav-item.active .nav-icon {
+}:root[data-theme='light'] .pullora-shell .nav-item.active .nav-icon {
   background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-3));
   border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-border));
   box-shadow: var(--shadow-control-hover);
   color: var(--color-primary);
-}
-
-:root[data-theme='light'] .cinematic-shell .page-header h2,
-:root[data-theme='light'] .cinematic-shell .library-page .page-header h2 {
+}:root[data-theme='light'] .pullora-shell .page-header h2,
+:root[data-theme='light'] .pullora-shell .library-page .page-header h2 {
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell button {
+}:root[data-theme='light'] .pullora-shell button {
   background: var(--color-control);
   border-color: var(--surface-border);
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell button:hover {
+}:root[data-theme='light'] .pullora-shell button:hover {
   background: var(--color-control-hover);
   border-color: color-mix(in srgb, var(--color-primary) 36%, var(--surface-border));
-}
-
-:root[data-theme='light'] .cinematic-shell input,
-:root[data-theme='light'] .cinematic-shell select,
-:root[data-theme='light'] .cinematic-shell textarea {
+}:root[data-theme='light'] .pullora-shell input,
+:root[data-theme='light'] .pullora-shell select,
+:root[data-theme='light'] .pullora-shell textarea {
   background: var(--color-control);
   border-color: var(--surface-border);
   color: var(--color-text);
-}
-
-.cinematic-shell .cinematic-background {
+}.pullora-shell .cinematic-background {
   filter: blur(18px) saturate(0.75);
   opacity: 0;
-}
-
-.cinematic-shell .cinematic-background.is-visible {
+}.pullora-shell .cinematic-background.is-visible {
   opacity: 0.09;
-}
-
-.cinematic-shell .cinematic-backdrop {
+}.pullora-shell .cinematic-backdrop {
   background:
     radial-gradient(circle at 69% 6%, rgba(44, 191, 229, 0.09), transparent 32%),
     linear-gradient(180deg, rgba(7, 11, 16, 0.76), rgba(7, 11, 16, 0.96));
-}
-
-.cinematic-shell .header {
+}.pullora-shell .header {
   -webkit-app-region: drag;
   align-items: center;
   background: rgba(7, 11, 16, 0.84);
@@ -157,20 +78,14 @@
   padding: 10px 24px;
   position: relative;
   z-index: 3;
-}
-
-.cinematic-shell .header-content {
+}.pullora-shell .header-content {
   align-items: center;
   display: flex;
   justify-content: flex-start;
   width: 100%;
-}
-
-.cinematic-shell .layout-container {
+}.pullora-shell .layout-container {
   grid-template-columns: minmax(0, 1fr);
-}
-
-.cinematic-shell .sidebar-nav {
+}.pullora-shell .sidebar-nav {
   -webkit-app-region: no-drag;
   align-items: center;
   display: flex;
@@ -178,11 +93,9 @@
   gap: 8px;
   justify-content: flex-start;
   min-width: 0;
-}
-
-.cinematic-shell .nav-item,
-.cinematic-shell .nav-item:hover,
-.cinematic-shell .nav-item.active {
+}.pullora-shell .nav-item,
+.pullora-shell .nav-item:hover,
+.pullora-shell .nav-item.active {
   background: transparent;
   border: 0;
   border-radius: 10px;
@@ -195,9 +108,7 @@
   padding: 4px 12px 4px 6px;
   transform: none;
   width: auto;
-}
-
-.cinematic-shell .nav-item.active::before {
+}.pullora-shell .nav-item.active::before {
   background: #55d6ff;
   border-radius: 999px;
   bottom: -1px;
@@ -207,172 +118,124 @@
   right: 10px;
   top: auto;
   width: auto;
-}
-
-.cinematic-shell .nav-icon {
+}.pullora-shell .nav-icon {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.065));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   color: currentColor;
   height: 32px;
   width: 32px;
-}
-
-.cinematic-shell .nav-item.active .nav-icon {
+}.pullora-shell .nav-item.active .nav-icon {
   background: rgba(85, 214, 255, 0.13);
   border-color: rgba(85, 214, 255, 0.52);
   box-shadow: 0 0 0 1px rgba(85, 214, 255, 0.12), 0 12px 28px rgba(0, 0, 0, 0.28);
   color: #68ddff;
-}
-
-.cinematic-shell .nav-text {
+}.pullora-shell .nav-text {
   display: block;
   opacity: 1;
   transform: none;
-}
-
-.cinematic-shell .nav-label {
+}.pullora-shell .nav-label {
   font-size: 13px;
   font-weight: 650;
-}
-
-.cinematic-shell .layout-content {
+}.pullora-shell .layout-content {
   align-items: center;
   background: transparent;
   padding: 30px 36px 36px;
-}
-
-.cinematic-shell .layout-content > div:not([hidden]) {
+}.pullora-shell .layout-content > div:not([hidden]) {
   display: flex;
   flex: 1;
   min-height: 0;
   width: 100%;
-}
-
-.cinematic-shell .page {
+}.pullora-shell .page {
   flex: 1;
   gap: 18px;
   max-width: none;
   min-height: 0;
   width: 100%;
-}
-
-.cinematic-shell .library-page {
+}.pullora-shell .library-page {
   height: 100%;
   min-height: 0;
-}
-
-.cinematic-shell .page-header {
+}.pullora-shell .page-header {
   min-height: 54px;
-}
-
-.cinematic-shell .page-header h2,
-.cinematic-shell .library-page .page-header h2 {
+}.pullora-shell .page-header h2,
+.pullora-shell .library-page .page-header h2 {
   color: #f7f8fa;
   font-size: 34px;
   font-weight: 720;
   letter-spacing: 0;
   text-shadow: none;
-}
-
-.cinematic-shell button {
+}.pullora-shell button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
   box-shadow: var(--shadow-control);
   color: #f3f5f7;
   font-weight: 650;
-}
-
-.cinematic-shell button:hover {
+}.pullora-shell button:hover {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.11));
   border-color: rgba(85, 214, 255, 0.34);
   box-shadow: var(--shadow-control-hover);
-}
-
-.cinematic-shell input,
-.cinematic-shell select,
-.cinematic-shell textarea {
+}.pullora-shell input,
+.pullora-shell select,
+.pullora-shell textarea {
   background: #101720;
   border: 1px solid #253445;
   border-radius: 9px;
   color: #f3f5f7;
-}
-
-.cinematic-shell .library-sam-workspace {
+}.pullora-shell .library-sam-workspace {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   flex: 1;
   grid-template-columns: minmax(310px, 350px) minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
-}
-
-.cinematic-shell .library-sam-list-pane,
-.cinematic-shell .library-sam-details-pane {
+}.pullora-shell .library-sam-list-pane,
+.pullora-shell .library-sam-details-pane {
   background: rgba(8, 12, 17, 0.72);
   border: 0;
   border-radius: 0;
   box-shadow: none;
   min-height: 0;
-}
-
-.cinematic-shell .library-sam-list-pane {
+}.pullora-shell .library-sam-list-pane {
   border-right: 1px solid rgba(255, 255, 255, 0.075);
   overflow: hidden;
-}
-
-.cinematic-shell .library-sam-pane-head,
-.cinematic-shell .library-sam-details-toolbar {
+}.pullora-shell .library-sam-pane-head,
+.pullora-shell .library-sam-details-toolbar {
   background: rgba(12, 17, 23, 0.82);
   border-bottom: 1px solid rgba(255, 255, 255, 0.075);
   min-height: 58px;
   padding: 10px 12px;
-}
-
-.cinematic-shell .library-sam-pane-head h3 {
+}.pullora-shell .library-sam-pane-head h3 {
   color: #f4f6f8;
   font-size: 17px;
   font-weight: 720;
-}
-
-.cinematic-shell .library-sam-kicker,
-.cinematic-shell .library-sam-details-toolbar > span {
+}.pullora-shell .library-sam-kicker,
+.pullora-shell .library-sam-details-toolbar > span {
   color: #7e8791;
   font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.06em;
-}
-
-.cinematic-shell .library-toolstrip {
+}.pullora-shell .library-toolstrip {
   background: rgba(9, 13, 18, 0.72);
   border-bottom: 1px solid rgba(255, 255, 255, 0.075);
   display: grid;
   gap: 8px;
   grid-template-columns: minmax(0, 1fr);
   padding: 10px;
-}
-
-.cinematic-shell .library-toolstrip .search-form,
-.cinematic-shell .library-toolstrip .search-input {
+}.pullora-shell .library-toolstrip .search-form,
+.pullora-shell .library-toolstrip .search-input {
   min-width: 0;
   width: 100%;
-}
-
-.cinematic-shell .library-toolstrip .search-input {
+}.pullora-shell .library-toolstrip .search-input {
   min-height: 38px;
   padding: 0 12px;
-}
-
-.cinematic-shell .library-page .library-controls {
+}.pullora-shell .library-page .library-controls {
   display: grid;
   gap: 8px;
   grid-template-columns: minmax(0, 1fr);
   justify-content: stretch;
   width: 100%;
-}
-
-.cinematic-shell .library-page .segmented-control {
+}.pullora-shell .library-page .segmented-control {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 10px;
@@ -381,9 +244,7 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
   padding: 3px;
   width: 100%;
-}
-
-.cinematic-shell .library-page .segmented-control button {
+}.pullora-shell .library-page .segmented-control button {
   background: transparent;
   border: 0;
   border-radius: 7px;
@@ -395,24 +256,16 @@
   padding: 0 4px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.cinematic-shell .library-page .segmented-control button.active {
+}.pullora-shell .library-page .segmented-control button.active {
   background: rgba(85, 214, 255, 0.16);
   color: #eefaff;
-}
-
-.cinematic-shell .library-page .sort-control,
-.cinematic-shell .library-page .sort-control select {
+}.pullora-shell .library-page .sort-control,
+.pullora-shell .library-page .sort-control select {
   min-width: 0;
   width: 100%;
-}
-
-.cinematic-shell .library-page .sort-control select {
+}.pullora-shell .library-page .sort-control select {
   min-height: 36px;
-}
-
-.cinematic-shell .library-trust-panel {
+}.pullora-shell .library-trust-panel {
   align-items: start;
   background: rgba(255, 255, 255, 0.035);
   border-radius: 0;
@@ -421,40 +274,26 @@
   grid-template-columns: 10px minmax(0, 1fr);
   margin: 0;
   padding: 9px 10px;
-}
-
-.cinematic-shell .library-trust-mark {
+}.pullora-shell .library-trust-mark {
   margin-top: 5px;
-}
-
-.cinematic-shell .library-trust-copy {
+}.pullora-shell .library-trust-copy {
   align-items: flex-start;
   flex-direction: column;
   gap: 2px;
-}
-
-.cinematic-shell .library-trust-copy strong {
+}.pullora-shell .library-trust-copy strong {
   font-size: 13px;
-}
-
-.cinematic-shell .library-trust-copy span {
+}.pullora-shell .library-trust-copy span {
   font-size: 11px;
-}
-
-.cinematic-shell .library-trust-inline-actions {
+}.pullora-shell .library-trust-inline-actions {
   display: grid;
   gap: 6px;
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) auto;
   width: 100%;
-}
-
-.cinematic-shell .library-trust-inline-actions .secondary-btn,
-.cinematic-shell .library-trust-toggle {
+}.pullora-shell .library-trust-inline-actions .secondary-btn,
+.pullora-shell .library-trust-toggle {
   min-height: 28px;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel {
   align-items: center;
   background: rgba(255, 135, 151, 0.07);
   border: 0;
@@ -471,36 +310,24 @@
   overflow: visible;
   padding: 7px 10px;
   width: 100%;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel::after {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel::after {
   content: none;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel .state-panel-mark {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel .state-panel-mark {
   border-radius: 8px;
   height: 32px;
   width: 32px;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel h3 {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel h3 {
   font-size: 13px;
   line-height: 1.2;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel p,
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel summary {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel p,
+.pullora-shell .library-sam-list-pane .search-results > .state-panel summary {
   font-size: 10px;
   line-height: 1.35;
-}
-
-.cinematic-shell .library-sam-list-pane .search-results > .state-panel .state-panel-action {
+}.pullora-shell .library-sam-list-pane .search-results > .state-panel .state-panel-action {
   font-size: 10px;
   min-height: 28px;
   padding: 0 8px;
-}
-
-.cinematic-shell .search-results {
+}.pullora-shell .search-results {
   align-content: start;
   background: transparent;
   display: grid;
@@ -512,27 +339,19 @@
   overflow-x: hidden;
   overflow-y: auto;
   padding: 10px;
-}
-
-.cinematic-shell .library-results-header {
+}.pullora-shell .library-results-header {
   display: none;
-}
-
-.cinematic-shell .repo-card {
+}.pullora-shell .repo-card {
   background: rgba(255, 255, 255, 0.045);
   border-color: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   box-shadow: none;
-}
-
-.cinematic-shell .repo-card:hover,
-.cinematic-shell .repo-card.selected {
+}.pullora-shell .repo-card:hover,
+.pullora-shell .repo-card.selected {
   background: rgba(85, 214, 255, 0.11);
   border-color: rgba(85, 214, 255, 0.35);
   box-shadow: none;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card {
+}.pullora-shell .library-sam-list-pane .repo-card {
   align-items: center;
   background: transparent;
   border: 0;
@@ -543,58 +362,42 @@
   min-height: 34px;
   overflow: visible;
   padding: 5px 8px;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card:hover,
-.cinematic-shell .library-sam-list-pane .repo-card.selected {
+}.pullora-shell .library-sam-list-pane .repo-card:hover,
+.pullora-shell .library-sam-list-pane .repo-card.selected {
   background: rgba(85, 214, 255, 0.11);
   border-color: transparent;
   box-shadow: none;
   transform: none;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card::after {
+}.pullora-shell .library-sam-list-pane .repo-card::after {
   display: none;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card::before {
+}.pullora-shell .library-sam-list-pane .repo-card::before {
   bottom: 7px;
   display: block;
   left: 0;
   top: 7px;
   width: 3px;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card-media,
-.cinematic-shell .library-sam-list-pane .owner-avatar {
+}.pullora-shell .library-sam-list-pane .repo-card-media,
+.pullora-shell .library-sam-list-pane .owner-avatar {
   align-self: center;
   border-radius: 50%;
   height: 24px;
   width: 24px;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-info {
+}.pullora-shell .library-sam-list-pane .repo-info {
   align-items: center;
   align-self: center;
   display: flex;
   min-height: 24px;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-title-line {
+}.pullora-shell .library-sam-list-pane .repo-title-line {
   align-items: center;
   flex-wrap: nowrap;
   min-width: 0;
   width: 100%;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-status,
-.cinematic-shell .library-sam-list-pane .repo-owner,
-.cinematic-shell .library-sam-list-pane .repo-description,
-.cinematic-shell .library-sam-list-pane .repo-meta {
+}.pullora-shell .library-sam-list-pane .repo-status,
+.pullora-shell .library-sam-list-pane .repo-owner,
+.pullora-shell .library-sam-list-pane .repo-description,
+.pullora-shell .library-sam-list-pane .repo-meta {
   display: none;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-name {
+}.pullora-shell .library-sam-list-pane .repo-name {
   color: #dfe3e6;
   font-size: 13px;
   font-weight: 650;
@@ -602,31 +405,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card--available .repo-name {
+}.pullora-shell .library-sam-list-pane .repo-card--available .repo-name {
   color: #8f98a0;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card--installed .repo-name,
-.cinematic-shell .library-sam-list-pane .repo-card--update .repo-name,
-.cinematic-shell .library-sam-list-pane .repo-card.selected .repo-name {
+}.pullora-shell .library-sam-list-pane .repo-card--installed .repo-name,
+.pullora-shell .library-sam-list-pane .repo-card--update .repo-name,
+.pullora-shell .library-sam-list-pane .repo-card.selected .repo-name {
   color: #ffffff;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card--available.selected .repo-name {
+}.pullora-shell .library-sam-list-pane .repo-card--available.selected .repo-name {
   color: #a8b0b8;
-}
-
-.cinematic-shell .library-sam-details-pane {
+}.pullora-shell .library-sam-details-pane {
   background:
     radial-gradient(circle at 74% 0%, rgba(55, 193, 230, 0.11), transparent 34%),
     rgba(8, 12, 17, 0.66);
   overflow-y: auto;
   padding: 0;
-}
-
-.cinematic-shell .settings-page {
+}.pullora-shell .settings-page {
   background: transparent;
   border: 0;
   display: flex;
@@ -638,9 +431,7 @@
   max-width: 1680px;
   min-height: calc(100vh - 130px);
   overflow: visible;
-}
-
-.cinematic-shell .settings-page-header {
+}.pullora-shell .settings-page-header {
   align-items: flex-end;
   background: transparent;
   border: 0;
@@ -649,28 +440,20 @@
   min-height: 64px;
   padding: 0;
   width: 100%;
-}
-
-.cinematic-shell .settings-page-kicker {
+}.pullora-shell .settings-page-kicker {
   color: #55d6ff;
   font-size: 10px;
   letter-spacing: 0.07em;
-}
-
-.cinematic-shell .settings-page-header h2 {
+}.pullora-shell .settings-page-header h2 {
   color: #f7f8fa;
   font-size: clamp(28px, 2.4vw, 36px);
   font-weight: 700;
   letter-spacing: -0.025em;
-}
-
-.cinematic-shell .settings-page-header p {
+}.pullora-shell .settings-page-header p {
   color: #9098a2;
   font-size: 13px;
   margin-top: 3px;
-}
-
-.cinematic-shell .settings-workspace {
+}.pullora-shell .settings-workspace {
   background: rgba(8, 12, 17, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
@@ -680,9 +463,7 @@
   grid-template-columns: 220px minmax(0, 1fr);
   min-height: min(640px, calc(100vh - 210px));
   overflow: hidden;
-}
-
-.cinematic-shell .settings-page .settings-nav {
+}.pullora-shell .settings-page .settings-nav {
   background: rgba(10, 14, 20, 0.88);
   border: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.075);
@@ -690,9 +471,7 @@
   flex-direction: column;
   gap: 5px;
   padding: 16px 14px;
-}
-
-.cinematic-shell .settings-page .settings-nav button {
+}.pullora-shell .settings-page .settings-nav button {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 9px;
@@ -709,28 +488,18 @@
     border-color 140ms ease,
     color 140ms ease,
     transform 140ms ease;
-}
-
-.cinematic-shell .settings-page .settings-nav button:hover,
-.cinematic-shell .settings-page .settings-nav button.active {
+}.pullora-shell .settings-page .settings-nav button:hover,
+.pullora-shell .settings-page .settings-nav button.active {
   background: rgba(85, 214, 255, 0.11);
   border-color: rgba(85, 214, 255, 0.2);
   color: #f4f8fa;
-}
-
-.cinematic-shell .settings-page .settings-nav button:hover {
+}.pullora-shell .settings-page .settings-nav button:hover {
   transform: translateX(2px);
-}
-
-.cinematic-shell .settings-page .settings-nav button.active {
+}.pullora-shell .settings-page .settings-nav button.active {
   box-shadow: inset 3px 0 0 #55d6ff;
-}
-
-.cinematic-shell .settings-page .settings-nav button::before {
+}.pullora-shell .settings-page .settings-nav button::before {
   content: none;
-}
-
-.cinematic-shell .settings-page .settings-content {
+}.pullora-shell .settings-page .settings-content {
   background:
     radial-gradient(circle at 82% 0%, rgba(55, 193, 230, 0.08), transparent 32%),
     rgba(10, 15, 21, 0.66);
@@ -738,10 +507,8 @@
   min-height: 0;
   overflow: visible;
   padding: clamp(18px, 2.1vw, 30px);
-}
-
-.cinematic-shell .settings-page .settings-section,
-.cinematic-shell .settings-page .danger-zone {
+}.pullora-shell .settings-page .settings-section,
+.pullora-shell .settings-page .danger-zone {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 12px;
@@ -750,65 +517,45 @@
   max-width: 1280px;
   padding: clamp(20px, 2vw, 28px);
   width: 100%;
-}
-
-.cinematic-shell .settings-page .settings-section h3,
-.cinematic-shell .settings-page .danger-zone h3 {
+}.pullora-shell .settings-page .settings-section h3,
+.pullora-shell .settings-page .danger-zone h3 {
   color: #f4f6f8;
   font-size: 18px;
   font-weight: 720;
   letter-spacing: 0.025em;
   margin: 0;
-}
-
-.cinematic-shell .settings-source-summary,
-.cinematic-shell .settings-diagnostics-card {
+}.pullora-shell .settings-source-summary,
+.pullora-shell .settings-diagnostics-card {
   background: rgba(6, 10, 15, 0.48);
   border-color: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-}
-
-.cinematic-shell .settings-source-summary .settings-reset-kicker,
-.cinematic-shell .settings-diagnostics-card .settings-reset-kicker {
+}.pullora-shell .settings-source-summary .settings-reset-kicker,
+.pullora-shell .settings-diagnostics-card .settings-reset-kicker {
   color: #63d9fa;
-}
-
-.cinematic-shell .settings-page .form-group {
+}.pullora-shell .settings-page .form-group {
   gap: 7px;
-}
-
-.cinematic-shell .settings-page .form-group > label {
+}.pullora-shell .settings-page .form-group > label {
   color: #d7dce1;
   font-size: 12px;
   font-weight: 680;
-}
-
-.cinematic-shell .settings-page .help-text {
+}.pullora-shell .settings-page .help-text {
   color: #858e99;
   line-height: 1.5;
   margin-bottom: 0;
-}
-
-.cinematic-shell .settings-page input,
-.cinematic-shell .settings-page select {
+}.pullora-shell .settings-page input,
+.pullora-shell .settings-page select {
   min-height: 42px;
-}
-
-.cinematic-shell .settings-page input:disabled,
-.cinematic-shell .settings-page select:disabled,
-.cinematic-shell .settings-page button:disabled {
+}.pullora-shell .settings-page input:disabled,
+.pullora-shell .settings-page select:disabled,
+.pullora-shell .settings-page button:disabled {
   cursor: not-allowed;
   filter: saturate(0.45);
   opacity: 0.48;
-}
-
-.cinematic-shell .settings-page button:disabled:hover {
+}.pullora-shell .settings-page button:disabled:hover {
   border-color: rgba(255, 255, 255, 0.14);
   box-shadow: var(--shadow-control);
   transform: none;
-}
-
-.cinematic-shell .settings-page .checkbox-label {
+}.pullora-shell .settings-page .checkbox-label {
   align-items: center;
   color: #d7dce1;
   display: inline-flex;
@@ -817,9 +564,7 @@
   gap: 11px;
   min-height: 32px;
   width: fit-content;
-}
-
-.cinematic-shell .settings-page .checkbox-label input[type='checkbox'] {
+}.pullora-shell .settings-page .checkbox-label input[type='checkbox'] {
   appearance: none;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -837,9 +582,7 @@
     border-color 150ms ease,
     box-shadow 150ms ease;
   width: 40px;
-}
-
-.cinematic-shell .settings-page .checkbox-label input[type='checkbox']::after {
+}.pullora-shell .settings-page .checkbox-label input[type='checkbox']::after {
   background: #d7dce1;
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.34);
@@ -852,27 +595,19 @@
     background-color 150ms ease,
     transform 170ms cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 16px;
-}
-
-.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked {
+}.pullora-shell .settings-page .checkbox-label input[type='checkbox']:checked {
   background: #49c8ee;
   border-color: #67dcff;
   box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.16),
     0 0 0 3px rgba(85, 214, 255, 0.09);
-}
-
-.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked::after {
+}.pullora-shell .settings-page .checkbox-label input[type='checkbox']:checked::after {
   background: #061116;
   transform: translateX(18px);
-}
-
-.cinematic-shell .settings-page .checkbox-label input[type='checkbox']:focus-visible {
+}.pullora-shell .settings-page .checkbox-label input[type='checkbox']:focus-visible {
   outline: 2px solid #73defe;
   outline-offset: 3px;
-}
-
-.cinematic-shell .settings-page input[type='range'] {
+}.pullora-shell .settings-page input[type='range'] {
   --range-progress: 50%;
   appearance: none;
   background: transparent;
@@ -880,17 +615,13 @@
   min-height: 30px;
   padding: 0;
   width: 100%;
-}
-
-.cinematic-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
+}.pullora-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
   background:
     linear-gradient(90deg, #55d6ff 0 var(--range-progress), rgba(255, 255, 255, 0.16) var(--range-progress) 100%);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   height: 6px;
-}
-
-.cinematic-shell .settings-page input[type='range']::-webkit-slider-thumb {
+}.pullora-shell .settings-page input[type='range']::-webkit-slider-thumb {
   appearance: none;
   background: #67dcff;
   border: 2px solid #10202a;
@@ -904,26 +635,18 @@
     box-shadow 140ms ease,
     transform 140ms ease;
   width: 18px;
-}
-
-.cinematic-shell .settings-page input[type='range']:hover::-webkit-slider-thumb {
+}.pullora-shell .settings-page input[type='range']:hover::-webkit-slider-thumb {
   box-shadow:
     0 0 0 4px rgba(103, 220, 255, 0.18),
     0 4px 10px rgba(0, 0, 0, 0.38);
   transform: scale(1.05);
-}
-
-.cinematic-shell .settings-page input[type='range']:focus-visible {
+}.pullora-shell .settings-page input[type='range']:focus-visible {
   outline: none;
-}
-
-.cinematic-shell .settings-page input[type='range']:focus-visible::-webkit-slider-thumb {
+}.pullora-shell .settings-page input[type='range']:focus-visible::-webkit-slider-thumb {
   box-shadow:
     0 0 0 4px rgba(7, 11, 16, 0.9),
     0 0 0 6px #67dcff;
-}
-
-.cinematic-shell .settings-page .settings-range-value {
+}.pullora-shell .settings-page .settings-range-value {
   background: rgba(85, 214, 255, 0.08);
   border: 1px solid rgba(85, 214, 255, 0.16);
   border-radius: 6px;
@@ -932,72 +655,44 @@
   margin-top: 1px;
   padding: 3px 7px;
   width: fit-content;
-}
-
-.cinematic-shell .settings-page .compact-control input,
-.cinematic-shell .settings-page .compact-control select {
+}.pullora-shell .settings-page .compact-control input,
+.pullora-shell .settings-page .compact-control select {
   max-width: none;
-}
-
-.cinematic-shell .settings-page .settings-grid {
+}.pullora-shell .settings-page .settings-grid {
   gap: 18px 24px;
-}
-
-.cinematic-shell .settings-content--general .settings-grid {
+}.pullora-shell .settings-content--general .settings-grid {
   align-items: start;
   grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
-}
-
-.cinematic-shell .settings-content--general .launcher-background-control {
+}.pullora-shell .settings-content--general .launcher-background-control {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding-top: 18px;
-}
-
-.cinematic-shell .settings-content--installation .settings-section {
+}.pullora-shell .settings-content--installation .settings-section {
   max-width: 1120px;
   margin-left: 0;
-}
-
-.cinematic-shell .settings-content--installation .path-input-row {
+}.pullora-shell .settings-content--installation .path-input-row {
   background: rgba(5, 9, 14, 0.32);
   border-color: rgba(255, 255, 255, 0.08);
   padding: 10px;
-}
-
-.cinematic-shell .settings-content--updates .settings-section {
+}.pullora-shell .settings-content--updates .settings-section {
   max-width: 920px;
   margin-left: 0;
-}
-
-.cinematic-shell .settings-content--updates .form-group {
+}.pullora-shell .settings-content--updates .form-group {
   max-width: 620px;
-}
-
-.cinematic-shell .settings-content--updates .form-group + .form-group {
+}.pullora-shell .settings-content--updates .form-group + .form-group {
   border-top: 1px solid rgba(255, 255, 255, 0.065);
   padding-top: 16px;
-}
-
-.cinematic-shell .settings-content--appearance .settings-section-heading-row {
+}.pullora-shell .settings-content--appearance .settings-section-heading-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   padding-bottom: 18px;
-}
-
-.cinematic-shell .settings-content--appearance .settings-theme-actions {
+}.pullora-shell .settings-content--appearance .settings-theme-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(150px, 1fr));
   width: min(100%, 420px);
-}
-
-.cinematic-shell .settings-content--appearance .settings-theme-actions .secondary-btn {
+}.pullora-shell .settings-content--appearance .settings-theme-actions .secondary-btn {
   width: 100%;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-grid {
+}.pullora-shell .settings-content--appearance .appearance-color-grid {
   gap: 12px;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field {
+}.pullora-shell .settings-content--appearance .appearance-color-field {
   background: rgba(6, 10, 15, 0.42);
   border-color: rgba(255, 255, 255, 0.08);
   border-radius: 9px;
@@ -1007,14 +702,10 @@
   transition:
     background-color 140ms ease,
     border-color 140ms ease;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field:hover {
+}.pullora-shell .settings-content--appearance .appearance-color-field:hover {
   background: rgba(85, 214, 255, 0.055);
   border-color: rgba(85, 214, 255, 0.22);
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color'] {
+}.pullora-shell .settings-content--appearance .appearance-color-field input[type='color'] {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent),
     rgba(255, 255, 255, 0.035);
@@ -1024,25 +715,17 @@
   min-height: 36px;
   padding: 3px;
   width: 40px;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch-wrapper {
+}.pullora-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch-wrapper {
   padding: 0;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch {
+}.pullora-shell .settings-content--appearance .appearance-color-field input[type='color']::-webkit-color-swatch {
   border: 0;
   border-radius: 5px;
-}
-
-.cinematic-shell .settings-content--appearance .appearance-color-field code {
+}.pullora-shell .settings-content--appearance .appearance-color-field code {
   color: #8d98a5;
   font-family: 'Cascadia Mono', Consolas, monospace;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-}
-
-.cinematic-shell .settings-content--appearance .settings-css-editor {
+}.pullora-shell .settings-content--appearance .settings-css-editor {
   background:
     linear-gradient(180deg, rgba(5, 9, 14, 0.62), rgba(8, 13, 19, 0.7));
   border-color: rgba(255, 255, 255, 0.1);
@@ -1051,150 +734,100 @@
   min-height: 150px;
   padding: 14px;
   tab-size: 2;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control {
+}.pullora-shell .settings-content--updates .interval-input-control {
   background: rgba(5, 9, 14, 0.36);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 9px;
   max-width: 190px;
   padding: 6px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control input {
+}.pullora-shell .settings-content--updates .interval-input-control input {
   background: transparent;
   border: 0;
   box-shadow: none;
   font-size: 15px;
   font-variant-numeric: tabular-nums;
   min-height: 32px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control span {
+}.pullora-shell .settings-content--updates .interval-input-control span {
   padding-right: 8px;
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone {
+}.pullora-shell .settings-content--maintenance .danger-zone {
   align-items: start;
   border-color: rgba(255, 255, 255, 0.075);
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone > h3,
-.cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+}.pullora-shell .settings-content--maintenance .danger-zone > h3,
+.pullora-shell .settings-content--maintenance .danger-zone > .help-text,
+.pullora-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
   grid-column: 1 / -1;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card {
+}.pullora-shell .settings-content--maintenance .settings-diagnostics-card {
   align-content: start;
   border-color: rgba(255, 255, 255, 0.085);
   height: 100%;
   max-width: none;
   padding: 16px;
   width: 100%;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dl {
+}.pullora-shell .settings-content--maintenance .settings-diagnostics-card dl {
   gap: 12px 20px;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+}.pullora-shell .settings-content--maintenance .settings-diagnostics-card dt {
   color: #7f8995;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+}.pullora-shell .settings-content--maintenance .settings-diagnostics-card dd {
   color: #b3bac3;
   line-height: 1.45;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-storage-actions {
+}.pullora-shell .settings-content--maintenance .settings-storage-actions {
   margin-top: auto;
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child {
+}.pullora-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   max-width: none;
   padding-top: 18px;
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child .secondary-btn:first-child {
+}.pullora-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child .secondary-btn:first-child {
   border-color: rgba(255, 135, 151, 0.32);
   color: #ff9aaa;
-}
-
-.cinematic-shell .settings-page .secondary-btn {
+}.pullora-shell .settings-page .secondary-btn {
   min-height: 38px;
   padding-left: 15px;
   padding-right: 15px;
-}
-
-.cinematic-shell .settings-page .secondary-btn:active:not(:disabled) {
+}.pullora-shell .settings-page .secondary-btn:active:not(:disabled) {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.28);
   transform: translateY(1px);
-}
-
-.cinematic-shell .settings-autosave-status {
+}.pullora-shell .settings-autosave-status {
   min-height: 28px;
-}
-
-.cinematic-shell .settings-page .saved-indicator,
-.cinematic-shell .settings-page .settings-status {
+}.pullora-shell .settings-page .saved-indicator,
+.pullora-shell .settings-page .settings-status {
   backdrop-filter: blur(8px);
   border-radius: 7px;
   font-size: 11px;
   padding: 5px 9px;
-}
-
-.cinematic-shell .settings-done-btn {
+}.pullora-shell .settings-done-btn {
   min-width: 112px;
-}
-
-.cinematic-shell .settings-page-footer {
+}.pullora-shell .settings-page-footer {
   display: none;
-}
-
-.cinematic-shell .about-page .page-header {
+}.pullora-shell .about-page .page-header {
   min-height: 54px;
-}
-
-.cinematic-shell .about-hero,
-.cinematic-shell .about-panel {
+}.pullora-shell .about-hero,
+.pullora-shell .about-panel {
   background: rgba(10, 15, 21, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   box-shadow: none;
-}
-
-.cinematic-shell .library-hero,
-.cinematic-shell .library-ops-panel,
-.cinematic-shell .library-inline-panel,
-.cinematic-shell .updates-center,
-.cinematic-shell .state-panel,
-.cinematic-shell .library-trust-panel {
+}.pullora-shell .library-hero,
+.pullora-shell .library-ops-panel,
+.pullora-shell .library-inline-panel,
+.pullora-shell .updates-center,
+.pullora-shell .state-panel,
+.pullora-shell .library-trust-panel {
   border-color: rgba(255, 255, 255, 0.085);
   border-radius: 12px;
-}
-
-.cinematic-shell .library-hero {
+}.pullora-shell .library-hero {
   grid-template-columns: 104px minmax(0, 1fr);
   margin: 14px 14px 0;
   min-height: 190px;
   padding: 22px 24px;
-}
-
-.cinematic-shell .library-hero-cover {
+}.pullora-shell .library-hero-cover {
   height: 104px;
   width: 104px;
-}
-
-.cinematic-shell .library-github-actions {
+}.pullora-shell .library-github-actions {
   display: none;
-}
-
-.cinematic-shell .library-ops-panel {
+}.pullora-shell .library-ops-panel {
   background:
     linear-gradient(180deg, rgba(27, 36, 47, 0.98), rgba(15, 22, 30, 0.98)),
     #111820;
@@ -1206,13 +839,9 @@
   margin: 10px 14px 0;
   overflow: hidden;
   padding: 0;
-}
-
-.cinematic-shell .library-ops-header {
+}.pullora-shell .library-ops-header {
   display: none;
-}
-
-.cinematic-shell .library-ops-action-row {
+}.pullora-shell .library-ops-action-row {
   align-items: stretch;
   background: rgba(255, 255, 255, 0.035);
   display: grid;
@@ -1220,16 +849,12 @@
   grid-template-columns: minmax(190px, 250px) repeat(3, minmax(130px, 1fr));
   order: 1;
   padding: 10px;
-}
-
-.cinematic-shell .library-ops-action-row .hero-primary-btn {
+}.pullora-shell .library-ops-action-row .hero-primary-btn {
   border-radius: 8px;
   box-shadow: none;
   font-size: 17px;
   min-height: 48px;
-}
-
-.cinematic-shell .library-play-status {
+}.pullora-shell .library-play-status {
   align-content: center;
   background: rgba(255, 255, 255, 0.035);
   border-left: 1px solid rgba(255, 255, 255, 0.075);
@@ -1238,422 +863,350 @@
   min-height: 48px;
   min-width: 0;
   padding: 0 16px;
-}
-
-.cinematic-shell .library-play-status span,
-.cinematic-shell .library-ops-grid span,
-.cinematic-shell .library-ops-rail span {
+}.pullora-shell .library-play-status span,
+.pullora-shell .library-ops-grid span,
+.pullora-shell .library-ops-rail span {
   color: #7f8994;
   font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.cinematic-shell .library-play-status strong {
+}.pullora-shell .library-play-status strong {
   color: #e5e9ed;
   font-size: 13px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.cinematic-shell .library-ops-tabs {
+}.pullora-shell .library-ops-tabs {
   background: rgba(0, 0, 0, 0.18);
   display: grid;
   gap: 1px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   order: 2;
   padding: 0;
-}
-
-.cinematic-shell .library-ops-tabs .secondary-btn {
+}.pullora-shell .library-ops-tabs .secondary-btn {
   background: rgba(255, 255, 255, 0.035);
   border: 0;
   border-radius: 0;
   box-shadow: none;
   min-height: 36px;
-}
-
-.cinematic-shell .library-ops-tabs .secondary-btn:hover,
-.cinematic-shell .library-ops-tabs .secondary-btn.active-soft {
+}.pullora-shell .library-ops-tabs .secondary-btn:hover,
+.pullora-shell .library-ops-tabs .secondary-btn.active-soft {
   background: rgba(85, 214, 255, 0.13);
   color: #e7faff;
-}
-
-.cinematic-shell .library-ops-rail {
+}.pullora-shell .library-ops-rail {
   background: rgba(0, 0, 0, 0.12);
   display: flex;
   flex-wrap: wrap;
   gap: 0;
   order: 3;
-}
-
-.cinematic-shell .library-ops-rail span {
+}.pullora-shell .library-ops-rail span {
   border-right: 1px solid rgba(255, 255, 255, 0.065);
   min-height: 34px;
   padding: 10px 13px;
-}
-
-.cinematic-shell .library-ops-rail span.ready {
+}.pullora-shell .library-ops-rail span.ready {
   color: #62dc78;
-}
-
-.cinematic-shell .library-ops-rail span.warning {
+}.pullora-shell .library-ops-rail span.warning {
   color: #e9c45e;
-}
-
-.cinematic-shell .library-ops-grid {
+}.pullora-shell .library-ops-grid {
   background: rgba(3, 8, 13, 0.32);
   border-top: 1px solid rgba(255, 255, 255, 0.065);
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   order: 4;
-}
-
-.cinematic-shell .library-ops-grid > div {
+}.pullora-shell .library-ops-grid > div {
   border-right: 1px solid rgba(255, 255, 255, 0.065);
   display: grid;
   gap: 4px;
   min-height: 60px;
   min-width: 0;
   padding: 10px 12px;
-}
-
-.cinematic-shell .library-ops-grid > div:last-child {
+}.pullora-shell .library-ops-grid > div:last-child {
   border-right: 0;
-}
-
-.cinematic-shell .library-ops-grid strong {
+}.pullora-shell .library-ops-grid strong {
   color: #e2e8ed;
   font-size: 13px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.cinematic-shell .library-inline-panel {
+}.pullora-shell .library-inline-panel {
   margin: 10px 14px 0;
-}
-
-.modal-overlay {
+}.modal-overlay {
   background: rgba(2, 5, 9, 0.72);
   backdrop-filter: blur(12px);
-}
-
-.modal-overlay .modal-content {
+}.modal-overlay .modal-content {
   background: rgba(15, 20, 27, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.58);
-}
-
-@media (max-width: 920px) {
-  .cinematic-shell .header {
+}@media (max-width: 920px) {
+  .pullora-shell .header {
     flex-basis: 58px;
     min-height: 58px;
     padding: 8px 14px;
   }
 
-  .cinematic-shell .layout-container {
+  .pullora-shell .layout-container {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .cinematic-shell .layout-content {
+  .pullora-shell .layout-content {
     padding: 26px 20px 28px;
   }
 
-  .cinematic-shell .nav-item,
-  .cinematic-shell .nav-item:hover,
-  .cinematic-shell .nav-item.active {
+  .pullora-shell .nav-item,
+  .pullora-shell .nav-item:hover,
+  .pullora-shell .nav-item.active {
     grid-template-columns: 32px;
     padding: 4px;
   }
 
-  .cinematic-shell .nav-text {
+  .pullora-shell .nav-text {
     display: none;
   }
 
-  .cinematic-shell .library-sam-workspace {
+  .pullora-shell .library-sam-workspace {
     grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
   }
 
-  .cinematic-shell .library-ops-action-row {
+  .pullora-shell .library-ops-action-row {
     grid-template-columns: minmax(180px, 220px) repeat(3, minmax(110px, 1fr));
   }
 
-  .cinematic-shell .library-ops-grid {
+  .pullora-shell .library-ops-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .cinematic-shell .library-ops-grid > div:nth-child(3n) {
+  .pullora-shell .library-ops-grid > div:nth-child(3n) {
     border-right: 0;
   }
 
-  .cinematic-shell .settings-workspace {
+  .pullora-shell .settings-workspace {
     grid-template-columns: 180px minmax(0, 1fr);
   }
 
-  .cinematic-shell .settings-page-header {
+  .pullora-shell .settings-page-header {
     align-items: flex-start;
   }
 
-  .cinematic-shell .settings-page-header-actions {
+  .pullora-shell .settings-page-header-actions {
     justify-content: flex-end;
     width: 100%;
   }
 
-  .cinematic-shell .settings-content--maintenance .danger-zone {
+  .pullora-shell .settings-content--maintenance .danger-zone {
     grid-template-columns: 1fr;
   }
 
-  .cinematic-shell .settings-content--maintenance .danger-zone > h3,
-  .cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
-  .cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+  .pullora-shell .settings-content--maintenance .danger-zone > h3,
+  .pullora-shell .settings-content--maintenance .danger-zone > .help-text,
+  .pullora-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
     grid-column: auto;
   }
 
-  .cinematic-shell .settings-content--general .settings-grid {
+  .pullora-shell .settings-content--general .settings-grid {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 720px) {
-  .cinematic-shell .header {
+}@media (max-width: 720px) {
+  .pullora-shell .header {
     padding-left: 14px;
     padding-right: 14px;
   }
 
-  .cinematic-shell .sidebar-nav {
+  .pullora-shell .sidebar-nav {
     gap: 4px;
   }
 
-  .cinematic-shell .library-page {
+  .pullora-shell .library-page {
     height: auto;
   }
 
-  .cinematic-shell .library-sam-workspace {
+  .pullora-shell .library-sam-workspace {
     display: flex;
     flex-direction: column;
     overflow: visible;
   }
 
-  .cinematic-shell .library-sam-list-pane {
+  .pullora-shell .library-sam-list-pane {
     border-bottom: 1px solid rgba(255, 255, 255, 0.075);
     border-right: 0;
     max-height: 52vh;
   }
 
-  .cinematic-shell .library-hero {
+  .pullora-shell .library-hero {
     grid-template-columns: 84px minmax(0, 1fr);
     margin: 10px 10px 0;
     min-height: 150px;
     padding: 16px;
   }
 
-  .cinematic-shell .library-hero-cover {
+  .pullora-shell .library-hero-cover {
     height: 84px;
     width: 84px;
   }
 
-  .cinematic-shell .library-ops-panel,
-  .cinematic-shell .library-inline-panel {
+  .pullora-shell .library-ops-panel,
+  .pullora-shell .library-inline-panel {
     margin-left: 10px;
     margin-right: 10px;
   }
 
-  .cinematic-shell .library-ops-action-row {
+  .pullora-shell .library-ops-action-row {
     grid-template-columns: 1fr;
   }
 
-  .cinematic-shell .library-play-status {
+  .pullora-shell .library-play-status {
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.075);
     min-height: 42px;
   }
 
-  .cinematic-shell .library-ops-grid {
+  .pullora-shell .library-ops-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .cinematic-shell .library-ops-grid > div,
-  .cinematic-shell .library-ops-grid > div:nth-child(3n) {
+  .pullora-shell .library-ops-grid > div,
+  .pullora-shell .library-ops-grid > div:nth-child(3n) {
     border-right: 1px solid rgba(255, 255, 255, 0.065);
   }
 
-  .cinematic-shell .library-ops-grid > div:nth-child(2n) {
+  .pullora-shell .library-ops-grid > div:nth-child(2n) {
     border-right: 0;
   }
 
-  .cinematic-shell .settings-workspace {
+  .pullora-shell .settings-workspace {
     display: flex;
     flex-direction: column;
     min-height: 0;
     overflow: visible;
   }
 
-  .cinematic-shell .settings-page .settings-nav {
+  .pullora-shell .settings-page .settings-nav {
     border-bottom: 1px solid rgba(255, 255, 255, 0.075);
     border-right: 0;
     flex-direction: row;
     overflow-x: auto;
   }
 
-  .cinematic-shell .settings-page {
+  .pullora-shell .settings-page {
     min-height: 0;
     overflow: visible;
   }
 
-  .cinematic-shell .settings-page .settings-content {
+  .pullora-shell .settings-page .settings-content {
     padding: 14px;
   }
 
-  .cinematic-shell .settings-page .settings-section,
-  .cinematic-shell .settings-page .danger-zone {
+  .pullora-shell .settings-page .settings-section,
+  .pullora-shell .settings-page .danger-zone {
     padding: 16px;
   }
 
-  .cinematic-shell .settings-section-heading-row {
+  .pullora-shell .settings-section-heading-row {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .cinematic-shell .settings-theme-actions {
+  .pullora-shell .settings-theme-actions {
     justify-content: flex-start;
   }
 
-  .cinematic-shell .settings-content--appearance .settings-theme-actions {
+  .pullora-shell .settings-content--appearance .settings-theme-actions {
     grid-template-columns: 1fr;
     width: 100%;
   }
-}
-
-/* One material layer for every page. Blur belongs to primary shells only. */
-:root[data-theme] .cinematic-shell .library-page .library-sam-list-pane,
-:root[data-theme] .cinematic-shell .library-page .library-sam-details-pane,
-:root[data-theme] .cinematic-shell .settings-workspace,
-:root[data-theme] .cinematic-shell .about-hero,
-:root[data-theme] .cinematic-shell .about-panel {
+}/* One material layer for every page. Blur belongs to primary shells only. */:root[data-theme] .pullora-shell .library-page .library-sam-list-pane,
+:root[data-theme] .pullora-shell .library-page .library-sam-details-pane,
+:root[data-theme] .pullora-shell .settings-workspace,
+:root[data-theme] .pullora-shell .about-hero,
+:root[data-theme] .pullora-shell .about-panel {
   backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
   background: var(--surface-1);
   border-color: var(--surface-border);
   box-shadow: var(--surface-shadow);
-}
-
-:root[data-theme] .cinematic-shell.settings-open .settings-workspace {
+}:root[data-theme] .pullora-shell.settings-open .settings-workspace {
   background: color-mix(in srgb, var(--surface-1) 76%, transparent);
-}
-
-:root[data-theme] .cinematic-shell .library-page .library-sam-details-pane {
+}:root[data-theme] .pullora-shell .library-page .library-sam-details-pane {
   background:
     radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
     var(--surface-1);
-}
-
-:root[data-theme] .cinematic-shell .library-page .library-toolstrip,
-:root[data-theme] .cinematic-shell .library-page .library-hero,
-:root[data-theme] .cinematic-shell .library-page .library-ops-panel,
-:root[data-theme] .cinematic-shell .library-page .library-inline-panel,
-:root[data-theme] .cinematic-shell .settings-page .settings-nav,
-:root[data-theme] .cinematic-shell .settings-page .settings-content {
+}:root[data-theme] .pullora-shell .library-page .library-toolstrip,
+:root[data-theme] .pullora-shell .library-page .library-hero,
+:root[data-theme] .pullora-shell .library-page .library-ops-panel,
+:root[data-theme] .pullora-shell .library-page .library-inline-panel,
+:root[data-theme] .pullora-shell .settings-page .settings-nav,
+:root[data-theme] .pullora-shell .settings-page .settings-content {
   backdrop-filter: none;
   background: var(--surface-2);
   border-color: var(--surface-border);
   box-shadow: none;
-}
-
-:root[data-theme] .cinematic-shell .library-page .library-sam-pane-head,
-:root[data-theme] .cinematic-shell .library-page .library-sam-details-toolbar,
-:root[data-theme] .cinematic-shell .settings-page .settings-section,
-:root[data-theme] .cinematic-shell .settings-page .danger-zone,
-:root[data-theme] .cinematic-shell .settings-source-summary,
-:root[data-theme] .cinematic-shell .settings-diagnostics-card,
-:root[data-theme] .cinematic-shell .launcher-background-theme {
+}:root[data-theme] .pullora-shell .library-page .library-sam-pane-head,
+:root[data-theme] .pullora-shell .library-page .library-sam-details-toolbar,
+:root[data-theme] .pullora-shell .settings-page .settings-section,
+:root[data-theme] .pullora-shell .settings-page .danger-zone,
+:root[data-theme] .pullora-shell .settings-source-summary,
+:root[data-theme] .pullora-shell .settings-diagnostics-card,
+:root[data-theme] .pullora-shell .launcher-background-theme {
   backdrop-filter: none;
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme] .cinematic-shell .library-page .library-ops-panel,
-:root[data-theme] .cinematic-shell .settings-page .settings-content {
+}:root[data-theme] .pullora-shell .library-page .library-ops-panel,
+:root[data-theme] .pullora-shell .settings-page .settings-content {
   background:
     radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
     var(--surface-2);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page .settings-nav button:hover,
-:root[data-theme='light'] .cinematic-shell .settings-page .settings-nav button.active {
+}:root[data-theme='light'] .pullora-shell .settings-page .settings-nav button:hover,
+:root[data-theme='light'] .pullora-shell .settings-page .settings-nav button.active {
   background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-3));
   border-color: color-mix(in srgb, var(--color-primary) 28%, var(--surface-border));
   color: var(--color-primary-dark);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page-header h2,
-:root[data-theme='light'] .cinematic-shell .settings-page .settings-section h3,
-:root[data-theme='light'] .cinematic-shell .settings-page .danger-zone h3,
-:root[data-theme='light'] .cinematic-shell .settings-page .form-group > label,
-:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label,
-:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+}:root[data-theme='light'] .pullora-shell .settings-page-header h2,
+:root[data-theme='light'] .pullora-shell .settings-page .settings-section h3,
+:root[data-theme='light'] .pullora-shell .settings-page .danger-zone h3,
+:root[data-theme='light'] .pullora-shell .settings-page .form-group > label,
+:root[data-theme='light'] .pullora-shell .settings-page .checkbox-label,
+:root[data-theme='light'] .pullora-shell .settings-content--maintenance .settings-diagnostics-card dd {
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page-header p,
-:root[data-theme='light'] .cinematic-shell .settings-page .help-text,
-:root[data-theme='light'] .cinematic-shell .settings-content--appearance .appearance-color-field code,
-:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+}:root[data-theme='light'] .pullora-shell .settings-page-header p,
+:root[data-theme='light'] .pullora-shell .settings-page .help-text,
+:root[data-theme='light'] .pullora-shell .settings-content--appearance .appearance-color-field code,
+:root[data-theme='light'] .pullora-shell .settings-content--maintenance .settings-diagnostics-card dt {
   color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox'] {
+}:root[data-theme='light'] .pullora-shell .settings-page .checkbox-label input[type='checkbox'] {
   background: var(--surface-3);
   border-color: var(--surface-border-strong);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-text) 12%, transparent);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox']::after {
+}:root[data-theme='light'] .pullora-shell .settings-page .checkbox-label input[type='checkbox']::after {
   background: #ffffff;
   box-shadow: 0 2px 5px color-mix(in srgb, var(--color-text) 24%, transparent);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label input[type='checkbox']:checked {
+}:root[data-theme='light'] .pullora-shell .settings-page .checkbox-label input[type='checkbox']:checked {
   background: var(--color-primary);
   border-color: var(--color-primary-dark);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
+}:root[data-theme='light'] .pullora-shell .settings-page input[type='range']::-webkit-slider-runnable-track {
   background:
     linear-gradient(90deg, var(--color-primary) 0 var(--range-progress), color-mix(in srgb, var(--color-text) 18%, transparent) var(--range-progress) 100%);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .settings-page input[type='range']::-webkit-slider-thumb {
+}:root[data-theme='light'] .pullora-shell .settings-page input[type='range']::-webkit-slider-thumb {
   background: var(--color-primary);
   border-color: #ffffff;
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent),
     0 3px 8px color-mix(in srgb, var(--color-text) 24%, transparent);
-}
-
-/* v5.9 library bulk selection and actions */
-.cinematic-shell .library-sam-list-pane {
+}/* v5.9 library bulk selection and actions */.pullora-shell .library-sam-list-pane {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-.cinematic-shell .library-sam-list-pane .repo-card.bulk-selected {
+}.pullora-shell .library-sam-list-pane .repo-card.bulk-selected {
   background: color-mix(in srgb, var(--color-primary) 20%, var(--surface-3));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 58%, transparent);
-}
-
-.cinematic-shell .repo-bulk-selection-mark {
+}.pullora-shell .repo-bulk-selection-mark {
   align-items: center;
   background: var(--color-primary);
   border: 2px solid var(--surface-1);
   border-radius: 50%;
-  color: #061018;
+  color: var(--color-on-primary);
   display: flex;
   font-size: 9px;
   font-weight: 900;
@@ -1665,9 +1218,7 @@
   top: 2px;
   width: 17px;
   z-index: 2;
-}
-
-.cinematic-shell .library-bulk-actions {
+}.pullora-shell .library-bulk-actions {
   background: var(--surface-material-strong);
   border-top: 1px solid var(--surface-border-strong);
   box-shadow: 0 -14px 30px color-mix(in srgb, #000 22%, transparent);
@@ -1677,29 +1228,21 @@
   padding: 10px;
   position: relative;
   z-index: 8;
-}
-
-.cinematic-shell .library-bulk-summary,
-.cinematic-shell .library-bulk-summary > span,
-.cinematic-shell .library-bulk-toolbar {
+}.pullora-shell .library-bulk-summary,
+.pullora-shell .library-bulk-summary > span,
+.pullora-shell .library-bulk-toolbar {
   align-items: center;
   display: flex;
   gap: 6px;
-}
-
-.cinematic-shell .library-bulk-summary {
+}.pullora-shell .library-bulk-summary {
   justify-content: space-between;
-}
-
-.cinematic-shell .library-bulk-summary strong {
+}.pullora-shell .library-bulk-summary strong {
   color: var(--color-text);
   font-size: 12px;
-}
-
-.cinematic-shell .library-bulk-summary button,
-.cinematic-shell .library-bulk-toolbar > button,
-.cinematic-shell .library-bulk-menu > summary,
-.cinematic-shell .library-bulk-menu-popover button {
+}.pullora-shell .library-bulk-summary button,
+.pullora-shell .library-bulk-toolbar > button,
+.pullora-shell .library-bulk-menu > summary,
+.pullora-shell .library-bulk-menu-popover button {
   background: var(--surface-3);
   border: 1px solid var(--surface-border);
   border-radius: 8px;
@@ -1710,47 +1253,33 @@
   font-weight: 750;
   min-height: 30px;
   padding: 5px 8px;
-}
-
-.cinematic-shell .library-bulk-summary button:hover,
-.cinematic-shell .library-bulk-toolbar > button:hover,
-.cinematic-shell .library-bulk-menu > summary:hover,
-.cinematic-shell .library-bulk-menu-popover button:hover {
+}.pullora-shell .library-bulk-summary button:hover,
+.pullora-shell .library-bulk-toolbar > button:hover,
+.pullora-shell .library-bulk-menu > summary:hover,
+.pullora-shell .library-bulk-menu-popover button:hover {
   background: color-mix(in srgb, var(--color-primary) 13%, var(--surface-3));
   border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-border));
   color: var(--color-text);
-}
-
-.cinematic-shell .library-bulk-summary button:disabled,
-.cinematic-shell .library-bulk-toolbar button:disabled {
+}.pullora-shell .library-bulk-summary button:disabled,
+.pullora-shell .library-bulk-toolbar button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.cinematic-shell .library-bulk-toolbar {
+}.pullora-shell .library-bulk-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) repeat(3, minmax(0, 1fr));
-}
-
-.cinematic-shell .library-bulk-menu {
+}.pullora-shell .library-bulk-menu {
   min-width: 0;
   position: relative;
-}
-
-.cinematic-shell .library-bulk-menu > summary {
+}.pullora-shell .library-bulk-menu > summary {
   align-items: center;
   display: flex;
   justify-content: center;
   list-style: none;
   overflow: hidden;
   white-space: nowrap;
-}
-
-.cinematic-shell .library-bulk-menu > summary::-webkit-details-marker {
+}.pullora-shell .library-bulk-menu > summary::-webkit-details-marker {
   display: none;
-}
-
-.cinematic-shell .library-bulk-menu-popover {
+}.pullora-shell .library-bulk-menu-popover {
   background: var(--surface-material-strong);
   border: 1px solid var(--surface-border-strong);
   border-radius: 10px;
@@ -1763,55 +1292,36 @@
   padding: 6px;
   position: absolute;
   z-index: 20;
-}
-
-.cinematic-shell .library-bulk-menu--more .library-bulk-menu-popover {
+}.pullora-shell .library-bulk-menu--more .library-bulk-menu-popover {
   left: auto;
   right: 0;
-}
-
-.cinematic-shell .library-bulk-menu-popover button {
+}.pullora-shell .library-bulk-menu-popover button {
   text-align: left;
   width: 100%;
-}
-
-.cinematic-shell .library-bulk-menu-popover .danger-menu-item {
+}.pullora-shell .library-bulk-menu-popover .danger-menu-item {
   color: var(--color-error);
-}
-
-.cinematic-shell .library-bulk-message,
-.cinematic-shell .library-bulk-error {
+}.pullora-shell .library-bulk-message,
+.pullora-shell .library-bulk-error {
   font-size: 10px;
   line-height: 1.35;
   margin: 0;
-}
-
-.cinematic-shell .library-bulk-message {
+}.pullora-shell .library-bulk-message {
   color: var(--color-text-secondary);
-}
-
-.cinematic-shell .library-bulk-error {
+}.pullora-shell .library-bulk-error {
   color: var(--color-error);
-}
-
-.cinematic-shell .library-bulk-confirm .uninstall-confirm-facts {
+}.pullora-shell .library-bulk-confirm .uninstall-confirm-facts {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.cinematic-shell .library-density-compact .library-bulk-actions {
+}.pullora-shell .library-density-compact .library-bulk-actions {
   gap: 6px;
   padding: 7px;
-}
-
-.cinematic-shell .library-density-compact .library-bulk-summary button,
-.cinematic-shell .library-density-compact .library-bulk-toolbar > button,
-.cinematic-shell .library-density-compact .library-bulk-menu > summary {
+}.pullora-shell .library-density-compact .library-bulk-summary button,
+.pullora-shell .library-density-compact .library-bulk-toolbar > button,
+.pullora-shell .library-density-compact .library-bulk-menu > summary {
   min-height: 26px;
   padding: 3px 6px;
-}
-
-@media (max-width: 1100px) {
-  .cinematic-shell .library-bulk-toolbar {
+}@media (max-width: 1100px) {
+  .pullora-shell .library-bulk-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 }

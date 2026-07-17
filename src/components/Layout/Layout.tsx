@@ -31,7 +31,7 @@ function Layout({
 
   return (
     <div
-      className={`layout cinematic-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
+      className={`layout pullora-shell ${backgroundImage ? 'has-custom-background' : ''} ${settingsOpen ? 'settings-open' : ''}`}
     >
       <a className="skip-link" href="#main-content">{t('nav.skipToContent')}</a>
       <div
