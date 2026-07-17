@@ -233,13 +233,11 @@ function libraryErrorTextKey(kind: LibraryErrorKind) {
 
 interface LibraryPageProps {
   onOpenSettings?: () => void
-  onPreviewBackground?: (url: string | null) => void
   suppressDiagnostics?: boolean
 }
 
 function LibraryPage({
   onOpenSettings,
-  onPreviewBackground,
   suppressDiagnostics = false,
 }: LibraryPageProps) {
   const { language, t } = useI18n()
@@ -868,18 +866,10 @@ function LibraryPage({
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
   const featuredCover = projectArtCoverUrl(featuredArt)
-  const featuredBackground = projectArtBackgroundUrl(featuredArt)
+  const featuredBackground = projectArtBackgroundUrl(featuredArt, { fallbackToCover: false })
   const featuredBackgroundStyle = featuredBackground
     ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
     : undefined
-
-  useEffect(() => {
-    onPreviewBackground?.(featuredBackground)
-  }, [featuredBackground, onPreviewBackground])
-
-  useEffect(() => {
-    return () => onPreviewBackground?.(null)
-  }, [onPreviewBackground])
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
     setLaunchError(null)

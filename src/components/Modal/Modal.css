@@ -1,4 +1,4 @@
-.modal-overlay {
+@layer components {.modal-overlay {
   align-items: center;
   animation: fluent-overlay-in var(--motion-fast);
   background:
@@ -13,9 +13,7 @@
   right: 0;
   top: 0;
   z-index: 1000;
-}
-
-.modal-content {
+}.modal-content {
   background-color: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
   border-radius: 14px;
@@ -25,305 +23,158 @@
   max-height: 90vh;
   overflow-y: auto;
   animation: fluent-dialog-in var(--motion-normal);
-}
-
-.modal-content.release-modal {
+}.modal-content.release-modal {
   max-width: 940px;
   width: min(94vw, 940px);
-}
-
-.modal-content.release-modal.release-modal--wizard {
+}.modal-content.release-modal.release-modal--wizard {
   max-width: 1040px;
   width: min(94vw, 1040px);
-}
-
-.modal-content.app-details-modal {
+}.modal-content.app-details-modal {
   max-width: 1120px;
   width: min(94vw, 1120px);
-}
-
-.modal-content {
+}.modal-content {
   background:
     linear-gradient(145deg, rgba(33, 36, 43, 0.96), rgba(22, 24, 30, 0.96));
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.52);
   color: #ffffff;
-}
-
-:root[data-theme='light'] .modal-overlay {
-  background:
-    radial-gradient(circle at 72% 12%, rgba(0, 120, 212, 0.12), transparent 24%),
-    rgba(238, 242, 246, 0.66);
-}
-
-:root[data-theme='light'] .modal-content {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 242, 246, 0.96));
-  border-color: rgba(17, 24, 39, 0.14);
-  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.24);
-  color: #111827;
-}
-
-.cinematic-shell .modal-header,
+}.pullora-shell .modal-header,
 .modal-header {
   border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
-.cinematic-shell .modal-description,
-.cinematic-shell .modal-footer-text,
+}.pullora-shell .modal-description,
+.pullora-shell .modal-footer-text,
 .modal-description,
 .modal-footer-text {
   color: rgba(255, 255, 255, 0.68);
-}
-
-:root[data-theme='light'] .cinematic-shell .modal-description,
-:root[data-theme='light'] .cinematic-shell .modal-footer-text,
-:root[data-theme='light'] .modal-description,
-:root[data-theme='light'] .modal-footer-text {
-  color: rgba(17, 24, 39, 0.68);
-}
-
-.modal-header {
+}.modal-header {
   padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
   border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.modal-header h2 {
+}.modal-header h2 {
   margin: 0;
   font-size: var(--font-size-xl);
-}
-
-.modal-form {
+}.modal-form {
   padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-}
-
-.modal-description {
+}.modal-description {
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-md) 0;
   line-height: 1.6;
-}
-
-.form-group {
+}.form-group {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-}
-
-.form-group label {
+}.form-group label {
   font-weight: 600;
   color: var(--color-text);
-}
-
-.path-input-group {
+}.path-input-group {
   display: flex;
   gap: var(--spacing-sm);
-}
-
-.path-input-group input {
+}.path-input-group input {
   flex: 1;
-}
-
-.path-input-group button {
+}.path-input-group button {
   white-space: nowrap;
-}
-
-.error-message {
+}.error-message {
   background: color-mix(in srgb, var(--color-error) 12%, var(--color-bg-elevated));
   color: var(--color-error);
   padding: var(--spacing-md);
   border-radius: 10px;
   border-left: 4px solid var(--color-error);
-}
-
-.modal-actions {
+}.modal-actions {
   display: flex;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
-}
-
-.modal-actions button {
+}.modal-actions button {
   flex: 1;
   padding: var(--spacing-md);
-}
-
-.modal-footer-text {
+}.modal-footer-text {
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
-}
-
-.sam-shell .modal-overlay,
-.modal-overlay {
+}.modal-overlay {
   background: rgba(5, 9, 13, 0.84);
   backdrop-filter: none;
-}
-
-.sam-shell .modal-content,
-.modal-content {
+}.modal-content {
   background: #121d27;
   border: 1px solid #30495f;
   border-radius: 2px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
   color: #e7eef6;
-}
-
-.sam-shell .modal-header,
-.modal-header {
+}.modal-header {
   border-bottom-color: #263848;
-}
-
-.sam-shell .modal-description,
-.sam-shell .modal-footer-text,
-.modal-description,
+}.modal-description,
 .modal-footer-text {
   color: #9fb4c6;
-}
-
-.sam-shell .error-message,
-.error-message {
+}.error-message {
   background: rgba(255, 125, 134, 0.09);
   border-left-color: #ff7d86;
   border-radius: 2px;
   color: #ff9da5;
-}
-
-.sam-shell .modal-content,
-.modal-content {
+}.modal-content {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.035);
   scrollbar-color: #4ba3df #0d161f;
-}
-
-.sam-shell .modal-header,
-.modal-header {
+}.modal-header {
   background: #101a24;
   box-shadow: inset 3px 0 0 #4ba3df;
   padding: 16px 18px 12px;
-}
-
-.sam-shell .modal-header h2,
-.modal-header h2 {
+}.modal-header h2 {
   color: #edf6ff;
   font-size: 18px;
-}
-
-.sam-shell .modal-form,
-.modal-form {
+}.modal-form {
   gap: 14px;
   padding: 16px 18px 18px;
-}
-
-.sam-shell .modal-actions,
-.modal-actions {
+}.modal-actions {
   background: #101a24;
   border-top: 1px solid #263848;
   margin: 0 -18px -18px;
   padding: 12px 18px;
-}
-
-.sam-shell .modal-actions button,
-.modal-actions button {
+}.modal-actions button {
   border-radius: 2px;
   box-shadow: none;
   min-height: 34px;
-}
-
-.sam-shell .path-input-group,
-.path-input-group {
+}.path-input-group {
   background: #111b25;
   border: 1px solid #263848;
   border-radius: 2px;
   padding: 8px;
-}
-
-.sam-shell .path-input-group input,
-.path-input-group input {
+}.path-input-group input {
   background: #0d161f;
-}
-
-.sam-shell .error-message,
-.error-message {
+}.error-message {
   box-shadow: inset 3px 0 0 #ff7d86;
   font-size: 13px;
   font-weight: 720;
-}
-
-.sam-shell .form-group label,
-.form-group label {
+}.form-group label {
   color: #d9e8f4;
   font-size: 13px;
-}
-
-/* v5 cohesive workstation pass */
-.sam-shell .modal-overlay,
-.modal-overlay {
-  background: rgba(5, 9, 13, 0.88);
-}
-
-.sam-shell .modal-content,
-.modal-content {
-  background: #16202d;
-  border-color: #2a475e;
-  border-radius: 0;
-}
-
-.sam-shell .modal-header,
-.modal-header {
-  background: #101821;
-  border-bottom-color: #2a475e;
-}
-
-.sam-shell .modal-actions,
-.modal-actions {
-  background: #101821;
-  border-top-color: #263848;
-}
-
-.sam-shell .path-input-group,
-.path-input-group,
-.sam-shell .error-message,
-.error-message {
-  border-radius: 0;
-}
-
-/* Light dialogs must win over the legacy dark workstation fallbacks above. */
-:root[data-theme='light'] .modal-overlay {
+}/* v5 cohesive workstation pass */.modal-overlay {
   background: color-mix(in srgb, var(--surface-canvas) 66%, transparent);
-  backdrop-filter: blur(10px) brightness(1.02);
-}
-
-:root[data-theme='light'] .modal-content {
+  backdrop-filter: blur(10px) brightness(0.82);
+}.modal-content {
   background: var(--surface-material-strong);
   border-color: var(--surface-border-strong);
+  border-radius: 0;
   box-shadow: var(--surface-shadow);
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .modal-header,
-:root[data-theme='light'] .modal-actions {
+}.modal-header {
   background: var(--surface-2);
-  border-color: var(--surface-border);
+  border-bottom-color: var(--surface-border);
+}.modal-actions {
+  background: var(--surface-2);
+  border-top-color: var(--surface-border);
+}.path-input-group,
+.error-message {
+  border-radius: 0;
+}/* Light dialogs must win over the legacy dark workstation fallbacks above. */.modal-header h2, .form-group label {
+color: var(--color-text);
+}.pullora-shell .modal-description, .pullora-shell .modal-footer-text, .modal-description, .modal-footer-text {
+color: var(--color-text-secondary);
+}.path-input-group {
+background: var(--surface-3);
+border-color: var(--surface-border);
+}.path-input-group input {
+background: var(--color-control);
 }
-
-:root[data-theme='light'] .modal-header h2,
-:root[data-theme='light'] .form-group label {
-  color: var(--color-text);
-}
-
-:root[data-theme='light'] .modal-description,
-:root[data-theme='light'] .modal-footer-text {
-  color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .path-input-group {
-  background: var(--surface-3);
-  border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .path-input-group input {
-  background: var(--color-control);
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import './App.css'
 import Layout from './components/Layout/Layout'
 import { LibraryPage } from './features/library'
 import SettingsPage from './pages/SettingsPage'
@@ -31,7 +30,6 @@ function App() {
     light: null,
     dark: null,
   })
-  const [searchPreviewBackground, setSearchPreviewBackground] = useState<string | null>(null)
 
   useEffect(() => {
     setThemePreference(settings.theme)
@@ -124,9 +122,7 @@ function App() {
     setActiveTab(tab)
   }
 
-  const visibleBackground = !settingsOpen && activeTab === 'library' && searchPreviewBackground
-    ? searchPreviewBackground
-    : launcherBackgrounds[resolvedTheme]
+  const visibleBackground = launcherBackgrounds[resolvedTheme]
 
   const shouldRenderTab = (tab: ContentTab) => visitedTabs.has(tab) || activeTab === tab
   const tabPanelProps = (tab: ContentTab) => ({
@@ -140,7 +136,6 @@ function App() {
         <div {...tabPanelProps('library')}>
           <LibraryPage
             onOpenSettings={() => setSettingsOpen(true)}
-            onPreviewBackground={setSearchPreviewBackground}
             suppressDiagnostics={showPathModal}
           />
         </div>

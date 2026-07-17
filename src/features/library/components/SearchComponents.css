@@ -1,4 +1,4 @@
-.repo-card {
+@layer features {.repo-card {
   align-items: stretch;
   animation: fluent-fade-up var(--motion-normal);
   background: var(--color-bg-elevated);
@@ -14,9 +14,7 @@
   position: relative;
   transition: var(--transition), outline-color var(--motion-fast);
   min-width: 0;
-}
-
-.repo-card::before {
+}.repo-card::before {
   background: var(--color-border);
   border-radius: 999px;
   bottom: 12px;
@@ -26,38 +24,24 @@
   position: absolute;
   top: 12px;
   width: 3px;
-}
-
-.repo-card--installed::before {
+}.repo-card--installed::before {
   background: var(--color-success);
-}
-
-.repo-card--update::before {
+}.repo-card--update::before {
   background: var(--color-primary);
   box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 32%, transparent);
-}
-
-.repo-card--available::before {
+}.repo-card--available::before {
   background: color-mix(in srgb, var(--color-text-secondary) 38%, transparent);
-}
-
-.repo-card:hover {
+}.repo-card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-}
-
-.repo-card:focus-within {
+}.repo-card:focus-within {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
-}
-
-.repo-card:focus-visible {
+}.repo-card:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
-}
-
-.owner-avatar {
+}.owner-avatar {
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--border-radius-lg);
@@ -65,26 +49,18 @@
   height: 42px;
   object-fit: cover;
   width: 42px;
-}
-
-.repo-card.selected .owner-avatar,
+}.repo-card.selected .owner-avatar,
 .repo-card:hover .owner-avatar {
   border-color: color-mix(in srgb, var(--color-primary) 62%, var(--color-border));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 13%, transparent);
-}
-
-.repo-info {
+}.repo-info {
   min-width: 0;
-}
-
-.repo-title-line {
+}.repo-title-line {
   align-items: center;
   display: flex;
   gap: 10px;
   min-width: 0;
-}
-
-.repo-name {
+}.repo-name {
   color: var(--color-text);
   flex: 0 1 auto;
   font-size: 15px;
@@ -95,9 +71,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.repo-status {
+}.repo-status {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   color: var(--color-text-secondary);
@@ -107,26 +81,18 @@
   line-height: 1;
   padding: 4px 8px;
   white-space: nowrap;
-}
-
-.repo-status.available {
+}.repo-status.available {
   background: var(--color-control);
   color: var(--color-text-secondary);
-}
-
-.repo-status.installed {
+}.repo-status.installed {
   background: color-mix(in srgb, var(--color-success) 14%, var(--color-bg-elevated));
   border-color: color-mix(in srgb, var(--color-success) 70%, var(--color-border));
   color: var(--color-success);
-}
-
-.repo-status.update {
+}.repo-status.update {
   background: color-mix(in srgb, var(--color-primary) 14%, var(--color-bg-elevated));
   border-color: var(--color-primary);
   color: var(--color-primary);
-}
-
-.repo-owner {
+}.repo-owner {
   color: var(--color-text-secondary);
   display: block;
   font-size: 12px;
@@ -134,9 +100,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.repo-description {
+}.repo-description {
   color: var(--color-text-secondary);
   display: -webkit-box;
   font-size: 12px;
@@ -145,9 +109,7 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
-}
-
-.repo-meta {
+}.repo-meta {
   align-items: center;
   color: var(--color-text-secondary);
   display: flex;
@@ -155,28 +117,20 @@
   font-size: 12px;
   gap: 6px 10px;
   margin-top: 7px;
-}
-
-.repo-lang {
+}.repo-lang {
   background: var(--color-primary-light);
   border-radius: 999px;
   color: var(--color-primary);
   font-size: 11px;
   font-weight: 650;
   padding: 2px 7px;
-}
-
-.repo-installed-version {
+}.repo-installed-version {
   color: var(--color-primary);
   font-weight: 650;
-}
-
-.repo-update-version {
+}.repo-update-version {
   color: var(--color-primary);
   font-weight: 750;
-}
-
-.repo-card-actions {
+}.repo-card-actions {
   align-items: center;
   display: flex;
   flex-shrink: 0;
@@ -185,18 +139,12 @@
   padding-top: 2px;
   flex-wrap: nowrap;
   min-width: 0;
-}
-
-.repo-card-actions button {
+}.repo-card-actions button {
   overflow-wrap: anywhere;
-}
-
-.fav-btn,
+}.fav-btn,
 .install-btn {
   min-height: 32px;
-}
-
-.fav-btn {
+}.fav-btn {
   align-items: center;
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
@@ -207,67 +155,47 @@
   justify-content: center;
   padding: 0;
   width: 32px;
-}
-
-.fav-btn:hover,
+}.fav-btn:hover,
 .fav-btn.active {
   background: var(--color-control-hover);
   box-shadow: var(--shadow-control-hover);
   color: var(--color-text);
   transform: translateY(-1px);
-}
-
-.install-btn {
+}.install-btn {
   background: var(--color-primary);
   color: white;
   min-width: 96px;
   padding: 0 14px;
-}
-
-.install-btn:hover {
+}.install-btn:hover {
   background: var(--color-primary-dark);
   transform: translateY(-1px);
-}
-
-.results-count {
+}.results-count {
   color: var(--color-text-secondary);
   font-size: 13px;
   margin: 0;
-}
-
-.load-more-btn {
+}.load-more-btn {
   align-self: center;
   background: var(--color-control);
   border: 1px solid var(--color-border);
   color: var(--color-text);
   margin-top: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-xl);
-}
-
-.load-more-btn:hover {
+}.load-more-btn:hover {
   background: var(--color-control-hover);
   transform: translateY(-1px);
-}
-
-.release-modal {
+}.release-modal {
   max-width: 560px;
   overflow: hidden;
-}
-
-.modal-header {
+}.modal-header {
   align-items: flex-start;
   display: flex;
   gap: var(--spacing-md);
   justify-content: space-between;
-}
-
-.modal-subtitle {
+}.modal-subtitle {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   margin: var(--spacing-xs) 0 0 0;
-}
-
-.close-btn {
+}.close-btn {
   align-items: center;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -282,45 +210,33 @@
   line-height: 1;
   padding: 0;
   width: 42px;
-}
-
-.close-btn:hover {
+}.close-btn:hover {
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(91, 215, 255, 0.45);
   box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
   color: var(--color-text);
   transform: translateY(-1px);
-}
-
-.release-body {
+}.release-body {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-}
-
-.cinematic-shell .release-modal {
+}.pullora-shell .release-modal {
   max-width: 940px;
   width: min(94vw, 940px);
-}
-
-.cinematic-shell .release-modal .modal-header {
+}.pullora-shell .release-modal .modal-header {
   background:
     linear-gradient(115deg, rgba(91, 215, 255, 0.12), rgba(255, 255, 255, 0.04)),
     rgba(12, 14, 18, 0.54);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin: 0;
   padding: 24px 26px;
-}
-
-:root[data-theme='light'] .cinematic-shell .release-modal .modal-header {
+}:root[data-theme='light'] .pullora-shell .release-modal .modal-header {
   background:
     linear-gradient(115deg, rgba(232, 244, 255, 0.92), rgba(255, 255, 255, 0.66)),
     rgba(255, 255, 255, 0.72);
   border-bottom-color: rgba(17, 24, 39, 0.1);
-}
-
-.release-modal-meta {
+}.release-modal-meta {
   align-items: center;
   color: var(--color-text-secondary);
   display: flex;
@@ -328,16 +244,12 @@
   font-size: 13px;
   gap: 8px 12px;
   margin-top: 6px;
-}
-
-.release-modal-meta span {
+}.release-modal-meta span {
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
   border-radius: 999px;
   padding: 4px 9px;
-}
-
-.cinematic-shell .release-body {
+}.pullora-shell .release-body {
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(230px, 0.9fr) minmax(300px, 1.1fr);
@@ -346,54 +258,38 @@
   overflow-y: auto;
   padding: 18px 26px 24px;
   scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
-}
-
-.cinematic-shell .release-picker {
+}.pullora-shell .release-picker {
   min-width: 0;
-}
-
-.cinematic-shell .release-picker:first-of-type {
+}.pullora-shell .release-picker:first-of-type {
   grid-row: span 4;
-}
-
-.cinematic-shell .release-selection-summary,
-.cinematic-shell .asset-summary,
-.cinematic-shell .release-actions,
-.cinematic-shell .error-message,
-.cinematic-shell .download-panel {
+}.pullora-shell .release-selection-summary,
+.pullora-shell .asset-summary,
+.pullora-shell .release-actions,
+.pullora-shell .error-message,
+.pullora-shell .download-panel {
   grid-column: 2;
-}
-
-.cinematic-shell .release-version-card,
-.cinematic-shell .release-asset-card {
+}.pullora-shell .release-version-card,
+.pullora-shell .release-asset-card {
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
     rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
-}
-
-.cinematic-shell .release-version-card.active,
-.cinematic-shell .release-asset-card.active {
+}.pullora-shell .release-version-card.active,
+.pullora-shell .release-asset-card.active {
   background: rgba(91, 215, 255, 0.13);
   border-color: rgba(91, 215, 255, 0.7);
   box-shadow: 0 0 0 1px rgba(91, 215, 255, 0.18), 0 18px 34px rgba(0, 0, 0, 0.22);
-}
-
-:root[data-theme='light'] .cinematic-shell .release-version-card,
-:root[data-theme='light'] .cinematic-shell .release-asset-card {
+}:root[data-theme='light'] .pullora-shell .release-version-card,
+:root[data-theme='light'] .pullora-shell .release-asset-card {
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(17, 24, 39, 0.12);
-}
-
-:root[data-theme='light'] .cinematic-shell .release-version-card.active,
-:root[data-theme='light'] .cinematic-shell .release-asset-card.active {
+}:root[data-theme='light'] .pullora-shell .release-version-card.active,
+:root[data-theme='light'] .pullora-shell .release-asset-card.active {
   background: rgba(232, 244, 255, 0.92);
   border-color: rgba(0, 120, 212, 0.54);
-}
-
-.release-selection-summary {
+}.release-selection-summary {
   animation: fluent-fade-up var(--motion-normal);
   background:
     radial-gradient(circle at 12% 0%, rgba(91, 215, 255, 0.18), transparent 36%),
@@ -404,97 +300,67 @@
   display: grid;
   gap: 8px;
   padding: 16px;
-}
-
-.release-summary-kicker {
+}.release-summary-kicker {
   color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
   font-weight: 820;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.release-summary-main {
+}.release-summary-main {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
-}
-
-.release-summary-main strong {
+}.release-summary-main strong {
   color: #ffffff;
   font-size: 28px;
   font-weight: 860;
   overflow-wrap: anywhere;
-}
-
-.release-selection-summary p,
+}.release-selection-summary p,
 .release-summary-assets {
   color: rgba(255, 255, 255, 0.68);
   font-size: 13px;
   margin: 0;
-}
-
-:root[data-theme='light'] .release-selection-summary {
+}:root[data-theme='light'] .release-selection-summary {
   background:
     radial-gradient(circle at 12% 0%, rgba(0, 120, 212, 0.12), transparent 36%),
     rgba(255, 255, 255, 0.72);
   border-color: rgba(0, 120, 212, 0.18);
-}
-
-:root[data-theme='light'] .release-summary-kicker,
+}:root[data-theme='light'] .release-summary-kicker,
 :root[data-theme='light'] .release-selection-summary p,
 :root[data-theme='light'] .release-summary-assets {
   color: rgba(17, 24, 39, 0.62);
-}
-
-:root[data-theme='light'] .release-summary-main strong {
+}:root[data-theme='light'] .release-summary-main strong {
   color: #111827;
-}
-
-.release-body .form-group {
+}.release-body .form-group {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-}
-
-.release-body label {
+}.release-body label {
   font-size: var(--font-size-sm);
   font-weight: 600;
-}
-
-.release-body select,
+}.release-body select,
 .release-body input {
   padding: var(--spacing-sm) var(--spacing-md);
   width: 100%;
-}
-
-.release-strategy-note {
+}.release-strategy-note {
   color: var(--color-text-secondary);
   font-size: 13px;
   margin: 0;
-}
-
-.release-picker {
+}.release-picker {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.release-section-label {
+}.release-section-label {
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 700;
-}
-
-.release-version-list,
+}.release-version-list,
 .release-asset-list {
   display: grid;
   gap: 8px;
-}
-
-.release-version-card,
+}.release-version-card,
 .release-asset-card {
   align-items: center;
   background: var(--color-control);
@@ -509,28 +375,20 @@
   text-align: left;
   width: 100%;
   min-width: 0;
-}
-
-.release-version-card:hover,
+}.release-version-card:hover,
 .release-asset-card:hover {
   background: var(--color-control-hover);
   box-shadow: var(--shadow-control-hover);
   transform: translateY(-1px);
-}
-
-.release-version-card.active,
+}.release-version-card.active,
 .release-asset-card.active {
   background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-elevated));
   border-color: var(--color-primary);
-}
-
-.release-asset-card:disabled {
+}.release-asset-card:disabled {
   cursor: not-allowed;
   opacity: 0.56;
   transform: none;
-}
-
-.release-version-main,
+}.release-version-main,
 .release-asset-main,
 .release-asset-badges {
   align-items: flex-start;
@@ -538,26 +396,18 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-}
-
-.release-version-main strong,
+}.release-version-main strong,
 .release-asset-main strong {
   overflow-wrap: anywhere;
-}
-
-.release-version-card:focus-visible,
+}.release-version-card:focus-visible,
 .release-asset-card:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
-}
-
-.release-version-main span,
+}.release-version-main span,
 .release-asset-main span {
   color: var(--color-text-secondary);
   font-size: 12px;
-}
-
-.release-status-pill {
+}.release-status-pill {
   border: 1px solid var(--color-primary);
   border-radius: 999px;
   color: var(--color-primary);
@@ -567,14 +417,10 @@
   padding: 5px 9px;
   white-space: nowrap;
   max-width: 100%;
-}
-
-.release-status-pill.prerelease {
+}.release-status-pill.prerelease {
   border-color: color-mix(in srgb, var(--color-warning, #f4a261) 70%, var(--color-border));
   color: var(--color-warning, #f4a261);
-}
-
-.asset-summary {
+}.asset-summary {
   animation: fluent-fade-up var(--motion-normal);
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
@@ -583,9 +429,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 14px;
-}
-
-.cinematic-shell .asset-summary {
+}.pullora-shell .asset-summary {
   background:
     radial-gradient(circle at 10% 0%, rgba(91, 215, 255, 0.16), transparent 34%),
     rgba(255, 255, 255, 0.075);
@@ -593,23 +437,17 @@
   border-radius: 18px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 38px rgba(0, 0, 0, 0.2);
   padding: 16px;
-}
-
-:root[data-theme='light'] .cinematic-shell .asset-summary {
+}:root[data-theme='light'] .pullora-shell .asset-summary {
   background:
     radial-gradient(circle at 10% 0%, rgba(0, 120, 212, 0.12), transparent 34%),
     rgba(255, 255, 255, 0.72);
   border-color: rgba(0, 120, 212, 0.18);
-}
-
-.asset-summary > div {
+}.asset-summary > div {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.asset-kind,
+}.asset-kind,
 .asset-architecture,
 .asset-recommended {
   border-radius: 999px;
@@ -617,62 +455,42 @@
   font-weight: 750;
   line-height: 1;
   padding: 5px 9px;
-}
-
-.asset-kind {
+}.asset-kind {
   background: var(--color-primary-light);
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
-}
-
-.asset-architecture {
+}.asset-architecture {
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-}
-
-.asset-recommended {
+}.asset-recommended {
   border: 1px solid color-mix(in srgb, var(--color-success) 70%, var(--color-border));
   color: var(--color-success);
-}
-
-.asset-summary > span {
+}.asset-summary > span {
   color: var(--color-text);
   font-size: 13px;
   overflow-wrap: anywhere;
-}
-
-.asset-summary p {
+}.asset-summary p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
-}
-
-.asset-summary--installer {
+}.asset-summary--installer {
   border-color: color-mix(in srgb, var(--color-warning, #f4a261) 45%, var(--color-border-subtle));
-}
-
-.asset-summary--unsupported,
+}.asset-summary--unsupported,
 .release-asset-card--unsupported {
   border-color: color-mix(in srgb, var(--color-error) 45%, var(--color-border-subtle));
-}
-
-.release-actions {
+}.release-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-md);
   min-width: 0;
-}
-
-.download-btn {
+}.download-btn {
   flex: 1;
   font-size: var(--font-size-base);
   padding: var(--spacing-md);
   min-width: 180px;
-}
-
-.release-action-primary {
+}.release-action-primary {
   background: linear-gradient(180deg, #ffffff, #d9dde2);
   border: 2px solid rgba(255, 255, 255, 0.58);
   border-radius: 999px;
@@ -680,24 +498,16 @@
   color: #111111;
   font-weight: 820;
   min-height: 52px;
-}
-
-.release-action-primary:hover:not(:disabled) {
+}.release-action-primary:hover:not(:disabled) {
   background: linear-gradient(180deg, #ffffff, #eef1f5);
   color: #000000;
   transform: translateY(-2px);
-}
-
-.release-action-primary:disabled {
+}.release-action-primary:disabled {
   opacity: 0.55;
-}
-
-:root[data-theme='light'] .release-action-primary {
-  background: linear-gradient(180deg, #111827, #303844);
-  color: #ffffff;
-}
-
-.release-github-link {
+}:root[data-theme='light'] .release-action-primary {
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dark));
+  color: var(--color-on-primary);
+}.release-github-link {
   align-items: center;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -708,35 +518,25 @@
   min-height: 44px;
   padding: 0 18px;
   text-decoration: none;
-}
-
-.release-github-link:hover {
+}.release-github-link:hover {
   border-color: rgba(91, 215, 255, 0.46);
   color: var(--color-text);
   transform: translateY(-1px);
-}
-
-.view-release-link {
+}.view-release-link {
   color: var(--color-primary);
   font-size: var(--font-size-sm);
   white-space: nowrap;
-}
-
-.release-asset-main,
+}.release-asset-main,
 .release-version-main {
   overflow: hidden;
-}
-
-.loading-text,
+}.loading-text,
 .no-releases,
 .no-assets {
   animation: fluent-fade-up var(--motion-normal);
   color: var(--color-text-secondary);
   padding: var(--spacing-lg) 0;
   text-align: center;
-}
-
-@media (max-width: 980px) {
+}@media (max-width: 980px) {
   .repo-card {
     align-items: stretch;
     grid-template-columns: 48px minmax(0, 1fr);
@@ -752,23 +552,19 @@
     height: 48px;
     width: 48px;
   }
-}
-
-@media (max-width: 820px) {
-  .cinematic-shell .release-body {
+}@media (max-width: 820px) {
+  .pullora-shell .release-body {
     grid-template-columns: 1fr;
   }
 
-  .cinematic-shell .asset-summary,
-  .cinematic-shell .release-selection-summary,
-  .cinematic-shell .release-actions,
-  .cinematic-shell .error-message,
-  .cinematic-shell .download-panel {
+  .pullora-shell .asset-summary,
+  .pullora-shell .release-selection-summary,
+  .pullora-shell .release-actions,
+  .pullora-shell .error-message,
+  .pullora-shell .download-panel {
     grid-column: auto;
   }
-}
-
-.cinematic-shell .repo-card {
+}.pullora-shell .repo-card {
   align-items: stretch;
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.045)),
@@ -780,17 +576,13 @@
   min-height: 190px;
   padding: 16px;
   overflow: visible;
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-card {
+}:root[data-theme='light'] .pullora-shell .repo-card {
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.62)),
     rgba(255, 255, 255, 0.74);
   border-color: rgba(17, 24, 39, 0.1);
   box-shadow: 0 20px 48px rgba(15, 23, 42, 0.14);
-}
-
-.cinematic-shell .repo-card::after {
+}.pullora-shell .repo-card::after {
   background: linear-gradient(90deg, rgba(91, 215, 255, 0.75), transparent);
   border-radius: 999px;
   bottom: -1px;
@@ -801,47 +593,31 @@
   position: absolute;
   right: 18px;
   transition: opacity var(--motion-normal);
-}
-
-.cinematic-shell .repo-card::before {
+}.pullora-shell .repo-card::before {
   bottom: 16px;
   left: -1px;
   top: 16px;
   width: 4px;
-}
-
-.cinematic-shell .repo-card--installed::before {
+}.pullora-shell .repo-card--installed::before {
   background: #95fb9b;
   box-shadow: 0 0 18px rgba(116, 240, 124, 0.28);
-}
-
-.cinematic-shell .repo-card--update::before {
+}.pullora-shell .repo-card--update::before {
   background: #5bd7ff;
   box-shadow: 0 0 22px rgba(91, 215, 255, 0.36);
-}
-
-.release-modal--wizard {
+}.release-modal--wizard {
   max-width: 1040px;
   width: min(94vw, 1040px);
-}
-
-.cinematic-shell .release-modal--wizard {
+}.pullora-shell .release-modal--wizard {
   max-width: 1040px;
   width: min(94vw, 1040px);
-}
-
-.release-wizard-steps {
+}.release-wizard-steps {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 14px 26px 0;
-}
-
-.cinematic-shell .release-wizard-steps {
+}.pullora-shell .release-wizard-steps {
   padding-top: 16px;
-}
-
-.release-step-pill {
+}.release-step-pill {
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
   border-radius: 999px;
@@ -851,77 +627,53 @@
   font-weight: 800;
   min-height: 34px;
   padding: 0 12px;
-}
-
-.release-step-pill.active {
+}.release-step-pill.active {
   background: color-mix(in srgb, var(--color-primary) 16%, var(--color-control));
   border-color: var(--color-primary);
   color: var(--color-text);
-}
-
-.release-step-pill.done {
+}.release-step-pill.done {
   border-color: color-mix(in srgb, var(--color-success) 58%, var(--color-border-subtle));
   color: var(--color-success);
-}
-
-.release-step-pill:disabled {
+}.release-step-pill:disabled {
   cursor: default;
   opacity: 0.56;
-}
-
-.release-wizard-context {
+}.release-wizard-context {
   border-bottom: 1px solid rgba(91, 215, 255, 0.16);
   display: grid;
   gap: 4px;
   margin: 12px 26px 0;
   min-width: 0;
   padding: 0 0 10px;
-}
-
-.release-wizard-context span {
+}.release-wizard-context span {
   color: var(--color-text);
   font-size: 13px;
   font-weight: 820;
-}
-
-.release-wizard-context p {
+}.release-wizard-context p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.45;
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-.cinematic-shell .release-modal--wizard .release-body {
+}.pullora-shell .release-modal--wizard .release-body {
   display: block;
   max-height: min(650px, calc(100vh - 205px));
   overflow-x: hidden;
   overflow-y: auto;
   padding: 14px 26px 0;
-}
-
-.release-wizard-panel {
+}.release-wizard-panel {
   display: grid;
   gap: 14px;
   min-width: 0;
   padding-bottom: 0;
-}
-
-.release-modal--wizard .release-picker {
+}.release-modal--wizard .release-picker {
   min-width: 0;
-}
-
-.release-modal--wizard .release-version-list {
+}.release-modal--wizard .release-version-list {
   max-height: 260px;
   overflow: auto;
   padding-right: 4px;
-}
-
-.release-modal--wizard .release-asset-list {
+}.release-modal--wizard .release-asset-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.release-blocked-note,
+}.release-blocked-note,
 .release-confirm-card,
 .release-result-card {
   animation: fluent-fade-up var(--motion-normal);
@@ -932,9 +684,7 @@
   border-radius: 18px;
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
   padding: 16px;
-}
-
-.release-cleanup-note {
+}.release-cleanup-note {
   background: color-mix(in srgb, var(--color-success) 10%, var(--color-control));
   border: 1px solid color-mix(in srgb, var(--color-success) 46%, var(--color-border-subtle));
   border-radius: 14px;
@@ -942,32 +692,22 @@
   font-size: 13px;
   font-weight: 760;
   padding: 11px 13px;
-}
-
-.release-blocked-note {
+}.release-blocked-note {
   border-color: color-mix(in srgb, var(--color-warning, #f4a261) 48%, var(--color-border-subtle));
-}
-
-.release-blocked-note strong,
+}.release-blocked-note strong,
 .release-confirm-card strong {
   color: var(--color-text);
-}
-
-.release-blocked-note p {
+}.release-blocked-note p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.5;
   margin: 6px 0 0;
-}
-
-.release-confirm-grid {
+}.release-confirm-grid {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 12px;
-}
-
-.release-confirm-grid > div,
+}.release-confirm-grid > div,
 .release-install-path {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -977,42 +717,30 @@
   gap: 5px;
   min-width: 0;
   padding: 11px 12px;
-}
-
-.release-confirm-grid span,
+}.release-confirm-grid span,
 .release-install-path span {
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 760;
-}
-
-.release-confirm-grid strong,
+}.release-confirm-grid strong,
 .release-install-path strong {
   font-size: 13px;
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-
-.release-install-path {
+}.release-install-path {
   margin-top: 10px;
-}
-
-.release-notes-card {
+}.release-notes-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   margin-top: 10px;
   min-width: 0;
   padding: 11px 12px;
-}
-
-.release-notes-card h3 {
+}.release-notes-card h3 {
   color: var(--color-text);
   font-size: 13px;
   margin: 0;
-}
-
-.release-notes-content {
+}.release-notes-content {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.55;
@@ -1022,9 +750,7 @@
   overflow-wrap: anywhere;
   padding-right: 4px;
   white-space: pre-wrap;
-}
-
-.release-nav-actions {
+}.release-nav-actions {
   align-items: center;
   background:
     linear-gradient(180deg, rgba(22, 24, 30, 0.4), rgba(22, 24, 30, 0.98) 22%);
@@ -1037,9 +763,7 @@
   padding: 16px 26px 18px;
   position: sticky;
   z-index: 4;
-}
-
-.release-secondary-btn,
+}.release-secondary-btn,
 .download-action-btn {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1049,63 +773,45 @@
   font-weight: 780;
   min-height: 42px;
   padding: 0 16px;
-}
-
-.release-secondary-btn:hover,
+}.release-secondary-btn:hover,
 .download-action-btn:hover {
   border-color: rgba(91, 215, 255, 0.46);
   color: var(--color-text);
   transform: translateY(-1px);
-}
-
-.download-action-btn.primary {
+}.download-action-btn.primary {
   background: linear-gradient(180deg, #5bd7ff, #36c6ff);
   border-color: rgba(91, 215, 255, 0.68);
   color: #061018;
-}
-
-.release-modal--wizard .release-action-primary {
+}.release-modal--wizard .release-action-primary {
   flex: 0 1 220px;
-}
-
-:root[data-theme='light'] .release-blocked-note,
+}:root[data-theme='light'] .release-blocked-note,
 :root[data-theme='light'] .release-confirm-card,
 :root[data-theme='light'] .release-result-card {
   background: rgba(255, 255, 255, 0.76);
   border-color: rgba(17, 24, 39, 0.12);
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
-}
-
-:root[data-theme='light'] .release-confirm-grid > div,
+}:root[data-theme='light'] .release-confirm-grid > div,
 :root[data-theme='light'] .release-install-path,
 :root[data-theme='light'] .release-notes-card,
 :root[data-theme='light'] .release-secondary-btn,
 :root[data-theme='light'] .download-action-btn {
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(17, 24, 39, 0.12);
-}
-
-.app-details-modal {
+}.app-details-modal {
   border-radius: 22px 0 0 22px;
   margin-left: auto;
   max-width: 1180px;
   overflow: hidden;
   width: min(94vw, 1180px);
-}
-
-.modal-content.app-details-modal {
+}.modal-content.app-details-modal {
   overflow: hidden;
-}
-
-.app-details-header {
+}.app-details-header {
   background:
     linear-gradient(115deg, rgba(91, 215, 255, 0.12), rgba(255, 255, 255, 0.04)),
     rgba(12, 14, 18, 0.54);
   margin: 0;
   padding: 22px 26px;
-}
-
-.app-details-kicker {
+}.app-details-kicker {
   color: #7ddeff;
   display: block;
   font-size: 12px;
@@ -1113,9 +819,7 @@
   letter-spacing: 0.08em;
   margin-bottom: 7px;
   text-transform: uppercase;
-}
-
-.app-details-body {
+}.app-details-body {
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(300px, 0.88fr) minmax(420px, 1.12fr);
@@ -1124,15 +828,11 @@
   overflow-y: auto;
   padding: 18px;
   scrollbar-color: rgba(91, 215, 255, 0.42) transparent;
-}
-
-.modal-overlay:has(.app-details-modal) {
+}.modal-overlay:has(.app-details-modal) {
   align-items: stretch;
   justify-content: flex-end;
   padding: 0;
-}
-
-.app-details-summary,
+}.app-details-summary,
 .app-details-panel {
   background:
     radial-gradient(circle at 10% 0%, rgba(91, 215, 255, 0.13), transparent 34%),
@@ -1142,36 +842,26 @@
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
   min-width: 0;
   padding: 16px;
-}
-
-.app-details-summary {
+}.app-details-summary {
   align-self: start;
   display: grid;
   gap: 14px;
   grid-row: span 3;
-}
-
-.app-details-status-row,
+}.app-details-status-row,
 .app-details-actions,
 .app-details-version-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.app-details-actions button {
+}.app-details-actions button {
   flex: 1 1 128px;
   min-height: 40px;
-}
-
-.app-details-facts {
+}.app-details-facts {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.app-details-facts > div,
+}.app-details-facts > div,
 .app-details-paths > div {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1181,92 +871,66 @@
   min-width: 0;
   overflow: hidden;
   padding: 11px 12px;
-}
-
-.app-details-facts span,
+}.app-details-facts span,
 .app-details-paths span,
 .app-details-version-main span {
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 720;
-}
-
-.app-details-facts strong,
+}.app-details-facts strong,
 .app-details-paths strong,
 .app-details-version-main strong {
   color: var(--color-text);
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-
-.app-details-health-message {
+}.app-details-health-message {
   border-left: 3px solid var(--color-error);
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.5;
   margin: 0;
   padding-left: 12px;
-}
-
-.app-details-panel {
+}.app-details-panel {
   display: grid;
   gap: 12px;
-}
-
-.app-details-panel-title {
+}.app-details-panel-title {
   align-items: center;
   display: flex;
   gap: 10px;
   justify-content: space-between;
   min-width: 0;
-}
-
-.app-details-panel-title span {
+}.app-details-panel-title span {
   color: var(--color-text);
   font-size: 13px;
   font-weight: 820;
   text-transform: uppercase;
-}
-
-.app-details-panel-title strong {
+}.app-details-panel-title strong {
   color: var(--color-primary);
   font-size: 13px;
   overflow-wrap: anywhere;
-}
-
-.app-details-paths,
+}.app-details-paths,
 .app-details-version-list {
   display: grid;
   gap: 10px;
-}
-
-.app-details-copy-row {
+}.app-details-copy-row {
   grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.app-details-copy-row span,
+}.app-details-copy-row span,
 .app-details-copy-row strong {
   grid-column: 1;
-}
-
-.app-details-copy-btn {
+}.app-details-copy-btn {
   align-self: center;
   grid-column: 2;
   grid-row: 1 / span 2;
   min-height: 32px;
   min-width: 92px;
-}
-
-.app-details-notes,
+}.app-details-notes,
 .app-details-muted {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.55;
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-.app-details-text-btn {
+}.app-details-text-btn {
   align-self: start;
   background: transparent;
   border: 0;
@@ -1276,15 +940,11 @@
   font-weight: 800;
   justify-self: start;
   padding: 0;
-}
-
-.app-details-text-btn:hover {
+}.app-details-text-btn:hover {
   color: #8be6ff;
   text-decoration: underline;
   transform: none;
-}
-
-.app-details-version-row {
+}.app-details-version-row {
   align-items: center;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1295,31 +955,21 @@
   min-width: 0;
   overflow: hidden;
   padding: 12px;
-}
-
-.app-details-version-row.active {
+}.app-details-version-row.active {
   background: rgba(91, 215, 255, 0.13);
   border-color: rgba(91, 215, 255, 0.62);
-}
-
-.app-details-version-row.missing {
+}.app-details-version-row.missing {
   background: rgba(255, 107, 139, 0.12);
   border-color: rgba(255, 107, 139, 0.42);
-}
-
-.app-details-version-main {
+}.app-details-version-main {
   display: grid;
   gap: 4px;
   min-width: 0;
-}
-
-.app-details-version-summary {
+}.app-details-version-summary {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.app-details-version-summary > div {
+}.app-details-version-summary > div {
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -1327,29 +977,21 @@
   gap: 4px;
   min-width: 0;
   padding: 9px 10px;
-}
-
-.app-details-version-summary span {
+}.app-details-version-summary span {
   color: var(--color-text-secondary);
   font-size: 11px;
   font-weight: 760;
-}
-
-.app-details-version-summary strong {
+}.app-details-version-summary strong {
   color: var(--color-text);
   font-size: 13px;
   overflow-wrap: anywhere;
-}
-
-.app-details-version-heading {
+}.app-details-version-heading {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
-}
-
-.app-details-version-heading em {
+}.app-details-version-heading em {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   color: var(--color-text-secondary);
@@ -1357,53 +999,33 @@
   font-style: normal;
   font-weight: 800;
   padding: 3px 7px;
-}
-
-.app-details-version-row.active .app-details-version-heading em {
+}.app-details-version-row.active .app-details-version-heading em {
   border-color: rgba(91, 215, 255, 0.55);
   color: var(--color-primary);
-}
-
-.app-details-version-row.missing .app-details-version-heading em,
+}.app-details-version-row.missing .app-details-version-heading em,
 .app-details-version-warning {
   color: var(--color-error);
-}
-
-.app-details-version-warning {
+}.app-details-version-warning {
   font-weight: 760;
-}
-
-.app-details-version-actions {
+}.app-details-version-actions {
   justify-content: flex-end;
-}
-
-.app-details-version-title,
+}.app-details-version-title,
 .app-details-version-tools {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.app-details-version-tools .small-btn {
+}.app-details-version-tools .small-btn {
   min-height: 34px;
-}
-
-.uninstall-overlay {
+}.uninstall-overlay {
   z-index: 1020;
-}
-
-.app-action-overlay {
+}.app-action-overlay {
   z-index: 1020;
-}
-
-.version-switch-modal {
+}.version-switch-modal {
   max-width: 520px;
   overflow: hidden;
   width: min(520px, calc(100vw - 40px));
-}
-
-.version-switch-header {
+}.version-switch-header {
   align-items: flex-start;
   background:
     radial-gradient(circle at 12% 0%, rgba(91, 215, 255, 0.14), transparent 46%),
@@ -1413,44 +1035,32 @@
   gap: 16px;
   justify-content: space-between;
   padding: 20px;
-}
-
-.version-switch-header h2 {
+}.version-switch-header h2 {
   color: var(--color-text);
   font-size: 22px;
   margin: 5px 0 0;
   overflow-wrap: anywhere;
-}
-
-.app-action-kicker {
+}.app-action-kicker {
   color: #7ddeff;
   display: block;
   font-size: 12px;
   font-weight: 850;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.version-switch-body {
+}.version-switch-body {
   display: grid;
   gap: 14px;
   padding: 18px 20px 20px;
-}
-
-.version-switch-body > p {
+}.version-switch-body > p {
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
-}
-
-.version-switch-facts {
+}.version-switch-facts {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.version-switch-facts > div {
+}.version-switch-facts > div {
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -1458,37 +1068,25 @@
   gap: 4px;
   min-width: 0;
   padding: 10px 12px;
-}
-
-.version-switch-facts span {
+}.version-switch-facts span {
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 720;
-}
-
-.version-switch-facts strong {
+}.version-switch-facts strong {
   color: var(--color-text);
   overflow-wrap: anywhere;
-}
-
-.version-switch-actions {
+}.version-switch-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.version-switch-actions button {
+}.version-switch-actions button {
   min-height: 42px;
   min-width: 136px;
-}
-
-.uninstall-confirm-modal {
+}.uninstall-confirm-modal {
   max-width: 580px;
   overflow: hidden;
   width: min(580px, calc(100vw - 40px));
-}
-
-.uninstall-confirm-header {
+}.uninstall-confirm-header {
   align-items: flex-start;
   background:
     radial-gradient(circle at 12% 0%, rgba(255, 107, 139, 0.12), transparent 46%),
@@ -1498,44 +1096,32 @@
   gap: 16px;
   justify-content: space-between;
   padding: 20px;
-}
-
-.uninstall-confirm-header h2 {
+}.uninstall-confirm-header h2 {
   color: var(--color-text);
   font-size: 23px;
   margin: 5px 0 0;
   overflow-wrap: anywhere;
-}
-
-.uninstall-confirm-kicker {
+}.uninstall-confirm-kicker {
   color: #ff9cb2;
   display: block;
   font-size: 12px;
   font-weight: 850;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.uninstall-confirm-body {
+}.uninstall-confirm-body {
   display: grid;
   gap: 14px;
   padding: 18px 20px 20px;
-}
-
-.uninstall-confirm-copy {
+}.uninstall-confirm-copy {
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
-}
-
-.uninstall-confirm-facts {
+}.uninstall-confirm-facts {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.uninstall-confirm-facts > div {
+}.uninstall-confirm-facts > div {
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -1543,74 +1129,50 @@
   gap: 4px;
   min-width: 0;
   padding: 10px 12px;
-}
-
-.uninstall-confirm-facts span {
+}.uninstall-confirm-facts span {
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 720;
-}
-
-.uninstall-confirm-facts strong {
+}.uninstall-confirm-facts strong {
   color: var(--color-text);
   overflow-wrap: anywhere;
-}
-
-.uninstall-confirm-path {
+}.uninstall-confirm-path {
   grid-column: 1 / -1;
-}
-
-.uninstall-confirm-warning {
+}.uninstall-confirm-warning {
   background: rgba(255, 107, 139, 0.08);
   border: 1px solid rgba(255, 107, 139, 0.25);
   border-radius: 12px;
   display: grid;
   gap: 5px;
   padding: 11px 12px;
-}
-
-.uninstall-confirm-warning strong {
+}.uninstall-confirm-warning strong {
   color: #ffb3c3;
   font-size: 13px;
-}
-
-.uninstall-confirm-warning p {
+}.uninstall-confirm-warning p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.45;
   margin: 0;
-}
-
-.uninstall-confirm-actions {
+}.uninstall-confirm-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.uninstall-confirm-actions button {
+}.uninstall-confirm-actions button {
   min-height: 42px;
   min-width: 136px;
-}
-
-.uninstall-danger-btn {
+}.uninstall-danger-btn {
   background: rgba(171, 39, 69, 0.8);
   border: 1px solid rgba(255, 107, 139, 0.5);
   border-radius: 12px;
-  color: #fff;
+  color: var(--color-on-danger);
   cursor: pointer;
   font-weight: 800;
-}
-
-.uninstall-danger-btn:hover:not(:disabled) {
+}.uninstall-danger-btn:hover:not(:disabled) {
   background: rgba(202, 45, 81, 0.92);
-}
-
-.uninstall-danger-btn:disabled {
+}.uninstall-danger-btn:disabled {
   cursor: not-allowed;
   opacity: 0.55;
-}
-
-.updates-center {
+}.updates-center {
   animation: fluent-fade-up var(--motion-normal);
   background:
     radial-gradient(circle at 12% 0%, rgba(91, 215, 255, 0.16), transparent 34%),
@@ -1621,17 +1183,13 @@
   display: grid;
   gap: 14px;
   padding: 16px;
-}
-
-.updates-center-main {
+}.updates-center-main {
   align-items: flex-start;
   display: flex;
   gap: 16px;
   justify-content: space-between;
   min-width: 0;
-}
-
-.updates-center-kicker {
+}.updates-center-kicker {
   color: #7ddeff;
   display: block;
   font-size: 12px;
@@ -1639,41 +1197,29 @@
   letter-spacing: 0.08em;
   margin-bottom: 6px;
   text-transform: uppercase;
-}
-
-.updates-center h3 {
+}.updates-center h3 {
   color: var(--color-text);
   font-size: 22px;
   margin: 0;
-}
-
-.updates-center p {
+}.updates-center p {
   color: var(--color-text-secondary);
   font-size: 13px;
   line-height: 1.5;
   margin: 6px 0 0;
-}
-
-.updates-center-actions,
+}.updates-center-actions,
 .updates-center-row-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.updates-center-actions button {
+}.updates-center-actions button {
   min-height: 40px;
-}
-
-.updates-center-stats {
+}.updates-center-stats {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.updates-center-stats > div {
+}.updates-center-stats > div {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -1681,22 +1227,16 @@
   gap: 5px;
   min-width: 0;
   padding: 11px 12px;
-}
-
-.updates-center-stats span,
+}.updates-center-stats span,
 .updates-center-row span {
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 720;
-}
-
-.updates-center-stats strong,
+}.updates-center-stats strong,
 .updates-center-row strong {
   color: var(--color-text);
   overflow-wrap: anywhere;
-}
-
-.updates-clear-skipped {
+}.updates-clear-skipped {
   align-self: start;
   background: transparent;
   border: 0;
@@ -1707,25 +1247,17 @@
   font-weight: 780;
   padding: 0;
   text-align: left;
-}
-
-.updates-clear-skipped:hover {
+}.updates-clear-skipped:hover {
   color: var(--color-text);
   transform: none;
-}
-
-.updates-center-list {
+}.updates-center-list {
   display: grid;
   gap: 10px;
-}
-
-.batch-update-confirm-list {
+}.batch-update-confirm-list {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-
-.updates-center-row {
+}.updates-center-row {
   align-items: center;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1735,97 +1267,65 @@
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   padding: 12px;
-}
-
-.updates-center-row > div:first-child {
+}.updates-center-row > div:first-child {
   display: grid;
   gap: 4px;
   min-width: 0;
-}
-
-.updates-center-empty {
+}.updates-center-empty {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 14px;
-}
-
-:root[data-theme='light'] .updates-center {
+}:root[data-theme='light'] .updates-center {
   background: var(--surface-2);
   border-color: var(--surface-border);
   box-shadow: var(--surface-shadow);
-}
-
-:root[data-theme='light'] .updates-center-stats > div,
+}:root[data-theme='light'] .updates-center-stats > div,
 :root[data-theme='light'] .updates-center-row,
 :root[data-theme='light'] .updates-center-empty {
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .app-details-header {
+}:root[data-theme='light'] .app-details-header {
   background:
     radial-gradient(circle at 76% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 34%),
     var(--surface-2);
   border-bottom-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .app-details-summary,
+}:root[data-theme='light'] .app-details-summary,
 :root[data-theme='light'] .app-details-panel {
   background: var(--surface-2);
   border-color: var(--surface-border);
   box-shadow: var(--surface-shadow);
-}
-
-:root[data-theme='light'] .uninstall-confirm-header {
+}:root[data-theme='light'] .uninstall-confirm-header {
   background:
     radial-gradient(circle at 12% 0%, rgba(220, 38, 38, 0.08), transparent 46%),
     var(--surface-2);
   border-bottom-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .version-switch-header {
+}:root[data-theme='light'] .version-switch-header {
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 46%),
     var(--surface-2);
   border-bottom-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .version-switch-facts > div {
+}:root[data-theme='light'] .version-switch-facts > div {
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .uninstall-confirm-facts > div {
+}:root[data-theme='light'] .uninstall-confirm-facts > div {
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .uninstall-confirm-warning {
+}:root[data-theme='light'] .uninstall-confirm-warning {
   background: rgba(254, 242, 242, 0.9);
   border-color: rgba(220, 38, 38, 0.2);
-}
-
-:root[data-theme='light'] .uninstall-confirm-warning strong {
+}:root[data-theme='light'] .uninstall-confirm-warning strong {
   color: #b91c1c;
-}
-
-:root[data-theme='light'] .app-details-facts > div,
+}:root[data-theme='light'] .app-details-facts > div,
 :root[data-theme='light'] .app-details-paths > div,
 :root[data-theme='light'] .app-details-version-row {
   background: var(--surface-3);
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .release-wizard-context {
+}:root[data-theme='light'] .release-wizard-context {
   border-color: color-mix(in srgb, var(--color-primary) 24%, var(--surface-border));
-}
-
-:root[data-theme='light'] .release-nav-actions {
+}:root[data-theme='light'] .release-nav-actions {
   background: linear-gradient(180deg, transparent, var(--surface-material-strong) 22%);
-}
-
-@media (max-width: 820px) {
+}@media (max-width: 820px) {
   .release-modal--wizard .release-asset-list,
   .release-confirm-grid {
     grid-template-columns: 1fr;
@@ -1908,1231 +1408,167 @@
   .updates-center-stats {
     grid-template-columns: 1fr;
   }
-}
-
-.cinematic-shell .repo-card:hover,
-.cinematic-shell .repo-card.selected {
+}.pullora-shell .repo-card:hover,
+.pullora-shell .repo-card.selected {
   background:
     linear-gradient(115deg, rgba(91, 215, 255, 0.14), rgba(255, 255, 255, 0.07)),
     rgba(26, 29, 36, 0.84);
   border-color: rgba(91, 215, 255, 0.46);
   transform: translateY(-2px);
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-card:hover,
-:root[data-theme='light'] .cinematic-shell .repo-card.selected {
+}:root[data-theme='light'] .pullora-shell .repo-card:hover,
+:root[data-theme='light'] .pullora-shell .repo-card.selected {
   background: color-mix(in srgb, var(--color-primary) 10%, var(--surface-3));
-}
-
-.cinematic-shell .repo-card.selected::after {
+}.pullora-shell .repo-card.selected::after {
   opacity: 1;
-}
-
-.repo-card-media {
+}.repo-card-media {
   align-self: start;
-}
-
-.cinematic-shell .owner-avatar {
+}.pullora-shell .owner-avatar {
   border-color: rgba(255, 255, 255, 0.16);
   border-radius: 15px;
   height: 64px;
   width: 64px;
-}
-
-.cinematic-shell .repo-card.selected .owner-avatar,
-.cinematic-shell .repo-card:hover .owner-avatar {
+}.pullora-shell .repo-card.selected .owner-avatar,
+.pullora-shell .repo-card:hover .owner-avatar {
   border-color: rgba(91, 215, 255, 0.58);
   box-shadow: 0 0 0 4px rgba(91, 215, 255, 0.14);
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-card.selected .owner-avatar,
-:root[data-theme='light'] .cinematic-shell .repo-card:hover .owner-avatar {
+}:root[data-theme='light'] .pullora-shell .repo-card.selected .owner-avatar,
+:root[data-theme='light'] .pullora-shell .repo-card:hover .owner-avatar {
   border-color: color-mix(in srgb, var(--color-primary) 46%, var(--surface-border));
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
-}
-
-.cinematic-shell .repo-info {
+}.pullora-shell .repo-info {
   align-self: start;
-}
-
-.cinematic-shell .repo-title-line {
+}.pullora-shell .repo-title-line {
   align-items: flex-start;
   flex-wrap: wrap;
-}
-
-.cinematic-shell .repo-name {
+}.pullora-shell .repo-name {
   color: #ffffff;
   font-size: 19px;
   font-weight: 820;
   white-space: normal;
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-name {
+}:root[data-theme='light'] .pullora-shell .repo-name {
   color: var(--color-text);
-}
-
-.cinematic-shell .repo-owner {
+}.pullora-shell .repo-owner {
   color: rgba(255, 255, 255, 0.68);
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-owner,
-:root[data-theme='light'] .cinematic-shell .repo-description,
-:root[data-theme='light'] .cinematic-shell .repo-meta {
+}:root[data-theme='light'] .pullora-shell .repo-owner,
+:root[data-theme='light'] .pullora-shell .repo-description,
+:root[data-theme='light'] .pullora-shell .repo-meta {
   color: var(--color-text-secondary);
-}
-
-.cinematic-shell .repo-description {
+}.pullora-shell .repo-description {
   color: rgba(255, 255, 255, 0.76);
   font-size: 13px;
   min-height: 38px;
   margin-top: 8px;
-}
-
-.cinematic-shell .repo-meta {
+}.pullora-shell .repo-meta {
   color: rgba(255, 255, 255, 0.66);
   font-size: 12px;
   gap: 7px 10px;
-}
-
-.cinematic-shell .repo-status {
+}.pullora-shell .repo-status {
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.18);
   color: rgba(255, 255, 255, 0.76);
-}
-
-:root[data-theme='light'] .cinematic-shell .repo-status {
+}:root[data-theme='light'] .pullora-shell .repo-status {
   background: var(--surface-3);
   border-color: var(--surface-border);
   color: var(--color-text-secondary);
-}
-
-.cinematic-shell .repo-status.installed {
+}.pullora-shell .repo-status.installed {
   background: rgba(116, 240, 124, 0.13);
   border-color: rgba(116, 240, 124, 0.58);
   color: #95fb9b;
-}
-
-.cinematic-shell .repo-status.update {
+}.pullora-shell .repo-status.update {
   background: rgba(91, 215, 255, 0.13);
   border-color: rgba(91, 215, 255, 0.7);
   color: #7ddeff;
-}
-
-.cinematic-shell .repo-lang {
+}.pullora-shell .repo-lang {
   background: rgba(91, 215, 255, 0.14);
   border: 1px solid rgba(91, 215, 255, 0.25);
   color: #7ddeff;
-}
-
-.cinematic-shell .repo-card-actions {
+}.pullora-shell .repo-card-actions {
   align-items: center;
   grid-column: 1 / -1;
   justify-content: flex-end;
   margin-top: auto;
   padding-top: 0;
-}
-
-@media (max-width: 1060px) {
-  .cinematic-shell .repo-card-actions {
+}@media (max-width: 1060px) {
+  .pullora-shell .repo-card-actions {
     justify-content: flex-start;
   }
 
-  .cinematic-shell .repo-card-actions button {
+  .pullora-shell .repo-card-actions button {
     flex: 1 1 112px;
   }
-}
-
-.cinematic-shell .fav-btn {
+}.pullora-shell .fav-btn {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.16);
   color: rgba(255, 255, 255, 0.72);
-}
-
-.cinematic-shell .install-btn {
-  background: linear-gradient(180deg, #5bd7ff, #36c6ff);
+}.pullora-shell .install-btn {
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dark));
   border-color: rgba(91, 215, 255, 0.68);
   border-radius: 12px;
-  color: #061018 !important;
+  color: var(--color-on-primary) !important;
   font-weight: 820;
   min-width: 120px;
-}
-
-.cinematic-shell .install-btn:hover {
-  background: linear-gradient(180deg, #87e8ff, #5bd7ff);
-  color: #061018 !important;
-}
-
-:root[data-theme='light'] .cinematic-shell .fav-btn {
+}.pullora-shell .install-btn:hover {
+  background: linear-gradient(180deg, var(--color-primary-dark), var(--color-primary));
+  color: var(--color-on-primary) !important;
+}:root[data-theme='light'] .pullora-shell .fav-btn {
   background: var(--color-control);
   border-color: var(--surface-border);
   color: var(--color-text);
-}
-
-@media (max-width: 760px) {
-  .cinematic-shell .repo-card {
+}@media (max-width: 760px) {
+  .pullora-shell .repo-card {
     grid-template-columns: 56px minmax(0, 1fr);
   }
 
-  .cinematic-shell .owner-avatar {
+  .pullora-shell .owner-avatar {
     height: 56px;
     width: 56px;
   }
 
-  .cinematic-shell .repo-card-actions {
+  .pullora-shell .repo-card-actions {
     justify-content: stretch;
   }
 
-  .cinematic-shell .repo-card-actions button {
+  .pullora-shell .repo-card-actions button {
     flex: 1 1 auto;
   }
-}
-
-.sam-shell .repo-card {
-  align-items: center;
-  animation: none;
-  background: #111b25;
-  border: 0;
-  border-bottom: 1px solid #263848;
-  border-radius: 0;
-  box-shadow: none;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
-  min-height: 54px;
-  padding: 6px 8px 6px 11px;
-}
-
-.sam-shell .repo-card::before {
-  background: #425b70;
-  border-radius: 0;
-  bottom: 0;
-  left: 0;
-  top: 0;
-  width: 3px;
-}
-
-.sam-shell .repo-card--installed::before {
-  background: #66c06f;
-}
-
-.sam-shell .repo-card--update::before {
-  background: #4ba3df;
-  box-shadow: none;
-}
-
-.sam-shell .repo-card:hover,
-.sam-shell .repo-card.selected {
-  background: #1d3447;
-  border-color: #355771;
-  box-shadow: none;
-  transform: none;
-}
-
-.sam-shell .repo-card:focus-visible,
-.sam-shell .repo-card:focus-within {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 3px;
-}
-
-.sam-shell .repo-card-media,
-.sam-shell .owner-avatar {
-  height: 32px;
-  width: 32px;
-}
-
-.sam-shell .owner-avatar {
-  background: #0d161f;
-  border-color: #30495f;
-  border-radius: 2px;
-}
-
-.sam-shell .repo-card.selected .owner-avatar,
-.sam-shell .repo-card:hover .owner-avatar {
-  border-color: #4ba3df;
-  box-shadow: none;
-}
-
-.sam-shell .repo-title-line {
-  gap: 7px;
-}
-
-.sam-shell .repo-name {
-  color: #eef6ff;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.sam-shell .repo-owner {
-  color: #7f98ac;
-  font-size: 11px;
-  margin-top: 1px;
-}
-
-.sam-shell .repo-description {
-  display: none;
-}
-
-.sam-shell .repo-meta {
-  color: #7f98ac;
-  font-size: 10px;
-  gap: 3px 7px;
-  margin-top: 3px;
-}
-
-.sam-shell .repo-lang {
-  background: #203346;
-  border-radius: 2px;
-  color: #9ed5f7;
-  padding: 1px 5px;
-}
-
-.sam-shell .repo-card-actions {
-  gap: 3px;
-}
-
-.sam-shell .fav-btn,
-.sam-shell .install-btn,
-.sam-shell .repo-actions-menu .project-actions-trigger {
-  border-radius: 2px;
-  min-height: 26px;
-}
-
-.sam-shell .fav-btn {
-  background: #172635;
-  border-color: #2a4054;
-  color: #9db1c1;
-  width: 26px;
-}
-
-.sam-shell .fav-btn:hover,
-.sam-shell .fav-btn.active {
-  background: #263f55;
-  box-shadow: none;
-  color: #ffffff;
-  transform: none;
-}
-
-.sam-shell .install-btn {
-  background: #4ba3df;
-  border-color: #83c8f2;
-  color: #07131c;
-  font-size: 12px;
-  font-weight: 800;
-  min-width: 78px;
-  padding: 0 9px;
-}
-
-.sam-shell .install-btn:hover {
-  background: #75bee9;
-  transform: none;
-}
-
-.sam-shell .release-modal .modal-header,
-.sam-shell .release-modal .release-body,
-.sam-shell .release-selection-summary,
-.sam-shell .asset-summary,
-.sam-shell .release-version-card,
-.sam-shell .release-asset-card {
-  background: #142231;
-  border-color: #263848;
-  border-radius: 2px;
-  box-shadow: none;
-}
-
-.sam-shell .release-body {
-  scrollbar-color: #4ba3df #0f1821;
-}
-
-.sam-shell .release-version-card.active,
-.sam-shell .release-asset-card.active {
-  background: #294c67;
-  border-color: #4ba3df;
-  box-shadow: none;
-}
-
-.sam-shell .release-summary-main strong,
-.sam-shell .release-summary-kicker,
-.sam-shell .release-selection-summary p,
-.sam-shell .release-summary-assets {
-  color: #e7eef6;
-}
-
-.sam-shell .release-action-primary {
-  background: #4ba3df;
-  border-color: #83c8f2;
-  border-radius: 2px;
-  box-shadow: none;
-  color: #07131c;
-}
-
-.sam-shell .release-action-primary:hover:not(:disabled) {
-  background: #75bee9;
-  color: #07131c;
-  transform: none;
-}
-
-.sam-shell .close-btn {
-  background: #1a2b3a;
-  border-color: #30495f;
-  border-radius: 2px;
-}
-
-@media (max-width: 760px) {
-  .sam-shell .library-results-header {
-    display: none;
-  }
-
-  .sam-shell .repo-card {
-    grid-template-columns: 34px minmax(0, 1fr);
-  }
-
-  .sam-shell .repo-card-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-  }
-}
-
-.sam-shell .repo-card {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
-}
-
-.sam-shell .search-results::before {
-  display: none;
-}
-
-.sam-shell .library-results-header {
-  background: #0f1922;
-  border-bottom: 1px solid #263848;
-  color: #7e96aa;
-  display: grid;
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 900;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1.1fr) minmax(90px, 0.75fr) minmax(84px, 0.55fr) minmax(110px, 0.65fr);
-  letter-spacing: 0.08em;
-  padding: 7px 10px 7px 44px;
-  position: sticky;
-  text-transform: uppercase;
-  top: 0;
-  z-index: 2;
-}
-
-.sam-shell .repo-card::after {
-  color: #52687b;
-  content: '';
-  display: none;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  opacity: 0;
-  position: absolute;
-  right: 12px;
-  top: 6px;
-  transition: opacity var(--motion-fast);
-}
-
-.sam-shell .repo-card:hover::after,
-.sam-shell .repo-card.selected::after {
-  opacity: 1;
-}
-
-.sam-shell .repo-card-actions {
-  padding-right: 0;
-}
-
-.sam-shell .repo-card-actions button {
-  box-shadow: none !important;
-}
-
-.sam-shell .repo-card-actions .project-actions-menu {
-  z-index: 8;
-}
-
-.sam-shell .repo-card-actions .project-actions-popover {
-  bottom: calc(100% + 5px);
-  top: auto;
-}
-
-.sam-shell .repo-card--available .install-btn {
-  background: #203346;
-  border-color: #395a72;
-  color: #d9e8f4;
-}
-
-.sam-shell .repo-card--installed .install-btn {
-  background: #1f3d2b;
-  border-color: rgba(102, 192, 111, 0.52);
-  color: #8fe09a;
-}
-
-.sam-shell .repo-card--update .install-btn {
-  background: #4ba3df;
-  border-color: #83c8f2;
-  color: #07131c;
-}
-
-.sam-shell .repo-meta span {
-  border-right: 1px solid #263848;
-  padding-right: 8px;
-}
-
-.sam-shell .repo-meta span:last-child {
-  border-right: 0;
-  padding-right: 0;
-}
-
-.sam-shell .release-modal {
-  border-radius: 2px;
-  max-width: 1120px;
-  width: min(96vw, 1120px);
-}
-
-/* GitHub direction: compact library list rows. */
-.sam-shell .repo-card {
-  background: transparent;
-  border-bottom: 0;
-  gap: 8px;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  min-height: 42px;
-  padding: 4px 8px 4px 10px;
-}
-
-.sam-shell .repo-card::before {
-  display: none;
-}
-
-.sam-shell .repo-card:hover {
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.sam-shell .repo-card.selected {
-  background: #344966;
-}
-
-.sam-shell .repo-card-media,
-.sam-shell .owner-avatar {
-  height: 28px;
-  width: 28px;
-}
-
-.sam-shell .repo-name {
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.sam-shell .repo-owner,
-.sam-shell .repo-meta {
-  color: #8f98a0;
-}
-
-.sam-shell .repo-meta {
-  margin-top: 1px;
-}
-
-.sam-shell .repo-card-actions {
-  gap: 4px;
-}
-
-.sam-shell .fav-btn,
-.sam-shell .repo-actions-menu .project-actions-trigger {
-  background: rgba(0, 0, 0, 0.18);
-  border: 0;
-  min-height: 28px;
-  width: 28px;
-}
-
-.sam-shell .install-btn {
-  border: 0;
-  min-height: 28px;
-}
-
-.sam-shell .repo-card--available .install-btn {
-  background: #2a475e;
-}
-
-.sam-shell .repo-card--installed .install-btn {
-  background: linear-gradient(90deg, #5aa832, #3f8f2f);
-  color: #ffffff;
-}
-
-.sam-shell .release-modal--wizard {
-  max-width: 1120px;
-  width: min(96vw, 1120px);
-}
-
-.sam-shell .release-wizard-steps {
-  background: #0d141b;
-  border-bottom: 1px solid #263848;
-  gap: 4px;
-  padding: 10px 16px;
-}
-
-.sam-shell .release-step-pill {
-  background: #172635;
-  border-color: #2a4054;
-  border-radius: 2px;
-  color: #8fa6b9;
-  min-height: 30px;
-}
-
-.sam-shell .release-step-pill.active {
-  background: #294c67;
-  border-color: #4ba3df;
-  color: #ffffff;
-}
-
-.sam-shell .release-step-pill.done {
-  border-color: rgba(102, 192, 111, 0.5);
-  color: #8fe09a;
-}
-
-.sam-shell .release-wizard-context {
-  background: #101a24;
-  border: 1px solid #263848;
-  border-radius: 2px;
-  margin: 10px 16px 0;
-  padding: 9px 10px;
-}
-
-.sam-shell .release-modal .modal-header {
-  align-items: center;
-  background: #101a24;
-  border-bottom: 1px solid #263848;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 14px 16px;
-}
-
-.sam-shell .release-modal .modal-header h2 {
-  color: #edf6ff;
-  font-size: 18px;
-}
-
-.sam-shell .modal-subtitle,
-.sam-shell .release-modal-meta,
-.sam-shell .release-strategy-note,
-.sam-shell .release-version-main span,
-.sam-shell .release-asset-main span,
-.sam-shell .asset-summary p {
-  color: #8fa6b9;
-}
-
-.sam-shell .release-body {
-  background: #0d141b;
-  gap: 10px;
-  grid-template-columns: minmax(260px, 0.75fr) minmax(360px, 1.25fr);
-  padding: 12px 16px 16px;
-}
-
-.sam-shell .release-modal--wizard .release-body {
-  display: block;
-  max-height: min(650px, calc(100vh - 205px));
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.sam-shell .release-wizard-panel,
-.sam-shell .release-confirm-card,
-.sam-shell .release-result-card,
-.sam-shell .release-blocked-note {
-  background: #101a24;
-  border: 1px solid #263848;
-  border-radius: 2px;
-  box-shadow: none;
-}
-
-.sam-shell .release-confirm-grid > div,
-.sam-shell .release-install-path,
-.sam-shell .release-nav-actions {
-  background: #111b25;
-  border-color: #263848;
-  border-radius: 2px;
-}
-
-.sam-shell .release-nav-actions {
-  border-top: 1px solid #263848;
-  margin: 8px -16px 0;
-  padding: 12px 16px 14px;
-}
-
-.sam-shell .release-picker {
-  background: #101a24;
-  border: 1px solid #263848;
-  border-radius: 2px;
-  gap: 0;
-  overflow: hidden;
-}
-
-.sam-shell .release-section-label {
-  background: #0f1922;
-  border-bottom: 1px solid #263848;
-  color: #7e96aa;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  padding: 7px 9px;
-  text-transform: uppercase;
-}
-
-.sam-shell .release-version-list,
-.sam-shell .release-asset-list {
-  gap: 0;
-}
-
-.sam-shell .release-version-card,
-.sam-shell .release-asset-card {
-  border: 0;
-  border-bottom: 1px solid #263848;
-  border-radius: 0;
-  min-height: 48px;
-}
-
-.sam-shell .release-version-card:last-child,
-.sam-shell .release-asset-card:last-child {
-  border-bottom: 0;
-}
-
-.sam-shell .release-version-card:hover,
-.sam-shell .release-asset-card:hover {
-  background: #1d3447;
-  transform: none;
-}
-
-.sam-shell .release-version-card.active,
-.sam-shell .release-asset-card.active {
-  box-shadow: inset 3px 0 0 #4ba3df;
-}
-
-.sam-shell .release-status-pill,
-.sam-shell .asset-kind,
-.sam-shell .asset-recommended {
-  border-radius: 2px;
-  font-size: 10px;
-  padding: 4px 7px;
-}
-
-.sam-shell .release-selection-summary,
-.sam-shell .asset-summary,
-.sam-shell .release-actions,
-.sam-shell .download-panel {
-  border-radius: 2px;
-}
-
-.sam-shell .release-selection-summary {
-  box-shadow: inset 3px 0 0 #4ba3df;
-}
-
-.sam-shell .asset-summary--installer {
-  box-shadow: inset 3px 0 0 #e7bd45;
-}
-
-.sam-shell .asset-summary--unsupported {
-  box-shadow: inset 3px 0 0 #ff7d86;
-}
-
-.sam-shell .release-actions {
-  background: #101a24;
-  border: 1px solid #263848;
-  padding: 10px;
-}
-
-.sam-shell .download-btn {
-  min-height: 40px;
-}
-
-.sam-shell .release-github-link {
-  border-radius: 2px;
-}
-
-.sam-shell .app-details-modal {
-  border-radius: 2px;
-  max-width: 1220px;
-  width: min(96vw, 1220px);
-}
-
-.sam-shell .app-details-header {
-  background: #101a24;
-  border-bottom: 1px solid #263848;
-  padding: 14px 16px;
-}
-
-.sam-shell .app-details-body {
-  background: #0d141b;
-  gap: 10px;
-  grid-template-columns: minmax(300px, 0.78fr) minmax(460px, 1.22fr);
-  padding: 12px;
-}
-
-.sam-shell .app-details-summary,
-.sam-shell .app-details-panel,
-.sam-shell .app-details-facts > div,
-.sam-shell .app-details-paths > div,
-.sam-shell .app-details-version-row,
-.sam-shell .version-switch-facts > div,
-.sam-shell .uninstall-confirm-facts > div,
-.sam-shell .uninstall-confirm-warning {
-  background: #111b25;
-  border-color: #263848;
-  border-radius: 2px;
-  box-shadow: none;
-}
-
-.sam-shell .app-details-summary {
-  box-shadow: inset 3px 0 0 #4ba3df;
-}
-
-.sam-shell .app-details-panel-title {
-  background: #0f1922;
-  border: 1px solid #263848;
-  margin: -4px -4px 0;
-  padding: 8px 9px;
-}
-
-.sam-shell .app-details-panel-title span,
-.sam-shell .app-details-kicker,
-.sam-shell .app-action-kicker,
-.sam-shell .uninstall-confirm-kicker {
-  color: #4ba3df;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.sam-shell .app-details-version-row.active {
-  box-shadow: inset 3px 0 0 #4ba3df;
-}
-
-.sam-shell .app-details-version-row.missing {
-  box-shadow: inset 3px 0 0 #ff7d86;
-}
-
-.sam-shell .version-switch-header,
-.sam-shell .uninstall-confirm-header {
-  background: #101a24;
-  border-bottom-color: #263848;
-}
-
-.sam-shell .version-switch-modal,
-.sam-shell .uninstall-confirm-modal,
-.sam-shell .uninstall-danger-btn {
-  border-radius: 2px;
-}
-
-@media (max-width: 920px) {
-  .sam-shell .release-body {
-    grid-template-columns: 1fr;
-  }
-
-  .sam-shell .release-selection-summary,
-  .sam-shell .asset-summary,
-  .sam-shell .release-actions,
-  .sam-shell .download-panel {
-    grid-column: 1;
-  }
-}
-
-/* v5 cohesive workstation pass */
-.sam-shell .release-modal,
-.sam-shell .release-modal--wizard,
-.sam-shell .app-details-modal,
-.sam-shell .version-switch-modal,
-.sam-shell .uninstall-confirm-modal {
-  background: #16202d;
-  border: 1px solid #2a475e;
-  border-radius: 0;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
-}
-
-.sam-shell .release-modal .modal-header,
-.sam-shell .app-details-header,
-.sam-shell .version-switch-header,
-.sam-shell .uninstall-confirm-header {
-  background: #101821;
-  border-bottom: 1px solid #2a475e;
-  box-shadow: inset 3px 0 0 #66c0f4;
-  padding: 12px 14px;
-}
-
-.sam-shell .uninstall-confirm-header {
-  box-shadow: inset 3px 0 0 #ff7d86;
-}
-
-.sam-shell .release-modal .modal-header h2,
-.sam-shell .app-details-header h2,
-.sam-shell .version-switch-header h2,
-.sam-shell .uninstall-confirm-header h2 {
-  color: #edf6ff;
-  font-size: 17px;
-  line-height: 1.15;
-}
-
-.sam-shell .release-modal-meta span,
-.sam-shell .release-step-pill,
-.sam-shell .release-status-pill,
-.sam-shell .asset-kind,
-.sam-shell .asset-recommended,
-.sam-shell .app-details-version-heading em {
-  border-radius: 0;
-}
-
-.sam-shell .release-wizard-steps {
-  background: #0d141b;
-  border-bottom: 1px solid #263848;
-  padding: 8px 12px;
-}
-
-.sam-shell .release-step-pill {
-  min-height: 28px;
-}
-
-.sam-shell .release-wizard-context {
-  background: #111b25;
-  border: 1px solid #263848;
-  margin: 8px 12px 0;
-  padding: 8px 9px;
-}
-
-.sam-shell .release-modal--wizard .release-body {
-  padding: 10px 12px 0;
-}
-
-.sam-shell .release-blocked-note,
-.sam-shell .release-confirm-card,
-.sam-shell .release-result-card,
-.sam-shell .release-cleanup-note,
-.sam-shell .updates-center,
-.sam-shell .updates-center-stats > div,
-.sam-shell .updates-center-row,
-.sam-shell .updates-center-empty {
-  background: #111b25;
-  border: 1px solid #263848;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.sam-shell .release-blocked-note {
-  box-shadow: inset 3px 0 0 #e7bd45;
-}
-
-.sam-shell .release-confirm-card,
-.sam-shell .release-result-card,
-.sam-shell .release-cleanup-note {
-  box-shadow: inset 3px 0 0 #66c0f4;
-}
-
-.sam-shell .release-confirm-grid > div,
-.sam-shell .release-install-path,
-.sam-shell .version-switch-facts > div,
-.sam-shell .uninstall-confirm-facts > div,
-.sam-shell .app-details-facts > div,
-.sam-shell .app-details-paths > div,
-.sam-shell .app-details-version-summary > div {
-  background: #0f1922;
-  border: 1px solid #263848;
-  border-radius: 0;
-}
-
-.sam-shell .release-nav-actions,
-.sam-shell .version-switch-actions,
-.sam-shell .uninstall-confirm-actions {
-  background: #101821;
-  border-top: 1px solid #263848;
-  margin-left: -12px;
-  margin-right: -12px;
-}
-
-.sam-shell .release-secondary-btn,
-.sam-shell .download-action-btn,
-.sam-shell .version-switch-actions button,
-.sam-shell .uninstall-confirm-actions button,
-.sam-shell .app-details-actions button,
-.sam-shell .app-details-version-actions button {
-  border-radius: 0;
-  min-height: 32px;
-}
-
-.sam-shell .release-asset-list {
-  grid-template-columns: 1fr;
-}
-
-.sam-shell .release-version-card,
-.sam-shell .release-asset-card,
-.sam-shell .app-details-version-row {
-  background: #111b25;
-  border: 0;
-  border-bottom: 1px solid #263848;
-  border-radius: 0;
-  min-height: 44px;
-}
-
-.sam-shell .app-details-body {
-  max-height: min(690px, calc(100vh - 118px));
-  padding: 10px;
-}
-
-.sam-shell .app-details-summary,
-.sam-shell .app-details-panel {
-  padding: 12px;
-}
-
-.sam-shell .app-details-actions,
-.sam-shell .app-details-version-actions,
-.sam-shell .updates-center-actions,
-.sam-shell .updates-center-row-actions {
-  gap: 5px;
-}
-
-.sam-shell .updates-center {
-  box-shadow: inset 3px 0 0 #66c0f4;
-  gap: 9px;
-  padding: 10px;
-}
-
-.sam-shell .updates-center h3 {
-  font-size: 16px;
-}
-
-.sam-shell .updates-center-main,
-.sam-shell .updates-center-row {
-  gap: 8px;
-}
-
-.sam-shell .updates-center-stats {
-  gap: 4px;
-}
-
-@media (max-width: 820px) {
-  .sam-shell .release-nav-actions,
-  .sam-shell .version-switch-actions,
-  .sam-shell .uninstall-confirm-actions,
-  .sam-shell .updates-center-main,
-  .sam-shell .updates-center-row {
-    align-items: stretch;
-    flex-direction: column;
-    grid-template-columns: 1fr;
-  }
-
-  .sam-shell .updates-center-stats,
-  .sam-shell .uninstall-confirm-facts,
-  .sam-shell .version-switch-facts {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* v5.0.3: GitHub-like compact game list. */
-.sam-shell .repo-card {
-  background: transparent;
-  border: 0;
-  color: #c7d5e0;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  min-height: 34px;
-  padding: 3px 8px;
-}
-
-.sam-shell .repo-card:hover {
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.sam-shell .repo-card.selected {
-  background: linear-gradient(90deg, #4f6b8a, #344966);
-}
-
-.sam-shell .repo-card-media,
-.sam-shell .owner-avatar {
-  height: 24px;
-  width: 24px;
-}
-
-.sam-shell .owner-avatar {
-  background: #151c24;
-  border: 0;
-  border-radius: 2px;
-}
-
-.sam-shell .repo-title-line {
-  align-items: center;
-  gap: 5px;
-}
-
-.sam-shell .repo-name {
-  color: #dfe3e6;
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.sam-shell .repo-card.selected .repo-name {
-  color: #ffffff;
-}
-
-.sam-shell .repo-owner {
-  display: none;
-}
-
-.sam-shell .repo-meta {
-  color: #7f8b96;
-  font-size: 10px;
-  gap: 5px;
-  margin-top: 0;
-  opacity: 0.9;
-}
-
-.sam-shell .repo-meta span {
-  border-right: 0;
-  padding-right: 0;
-}
-
-.sam-shell .repo-meta span:not(.repo-installed-version):not(.repo-update-version):first-child {
-  display: none;
-}
-
-.sam-shell .repo-meta span:last-child {
-  display: none;
-}
-
-.sam-shell .repo-lang {
-  background: transparent;
-  color: #66c0f4;
-  font-size: 10px;
-  padding: 0;
-}
-
-.sam-shell .repo-status {
-  background: transparent !important;
-  border: 0;
-  color: #8f98a0;
-  font-size: 10px;
-  padding: 0;
-}
-
-.sam-shell .repo-status.installed {
-  color: #8bc53f;
-}
-
-.sam-shell .repo-status.update {
-  color: #66c0f4;
-}
-
-.sam-shell .repo-card-actions {
-  align-items: center;
-  gap: 2px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--motion-fast);
-}
-
-.sam-shell .repo-card:hover .repo-card-actions,
-.sam-shell .repo-card:focus-within .repo-card-actions,
-.sam-shell .repo-card.selected .repo-card-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.sam-shell .fav-btn,
-.sam-shell .repo-actions-menu .project-actions-trigger {
-  background: rgba(0, 0, 0, 0.18);
-  color: #c7d5e0;
-  height: 24px;
-  min-height: 24px;
-  width: 24px;
-}
-
-.sam-shell .fav-btn.active {
-  color: #ffffff;
-}
-
-.sam-shell .install-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: #dfe3e6;
-  font-size: 11px;
-  min-height: 24px;
-  min-width: 66px;
-  padding: 0 7px;
-}
-
-.sam-shell .repo-card--installed .install-btn {
-  background: rgba(117, 200, 61, 0.84);
-  color: #ffffff;
-}
-
-.sam-shell .repo-card--update .install-btn {
-  background: #66c0f4;
-  color: #101822;
-}
-
-.sam-shell .repo-installed-version {
-  color: #8bc53f;
-}
-
-.sam-shell .repo-update-version {
-  color: #66c0f4;
-}
-
-@media (max-width: 860px) {
-  .sam-shell .repo-card-actions {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-/* Library sidebar should read like Steam's compact game list: icon + name only. */
-.library-sam-list-pane .repo-card {
+}/* GitHub direction: compact library list rows. *//* v5 cohesive workstation pass *//* v5.0.3: GitHub-like compact game list. *//* Library sidebar should read like Steam's compact game list: icon + name only. */.library-sam-list-pane .repo-card {
   align-items: center;
   grid-template-columns: 26px minmax(0, 1fr);
   min-height: 34px;
-}
-
-.library-sam-list-pane .repo-card-media,
+}.library-sam-list-pane .repo-card-media,
 .library-sam-list-pane .owner-avatar {
   height: 24px;
   width: 24px;
-}
-
-.library-sam-list-pane .repo-info {
+}.library-sam-list-pane .repo-info {
   align-items: center;
   display: flex;
   min-height: 24px;
-}
-
-.library-sam-list-pane .repo-title-line {
+}.library-sam-list-pane .repo-title-line {
   min-width: 0;
   width: 100%;
-}
-
-.library-sam-list-pane .repo-status,
+}.library-sam-list-pane .repo-status,
 .library-sam-list-pane .repo-owner,
 .library-sam-list-pane .repo-description,
 .library-sam-list-pane .repo-meta {
   display: none;
-}
-
-.library-sam-list-pane .repo-name {
+}.library-sam-list-pane .repo-name {
   color: #dfe3e6;
   font-size: 13px;
   font-weight: 650;
   line-height: 1.2;
-}
-
-.library-sam-list-pane .repo-card--available .repo-name {
+}.library-sam-list-pane .repo-card--available .repo-name {
   color: #8f98a0;
-}
-
-.library-sam-list-pane .repo-card--installed .repo-name,
+}.library-sam-list-pane .repo-card--installed .repo-name,
 .library-sam-list-pane .repo-card--update .repo-name,
 .library-sam-list-pane .repo-card.selected .repo-name {
   color: #ffffff;
-}
-
-:root[data-theme='light'] .library-sam-list-pane .repo-name {
+}:root[data-theme='light'] .library-sam-list-pane .repo-name {
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .library-sam-list-pane .repo-card--available .repo-name {
+}:root[data-theme='light'] .library-sam-list-pane .repo-card--available .repo-name {
   color: var(--color-text-tertiary);
-}
-
-:root[data-theme='light'] .library-sam-list-pane .repo-card--installed .repo-name,
+}:root[data-theme='light'] .library-sam-list-pane .repo-card--installed .repo-name,
 :root[data-theme='light'] .library-sam-list-pane .repo-card--update .repo-name,
 :root[data-theme='light'] .library-sam-list-pane .repo-card.selected .repo-name {
   color: var(--color-text);
+}/* Keep status actions readable on the light palette. */
 }

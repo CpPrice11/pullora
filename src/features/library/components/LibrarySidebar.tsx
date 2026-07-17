@@ -1,5 +1,6 @@
 import type { ReactNode, Ref, UIEventHandler } from 'react'
 import StatePanel from '../../../components/State/StatePanel'
+import UiSelect from '../../../components/ui/UiSelect'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
 import type { LibraryFilter, LibrarySort } from '../hooks/useLibraryFiltering'
@@ -124,17 +125,16 @@ export default function LibrarySidebar({
           </div>
         </div>
 
-        <label className="library-sort-control">
-          <span>{t('library.sortLabel')}</span>
-          <select
-            value={sort}
-            onChange={(event) => onSortChange(event.target.value as LibrarySort)}
-          >
-            {(['name', 'launched', 'installed', 'updated'] as const).map((mode) => (
-              <option key={mode} value={mode}>{t(`library.sort.${mode}`)}</option>
-            ))}
-          </select>
-        </label>
+        <UiSelect
+          className="library-sort-control"
+          value={sort}
+          label={t('library.sortLabel')}
+          options={(['name', 'launched', 'installed', 'updated'] as const).map((mode) => ({
+            value: mode,
+            label: t(`library.sort.${mode}`),
+          }))}
+          onChange={(nextSort: LibrarySort) => onSortChange(nextSort)}
+        />
       </section>
 
       <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>

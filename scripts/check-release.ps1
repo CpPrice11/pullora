@@ -195,13 +195,27 @@ try {
 
     if (-not $SkipSmokeTest) {
       Write-Host "[release-check] Smoke-testing portable EXE..."
-      $proc = Start-Process -FilePath $portablePath -PassThru -WindowStyle Hidden
-      Start-Sleep -Seconds 6
-      if ($proc.HasExited) {
-        Fail "Portable EXE exited during smoke-test with code $($proc.ExitCode)"
+      $smokeDir = Join-Path ([System.IO.Path]::GetTempPath()) "pullora-smoke-$([guid]::NewGuid().ToString('N'))"
+      $smokePath = Join-Path $smokeDir $portableName
+      $proc = $null
+      try {
+        New-Item -ItemType Directory -Path $smokeDir | Out-Null
+        Copy-Item -LiteralPath $portablePath -Destination $smokePath
+        $proc = Start-Process -FilePath $smokePath -PassThru -WindowStyle Hidden
+        Start-Sleep -Seconds 6
+        if ($proc.HasExited) {
+          Fail "Portable EXE exited during smoke-test with code $($proc.ExitCode)"
+        }
+        Write-Host "[ok] Smoke-test portable EXE: Running"
+      } finally {
+        if ($proc -and -not $proc.HasExited) {
+          Stop-Process -Id $proc.Id -Force
+          $proc.WaitForExit()
+        }
+        if (Test-Path -LiteralPath $smokeDir) {
+          Remove-Item -LiteralPath $smokeDir -Recurse -Force
+        }
       }
-      Stop-Process -Id $proc.Id -Force
-      Write-Host "[ok] Smoke-test portable EXE: Running"
     }
   }
 

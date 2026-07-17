@@ -1,4 +1,4 @@
-.state-panel {
+@layer components {.state-panel {
   animation: fluent-fade-up var(--motion-normal);
   background: var(--color-mica);
   border: 1px solid var(--color-border-subtle);
@@ -9,9 +9,7 @@
   grid-column: 1 / -1;
   justify-content: space-between;
   padding: 22px;
-}
-
-.state-panel-mark {
+}.state-panel-mark {
   align-items: center;
   background: var(--color-control);
   border: 1px solid var(--color-border-subtle);
@@ -21,15 +19,11 @@
   height: 54px;
   justify-content: center;
   width: 54px;
-}
-
-.state-panel-mark span {
+}.state-panel-mark span {
   color: var(--color-text-secondary);
   font-size: 24px;
   font-weight: 850;
-}
-
-.state-panel--empty .state-panel-mark span::before {
+}.state-panel--empty .state-panel-mark span::before {
   content: '';
   border: 2px solid currentColor;
   border-radius: 999px;
@@ -37,63 +31,41 @@
   height: 18px;
   opacity: 0.8;
   width: 18px;
-}
-
-.state-panel--error .state-panel-mark {
+}.state-panel--error .state-panel-mark {
   background: color-mix(in srgb, var(--color-error) 12%, var(--color-bg-elevated));
   border-color: color-mix(in srgb, var(--color-error) 35%, var(--color-border-subtle));
-}
-
-.state-panel--error .state-panel-mark span {
+}.state-panel--error .state-panel-mark span {
   color: var(--color-error);
-}
-
-.state-panel--empty {
+}.state-panel--empty {
   align-items: center;
   min-height: 150px;
   text-align: left;
-}
-
-.state-panel--error {
+}.state-panel--error {
   align-items: flex-start;
   background: color-mix(in srgb, var(--color-error) 10%, var(--color-bg-elevated));
   border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border-subtle));
   border-left: 4px solid var(--color-error);
-}
-
-.state-panel-content {
+}.state-panel-content {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-}
-
-.state-panel h3 {
+}.state-panel h3 {
   color: var(--color-text);
   font-size: 18px;
   margin: 0;
-}
-
-.state-panel p {
+}.state-panel p {
   line-height: 1.5;
   margin: 0;
-}
-
-.state-panel--error h3 {
+}.state-panel--error h3 {
   color: var(--color-error);
-}
-
-.state-details {
+}.state-details {
   margin-top: 6px;
-}
-
-.state-details summary {
+}.state-details summary {
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
-}
-
-.state-details pre {
+}.state-details pre {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-subtle);
   border-radius: 10px;
@@ -105,17 +77,13 @@
   overflow: auto;
   padding: 10px;
   white-space: pre-wrap;
-}
-
-.state-panel--loading {
+}.state-panel--loading {
   background: transparent;
   border: 0;
   display: grid;
   gap: 12px;
   padding: 0;
-}
-
-.state-skeleton-card {
+}.state-skeleton-card {
   background:
     linear-gradient(90deg, transparent, var(--color-control-hover), transparent),
     var(--color-bg-elevated);
@@ -128,46 +96,32 @@
   min-height: 118px;
   padding: 18px;
   animation: skeleton-sheen 1.25s ease-in-out infinite;
-}
-
-@keyframes skeleton-sheen {
+}@keyframes skeleton-sheen {
   from { background-position: -220px 0, 0 0; }
   to { background-position: calc(100% + 220px) 0, 0 0; }
-}
-
-.state-skeleton-icon,
+}.state-skeleton-icon,
 .state-skeleton-line,
 .state-skeleton-action {
   background: var(--color-control);
   border-radius: 999px;
-}
-
-.state-skeleton-icon {
+}.state-skeleton-icon {
   align-self: center;
   border-radius: 12px;
   grid-row: 1 / span 2;
   height: 52px;
   width: 52px;
-}
-
-.state-skeleton-line {
+}.state-skeleton-line {
   height: 15px;
   max-width: 52%;
-}
-
-.state-skeleton-line--wide {
+}.state-skeleton-line--wide {
   height: 19px;
   max-width: 72%;
-}
-
-.state-skeleton-action {
+}.state-skeleton-action {
   align-self: center;
   grid-column: 3;
   grid-row: 1 / span 2;
   height: 38px;
-}
-
-@media (max-width: 768px) {
+}@media (max-width: 768px) {
   .state-panel {
     align-items: stretch;
     flex-direction: column;
@@ -181,21 +135,17 @@
     grid-column: 1 / -1;
     grid-row: auto;
   }
-}
-
-.cinematic-shell .state-panel {
+}.pullora-shell .state-panel {
   background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),
-    rgba(18, 20, 24, 0.72);
-  border-color: rgba(255, 255, 255, 0.12);
+    linear-gradient(115deg, color-mix(in srgb, var(--color-text) 8%, transparent), transparent),
+    var(--surface-2);
+  border-color: var(--surface-border);
   border-radius: 22px;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
-  color: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--surface-shadow);
+  color: var(--color-text-secondary);
   overflow: hidden;
   position: relative;
-}
-
-.cinematic-shell .state-panel::after {
+}.pullora-shell .state-panel::after {
   background: linear-gradient(90deg, rgba(91, 215, 255, 0.7), transparent);
   border-radius: 999px;
   bottom: -1px;
@@ -205,211 +155,40 @@
   opacity: 0.72;
   position: absolute;
   right: 18px;
-}
-
-.cinematic-shell .state-panel h3 {
-  color: #ffffff;
+}.pullora-shell .state-panel h3 {
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 820;
-}
-
-.cinematic-shell .state-panel-mark {
+}.pullora-shell .state-panel-mark {
   background:
-    radial-gradient(circle at 70% 20%, rgba(91, 215, 255, 0.34), transparent 38%),
-    rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.14);
+    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 38%),
+    var(--surface-3);
+  border-color: var(--surface-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.cinematic-shell .state-panel-mark span {
-  color: #ffffff;
-}
-
-.cinematic-shell .state-panel--error {
+}.pullora-shell .state-panel-mark span {
+  color: var(--color-text);
+}.pullora-shell .state-panel--error {
   background:
     linear-gradient(115deg, rgba(255, 138, 160, 0.16), rgba(255, 255, 255, 0.04)),
     rgba(18, 20, 24, 0.78);
   border-color: rgba(255, 138, 160, 0.34);
   border-left: 4px solid var(--color-error);
-}
-
-.cinematic-shell .state-panel--error h3 {
+}.pullora-shell .state-panel--error h3 {
   color: var(--color-error);
-}
-
-.cinematic-shell .state-details pre {
+}.pullora-shell .state-details pre {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.1);
-}
-
-.cinematic-shell .state-skeleton-card {
-  background:
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent),
-    rgba(255, 255, 255, 0.07);
-  background-size: 220px 100%, 100% 100%;
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
-}
-
-.cinematic-shell .state-skeleton-icon,
-.cinematic-shell .state-skeleton-line,
-.cinematic-shell .state-skeleton-action {
-  background: rgba(255, 255, 255, 0.11);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-panel {
-  background: var(--surface-2);
-  border-color: var(--surface-border);
-  box-shadow: var(--surface-shadow);
-  color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-panel h3 {
-  color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-panel-mark {
-  background:
-    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 38%),
-    var(--surface-3);
-  border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-panel-mark span {
-  color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-panel--error h3 {
-  color: var(--color-error);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-skeleton-card {
+}.pullora-shell .state-skeleton-card {
   background:
     linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-text) 8%, transparent), transparent),
     var(--surface-3);
   background-size: 220px 100%, 100% 100%;
   border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .state-skeleton-icon,
-:root[data-theme='light'] .cinematic-shell .state-skeleton-line,
-:root[data-theme='light'] .cinematic-shell .state-skeleton-action {
+  border-radius: 20px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+}.pullora-shell .state-skeleton-icon,
+.pullora-shell .state-skeleton-line,
+.pullora-shell .state-skeleton-action {
   background: color-mix(in srgb, var(--color-text) 10%, transparent);
 }
-
-.sam-shell .state-panel {
-  align-items: center;
-  animation: none;
-  background: #121d27;
-  border: 1px solid #263848;
-  border-radius: 2px;
-  box-shadow: inset 3px 0 0 #4ba3df;
-  color: #9fb4c6;
-  padding: 14px;
-  position: relative;
-}
-
-.sam-shell .state-panel::before {
-  background: #4ba3df;
-  bottom: 0;
-  content: '';
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 3px;
-}
-
-.sam-shell .state-panel--error {
-  background: rgba(255, 125, 134, 0.08);
-  border-color: rgba(255, 125, 134, 0.28);
-  border-left: 0;
-  box-shadow: inset 3px 0 0 #ff7d86;
-}
-
-.sam-shell .state-panel--error::before {
-  background: #ff7d86;
-}
-
-.sam-shell .state-panel--empty {
-  min-height: 110px;
-}
-
-.sam-shell .state-panel-mark {
-  background: #172635;
-  border-color: #2a4054;
-  border-radius: 2px;
-  box-shadow: none;
-  height: 42px;
-  width: 42px;
-}
-
-.sam-shell .state-panel h3 {
-  color: #edf6ff;
-  font-size: 15px;
-  font-weight: 850;
-  letter-spacing: -0.01em;
-}
-
-.sam-shell .state-panel p {
-  color: #9fb4c6;
-  font-size: 13px;
-}
-
-.sam-shell .state-panel--error h3,
-.sam-shell .state-panel--error .state-panel-mark span {
-  color: #ff9da5;
-}
-
-.sam-shell .state-details pre {
-  background: #0d161f;
-  border-color: #263848;
-  border-radius: 2px;
-}
-
-.sam-shell .state-panel-action {
-  align-self: center;
-  background: #172635;
-  border-color: #2a4054;
-  border-radius: 2px;
-  box-shadow: none;
-  color: #d9e8f4;
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 12px;
-}
-
-.sam-shell .state-panel-action:hover {
-  background: #263f55;
-  transform: none;
-}
-
-.sam-shell .state-skeleton-card {
-  background:
-    linear-gradient(90deg, transparent, rgba(75, 163, 223, 0.12), transparent),
-    #111b25;
-  background-size: 220px 100%, 100% 100%;
-  border-color: #263848;
-  border-radius: 2px;
-  box-shadow: none;
-  min-height: 76px;
-  padding: 12px;
-  position: relative;
-}
-
-.sam-shell .state-skeleton-card::before {
-  background: #263848;
-  bottom: 0;
-  content: '';
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 3px;
-}
-
-.sam-shell .state-skeleton-icon,
-.sam-shell .state-skeleton-line,
-.sam-shell .state-skeleton-action {
-  background: #1b2d3c;
-  border-radius: 2px;
 }
