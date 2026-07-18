@@ -7,22 +7,6 @@
   width: 100%;
 }
 
-/* Світлі поверхні бібліотеки та читабельний власний фон. */
-.cinematic-shell.has-custom-background .library-page {
-  --library-fluent-surface: rgba(7, 14, 21, 0.68);
-  --library-fluent-surface-strong: rgba(8, 16, 24, 0.76);
-}
-
-.cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
-  background:
-    radial-gradient(circle at 78% 0%, rgba(102, 192, 244, 0.08), transparent 30%),
-    rgba(6, 13, 20, 0.68);
-}
-
-.cinematic-shell.has-custom-background .library-page .library-hero-gradient {
-  background: linear-gradient(90deg, rgba(4, 10, 16, 0.78) 0%, rgba(4, 10, 16, 0.52) 54%, rgba(4, 10, 16, 0.22) 100%);
-}
-
 .library-page {
   gap: 12px;
 }
@@ -687,17 +671,6 @@
   flex: 1;
 }
 
-.saved-indicator {
-  animation: fluent-scale-in var(--motion-normal);
-  background: var(--color-primary-light);
-  border: 1px solid var(--color-primary);
-  border-radius: 999px;
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  padding: 4px 10px;
-}
-
 .settings-status {
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -961,8 +934,8 @@
 
 .modal-backdrop {
   align-items: center;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(12px);
+  background: var(--launcher-background-scrim);
+  backdrop-filter: blur(var(--surface-blur));
   display: flex;
   inset: 0;
   justify-content: center;
@@ -1775,14 +1748,6 @@
   width: 100%;
 }
 
-.settings-autosave-status {
-  align-items: center;
-  display: flex;
-  justify-content: flex-end;
-  min-height: 34px;
-  min-width: 150px;
-}
-
 .settings-nav {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent),
@@ -2441,12 +2406,12 @@
 
 /* Settings workspace */
 .settings-page {
-  background: #0f1821;
-  border: 1px solid #263848;
+  background: transparent;
+  border: 1px solid var(--surface-border);
   border-radius: 0;
   display: grid;
   gap: 0;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   max-width: none;
   min-height: 0;
@@ -2460,8 +2425,8 @@
 
 .settings-page-header {
   align-items: center;
-  background: #111d28;
-  border-bottom: 1px solid #263848;
+  background: transparent;
+  border-bottom: 1px solid var(--surface-border);
   display: flex;
   gap: 16px;
   justify-content: space-between;
@@ -2495,17 +2460,10 @@
   max-width: 760px;
 }
 
-.settings-page-header-actions {
-  align-items: center;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
 .settings-page .settings-form {
-  background: #121d27;
-  border: 0;
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
   border-radius: 0;
   box-shadow: none;
   display: grid;
@@ -2519,8 +2477,8 @@
 }
 
 .settings-page .settings-nav {
-  background: #101821;
-  border-right: 1px solid #263848;
+  background: var(--surface-2);
+  border-right: 1px solid var(--surface-border);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -2530,7 +2488,7 @@
 }
 
 .settings-page .settings-content {
-  background: #0d141b;
+  background: var(--surface-2);
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -2599,8 +2557,7 @@
   accent-color: #66c0f4;
 }
 
-.settings-page .secondary-btn,
-.settings-page .settings-done-btn {
+.settings-page .secondary-btn {
   border-radius: 0;
   min-height: 34px;
 }
@@ -2612,30 +2569,10 @@
   padding: 8px;
 }
 
-.settings-page-footer {
-  align-items: center;
-  background: #101821;
-  border-top: 1px solid #263848;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  min-height: 50px;
-  padding: 8px 16px;
-}
-
-.settings-page-footer .settings-autosave-status {
-  min-width: 0;
-}
-
-.settings-done-btn {
-  min-height: 40px;
-  min-width: 104px;
-}
-
 .settings-page .settings-section,
 .settings-page .danger-zone {
-  background: #142231;
-  border: 1px solid #263848;
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 0;
   box-shadow: none;
   min-height: 0;
@@ -2661,7 +2598,7 @@
 
 .launcher-background-themes {
   display: grid;
-  gap: 8px;
+  gap: calc(8px * var(--density-scale));
 }
 
 .launcher-background-theme {
@@ -2669,9 +2606,9 @@
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-subtle);
   display: grid;
-  gap: 12px;
+  gap: calc(12px * var(--density-scale));
   grid-template-columns: minmax(120px, 1fr) auto;
-  padding: 10px 12px;
+  padding: calc(10px * var(--density-scale)) 12px;
 }
 
 .launcher-background-theme strong {
@@ -2694,8 +2631,8 @@
   border: 1px solid #263848;
   border-radius: 0;
   display: grid;
-  gap: 6px;
-  padding: 10px;
+  gap: calc(6px * var(--density-scale));
+  padding: calc(10px * var(--density-scale));
 }
 
 .settings-source-summary strong {
@@ -2714,8 +2651,8 @@
 .settings-owner-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: calc(6px * var(--density-scale));
+  margin-top: calc(8px * var(--density-scale));
 }
 
 .settings-owner-chips button {
@@ -2724,8 +2661,8 @@
   border-radius: 0;
   color: var(--color-text-secondary);
   font-size: 12px;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: calc(28px * var(--density-scale));
+  padding: 0 calc(10px * var(--density-scale));
 }
 
 .settings-owner-chips button.active {
@@ -2823,7 +2760,7 @@
 .settings-inline-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: calc(10px * var(--density-scale));
 }
 
 .settings-page .compact-control input,
@@ -2908,7 +2845,7 @@
 .settings-maintenance-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: calc(10px * var(--density-scale));
   max-width: 520px;
 }
 
@@ -2921,14 +2858,14 @@
   border: 1px solid #263848;
   border-radius: 0;
   display: grid;
-  gap: 10px;
+  gap: calc(10px * var(--density-scale));
   max-width: 620px;
-  padding: 12px;
+  padding: calc(12px * var(--density-scale));
 }
 
 .settings-diagnostics-card dl {
   display: grid;
-  gap: 8px;
+  gap: calc(8px * var(--density-scale));
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
@@ -3006,7 +2943,7 @@
 
 .settings-event-log {
   display: grid;
-  gap: 14px;
+  gap: calc(14px * var(--density-scale));
 }
 
 .settings-event-log-toolbar {
@@ -3028,7 +2965,7 @@
 
 .settings-event-log-list {
   display: grid;
-  gap: 8px;
+  gap: calc(8px * var(--density-scale));
   list-style: none;
   margin: 0;
   max-height: min(58vh, 620px);
@@ -3039,7 +2976,7 @@
 .settings-event-log-list li {
   background: var(--surface-3, var(--color-bg-secondary));
   border: 1px solid var(--surface-border, var(--color-border-subtle));
-  padding: 10px 12px;
+  padding: calc(10px * var(--density-scale)) 12px;
 }
 
 .settings-event-log-list code {
@@ -3059,8 +2996,8 @@
 
 .settings-reset-overlay {
   align-items: center;
-  background: rgba(3, 5, 8, 0.68);
-  backdrop-filter: blur(10px) brightness(0.72);
+  background: var(--launcher-background-scrim);
+  backdrop-filter: blur(var(--surface-blur));
   display: flex;
   inset: 0;
   justify-content: center;
@@ -3308,7 +3245,6 @@
 }
 
 :root[data-theme='light'] .settings-page-header,
-:root[data-theme='light'] .settings-page-footer,
 :root[data-theme='light'] .settings-page .settings-nav {
   background: transparent;
   border-color: var(--surface-border);
@@ -3384,10 +3320,6 @@
   flex-direction: column;
   }
 
-.settings-page-header-actions {
-    justify-content: space-between;
-  width: 100%;
-  }
 }
 
 /* Unified cinematic button language */
@@ -4708,22 +4640,17 @@
 
 /* v5.2.30: Fluent/Mica library surface for the active cinematic shell. */
 .cinematic-shell .library-page {
-  --library-fluent-surface: rgba(7, 14, 21, 0.88);
-  --library-fluent-surface-strong: rgba(8, 16, 24, 0.94);
-  --library-fluent-surface-soft: rgba(255, 255, 255, 0.04);
-  --library-fluent-border: rgba(176, 213, 238, 0.14);
-  --library-fluent-border-strong: rgba(102, 192, 244, 0.34);
-  --library-fluent-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  --library-fluent-surface: var(--surface-1);
+  --library-fluent-surface-soft: var(--surface-2);
+  --library-fluent-border: var(--surface-border);
+  --library-fluent-shadow: var(--surface-shadow);
   --library-fluent-accent: #42c7f4;
-  --library-fluent-accent-strong: #2ea8df;
 }
 
 .cinematic-shell .library-page .library-sam-list-pane,
 .cinematic-shell .library-page .library-sam-details-pane {
-  backdrop-filter: blur(28px) saturate(1.18);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.012)),
-    var(--library-fluent-surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--library-fluent-surface);
   border: 1px solid var(--library-fluent-border);
   border-radius: 22px;
   box-shadow: var(--library-fluent-shadow);
@@ -4734,10 +4661,7 @@
 }
 
 .cinematic-shell .library-page .library-sam-details-pane {
-  background:
-    radial-gradient(circle at 78% 0%, rgba(102, 192, 244, 0.09), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
-    rgba(6, 13, 20, 0.9);
+  background: var(--library-fluent-surface);
   border-radius: 24px;
 }
 
@@ -4747,9 +4671,7 @@
 }
 
 .cinematic-shell .library-page .library-toolstrip {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.016)),
-    rgba(4, 11, 17, 0.78);
+  background: var(--library-fluent-surface-soft);
   border-color: rgba(102, 192, 244, 0.16);
   border-radius: 18px;
   gap: var(--library-toolstrip-gap);
@@ -4861,9 +4783,7 @@
 
 .cinematic-shell .library-page .library-hero {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.016)),
-    rgba(7, 14, 21, 0.9);
+  background: var(--library-fluent-surface-soft);
   border: 1px solid var(--library-fluent-border);
   border-radius: 24px;
   box-shadow: var(--library-fluent-shadow);
@@ -4947,8 +4867,8 @@
 }
 
 .cinematic-shell .library-page .library-hero-meta {
-  background: rgba(7, 14, 21, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
   display: inline-flex;
   overflow: hidden;
@@ -4959,9 +4879,7 @@
 }
 
 .cinematic-shell .library-page .library-ops-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.048), rgba(255, 255, 255, 0.018)),
-    var(--library-fluent-surface-strong);
+  background: var(--library-fluent-surface-soft);
   border: 1px solid var(--library-fluent-border);
   border-radius: 18px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
@@ -5017,8 +4935,8 @@
 .cinematic-shell .library-page .library-ops-grid > div,
 .cinematic-shell .library-page .library-inline-summary > div,
 .cinematic-shell .library-page .library-inline-summary > button {
-  background: rgba(3, 9, 15, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 13px;
 }
 
@@ -5035,9 +4953,7 @@
 }
 
 .cinematic-shell .library-page .library-inline-panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.014)),
-    var(--library-fluent-surface);
+  background: var(--library-fluent-surface-soft);
   border: 1px solid var(--library-fluent-border);
   border-radius: 18px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
@@ -5066,9 +4982,14 @@
 
 .cinematic-shell .library-page .library-inline-version-row,
 .cinematic-shell .library-page .library-inline-empty {
-  background: rgba(3, 9, 15, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
+}
+
+.cinematic-shell .library-page .library-details-empty {
+  background: var(--surface-3);
+  border-color: var(--surface-border);
 }
 
 @media (max-width: 1180px) {
@@ -5228,30 +5149,6 @@
   }
 }
 
-/* Light library states reuse the shared material tokens. */
-:root[data-theme='light'] .cinematic-shell .library-page {
-  --library-fluent-surface: var(--surface-1);
-  --library-fluent-surface-strong: var(--surface-2);
-  --library-fluent-surface-soft: var(--surface-3);
-  --library-fluent-border: var(--surface-border);
-  --library-fluent-shadow: var(--surface-shadow);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-sam-list-pane,
-:root[data-theme='light'] .cinematic-shell .library-page .library-sam-details-pane,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-sam-list-pane,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-sam-details-pane {
-  background: var(--surface-1);
-  border-color: var(--library-fluent-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-toolstrip,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-toolstrip {
-  background: var(--surface-2);
-  border-color: var(--surface-border);
-  box-shadow: none;
-}
-
 :root[data-theme='light'] .cinematic-shell .library-page .library-sidebar-nav-btn {
   background: var(--color-control);
   border-color: var(--surface-border);
@@ -5326,11 +5223,6 @@
   color: var(--color-text);
 }
 
-:root[data-theme='light'] .cinematic-shell .library-page .library-hero,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero {
-  background: var(--surface-2);
-}
-
 :root[data-theme='light'] .cinematic-shell .library-page .library-hero-background,
 :root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero-background {
   background: var(--library-hero-background, transparent);
@@ -5354,28 +5246,6 @@
 :root[data-theme='light'] .cinematic-shell .library-page .library-github-header .library-hero-description,
 :root[data-theme='light'] .cinematic-shell .library-page .library-hero-meta span {
   color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-hero-meta,
-:root[data-theme='light'] .cinematic-shell .library-page .library-play-status,
-:root[data-theme='light'] .cinematic-shell .library-page .library-ops-grid > div,
-:root[data-theme='light'] .cinematic-shell .library-page .library-inline-summary > div,
-:root[data-theme='light'] .cinematic-shell .library-page .library-inline-version-row,
-:root[data-theme='light'] .cinematic-shell .library-page .library-inline-empty {
-  background: var(--surface-3);
-  border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-ops-panel,
-:root[data-theme='light'] .cinematic-shell .library-page .library-inline-panel {
-  background: var(--surface-2);
-  border-color: var(--library-fluent-border);
-  box-shadow: none;
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-details-empty {
-  background: var(--surface-3);
-  border-color: var(--surface-border);
 }
 
 :root[data-theme='light'] .cinematic-shell .library-page .library-details-empty h3 {

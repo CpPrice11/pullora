@@ -261,7 +261,8 @@
 /* v5 cohesive workstation pass */
 .sam-shell .modal-overlay,
 .modal-overlay {
-  background: rgba(5, 9, 13, 0.88);
+  background: var(--launcher-background-scrim);
+  backdrop-filter: blur(var(--surface-blur));
 }
 
 .sam-shell .modal-content,
@@ -292,8 +293,8 @@
 
 /* Light dialogs must win over the legacy dark workstation fallbacks above. */
 :root[data-theme='light'] .modal-overlay {
-  background: color-mix(in srgb, var(--surface-canvas) 66%, transparent);
-  backdrop-filter: blur(10px) brightness(1.02);
+  background: var(--launcher-background-scrim);
+  backdrop-filter: blur(var(--surface-blur));
 }
 
 :root[data-theme='light'] .modal-content {

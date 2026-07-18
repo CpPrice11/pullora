@@ -47,6 +47,10 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
   const nestedOpacity = Math.round(shellOpacity * (isLight ? 0.68 : 0.55))
   const insetOpacity = Math.round(shellOpacity * (isLight ? 0.82 : 0.72))
   const strongOpacity = Math.min(100, shellOpacity + 12)
+  const backgroundScrimOpacity = Math.max(
+    isLight ? 34 : 28,
+    Math.min(isLight ? 70 : 66, shellOpacity - 8),
+  )
 
   return {
     '--color-primary': normalized.accent,
@@ -73,6 +77,7 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
     '--surface-opacity-strong': `${strongOpacity}%`,
     '--surface-blur': `${normalized.surfaceBlur}px`,
     '--surface-canvas': normalized.background,
+    '--launcher-background-scrim': `color-mix(in srgb, ${normalized.background} ${backgroundScrimOpacity}%, transparent)`,
     '--surface-1': `color-mix(in srgb, ${normalized.surface} ${shellOpacity}%, transparent)`,
     '--surface-2': `color-mix(in srgb, ${normalized.surface2} ${nestedOpacity}%, transparent)`,
     '--surface-3': `color-mix(in srgb, ${normalized.background} ${insetOpacity}%, transparent)`,
@@ -115,6 +120,7 @@ export function applyAppearanceSettings(
         : APPEARANCE_PRESETS[normalized.preset]
   const effectiveAppearance = {
     ...themeAppearance,
+    density: normalized.density,
     surfaceTransparency: normalized.surfaceTransparency,
     surfaceBlur: normalized.surfaceBlur,
   }
