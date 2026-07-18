@@ -1,6 +1,6 @@
 use chrono::Utc;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use super::StorageError;
@@ -10,7 +10,7 @@ const MAX_LOG_BYTES: u64 = 1024 * 1024;
 const ROTATED_LOG_FILES: usize = 3;
 static LOG_WRITE_LOCK: Mutex<()> = Mutex::new(());
 
-fn log_path(config_dir: &PathBuf, index: usize) -> PathBuf {
+fn log_path(config_dir: &Path, index: usize) -> PathBuf {
     if index == 0 {
         config_dir.join("pullora.log")
     } else {
@@ -18,7 +18,7 @@ fn log_path(config_dir: &PathBuf, index: usize) -> PathBuf {
     }
 }
 
-fn rotate_logs(config_dir: &PathBuf) -> Result<(), StorageError> {
+fn rotate_logs(config_dir: &Path) -> Result<(), StorageError> {
     let active = log_path(config_dir, 0);
     if active
         .metadata()
@@ -92,7 +92,7 @@ pub fn redact_sensitive_text(value: &str) -> String {
     redacted
 }
 
-pub fn append_log(config_dir: &PathBuf, message: &str) -> Result<(), StorageError> {
+pub fn append_log(config_dir: &Path, message: &str) -> Result<(), StorageError> {
     let _guard = LOG_WRITE_LOCK
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -113,7 +113,7 @@ pub fn append_log(config_dir: &PathBuf, message: &str) -> Result<(), StorageErro
     Ok(())
 }
 
-pub fn read_recent_logs(config_dir: &PathBuf, limit: usize) -> Result<Vec<String>, StorageError> {
+pub fn read_recent_logs(config_dir: &Path, limit: usize) -> Result<Vec<String>, StorageError> {
     let _guard = LOG_WRITE_LOCK
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());

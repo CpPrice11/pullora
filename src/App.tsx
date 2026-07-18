@@ -169,7 +169,6 @@ function App() {
             }}
             onChangeLauncherBackground={handleChangeLauncherBackground}
             onClearLauncherBackground={handleClearLauncherBackground}
-            onClose={() => setSettingsOpen(false)}
           />
         )}
 

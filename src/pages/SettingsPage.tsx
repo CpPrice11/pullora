@@ -11,12 +11,14 @@ import {
 import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
-import NativeSelect from '../components/Select/NativeSelect'
+import {
+  SettingsSections,
+  type SettingsSectionId,
+} from '../features/settings/components/SettingsSections'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
-import { formatBytes } from '../utils/format'
 import { redactSensitiveText } from '../utils/redactSensitiveText'
 import './PageStyles.css'
 
@@ -24,16 +26,6 @@ interface SettingsPageProps {
   hasLauncherBackground: Record<ResolvedTheme, boolean>
   onChangeLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onClearLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
-  onClose: () => void
-}
-
-function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
-  switch (strategy) {
-    case 'installerFirst': return 'settings.installerFirst'
-    case 'manual': return 'settings.manual'
-    case 'portableFirst':
-    default: return 'settings.portableFirst'
-  }
 }
 
 const RECENT_GITHUB_OWNERS_KEY = 'pullora.recentGithubOwners.v1'
@@ -79,14 +71,12 @@ function SettingsPage({
   hasLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
-  onClose,
 }: SettingsPageProps) {
   const { language, t } = useI18n()
-  const [activeSection, setActiveSection] = useState('general')
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>('general')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'>('idle')
   const [resetPending, setResetPending] = useState(false)
@@ -170,11 +160,6 @@ function SettingsPage({
     return () => window.clearInterval(timer)
   }, [activeSection])
 
-  const showSavedState = () => {
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 1600)
-  }
-
   const persistSettings = async (
     nextSettings: AppSettings,
     previousSettings: AppSettings | null = settings,
@@ -187,7 +172,6 @@ function SettingsPage({
 
     try {
       await updateSettings(normalizedSettings)
-      showSavedState()
       return normalizedSettings
     } catch (err) {
       if (previousSettings) {
@@ -214,7 +198,6 @@ function SettingsPage({
 
     try {
       await updateSettings(nextSettings)
-      showSavedState()
     } catch (err) {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
@@ -456,7 +439,7 @@ function SettingsPage({
     )
   }
 
-  const sections = [
+  const sections: Array<{ id: SettingsSectionId; label: string }> = [
     { id: 'general', label: t('settings.general') },
     { id: 'installation', label: t('settings.installation') },
     { id: 'updates', label: t('settings.updates') },
@@ -464,409 +447,11 @@ function SettingsPage({
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
 
-  const settingsPanelId = (sectionId: string) =>
+  const settingsPanelId = (sectionId: SettingsSectionId) =>
     sectionId === 'installation' ? 'settings-folders' : `settings-${sectionId}`
 
-  const handleSectionSelect = (sectionId: string) => {
+  const handleSectionSelect = (sectionId: SettingsSectionId) => {
     setActiveSection(sectionId)
-  }
-
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case 'general':
-        return (
-          <section id="settings-general" className="settings-section">
-            <h3>{t('settings.general')}</h3>
-            <div className="settings-grid">
-              <div className="form-group compact-control">
-                <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
-                <input
-                  id="githubOwner"
-                  type="text"
-                  value={settings.githubOwner ?? ''}
-                  onBlur={handleGithubOwnerBlur}
-                  onChange={(event) =>
-                    setSettings({ ...settings, githubOwner: event.target.value })
-                  }
-                  onKeyDown={handleGithubOwnerKeyDown}
-                  placeholder={t('settings.githubOwnerPlaceholder')}
-                  data-autofocus="true"
-                />
-                <p className="help-text">{t('settings.githubSourceHelp')}</p>
-                {recentGithubOwners.length > 0 && (
-                  <div className="settings-owner-chips" aria-label={t('settings.recentOwners')}>
-                    {recentGithubOwners.map((owner) => (
-                      <button
-                        key={owner}
-                        type="button"
-                        className={owner.toLowerCase() === (settings.githubOwner ?? '').toLowerCase() ? 'active' : ''}
-                        onClick={() => void selectRecentGithubOwner(owner)}
-                      >
-                        {owner}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="settings-source-summary">
-                <span className="settings-reset-kicker">{t('settings.sourceSummary')}</span>
-                <strong>{settings.githubOwner || t('settings.notSet')}</strong>
-                <p>{t('settings.sourceSummaryText')}</p>
-                <small>{t('settings.githubTokenHelp')}</small>
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="theme">{t('settings.theme')}</label>
-                <NativeSelect
-                  id="theme"
-                  value={settings.theme}
-                  onValueChange={(value) => handleThemeChange(value as ThemePreference)}
-                  options={([
-                    ['light', t('settings.light')],
-                    ['dark', t('settings.dark')],
-                    ['auto', t('settings.auto')],
-                  ] as const).map(([value, label]) => ({ value, label }))}
-                />
-              </div>
-
-              <div className="form-group compact-control">
-                <label htmlFor="language">{t('settings.language')}</label>
-                <NativeSelect
-                  id="language"
-                  value={settings.language}
-                  onValueChange={(value) => handleLanguageChange(value as AppLanguage)}
-                  options={([
-                    ['uk', t('settings.ukrainian')],
-                    ['en', t('settings.english')],
-                  ] as const).map(([value, label]) => ({ value, label }))}
-                />
-              </div>
-
-              <div className="form-group launcher-background-control">
-                <label>{t('settings.launcherBackground')}</label>
-                <div className="launcher-background-themes">
-                  {(['light', 'dark'] as const).map((theme) => (
-                    <div className="launcher-background-theme" key={theme}>
-                      <strong>{t(`settings.${theme}`)}</strong>
-                      <div className="settings-inline-actions">
-                        <button type="button" className="secondary-btn" onClick={() => onChangeLauncherBackground(theme)}>
-                          {t('art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
-                        </button>
-                        {hasLauncherBackground[theme] && (
-                          <button type="button" className="secondary-btn" onClick={() => onClearLauncherBackground(theme)}>
-                            {t('art.resetThemeBackground', { theme: t(`settings.${theme}`) })}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <fieldset className="form-group underlay-controls">
-                <legend>{t('settings.underlayAppearance')}</legend>
-                <div className="underlay-control">
-                  <label htmlFor="surfaceTransparency">{t('settings.surfaceTransparency')}</label>
-                  <input
-                    id="surfaceTransparency"
-                    type="range"
-                    min="0"
-                    max="80"
-                    step="1"
-                    value={settings.appearance?.surfaceTransparency ?? 42}
-                    onChange={(event) => previewSurfaceSetting('surfaceTransparency', Number(event.target.value))}
-                    onKeyUp={saveSurfaceSettings}
-                    onPointerUp={saveSurfaceSettings}
-                  />
-                  <output htmlFor="surfaceTransparency">
-                    {settings.appearance?.surfaceTransparency ?? 42}%
-                  </output>
-                </div>
-                <div className="underlay-control">
-                  <label htmlFor="surfaceBlur">{t('settings.surfaceBlur')}</label>
-                  <input
-                    id="surfaceBlur"
-                    type="range"
-                    min="0"
-                    max="32"
-                    step="1"
-                    value={settings.appearance?.surfaceBlur ?? 12}
-                    onChange={(event) => previewSurfaceSetting('surfaceBlur', Number(event.target.value))}
-                    onKeyUp={saveSurfaceSettings}
-                    onPointerUp={saveSurfaceSettings}
-                  />
-                  <output htmlFor="surfaceBlur">
-                    {settings.appearance?.surfaceBlur ?? 12} px
-                  </output>
-                </div>
-                <p className="help-text">{t('settings.underlayAppearanceHelp')}</p>
-              </fieldset>
-            </div>
-          </section>
-        )
-
-      case 'installation':
-        return (
-          <section id="settings-folders" className="settings-section">
-            <h3>{t('settings.installation')}</h3>
-            <div className="form-group">
-              <label htmlFor="installPath">{t('settings.installPath')}</label>
-              <div className="path-input-row">
-                <input
-                  id="installPath"
-                  type="text"
-                  value={settings.installationPath}
-                  onBlur={handleInstallationPathBlur}
-                  onChange={(event) =>
-                    setSettings({ ...settings, installationPath: event.target.value })
-                  }
-                  onKeyDown={handleInstallationPathKeyDown}
-                  placeholder={t('settings.installPathPlaceholder')}
-                />
-                <button type="button" className="secondary-btn" onClick={handleBrowse}>
-                  {t('settings.choose')}
-                </button>
-                <button type="button" className="secondary-btn" onClick={handleValidatePath}>
-                  {t('settings.checkFolder')}
-                </button>
-                {settings.installationPath && (
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() => openDir(settings.installationPath).catch(() => {})}
-                    title={t('settings.open')}
-                  >
-                    {t('settings.open')}
-                  </button>
-                )}
-              </div>
-              {pathValidation !== 'idle' && (
-                <span className={`settings-status ${pathValidation === 'ok' || pathValidation === 'requiresElevation' ? 'success' : 'error'}`}>
-                  {pathValidation === 'ok' && t('settings.pathOk')}
-                  {pathValidation === 'requiresElevation' && t('settings.pathRequiresElevation')}
-                  {pathValidation === 'missing' && t('settings.pathMissing')}
-                  {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
-                  {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
-                </span>
-              )}
-            </div>
-          </section>
-        )
-
-      case 'maintenance':
-        return (
-          <section id="settings-maintenance" className="danger-zone">
-            <h3>{t('settings.maintenance')}</h3>
-            <p className="help-text">{t('settings.maintenanceHelp')}</p>
-            <div className="settings-diagnostics-card">
-              <span className="settings-reset-kicker">{t('settings.githubDiagnostics')}</span>
-              <dl>
-                <div>
-                  <dt>{t('settings.githubOwner')}</dt>
-                  <dd>{settings.githubOwner || t('settings.notSet')}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.assets')}</dt>
-                  <dd>{t(assetStrategyLabelKey(settings.assetStrategy))}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.prerelease')}</dt>
-                  <dd>{settings.includePrereleases ? t('settings.yes') : t('settings.no')}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubCoreLimit')}</dt>
-                  <dd>{formatRateLimit(githubRateLimit.core)}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubSearchLimit')}</dt>
-                  <dd>{formatRateLimit(githubRateLimit.search)}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubCoreReset')}</dt>
-                  <dd>{formatRateLimitReset(githubRateLimit.core)}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubSearchReset')}</dt>
-                  <dd>{formatRateLimitReset(githubRateLimit.search)}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubQueue')}</dt>
-                  <dd>{t('settings.githubQueueValue', {
-                    active: githubQueue.active,
-                    queued: githubQueue.queued,
-                    concurrency: githubQueue.concurrency,
-                  })}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubQueuePriority')}</dt>
-                  <dd>{t('settings.githubQueuePriorityValue', {
-                    high: githubQueue.highPriority,
-                    normal: githubQueue.normalPriority,
-                  })}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.githubQueueState')}</dt>
-                  <dd>{formatQueuePause()}</dd>
-                </div>
-              </dl>
-            </div>
-            <div className="settings-diagnostics-card">
-              <span className="settings-reset-kicker">{t('settings.storageDiagnostics')}</span>
-              <dl>
-                <div>
-                  <dt>{t('settings.launcherFolder')}</dt>
-                  <dd>{storageInfo?.launcherDir ?? t('settings.notChecked')}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.updateCache')}</dt>
-                  <dd>{storageInfo ? `${storageInfo.updateCacheCount} · ${storageInfo.updateCachePath}` : t('settings.notChecked')}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.backups')}</dt>
-                  <dd>{storageInfo ? `${storageInfo.backupCount} · ${storageInfo.backupPath}` : t('settings.notChecked')}</dd>
-                </div>
-                <div>
-                  <dt>{t('settings.cleanupSize')}</dt>
-                  <dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes, language) : t('settings.notChecked')}</dd>
-                </div>
-              </dl>
-              <div className="settings-maintenance-actions settings-storage-actions">
-                <button className="secondary-btn" onClick={handleRefreshStorageInfo}>
-                  {t('settings.refreshDiagnostics')}
-                </button>
-                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.launcherDir).catch(() => {})} disabled={!storageInfo}>
-                  {t('settings.openLauncherFolder')}
-                </button>
-                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.updateCachePath).catch(() => {})} disabled={!storageInfo}>
-                  {t('settings.openUpdateCache')}
-                </button>
-                <button className="secondary-btn" onClick={() => storageInfo && openDir(storageInfo.backupPath).catch(() => {})} disabled={!storageInfo}>
-                  {t('settings.openBackups')}
-                </button>
-                <button className="secondary-btn" onClick={handleCleanupLauncherFiles} disabled={!storageInfo || storageInfo.cleanupBytes === 0}>
-                  {t('settings.cleanupLauncherFiles')}
-                </button>
-              </div>
-            </div>
-            <div className="settings-maintenance-actions">
-              <button className="secondary-btn" onClick={() => setResetPending(true)} disabled={saving}>
-                {t('settings.reset')}
-              </button>
-              <button className="secondary-btn" onClick={handleClearCache}>
-                {t('settings.clearCache')}
-              </button>
-              <button className="secondary-btn" onClick={handleExportInstalledRegistry} disabled={registryBusy}>
-                {t('settings.exportInstalledRegistry')}
-              </button>
-              <button className="secondary-btn" onClick={handleImportInstalledRegistry} disabled={registryBusy}>
-                {t('settings.importInstalledRegistry')}
-              </button>
-              <button className="secondary-btn" onClick={handleCopyMaintenanceDiagnostics}>
-                {t('settings.copyDiagnostics')}
-              </button>
-            </div>
-          </section>
-        )
-
-      case 'events':
-        return (
-          <section
-            id="settings-events"
-            className="settings-section settings-event-log"
-            aria-labelledby="settings-event-log-title"
-            aria-busy={eventLogLoading}
-          >
-            <div className="settings-event-log-toolbar">
-              <div>
-                <h3 id="settings-event-log-title">{t('settings.eventLog')}</h3>
-                <p className="help-text">{t('settings.eventLogHelp')}</p>
-              </div>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => void refreshEventLog()}
-                disabled={eventLogLoading}
-              >
-                {eventLogLoading ? t('settings.eventLogLoading') : t('settings.eventLogRefresh')}
-              </button>
-            </div>
-
-            {eventLogLoading && eventLog.length === 0 ? (
-              <StatePanel kind="loading" title={t('settings.eventLogLoading')} skeletonCount={2} />
-            ) : eventLogError ? (
-              <StatePanel
-                kind="error"
-                title={t('settings.eventLogErrorTitle')}
-                message={eventLogError}
-                actionLabel={t('settings.eventLogRefresh')}
-                onAction={() => void refreshEventLog()}
-              />
-            ) : eventLog.length === 0 ? (
-              <StatePanel
-                kind="empty"
-                title={t('settings.eventLogEmptyTitle')}
-                message={t('settings.eventLogEmptyText')}
-              />
-            ) : (
-              <>
-                <p className="settings-event-log-summary" role="status" aria-live="polite">
-                  {t('settings.eventLogSummary', { count: eventLog.length })}
-                </p>
-                <ol className="settings-event-log-list">
-                  {eventLog.map((entry, index) => (
-                    <li key={`${entry}-${index}`}>
-                      <code>{entry}</code>
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-          </section>
-        )
-
-      case 'updates':
-        return (
-          <section id="settings-updates" className="settings-section">
-            <h3>{t('settings.updates')}</h3>
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={Boolean(settings.includePrereleases)}
-                  onChange={(event) =>
-                    persistSettings({ ...settings, includePrereleases: event.target.checked }, settings)
-                  }
-                />
-                {t('settings.prerelease')}
-              </label>
-            </div>
-
-            <div className="form-group compact-control">
-              <label htmlFor="assetStrategy">{t('settings.assets')}</label>
-              <NativeSelect
-                id="assetStrategy"
-                value={settings.assetStrategy ?? 'portableFirst'}
-                onValueChange={(value) =>
-                  persistSettings({
-                    ...settings,
-                    assetStrategy: value as AppSettings['assetStrategy'],
-                  }, settings)
-                }
-                options={([
-                  ['portableFirst', t('settings.portableFirst')],
-                  ['installerFirst', t('settings.installerFirst')],
-                  ['manual', t('settings.manual')],
-                ] as const).map(([value, label]) => ({ value, label }))}
-              />
-              <p className="help-text">{t('settings.assetStrategyHelp')}</p>
-            </div>
-          </section>
-        )
-
-      default:
-        return null
-    }
   }
 
   return (
@@ -877,21 +462,6 @@ function SettingsPage({
             <span className="settings-page-kicker">{t('settings.workspaceKicker')}</span>
             <h2 id="settings-title">{t('settings.title')}</h2>
             <p>{t('settings.workspaceSubtitle')}</p>
-          </div>
-          <div className="settings-page-header-actions">
-            <div className="settings-autosave-status" aria-live="polite">
-              {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
-              {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
-              {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
-            </div>
-            <button
-              type="button"
-              className="secondary-btn settings-done-btn"
-              onClick={onClose}
-              aria-label={t('settings.close')}
-            >
-              {t('settings.done')}
-            </button>
           </div>
         </div>
 
@@ -923,19 +493,57 @@ function SettingsPage({
                 message={error}
               />
             )}
-            {renderActiveSection()}
+            <SettingsSections
+              activeSection={activeSection}
+              settings={settings}
+              language={language}
+              recentGithubOwners={recentGithubOwners}
+              hasLauncherBackground={hasLauncherBackground}
+              pathValidation={pathValidation}
+              storageInfo={storageInfo}
+              githubRateLimit={githubRateLimit}
+              githubQueue={githubQueue}
+              saving={saving}
+              registryBusy={registryBusy}
+              eventLog={eventLog}
+              eventLogLoading={eventLogLoading}
+              eventLogError={eventLogError}
+              formatRateLimit={formatRateLimit}
+              formatRateLimitReset={formatRateLimitReset}
+              formatQueuePause={formatQueuePause}
+              onGithubOwnerChange={(githubOwner) => setSettings({ ...settings, githubOwner })}
+              onGithubOwnerBlur={() => void handleGithubOwnerBlur()}
+              onGithubOwnerKeyDown={handleGithubOwnerKeyDown}
+              onSelectRecentGithubOwner={(owner) => void selectRecentGithubOwner(owner)}
+              onThemeChange={(theme) => void handleThemeChange(theme)}
+              onLanguageChange={(nextLanguage) => void handleLanguageChange(nextLanguage)}
+              onChangeLauncherBackground={onChangeLauncherBackground}
+              onClearLauncherBackground={onClearLauncherBackground}
+              onPreviewSurfaceSetting={previewSurfaceSetting}
+              onSaveSurfaceSettings={saveSurfaceSettings}
+              onInstallationPathChange={(installationPath) => setSettings({ ...settings, installationPath })}
+              onInstallationPathBlur={() => void handleInstallationPathBlur()}
+              onInstallationPathKeyDown={handleInstallationPathKeyDown}
+              onBrowse={() => void handleBrowse()}
+              onValidatePath={() => void handleValidatePath()}
+              onOpenDirectory={(path) => void openDir(path).catch(() => {})}
+              onIncludePrereleasesChange={(includePrereleases) => {
+                void persistSettings({ ...settings, includePrereleases }, settings)
+              }}
+              onAssetStrategyChange={(assetStrategy) => {
+                void persistSettings({ ...settings, assetStrategy }, settings)
+              }}
+              onRefreshStorageInfo={() => void handleRefreshStorageInfo()}
+              onCleanupLauncherFiles={() => void handleCleanupLauncherFiles()}
+              onRequestReset={() => setResetPending(true)}
+              onClearCache={() => void handleClearCache()}
+              onExportInstalledRegistry={() => void handleExportInstalledRegistry()}
+              onImportInstalledRegistry={() => void handleImportInstalledRegistry()}
+              onCopyDiagnostics={() => void handleCopyMaintenanceDiagnostics()}
+              onRefreshEventLog={() => void refreshEventLog()}
+            />
           </div>
         </div>
-        <footer className="settings-page-footer">
-          <div className="settings-autosave-status" aria-live="polite">
-            {saving && <span className="saved-indicator">{t('settings.saving')}</span>}
-            {!saving && saved && <span className="saved-indicator">{t('settings.saved')}</span>}
-            {!saving && error && <span className="settings-status error">{t('settings.saveError')}</span>}
-          </div>
-          <button type="button" className="secondary-btn settings-done-btn" onClick={onClose}>
-            {t('settings.done')}
-          </button>
-        </footer>
       </section>
     {resetPending && (
       <div

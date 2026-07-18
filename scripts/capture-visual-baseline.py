@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from time import time
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, sync_playwright
 
 
-BASE_URL = "http://127.0.0.1:4173"
+BASE_URL = os.environ.get("PULLORA_TEST_BASE_URL", "http://127.0.0.1:4173")
 OUTPUT_DIR = Path("docs/visual-baseline/design-contract")
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
@@ -108,7 +110,14 @@ def seed_cache(page: Page) -> None:
 
 
 def open_library(page: Page) -> None:
-    page.goto(BASE_URL)
+    for attempt in range(5):
+        try:
+            page.goto(BASE_URL, wait_until="domcontentloaded")
+            break
+        except PlaywrightError:
+            if attempt == 4:
+                raise
+            page.wait_for_timeout(300)
     page.wait_for_load_state("networkidle")
     skip = page.locator(".modal-actions .secondary-btn")
     if skip.is_visible():

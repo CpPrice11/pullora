@@ -19,7 +19,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'header.availableUpdates': 'Доступно оновлень: {count}',
     'settings.title': 'Налаштування',
     'settings.saving': 'Зберігаємо',
-    'settings.saved': 'Збережено',
     'settings.loading': 'Завантажуємо налаштування...',
     'settings.installation': 'Встановлення',
     'settings.installPath': 'Папка встановлення',
@@ -453,7 +452,6 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     'header.availableUpdates': 'Available updates: {count}',
     'settings.title': 'Settings',
     'settings.saving': 'Saving',
-    'settings.saved': 'Saved',
     'settings.loading': 'Loading settings...',
     'settings.installation': 'Installation',
     'settings.installPath': 'Install folder',
@@ -1482,7 +1480,6 @@ Object.assign(dictionaries.en, {
 })
 
 Object.assign(dictionaries.uk, {
-  'settings.done': 'Готово',
   'library.trust.expand': 'Деталі',
   'library.trust.collapse': 'Згорнути',
   'about.moreActions': 'Дії версії',
@@ -1490,7 +1487,6 @@ Object.assign(dictionaries.uk, {
 })
 
 Object.assign(dictionaries.en, {
-  'settings.done': 'Done',
   'library.trust.expand': 'Details',
   'library.trust.collapse': 'Collapse',
   'about.moreActions': 'Version actions',

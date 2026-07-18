@@ -32,7 +32,6 @@
   --color-warning: #e9c45e;
   --border-radius: 9px;
   --border-radius-lg: 14px;
-  --density-scale: 1;
   --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
   --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 18px rgba(0, 0, 0, 0.2);
   --shadow-control-hover: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 24px rgba(0, 0, 0, 0.3);
@@ -624,7 +623,7 @@
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 18px;
+  gap: calc(18px * var(--density-scale));
   height: auto;
   margin: 0 auto;
   max-width: 1680px;
@@ -638,7 +637,7 @@
   border: 0;
   flex: 0 0 auto;
   max-width: none;
-  min-height: 64px;
+  min-height: calc(64px * var(--density-scale));
   padding: 0;
   width: 100%;
 }
@@ -663,10 +662,11 @@
 }
 
 .cinematic-shell .settings-workspace {
-  background: rgba(8, 12, 17, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--surface-shadow);
   display: grid;
   flex: 0 0 auto;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -675,13 +675,13 @@
 }
 
 .cinematic-shell .settings-page .settings-nav {
-  background: rgba(10, 14, 20, 0.88);
+  background: var(--surface-2);
   border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.075);
+  border-right: 1px solid var(--surface-border);
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 16px 14px;
+  gap: calc(5px * var(--density-scale));
+  padding: calc(16px * var(--density-scale)) 14px;
 }
 
 .cinematic-shell .settings-page .settings-nav button {
@@ -693,8 +693,8 @@
   font-size: 13px;
   font-weight: 650;
   justify-content: flex-start;
-  min-height: 42px;
-  padding: 0 13px;
+  min-height: calc(42px * var(--density-scale));
+  padding: 0 calc(13px * var(--density-scale));
   text-align: left;
   transition:
     background-color 140ms ease,
@@ -724,23 +724,31 @@
 
 .cinematic-shell .settings-page .settings-content {
   background:
-    radial-gradient(circle at 82% 0%, rgba(55, 193, 230, 0.08), transparent 32%),
-    rgba(10, 15, 21, 0.66);
+    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 32%),
+    var(--surface-2);
   display: block;
   min-height: 0;
   overflow: visible;
-  padding: clamp(18px, 2.1vw, 30px);
+  padding: clamp(
+    calc(18px * var(--density-scale)),
+    calc(2.1vw * var(--density-scale)),
+    calc(30px * var(--density-scale))
+  );
 }
 
 .cinematic-shell .settings-page .settings-section,
 .cinematic-shell .settings-page .danger-zone {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
   box-shadow: none;
   margin: 0 auto;
   max-width: 1280px;
-  padding: clamp(20px, 2vw, 28px);
+  padding: clamp(
+    calc(20px * var(--density-scale)),
+    calc(2vw * var(--density-scale)),
+    calc(28px * var(--density-scale))
+  );
   width: 100%;
 }
 
@@ -755,8 +763,8 @@
 
 .cinematic-shell .settings-source-summary,
 .cinematic-shell .settings-diagnostics-card {
-  background: rgba(6, 10, 15, 0.48);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
+  border-color: var(--surface-border);
   border-radius: 10px;
 }
 
@@ -766,7 +774,7 @@
 }
 
 .cinematic-shell .settings-page .form-group {
-  gap: 7px;
+  gap: calc(7px * var(--density-scale));
 }
 
 .cinematic-shell .settings-page .form-group > label {
@@ -783,7 +791,7 @@
 
 .cinematic-shell .settings-page input,
 .cinematic-shell .settings-page select {
-  min-height: 42px;
+  min-height: calc(42px * var(--density-scale));
 }
 
 .cinematic-shell .settings-page input:disabled,
@@ -806,8 +814,8 @@
   display: inline-flex;
   font-size: 13px;
   font-weight: 620 !important;
-  gap: 11px;
-  min-height: 32px;
+  gap: calc(11px * var(--density-scale));
+  min-height: calc(32px * var(--density-scale));
   width: fit-content;
 }
 
@@ -932,7 +940,7 @@
 }
 
 .cinematic-shell .settings-page .settings-grid {
-  gap: 18px 24px;
+  gap: calc(18px * var(--density-scale)) calc(24px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--general .settings-grid {
@@ -942,7 +950,7 @@
 
 .cinematic-shell .settings-content--general .launcher-background-control {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
-  padding-top: 18px;
+  padding-top: calc(18px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--installation .settings-section {
@@ -953,7 +961,7 @@
 .cinematic-shell .settings-content--installation .path-input-row {
   background: rgba(5, 9, 14, 0.32);
   border-color: rgba(255, 255, 255, 0.08);
-  padding: 10px;
+  padding: calc(10px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--updates .settings-section {
@@ -967,7 +975,7 @@
 
 .cinematic-shell .settings-content--updates .form-group + .form-group {
   border-top: 1px solid rgba(255, 255, 255, 0.065);
-  padding-top: 16px;
+  padding-top: calc(16px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--appearance .settings-section-heading-row {
@@ -1070,7 +1078,7 @@
   align-items: start;
   border-color: rgba(255, 255, 255, 0.075);
   display: grid;
-  gap: 16px;
+  gap: calc(16px * var(--density-scale));
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -1085,12 +1093,12 @@
   border-color: rgba(255, 255, 255, 0.085);
   height: 100%;
   max-width: none;
-  padding: 16px;
+  padding: calc(16px * var(--density-scale));
   width: 100%;
 }
 
 .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dl {
-  gap: 12px 20px;
+  gap: calc(12px * var(--density-scale)) calc(20px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
@@ -1109,7 +1117,7 @@
 .cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   max-width: none;
-  padding-top: 18px;
+  padding-top: calc(18px * var(--density-scale));
 }
 
 .cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child .secondary-btn:first-child {
@@ -1118,9 +1126,9 @@
 }
 
 .cinematic-shell .settings-page .secondary-btn {
-  min-height: 38px;
-  padding-left: 15px;
-  padding-right: 15px;
+  min-height: calc(38px * var(--density-scale));
+  padding-left: calc(15px * var(--density-scale));
+  padding-right: calc(15px * var(--density-scale));
 }
 
 .cinematic-shell .settings-page .secondary-btn:active:not(:disabled) {
@@ -1128,24 +1136,11 @@
   transform: translateY(1px);
 }
 
-.cinematic-shell .settings-autosave-status {
-  min-height: 28px;
-}
-
-.cinematic-shell .settings-page .saved-indicator,
 .cinematic-shell .settings-page .settings-status {
   backdrop-filter: blur(8px);
   border-radius: 7px;
   font-size: 11px;
   padding: 5px 9px;
-}
-
-.cinematic-shell .settings-done-btn {
-  min-width: 112px;
-}
-
-.cinematic-shell .settings-page-footer {
-  display: none;
 }
 
 .cinematic-shell .about-page .page-header {
@@ -1331,8 +1326,8 @@
 }
 
 .modal-overlay {
-  background: rgba(2, 5, 9, 0.72);
-  backdrop-filter: blur(12px);
+  background: var(--launcher-background-scrim);
+  backdrop-filter: blur(var(--surface-blur));
 }
 
 .modal-overlay .modal-content {
@@ -1386,11 +1381,6 @@
 
   .cinematic-shell .settings-page-header {
     align-items: flex-start;
-  }
-
-  .cinematic-shell .settings-page-header-actions {
-    justify-content: flex-end;
-    width: 100%;
   }
 
   .cinematic-shell .settings-content--maintenance .danger-zone {
@@ -1488,12 +1478,12 @@
   }
 
   .cinematic-shell .settings-page .settings-content {
-    padding: 14px;
+    padding: calc(14px * var(--density-scale));
   }
 
   .cinematic-shell .settings-page .settings-section,
   .cinematic-shell .settings-page .danger-zone {
-    padding: 16px;
+    padding: calc(16px * var(--density-scale));
   }
 
   .cinematic-shell .settings-section-heading-row {
@@ -1521,10 +1511,6 @@
   background: var(--surface-1);
   border-color: var(--surface-border);
   box-shadow: var(--surface-shadow);
-}
-
-:root[data-theme] .cinematic-shell.settings-open .settings-workspace {
-  background: color-mix(in srgb, var(--surface-1) 76%, transparent);
 }
 
 :root[data-theme] .cinematic-shell .library-page .library-sam-details-pane {
