@@ -348,3 +348,12 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
+
+/* Install uses the same launcher surface contract in both themes. */
+:root[data-theme] .cinematic-shell .release-modal--wizard {
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border-color: var(--surface-border-strong);
+  box-shadow: var(--surface-shadow);
+  color: var(--color-text);
+}

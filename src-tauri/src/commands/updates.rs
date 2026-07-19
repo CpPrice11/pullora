@@ -579,8 +579,8 @@ fn old_backup_size(path: &std::path::Path) -> Result<u64, String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        fail_closed, parse_sha256_manifest, reset_update_dir, verify_sha256,
-        write_launcher_update_script,
+        fail_closed, parse_sha256_manifest, prepare_portable_launcher_asset, reset_update_dir,
+        verify_sha256, write_launcher_update_script,
     };
 
     #[test]
@@ -621,6 +621,34 @@ b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9  Pullora.exe\n"
         )
         .is_ok());
         assert!(verify_sha256(b"tampered", &"0".repeat(64)).is_err());
+    }
+
+    #[test]
+    fn accepts_portable_exe_and_rejects_installer_assets() {
+        let dir = std::env::temp_dir().join(format!(
+            "pullora-portable-asset-test-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let destination = dir.join("Pullora.exe");
+        let portable = dir.join("Pullora_portable_x64.exe");
+        std::fs::write(&portable, b"portable").unwrap();
+
+        prepare_portable_launcher_asset(&portable, &destination, &dir).unwrap();
+        assert_eq!(std::fs::read(&destination).unwrap(), b"portable");
+
+        for name in [
+            "Pullora_setup.exe",
+            "Pullora_installer.exe",
+            "Pullora.msi",
+            "Pullora.txt",
+        ] {
+            let asset = dir.join(name);
+            std::fs::write(&asset, b"unsupported").unwrap();
+            assert!(prepare_portable_launcher_asset(&asset, &destination, &dir).is_err());
+        }
+
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

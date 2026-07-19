@@ -24,27 +24,15 @@ def check_source_contract() -> None:
     cinematic = (root / "src/styles/Cinematic.css").read_text(encoding="utf-8")
     pages = (root / "src/pages/PageStyles.css").read_text(encoding="utf-8")
     contracts = (
-        (
-            cinematic,
-            ":root[data-theme] .cinematic-shell .library-page .library-sam-list-pane,",
-            ("var(--surface-1)", "blur(var(--surface-blur))"),
-        ),
-        (
-            cinematic,
-            ":root[data-theme] .cinematic-shell .library-page .library-toolstrip,",
-            ("var(--surface-2)", "backdrop-filter: none"),
-        ),
-        (
-            pages,
-            ".cinematic-shell .library-page .library-play-status,",
-            ("var(--surface-3)", "var(--surface-border)"),
-        ),
+        (cinematic, ":root[data-theme] .cinematic-shell .about-hero,", ("var(--surface-1)", "blur(var(--surface-blur))")),
+        (pages, ".cinematic-shell .about-release-link", ("var(--surface-2)", "var(--surface-border)")),
+        (pages, ".about-release-orb", ("var(--surface-3)", "var(--surface-border)")),
     )
     for source, selector, expected in contracts:
         rule = css_rule(source, selector)
         for fragment in expected:
             assert fragment in rule, {"selector": selector, "missing": fragment, "rule": rule}
-    print("[library-surfaces] source contract: ok")
+    print("[about-surfaces] source contract: ok")
 
 
 def click_range(page: Page, selector: str, value: int) -> None:
@@ -55,26 +43,28 @@ def click_range(page: Page, selector: str, value: int) -> None:
     limits = control.evaluate("el => ({ min: Number(el.min), max: Number(el.max) })")
     ratio = (value - limits["min"]) / (limits["max"] - limits["min"])
     usable_width = max(1, box["width"] - 18)
-    page.mouse.click(box["x"] + 9 + usable_width * ratio, box["y"] + box["height"] / 2)
+    page.mouse.click(
+        box["x"] + 9 + usable_width * ratio,
+        box["y"] + box["height"] / 2,
+    )
     page.wait_for_function(
         "([controlSelector, expected]) => document.querySelector(controlSelector)?.value === String(expected)",
         arg=[selector, value],
     )
 
 
-def open_library(page: Page) -> None:
-    page.locator(".nav-item").nth(0).click()
-    page.locator(".library-page").wait_for()
-    page.locator(".library-hero").wait_for()
-    page.locator(".library-inline-panel--versions").wait_for()
+def open_about(page: Page) -> None:
+    page.get_by_role("button", name="Про застосунок").click()
+    page.get_by_role("heading", name="Про застосунок").wait_for()
+    page.locator(".about-release-link").first.wait_for()
 
 
 def set_surface_controls(page: Page, transparency: int, blur: int) -> None:
-    page.locator(".nav-item").nth(1).click()
-    page.locator(".settings-page").wait_for()
+    page.get_by_role("button", name="Налаштування").click()
+    page.get_by_role("heading", name="Налаштування").wait_for()
     click_range(page, "#surfaceTransparency", transparency)
     click_range(page, "#surfaceBlur", blur)
-    open_library(page)
+    open_about(page)
 
 
 def surface_state(page: Page) -> dict:
@@ -99,13 +89,10 @@ def surface_state(page: Page) -> dict:
             blur: root.getPropertyValue('--surface-blur').trim(),
             launcherBackgroundVisible: background.classList.contains('is-visible'),
             launcherBackgroundOpacity: Number(getComputedStyle(background).opacity),
-            sidebar: read('.library-sam-list-pane'),
-            details: read('.library-sam-details-pane'),
-            toolstrip: read('.library-toolstrip'),
-            playStatus: read('.library-play-status'),
-            hero: read('.library-hero'),
-            operations: read('.library-ops-panel'),
-            inlinePanel: read('.library-inline-panel--versions'),
+            hero: read('.about-hero'),
+            panel: read('.about-panel'),
+            release: read('.about-release-link'),
+            orb: read('.about-release-orb'),
           };
         }
         """
@@ -126,9 +113,9 @@ def main() -> None:
     if "--static" in sys.argv:
         return
 
-    checks = 0
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
+        checks = 0
         for theme in ("dark", "light"):
             context = browser.new_context(
                 viewport={"width": 1280, "height": 720},
@@ -138,12 +125,10 @@ def main() -> None:
             page = context.new_page()
             BASELINE["seed_cache"](page)
             BASELINE["open_library"](page)
+            open_about(page)
             BASELINE["apply_custom_background"](page)
             initial = surface_state(page)
-            geometry = {
-                key: initial[key]["box"]
-                for key in ("sidebar", "details", "hero", "operations", "inlinePanel")
-            }
+            geometry = {key: initial[key]["box"] for key in ("hero", "panel", "release")}
 
             opacity_states = {}
             for transparency in (0, 40, 80):
@@ -151,20 +136,14 @@ def main() -> None:
                 state = surface_state(page)
                 assert state["opacity"] == f"{100 - transparency}%", state
                 assert state["launcherBackgroundVisible"] and state["launcherBackgroundOpacity"] > 0
-                current_geometry = {key: state[key]["box"] for key in geometry}
-                assert current_geometry == geometry, {
-                    "expectedGeometry": geometry,
-                    "actualGeometry": current_geometry,
-                    "state": state,
-                }
-                assert "12px" in state["sidebar"]["filter"]
-                assert "12px" in state["details"]["filter"]
-                for inner in ("toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
-                    assert state[inner]["filter"] == "none", {inner: state[inner]}
+                assert {key: state[key]["box"] for key in geometry} == geometry, state
+                assert "12px" in state["hero"]["filter"]
+                assert "12px" in state["panel"]["filter"]
+                assert state["release"]["filter"] == "none"
                 opacity_states[transparency] = state
                 checks += 1
 
-            for surface in ("sidebar", "details", "toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
+            for surface in ("hero", "panel", "release", "orb"):
                 assert (
                     alpha(opacity_states[0][surface]["background"])
                     > alpha(opacity_states[40][surface]["background"])
@@ -175,13 +154,17 @@ def main() -> None:
                 set_surface_controls(page, 40, blur)
                 state = surface_state(page)
                 assert state["blur"] == f"{blur}px", state
-                assert f"blur({blur}px)" in state["sidebar"]["filter"]
-                assert f"blur({blur}px)" in state["details"]["filter"]
+                if blur == 0:
+                    assert state["hero"]["filter"].startswith("blur(0px)")
+                    assert state["panel"]["filter"].startswith("blur(0px)")
+                else:
+                    assert f"{blur}px" in state["hero"]["filter"]
+                    assert f"{blur}px" in state["panel"]["filter"]
                 checks += 1
 
             context.close()
         browser.close()
-    print(f"[library-surfaces] checks={checks}: ok")
+    print(f"[about-surfaces] checks={checks}: ok")
 
 
 if __name__ == "__main__":

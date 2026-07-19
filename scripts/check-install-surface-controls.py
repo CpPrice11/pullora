@@ -21,30 +21,20 @@ def css_rule(source: str, selector: str) -> str:
 
 def check_source_contract() -> None:
     root = Path(__file__).resolve().parent.parent
-    cinematic = (root / "src/styles/Cinematic.css").read_text(encoding="utf-8")
-    pages = (root / "src/pages/PageStyles.css").read_text(encoding="utf-8")
+    modal = (root / "src/components/Modal/Modal.css").read_text(encoding="utf-8")
+    library = (root / "src/features/library/components/SearchComponents.css").read_text(encoding="utf-8")
     contracts = (
-        (
-            cinematic,
-            ":root[data-theme] .cinematic-shell .library-page .library-sam-list-pane,",
-            ("var(--surface-1)", "blur(var(--surface-blur))"),
-        ),
-        (
-            cinematic,
-            ":root[data-theme] .cinematic-shell .library-page .library-toolstrip,",
-            ("var(--surface-2)", "backdrop-filter: none"),
-        ),
-        (
-            pages,
-            ".cinematic-shell .library-page .library-play-status,",
-            ("var(--surface-3)", "var(--surface-border)"),
-        ),
+        (modal, ".cinematic-shell .release-modal--wizard", ("var(--surface-1)", "blur(var(--surface-blur))")),
+        (library, ".cinematic-shell .release-modal--wizard > .modal-header", ("var(--surface-2)", "var(--surface-border)")),
+        (library, ".cinematic-shell .release-modal--wizard > .release-body", ("var(--surface-1)",)),
+        (library, ".cinematic-shell .release-modal--wizard .release-nav-actions", ("var(--surface-2)",)),
+        (library, ".cinematic-shell .release-modal--wizard .release-version-card", ("var(--surface-3)", "var(--surface-border)")),
     )
     for source, selector, expected in contracts:
         rule = css_rule(source, selector)
         for fragment in expected:
             assert fragment in rule, {"selector": selector, "missing": fragment, "rule": rule}
-    print("[library-surfaces] source contract: ok")
+    print("[install-surfaces] source contract: ok")
 
 
 def click_range(page: Page, selector: str, value: int) -> None:
@@ -62,19 +52,47 @@ def click_range(page: Page, selector: str, value: int) -> None:
     )
 
 
-def open_library(page: Page) -> None:
+def open_install(page: Page) -> None:
     page.locator(".nav-item").nth(0).click()
     page.locator(".library-page").wait_for()
-    page.locator(".library-hero").wait_for()
-    page.locator(".library-inline-panel--versions").wait_for()
+    page.locator(".library-ops-action-row .hero-primary-btn").click()
+    page.locator(".release-modal--wizard").wait_for()
+    page.wait_for_function(
+        """() => {
+          const modal = document.querySelector('.release-modal--wizard');
+          const body = modal?.querySelector('.release-body');
+          return Boolean(modal?.querySelector('.release-version-card'))
+            && body
+            && getComputedStyle(body).display === 'block';
+        }"""
+    )
+    page.locator(".release-modal--wizard").evaluate(
+        """
+        element => new Promise(resolve => {
+          const body = element.querySelector('.release-body');
+          element.scrollTop = 0;
+          if (body) body.scrollTop = 0;
+          element.focus({ preventScroll: true });
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            element.scrollTop = 0;
+            if (body) body.scrollTop = 0;
+            resolve();
+          }));
+        })
+        """
+    )
 
 
 def set_surface_controls(page: Page, transparency: int, blur: int) -> None:
+    modal = page.locator(".release-modal--wizard")
+    if modal.is_visible():
+        modal.locator(".close-btn").click()
+        modal.wait_for(state="hidden")
     page.locator(".nav-item").nth(1).click()
     page.locator(".settings-page").wait_for()
     click_range(page, "#surfaceTransparency", transparency)
     click_range(page, "#surfaceBlur", blur)
-    open_library(page)
+    open_install(page)
 
 
 def surface_state(page: Page) -> dict:
@@ -99,13 +117,13 @@ def surface_state(page: Page) -> dict:
             blur: root.getPropertyValue('--surface-blur').trim(),
             launcherBackgroundVisible: background.classList.contains('is-visible'),
             launcherBackgroundOpacity: Number(getComputedStyle(background).opacity),
-            sidebar: read('.library-sam-list-pane'),
-            details: read('.library-sam-details-pane'),
-            toolstrip: read('.library-toolstrip'),
-            playStatus: read('.library-play-status'),
-            hero: read('.library-hero'),
-            operations: read('.library-ops-panel'),
-            inlinePanel: read('.library-inline-panel--versions'),
+            overlay: read('.modal-overlay'),
+            modal: read('.release-modal--wizard'),
+            header: read('.release-modal--wizard > .modal-header'),
+            steps: read('.release-modal--wizard > .release-wizard-steps'),
+            body: read('.release-modal--wizard > .release-body'),
+            card: read('.release-modal--wizard .release-version-card'),
+            footer: read('.release-modal--wizard .release-nav-actions'),
           };
         }
         """
@@ -139,11 +157,9 @@ def main() -> None:
             BASELINE["seed_cache"](page)
             BASELINE["open_library"](page)
             BASELINE["apply_custom_background"](page)
+            open_install(page)
             initial = surface_state(page)
-            geometry = {
-                key: initial[key]["box"]
-                for key in ("sidebar", "details", "hero", "operations", "inlinePanel")
-            }
+            geometry = {key: initial[key]["box"] for key in ("modal", "header", "steps", "body", "footer")}
 
             opacity_states = {}
             for transparency in (0, 40, 80):
@@ -157,14 +173,12 @@ def main() -> None:
                     "actualGeometry": current_geometry,
                     "state": state,
                 }
-                assert "12px" in state["sidebar"]["filter"]
-                assert "12px" in state["details"]["filter"]
-                for inner in ("toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
-                    assert state[inner]["filter"] == "none", {inner: state[inner]}
+                assert "12px" in state["overlay"]["filter"]
+                assert "12px" in state["modal"]["filter"]
                 opacity_states[transparency] = state
                 checks += 1
 
-            for surface in ("sidebar", "details", "toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
+            for surface in ("modal", "header", "body", "card", "footer"):
                 assert (
                     alpha(opacity_states[0][surface]["background"])
                     > alpha(opacity_states[40][surface]["background"])
@@ -175,13 +189,13 @@ def main() -> None:
                 set_surface_controls(page, 40, blur)
                 state = surface_state(page)
                 assert state["blur"] == f"{blur}px", state
-                assert f"blur({blur}px)" in state["sidebar"]["filter"]
-                assert f"blur({blur}px)" in state["details"]["filter"]
+                assert f"blur({blur}px)" in state["overlay"]["filter"]
+                assert f"blur({blur}px)" in state["modal"]["filter"]
                 checks += 1
 
             context.close()
         browser.close()
-    print(f"[library-surfaces] checks={checks}: ok")
+    print(f"[install-surfaces] checks={checks}: ok")
 
 
 if __name__ == "__main__":

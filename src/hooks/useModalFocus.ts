@@ -19,11 +19,12 @@ function getFocusableElements(root: HTMLElement) {
 interface UseModalFocusOptions {
   active?: boolean
   onEscape?: () => void
+  returnFocusRef?: RefObject<HTMLElement>
 }
 
 export function useModalFocus(
   containerRef: RefObject<HTMLElement>,
-  { active = true, onEscape }: UseModalFocusOptions = {},
+  { active = true, onEscape, returnFocusRef }: UseModalFocusOptions = {},
 ) {
   const onEscapeRef = useRef(onEscape)
 
@@ -84,9 +85,10 @@ export function useModalFocus(
       window.clearTimeout(focusTimer)
       document.removeEventListener('keydown', handleKeyDown)
 
-      if (previousFocus && document.contains(previousFocus)) {
-        previousFocus.focus()
+      const focusTarget = returnFocusRef?.current ?? previousFocus
+      if (focusTarget && document.contains(focusTarget)) {
+        focusTarget.focus()
       }
     }
-  }, [active, containerRef])
+  }, [active, containerRef, returnFocusRef])
 }

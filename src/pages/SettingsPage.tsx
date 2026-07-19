@@ -227,14 +227,34 @@ function SettingsPage({
     }
   }
 
-  const handleResetSettings = async () => {
-    const resetSettings = normalizeSettings(DEFAULT_SETTINGS)
+  const handleResetGeneralSettings = async () => {
+    if (!settings) return
+    const resetAppearance = normalizeAppearance({
+      ...settings.appearance,
+      surfaceTransparency: DEFAULT_SETTINGS.appearance?.surfaceTransparency,
+      surfaceBlur: DEFAULT_SETTINGS.appearance?.surfaceBlur,
+    })
+    const resetSettings = normalizeSettings({
+      ...settings,
+      githubOwner: DEFAULT_SETTINGS.githubOwner,
+      theme: DEFAULT_SETTINGS.theme,
+      language: DEFAULT_SETTINGS.language,
+      appearance: resetAppearance,
+    })
     const savedSettings = await persistSettings(resetSettings, settings)
     if (savedSettings) {
+      const backgroundResults = await Promise.allSettled([
+        onClearLauncherBackground('light'),
+        onClearLauncherBackground('dark'),
+      ])
+      if (backgroundResults.some((result) => result.status === 'rejected')) {
+        setError(t('art.clearError'))
+      }
       setResetPending(false)
       applyThemePreference(savedSettings.theme, true)
       applyAppearanceSettings(savedSettings.appearance)
       notifyThemePreference(savedSettings.theme)
+      notifyLanguage(savedSettings.language as AppLanguage)
       setActionMessage(t('settings.resetDone'))
     }
   }
@@ -427,8 +447,16 @@ function SettingsPage({
     applyAppearanceSettings(appearance)
   }
 
-  const saveSurfaceSettings = () => {
-    if (settings) void persistSettings(settings)
+  const commitSurfaceSetting = (
+    key: 'surfaceTransparency' | 'surfaceBlur',
+    value: number,
+  ) => {
+    if (!settings) return
+    const previousSettings = settings
+    const appearance = normalizeAppearance({ ...settings.appearance, [key]: value })
+    const nextSettings = normalizeSettings({ ...settings, appearance })
+    applyAppearanceSettings(appearance)
+    void persistSettings(nextSettings, previousSettings)
   }
 
   if (loading || !settings) {
@@ -520,7 +548,7 @@ function SettingsPage({
               onChangeLauncherBackground={onChangeLauncherBackground}
               onClearLauncherBackground={onClearLauncherBackground}
               onPreviewSurfaceSetting={previewSurfaceSetting}
-              onSaveSurfaceSettings={saveSurfaceSettings}
+              onCommitSurfaceSetting={commitSurfaceSetting}
               onInstallationPathChange={(installationPath) => setSettings({ ...settings, installationPath })}
               onInstallationPathBlur={() => void handleInstallationPathBlur()}
               onInstallationPathKeyDown={handleInstallationPathKeyDown}
@@ -557,12 +585,13 @@ function SettingsPage({
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="settings-reset-title"
+          aria-describedby="settings-reset-description"
           tabIndex={-1}
           onClick={(event) => event.stopPropagation()}
         >
           <header className="settings-reset-header">
             <div>
-              <span className="settings-reset-kicker">{t('settings.maintenance')}</span>
+              <span className="settings-reset-kicker">{t('settings.general')}</span>
               <h3 id="settings-reset-title">{t('settings.resetConfirmTitle')}</h3>
             </div>
             <button
@@ -575,19 +604,24 @@ function SettingsPage({
               {'\u00d7'}
             </button>
           </header>
-          <p>{t('settings.resetConfirmText')}</p>
+          <p id="settings-reset-description">{t('settings.resetConfirmText')}</p>
           <div className="settings-reset-actions">
-            <button type="button" className="secondary-btn" disabled={saving} onClick={() => setResetPending(false)}>
+            <button
+              type="button"
+              className="secondary-btn"
+              disabled={saving}
+              data-autofocus="true"
+              onClick={() => setResetPending(false)}
+            >
               {t('installed.uninstallCancel')}
             </button>
             <button
               type="button"
               className="settings-reset-btn"
               disabled={saving}
-              data-autofocus="true"
-              onClick={handleResetSettings}
+              onClick={handleResetGeneralSettings}
             >
-              {saving ? t('settings.saving') : t('settings.reset')}
+              {saving ? t('settings.saving') : t('settings.resetAction')}
             </button>
           </div>
         </section>

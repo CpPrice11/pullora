@@ -30,6 +30,15 @@
   --color-success: #62dc78;
   --color-error: #ff8797;
   --color-warning: #e9c45e;
+  --segmented-background: rgba(255, 255, 255, 0.065);
+  --segmented-border: rgba(255, 255, 255, 0.1);
+  --segmented-text: rgba(255, 255, 255, 0.72);
+  --segmented-active-background: rgba(255, 255, 255, 0.13);
+  --segmented-active-text: #ffffff;
+  --about-status-current: #5bd7ff;
+  --about-status-success: #74f07c;
+  --about-status-success-text: #95fb9b;
+  --about-status-error: #ff6b8b;
   --border-radius: 9px;
   --border-radius-lg: 14px;
   --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
@@ -60,6 +69,15 @@
   --color-success: #107c10;
   --color-error: #b42318;
   --color-warning: #8a5d00;
+  --segmented-background: rgba(255, 255, 255, 0.7);
+  --segmented-border: rgba(17, 24, 39, 0.12);
+  --segmented-text: rgba(17, 24, 39, 0.68);
+  --segmented-active-background: rgba(17, 24, 39, 0.08);
+  --segmented-active-text: #111827;
+  --about-status-current: #0067c0;
+  --about-status-success: #15803d;
+  --about-status-success-text: #15803d;
+  --about-status-error: #b42318;
   --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
   background: var(--surface-canvas);
@@ -879,6 +897,8 @@
   cursor: pointer;
   min-height: 30px;
   padding: 0;
+  pointer-events: auto;
+  touch-action: none;
   width: 100%;
 }
 
@@ -1149,10 +1169,11 @@
 
 .cinematic-shell .about-hero,
 .cinematic-shell .about-panel {
-  background: rgba(10, 15, 21, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
-  box-shadow: none;
+  box-shadow: var(--surface-shadow);
 }
 
 .cinematic-shell .library-hero,

@@ -52,5 +52,5 @@ yarn-error.log*
 *.tmp
 *.temp
 
-# Generated visual regression captures
-/docs/visual-baseline/design-contract/
+# Generated visual regression captures (keep the parity contract itself in Git)
+/docs/visual-baseline/design-contract/*.png

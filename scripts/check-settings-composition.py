@@ -100,6 +100,11 @@ def install_settings_mock(page):
           window.__PULLORA_SETTINGS_TEST__ = {
             get updateCount() { return settingsUpdateCount; },
             get settings() { return structuredClone(settings); },
+            get launcherBackgrounds() {
+              return Object.fromEntries(
+                [...launcherArt.entries()].map(([key, art]) => [key, art.backgroundPath ?? null]),
+              );
+            },
           };
           window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
           window.__TAURI_INTERNALS__ = {
@@ -469,33 +474,24 @@ def density_metrics(page):
 
 def preview_range_value(page, selector, value, css_variable, expected_value):
     control = page.locator(selector)
-    last_error = None
-    for _ in range(2):
-        control.evaluate(
-            """
-            (element, nextValue) => {
-              const valueSetter = Object.getOwnPropertyDescriptor(
-                HTMLInputElement.prototype,
-                'value',
-              ).set;
-              valueSetter.call(element, String(nextValue));
-              element.dispatchEvent(new Event('input', { bubbles: true }));
-              element.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            """,
-            value,
+    control.scroll_into_view_if_needed()
+    box = control.bounding_box()
+    assert box, {"selector": selector, "reason": "missing bounding box"}
+    limits = control.evaluate("el => ({ min: Number(el.min), max: Number(el.max) })")
+    ratio = (value - limits["min"]) / (limits["max"] - limits["min"])
+    usable_width = max(1, box["width"] - 18)
+    x = box["x"] + 9 + usable_width * ratio
+    y = box["y"] + box["height"] / 2
+    page.mouse.click(x, y)
+    try:
+        page.wait_for_function(
+            "([controlSelector, name, controlValue, expected]) => "
+            "document.querySelector(controlSelector)?.value === String(controlValue) && "
+            "document.documentElement.style.getPropertyValue(name).trim() === expected",
+            arg=[selector, css_variable, value, expected_value],
+            timeout=5_000,
         )
-        try:
-            page.wait_for_function(
-                "([name, expected]) => document.documentElement.style.getPropertyValue(name).trim() === expected",
-                arg=[css_variable, expected_value],
-                timeout=5_000,
-            )
-            return
-        except PlaywrightTimeoutError as error:
-            last_error = error
-
-    if last_error:
+    except PlaywrightTimeoutError as error:
         actual = page.evaluate(
             """
             ([controlSelector, variable]) => ({
@@ -511,7 +507,84 @@ def preview_range_value(page, selector, value, css_variable, expected_value):
             "requested": value,
             "expected": expected_value,
             "actual": actual,
-        }) from last_error
+        }) from error
+
+
+def drag_range_control(page, selector, target_ratio):
+    control = page.locator(selector)
+    control.scroll_into_view_if_needed()
+    box = control.bounding_box()
+    assert box, {"selector": selector, "reason": "missing bounding box"}
+    limits = control.evaluate(
+        "el => ({ min: Number(el.min), max: Number(el.max), value: Number(el.value) })"
+    )
+    usable_width = max(1, box["width"] - 18)
+    start_ratio = (limits["value"] - limits["min"]) / (limits["max"] - limits["min"])
+    start_x = box["x"] + 9 + usable_width * start_ratio
+    target_x = box["x"] + 9 + usable_width * target_ratio
+    y = box["y"] + box["height"] / 2
+    hit_target = page.evaluate(
+        "([x, y]) => document.elementFromPoint(x, y)?.id ?? null",
+        [start_x, y],
+    )
+    assert hit_target == selector.removeprefix("#"), {
+        "selector": selector,
+        "hitTarget": hit_target,
+    }
+    page.mouse.move(start_x, y)
+    page.mouse.down()
+    page.mouse.move(target_x, y, steps=8)
+    page.mouse.up()
+    page.wait_for_timeout(350)
+    actual = int(control.input_value())
+    assert actual != limits["value"], {
+        "selector": selector,
+        "before": limits["value"],
+        "after": actual,
+    }
+    return actual
+
+
+def check_general_reset_contract(page):
+    page.get_by_role("button", name="Загальне", exact=True).click()
+    page.locator("#settings-general").wait_for()
+    before = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
+    assert before["installationPath"] == "C:\\PulloraApps", before
+    assert before["assetStrategy"] == "manual", before
+    assert before["appearance"]["surfaceTransparency"] != 42, before
+    assert page.evaluate(
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).some(Boolean)"
+    )
+
+    page.get_by_role("button", name="Скинути", exact=True).click()
+    dialog = page.get_by_role("alertdialog")
+    dialog.wait_for()
+    assert dialog.get_attribute("aria-describedby") == "settings-reset-description"
+    cancel = dialog.get_by_role("button", name="Скасувати", exact=True)
+    page.wait_for_function(
+        "el => el === document.activeElement",
+        arg=cancel.element_handle(),
+    )
+    update_count = page.evaluate("window.__PULLORA_SETTINGS_TEST__.updateCount")
+    dialog.get_by_role("button", name="Скинути", exact=True).click()
+    dialog.wait_for(state="hidden")
+    page.wait_for_function(
+        "count => window.__PULLORA_SETTINGS_TEST__.updateCount > count",
+        arg=update_count,
+    )
+
+    after = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
+    assert after["githubOwner"] == "CpPrice11", after
+    assert after["theme"] == "auto", after
+    assert after["language"] == "uk", after
+    assert after["appearance"]["surfaceTransparency"] == 42, after
+    assert after["appearance"]["surfaceBlur"] == 12, after
+    assert after["installationPath"] == before["installationPath"], after
+    assert after["includePrereleases"] == before["includePrereleases"], after
+    assert after["assetStrategy"] == before["assetStrategy"], after
+    assert page.evaluate(
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(value => value === null)"
+    )
 
 
 def check_surface_and_density_contract(page, theme):
@@ -582,7 +655,11 @@ def check_surface_and_density_contract(page, theme):
     for value in (0, 12, 32):
         expected = f"{value}px"
         preview_range_value(page, "#surfaceBlur", value, "--surface-blur", expected)
-        assert expected in surface_state(page)["workspace"]["backdropFilter"]
+        backdrop_filter = surface_state(page)["workspace"]["backdropFilter"]
+        if value == 0:
+            assert "blur(" not in backdrop_filter or expected in backdrop_filter
+        else:
+            assert expected in backdrop_filter
 
     preview_range_value(page, "#surfaceBlur", 0, "--surface-blur", "0px")
     update_count = page.evaluate("window.__PULLORA_SETTINGS_TEST__.updateCount")
@@ -599,6 +676,14 @@ def check_surface_and_density_contract(page, theme):
 
     stored = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
     assert stored["appearance"]["surfaceTransparency"] == 80, stored
+    dragged_transparency = drag_range_control(page, "#surfaceTransparency", 0.25)
+    expected_opacity = f"{100 - dragged_transparency}%"
+    page.wait_for_function(
+        "expected => document.documentElement.style.getPropertyValue('--surface-opacity').trim() === expected",
+        arg=expected_opacity,
+    )
+    stored = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
+    assert stored["appearance"]["surfaceTransparency"] == dragged_transparency, stored
     assert stored["appearance"]["surfaceBlur"] == 32, stored
     assert stored["appearance"]["density"] == "compact", stored
     assert root_appearance_state(page)["densityScale"] == "0.86"
@@ -690,6 +775,7 @@ def main() -> None:
                 check_select_contract(page)
                 check_appearance_contract(page, theme)
                 check_surface_and_density_contract(page, theme)
+                check_general_reset_contract(page)
 
                 context.close()
         browser.close()
