@@ -29,13 +29,13 @@ def rounded_box(locator) -> dict:
     return {key: round(value, 2) for key, value in box.items()}
 
 
-def assert_current_step(modal, step: str, *, expect_focus: bool = True) -> None:
+def assert_current_step(page: Page, modal, step: str, *, expect_focus: bool = True) -> None:
     pill = modal.locator(f'[data-wizard-step="{step}"]')
     pill.wait_for()
     assert pill.get_attribute("aria-current") == "step"
     assert "active" in (pill.get_attribute("class") or "").split()
     if expect_focus:
-        assert pill.evaluate("el => el === document.activeElement")
+        page.wait_for_function("el => el === document.activeElement", arg=pill.element_handle())
 
 
 def assert_action_hierarchy(actions) -> None:
@@ -89,7 +89,7 @@ def check_step_navigation(
     progress = modal.locator('[data-wizard-step="progress"]')
     result = modal.locator('[data-wizard-step="result"]')
 
-    assert_current_step(modal, "version", expect_focus=False)
+    assert_current_step(page, modal, "version", expect_focus=False)
     assert file.is_disabled() and confirm.is_disabled() and progress.is_disabled() and result.is_disabled()
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
@@ -99,7 +99,7 @@ def check_step_navigation(
     assert release_card.locator(".release-status-pill").count() == 2
 
     modal.locator(".release-nav-actions .release-action-primary").click()
-    assert_current_step(modal, "file")
+    assert_current_step(page, modal, "file")
     assert confirm.is_disabled() and progress.is_disabled() and result.is_disabled()
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
@@ -111,12 +111,12 @@ def check_step_navigation(
     page.screenshot(path=file_screenshot)
 
     modal.locator(".release-nav-actions .release-secondary-btn").click()
-    assert_current_step(modal, "version")
+    assert_current_step(page, modal, "version")
 
     modal.locator(".release-nav-actions .release-action-primary").click()
-    assert_current_step(modal, "file")
+    assert_current_step(page, modal, "file")
     modal.locator(".release-nav-actions .release-action-primary").click()
-    assert_current_step(modal, "confirm")
+    assert_current_step(page, modal, "confirm")
     assert progress.is_disabled() and result.is_disabled()
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
@@ -129,9 +129,9 @@ def check_step_navigation(
     page.screenshot(path=confirm_screenshot)
 
     modal.locator(".release-nav-actions .release-secondary-btn").click()
-    assert_current_step(modal, "file")
+    assert_current_step(page, modal, "file")
     version.click()
-    assert_current_step(modal, "version")
+    assert_current_step(page, modal, "version")
 
 
 def inspect_dialog(page: Page, width: int, height: int) -> dict:

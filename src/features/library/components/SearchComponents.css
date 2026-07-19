@@ -3189,3 +3189,48 @@
 :root[data-theme='light'] .library-sam-list-pane .repo-card.selected .repo-name {
   color: var(--color-text);
 }
+
+/* Release wizard surface hierarchy: shared by dark and light themes. */
+:root[data-theme] .cinematic-shell .release-modal--wizard > .modal-header,
+:root[data-theme] .cinematic-shell .release-modal--wizard > .release-wizard-steps,
+:root[data-theme] .cinematic-shell .release-modal--wizard > .release-wizard-context {
+  background: var(--surface-2);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme] .cinematic-shell .release-modal--wizard > .release-body {
+  background: var(--surface-1);
+}
+
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-nav-actions {
+  background: var(--surface-2);
+  border-color: var(--surface-border);
+}
+
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-version-card,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-asset-card,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-confirm-grid > div,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-install-path,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-notes-card {
+  background: var(--surface-3);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-control);
+}
+
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-selection-summary,
+:root[data-theme] .cinematic-shell .release-modal--wizard .asset-summary,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-blocked-note,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-confirm-card,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-result-card {
+  background:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 34%),
+    var(--surface-2);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-control);
+}
+
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-version-card.active,
+:root[data-theme] .cinematic-shell .release-modal--wizard .release-asset-card.active {
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--surface-3));
+  border-color: var(--color-primary);
+}

@@ -21,7 +21,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.10.3'
+const FALLBACK_CURRENT_VERSION = 'v5.11.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
@@ -104,6 +104,7 @@ function AboutPage() {
   const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
   const confirmModalRef = useRef<HTMLDivElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
+  const notesReturnFocusRef = useRef<HTMLButtonElement | null>(null)
   const releaseMenuRef = useRef<HTMLDivElement | null>(null)
   const releaseMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
 
@@ -190,6 +191,7 @@ function AboutPage() {
   useModalFocus(notesModalRef, {
     active: Boolean(notesRelease),
     onEscape: notesRelease ? () => setNotesRelease(null) : undefined,
+    returnFocusRef: notesReturnFocusRef,
   })
 
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
@@ -555,6 +557,7 @@ function AboutPage() {
                                 type="button"
                                 role="menuitem"
                                 onClick={() => {
+                                  notesReturnFocusRef.current = releaseMenuTriggerRef.current
                                   setMenuReleaseId(null)
                                   setNotesRelease(release)
                                 }}
@@ -565,7 +568,9 @@ function AboutPage() {
                                 type="button"
                                 role="menuitem"
                                 onClick={() => {
+                                  const trigger = releaseMenuTriggerRef.current
                                   setMenuReleaseId(null)
+                                  window.requestAnimationFrame(() => trigger?.focus())
                                   void openReleaseInBrowser(release)
                                 }}
                               >
@@ -585,8 +590,8 @@ function AboutPage() {
         </section>
       </div>
 
-      {notesRelease && (
-        <div className="modal-overlay" role="presentation" onClick={() => setNotesRelease(null)}>
+      {notesRelease && createPortal(
+        <div className="modal-overlay about-dialog-overlay" role="presentation" onClick={() => setNotesRelease(null)}>
           <div
             ref={notesModalRef}
             className="modal-content about-notes-modal"
@@ -622,12 +627,13 @@ function AboutPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.querySelector('.layout') ?? document.body,
       )}
 
-      {pendingAction && (
+      {pendingAction && createPortal(
         <div
-          className="modal-overlay"
+          className="modal-overlay about-dialog-overlay"
           role="presentation"
           onClick={() => {
             if (!installingVersion) setPendingAction(null)
@@ -713,7 +719,8 @@ function AboutPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.querySelector('.layout') ?? document.body,
       )}
     </div>
   )

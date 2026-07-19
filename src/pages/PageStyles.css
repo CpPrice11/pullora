@@ -738,8 +738,9 @@
 
 .about-panel {
   animation: fluent-fade-up var(--motion-normal);
-  background: var(--color-mica);
-  border: 1px solid var(--color-border-subtle);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
   box-shadow: var(--shadow-control);
   padding: 22px;
@@ -802,6 +803,27 @@
   grid-column: 1 / -1;
 }
 
+/* About keeps the launcher artwork as the only page background layer. */
+:root[data-theme] .cinematic-shell .about-page {
+  background: transparent;
+}
+
+:root[data-theme] .cinematic-shell .about-dialog-overlay {
+  backdrop-filter: blur(var(--surface-blur));
+  background: var(--launcher-background-scrim);
+}
+
+:root[data-theme] .cinematic-shell .about-dialog-overlay .about-notes-modal,
+:root[data-theme] .cinematic-shell .about-dialog-overlay .confirm-modal {
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background:
+    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 30%),
+    var(--surface-material-strong);
+  border-color: var(--surface-border-strong);
+  box-shadow: var(--surface-shadow);
+  color: var(--color-text);
+}
+
 .about-release-list {
   display: flex;
   flex-direction: column;
@@ -810,8 +832,8 @@
 
 .about-release-link {
   align-items: flex-start;
-  border: 1px solid var(--color-border-subtle);
-  background: var(--color-bg-elevated);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-2);
   border-radius: 10px;
   color: var(--color-text);
   display: flex;
@@ -1212,12 +1234,6 @@
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.18);
 }
 
-:root[data-theme='light'] .library-hero-background {
-  background:
-    var(--library-hero-background, transparent),
-    radial-gradient(circle at 10% 0%, rgba(0, 120, 212, 0.14), transparent 30%);
-}
-
 :root[data-theme='light'] .library-hero-gradient {
   background: linear-gradient(100deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7) 58%, rgba(255, 255, 255, 0.34));
 }
@@ -1569,41 +1585,26 @@
 }
 
 .cinematic-shell .segmented-control {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--segmented-background);
+  border-color: var(--segmented-border);
   border-radius: 12px;
   box-shadow: none;
   padding: 3px;
 }
 
-:root[data-theme='light'] .cinematic-shell .segmented-control {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(17, 24, 39, 0.12);
-}
-
 .cinematic-shell .segmented-control button {
   border-radius: 9px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--segmented-text);
   font-size: 13px;
   font-weight: 760;
   min-height: 30px;
   padding: 0 11px;
 }
 
-:root[data-theme='light'] .cinematic-shell .segmented-control button {
-  color: rgba(17, 24, 39, 0.68);
-}
-
 .cinematic-shell .segmented-control button:hover,
 .cinematic-shell .segmented-control button.active {
-  background: rgba(255, 255, 255, 0.13);
-  color: #ffffff;
-}
-
-:root[data-theme='light'] .cinematic-shell .segmented-control button:hover,
-:root[data-theme='light'] .cinematic-shell .segmented-control button.active {
-  background: rgba(17, 24, 39, 0.08);
-  color: #111827;
+  background: var(--segmented-active-background);
+  color: var(--segmented-active-text);
 }
 
 .cinematic-shell .results-count {
@@ -1888,12 +1889,11 @@
 
 .about-hero {
   align-items: center;
-  background:
-    linear-gradient(115deg, rgba(91, 215, 255, 0.1), rgba(255, 255, 255, 0.035)),
-    rgba(12, 16, 21, 0.66);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
   border-radius: 18px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--surface-shadow);
   display: grid;
   gap: 12px;
   grid-template-columns: 48px minmax(0, 1fr) auto;
@@ -1905,8 +1905,8 @@
 
 .about-hero-mark {
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
   display: flex;
   height: 48px;
@@ -1956,8 +1956,8 @@
 }
 
 .about-hero-meta .about-current-version-chip {
-  border-color: rgba(116, 240, 124, 0.52);
-  color: #95fb9b;
+  border-color: color-mix(in srgb, var(--about-status-success) 52%, transparent);
+  color: var(--about-status-success-text);
 }
 
 .about-hero-actions {
@@ -2041,11 +2041,6 @@
   border-color: var(--surface-border);
 }
 
-:root[data-theme='light'] .about-hero-meta .about-current-version-chip {
-  border-color: rgba(22, 163, 74, 0.32);
-  color: #15803d;
-}
-
 :root[data-theme='light'] .about-version-heading p,
 :root[data-theme='light'] .about-panel-meta {
   color: var(--color-text-tertiary);
@@ -2122,7 +2117,9 @@
 }
 
 .cinematic-shell .about-panel {
-  background: rgba(18, 20, 24, 0.68);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  background: var(--surface-1);
+  border-color: var(--surface-border);
   border-radius: 20px;
   padding: 20px 24px;
 }
@@ -2133,12 +2130,10 @@
 
 .cinematic-shell .about-release-link {
   align-items: center;
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
-    rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--surface-2);
+  border-color: var(--surface-border);
   border-radius: 18px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-control);
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr) auto;
   min-height: 64px;
@@ -2148,7 +2143,7 @@
 }
 
 .cinematic-shell .about-release-link::before {
-  background: rgba(255, 255, 255, 0.16);
+  background: color-mix(in srgb, var(--color-text-secondary) 32%, transparent);
   border-radius: 999px;
   content: '';
   inset: 12px auto 12px 0;
@@ -2157,15 +2152,15 @@
 }
 
 .cinematic-shell .about-release-link--current::before {
-  background: #5bd7ff;
+  background: var(--about-status-current);
 }
 
 .cinematic-shell .about-release-link--newer::before {
-  background: #74f07c;
+  background: var(--about-status-success);
 }
 
 .cinematic-shell .about-release-link--missing::before {
-  background: #ff6b8b;
+  background: var(--about-status-error);
 }
 
 :root[data-theme='light'] .cinematic-shell .about-release-link {
@@ -2175,16 +2170,16 @@
 }
 
 .cinematic-shell .about-release-link.active {
-  background: rgba(91, 215, 255, 0.15);
-  border-color: rgba(91, 215, 255, 0.7);
+  background: color-mix(in srgb, var(--color-primary) 15%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--color-primary) 70%, var(--surface-border));
 }
 
 .about-release-orb {
   align-items: center;
   background:
-    radial-gradient(circle at 70% 20%, rgba(91, 215, 255, 0.34), transparent 38%),
-    rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 38%),
+    var(--surface-3);
+  border: 1px solid var(--surface-border);
   border-radius: 14px;
   display: flex !important;
   height: 38px;
@@ -2299,10 +2294,10 @@
 
 .about-release-active-badge {
   align-items: center;
-  background: rgba(116, 240, 124, 0.1);
-  border: 1px solid rgba(116, 240, 124, 0.32);
+  background: color-mix(in srgb, var(--about-status-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--about-status-success) 32%, transparent);
   border-radius: 999px;
-  color: #95fb9b;
+  color: var(--about-status-success-text);
   display: inline-flex;
   font-size: 12px;
   font-weight: 820;
@@ -2365,12 +2360,6 @@
   font-size: 14px;
   line-height: 1.45;
   margin: 0 0 12px;
-}
-
-:root[data-theme='light'] .about-release-active-badge {
-  background: rgba(22, 163, 74, 0.1);
-  border-color: rgba(22, 163, 74, 0.28);
-  color: #15803d;
 }
 
 :root[data-theme='light'] .about-notes-header,
@@ -3214,9 +3203,9 @@
 }
 
 .about-release-portable-badge {
-  border: 1px solid rgba(91, 215, 255, 0.55);
+  border: 1px solid color-mix(in srgb, var(--about-status-current) 55%, transparent);
   border-radius: 999px;
-  color: #7ddeff !important;
+  color: var(--about-status-current) !important;
   font-size: 11px;
   font-weight: 840;
   line-height: 1;
@@ -4796,8 +4785,10 @@
 }
 
 .cinematic-shell .library-page .library-hero-background {
-  background: var(--library-hero-background, transparent);
-  background-position: center;
+  background-color: transparent;
+  background-image: var(--library-hero-background, none);
+  background-position: center center;
+  background-repeat: no-repeat;
   background-size: cover;
   border-radius: inherit;
   opacity: 1;
@@ -4827,6 +4818,7 @@
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
   height: var(--library-hero-cover-size);
   inset: auto;
+  justify-self: start;
   opacity: 1;
   overflow: hidden;
   position: relative;
@@ -4837,9 +4829,11 @@
 
 .cinematic-shell .library-page .library-hero--art .library-hero-cover img,
 .cinematic-shell .library-page .library-hero--fallback .library-hero-cover img {
+  display: block;
   filter: none;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   width: 100%;
 }
 
@@ -5223,11 +5217,6 @@
   color: var(--color-text);
 }
 
-:root[data-theme='light'] .cinematic-shell .library-page .library-hero-background,
-:root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero-background {
-  background: var(--library-hero-background, transparent);
-}
-
 :root[data-theme='light'] .cinematic-shell .library-page .library-hero-gradient,
 :root[data-theme='light'] .cinematic-shell.has-custom-background .library-page .library-hero-gradient {
   background: linear-gradient(90deg, color-mix(in srgb, var(--surface-canvas) 78%, transparent) 0%, color-mix(in srgb, var(--surface-canvas) 62%, transparent) 58%, color-mix(in srgb, var(--surface-canvas) 38%, transparent) 100%);
@@ -5313,6 +5302,37 @@
   margin: 6px 0 0;
 }
 
+.settings-reset-control {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-error) 7%, var(--surface-3));
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, var(--surface-border));
+  border-radius: 12px;
+  display: flex;
+  gap: 18px;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  padding: calc(12px * var(--density-scale)) 14px;
+}
+
+.settings-reset-control strong {
+  color: var(--color-text);
+  display: block;
+  font-size: 14px;
+}
+
+.settings-reset-control p {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.settings-reset-trigger {
+  flex: 0 0 auto;
+  min-height: calc(40px * var(--density-scale));
+  padding-inline: 16px;
+}
+
 .cinematic-shell .library-page .library-hero-gradient {
   background: linear-gradient(90deg, var(--surface-material-strong) 0%, var(--surface-material) 58%, transparent 100%);
 }
@@ -5324,5 +5344,14 @@
 
   .underlay-control label {
     grid-column: 1 / -1;
+  }
+
+  .settings-reset-control {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-reset-trigger {
+    width: 100%;
   }
 }

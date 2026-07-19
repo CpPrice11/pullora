@@ -1,56 +1,134 @@
 from __future__ import annotations
 
 import runpy
+import sys
+from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
 
 BASELINE = runpy.run_path("scripts/capture-visual-baseline.py")
-TRANSPARENCY_VALUES = (0, 40, 80)
-BLUR_VALUES = (0, 12, 32)
+
+
+def css_rule(source: str, selector: str) -> str:
+    start = source.find(selector)
+    assert start >= 0, f"Missing CSS selector: {selector}"
+    block_start = source.find("{", start)
+    block_end = source.find("}", block_start)
+    assert block_start >= 0 and block_end >= 0, f"Incomplete CSS rule: {selector}"
+    return source[start:block_end]
+
+
+def check_source_contract() -> None:
+    root = Path(__file__).resolve().parent.parent
+    cinematic = (root / "src/styles/Cinematic.css").read_text(encoding="utf-8")
+    pages = (root / "src/pages/PageStyles.css").read_text(encoding="utf-8")
+    contracts = (
+        (
+            cinematic,
+            ":root[data-theme] .cinematic-shell .library-page .library-sam-list-pane,",
+            ("var(--surface-1)", "blur(var(--surface-blur))"),
+        ),
+        (
+            cinematic,
+            ":root[data-theme] .cinematic-shell .library-page .library-toolstrip,",
+            ("var(--surface-2)", "backdrop-filter: none"),
+        ),
+        (
+            pages,
+            ".cinematic-shell .library-page .library-play-status,",
+            ("var(--surface-3)", "var(--surface-border)"),
+        ),
+    )
+    for source, selector, expected in contracts:
+        rule = css_rule(source, selector)
+        for fragment in expected:
+            assert fragment in rule, {"selector": selector, "missing": fragment, "rule": rule}
+    print("[library-surfaces] source contract: ok")
+
+
+def click_range(page: Page, selector: str, value: int) -> None:
+    control = page.locator(selector)
+    control.scroll_into_view_if_needed()
+    box = control.bounding_box()
+    assert box
+    limits = control.evaluate("el => ({ min: Number(el.min), max: Number(el.max) })")
+    ratio = (value - limits["min"]) / (limits["max"] - limits["min"])
+    usable_width = max(1, box["width"] - 18)
+    page.mouse.click(box["x"] + 9 + usable_width * ratio, box["y"] + box["height"] / 2)
+    page.wait_for_function(
+        "([controlSelector, expected]) => document.querySelector(controlSelector)?.value === String(expected)",
+        arg=[selector, value],
+    )
+
+
+def open_library(page: Page) -> None:
+    page.locator(".nav-item").nth(0).click()
+    page.locator(".library-page").wait_for()
+    page.locator(".library-hero").wait_for()
+    page.locator(".library-inline-panel--versions").wait_for()
 
 
 def set_surface_controls(page: Page, transparency: int, blur: int) -> None:
-    page.get_by_role("button", name="Налаштування").click()
-    page.get_by_role("heading", name="Налаштування").wait_for()
-    page.locator("#surfaceTransparency").fill(str(transparency))
-    page.locator("#surfaceBlur").fill(str(blur))
-    page.get_by_role("button", name="Бібліотека").click()
-    page.locator(".library-sam-list-pane").wait_for()
-    page.locator(".library-hero").wait_for()
-    page.locator(".library-ops-panel").wait_for()
+    page.locator(".nav-item").nth(1).click()
+    page.locator(".settings-page").wait_for()
+    click_range(page, "#surfaceTransparency", transparency)
+    click_range(page, "#surfaceBlur", blur)
+    open_library(page)
 
 
-def surface_snapshot(page: Page) -> dict:
+def surface_state(page: Page) -> dict:
     return page.evaluate(
         """
         () => {
-          const style = selector => {
+          const read = selector => {
             const element = document.querySelector(selector);
-            return element ? getComputedStyle(element) : null;
+            const style = getComputedStyle(element);
+            const box = element.getBoundingClientRect();
+            return {
+              background: style.backgroundColor,
+              border: style.borderColor,
+              filter: style.backdropFilter,
+              box: [box.x, box.y, box.width, box.height].map(value => Math.round(value)),
+            };
           };
-          const background = selector => style(selector)?.backgroundColor ?? null;
+          const root = getComputedStyle(document.documentElement);
+          const background = document.querySelector('.cinematic-background');
           return {
-            rootSurface: getComputedStyle(document.documentElement).getPropertyValue('--surface-1').trim(),
-            listBackground: background('.library-sam-list-pane'),
-            detailsBackground: background('.library-sam-details-pane'),
-            listFilter: style('.library-sam-list-pane')?.backdropFilter ?? null,
-            detailsFilter: style('.library-sam-details-pane')?.backdropFilter ?? null,
-            toolstripBackground: background('.library-toolstrip'),
-            heroBackground: background('.library-hero'),
-            operationsBackground: background('.library-ops-panel'),
-            inlinePanelBackground: background('.library-inline-panel'),
-            innerCardBackground: background('.library-ops-grid > div'),
+            opacity: root.getPropertyValue('--surface-opacity').trim(),
+            blur: root.getPropertyValue('--surface-blur').trim(),
+            launcherBackgroundVisible: background.classList.contains('is-visible'),
+            launcherBackgroundOpacity: Number(getComputedStyle(background).opacity),
+            sidebar: read('.library-sam-list-pane'),
+            details: read('.library-sam-details-pane'),
+            toolstrip: read('.library-toolstrip'),
+            playStatus: read('.library-play-status'),
+            hero: read('.library-hero'),
+            operations: read('.library-ops-panel'),
+            inlinePanel: read('.library-inline-panel--versions'),
           };
         }
         """
     )
 
 
+def alpha(color: str) -> float:
+    if "/" in color:
+        value = color.rsplit("/", 1)[-1].rstrip(" )").strip()
+        return float(value.removesuffix("%")) / (100 if value.endswith("%") else 1)
+    if color.startswith("rgba("):
+        return float(color.removeprefix("rgba(").removesuffix(")").split(",")[-1])
+    return 1.0
+
+
 def main() -> None:
+    check_source_contract()
+    if "--static" in sys.argv:
+        return
+
+    checks = 0
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
-        checks = 0
         for theme in ("dark", "light"):
             context = browser.new_context(
                 viewport={"width": 1280, "height": 720},
@@ -60,36 +138,50 @@ def main() -> None:
             page = context.new_page()
             BASELINE["seed_cache"](page)
             BASELINE["open_library"](page)
-            backgrounds: dict[int, str] = {}
-
-            for transparency in TRANSPARENCY_VALUES:
-                for blur in BLUR_VALUES:
-                    set_surface_controls(page, transparency, blur)
-                    snapshot = surface_snapshot(page)
-                    expected_filter = f"blur({blur}px) saturate(1.08)"
-                    assert snapshot["listFilter"] == expected_filter, snapshot
-                    assert snapshot["detailsFilter"] == expected_filter, snapshot
-                    assert snapshot["listBackground"] == snapshot["detailsBackground"], snapshot
-                    assert snapshot["toolstripBackground"] == snapshot["heroBackground"], snapshot
-                    assert snapshot["heroBackground"] == snapshot["operationsBackground"], snapshot
-                    if snapshot["inlinePanelBackground"] is not None:
-                        assert snapshot["operationsBackground"] == snapshot["inlinePanelBackground"], snapshot
-                    if blur == BLUR_VALUES[0]:
-                        backgrounds[transparency] = snapshot["listBackground"]
-
-                    BASELINE["apply_custom_background"](page)
-                    custom_snapshot = surface_snapshot(page)
-                    assert custom_snapshot["listBackground"] == snapshot["listBackground"], custom_snapshot
-                    assert custom_snapshot["detailsBackground"] == snapshot["detailsBackground"], custom_snapshot
-                    checks += 1
-
-            assert len(set(backgrounds.values())) == len(TRANSPARENCY_VALUES), {
-                "theme": theme,
-                "backgrounds": backgrounds,
+            BASELINE["apply_custom_background"](page)
+            initial = surface_state(page)
+            geometry = {
+                key: initial[key]["box"]
+                for key in ("sidebar", "details", "hero", "operations", "inlinePanel")
             }
+
+            opacity_states = {}
+            for transparency in (0, 40, 80):
+                set_surface_controls(page, transparency, 12)
+                state = surface_state(page)
+                assert state["opacity"] == f"{100 - transparency}%", state
+                assert state["launcherBackgroundVisible"] and state["launcherBackgroundOpacity"] > 0
+                current_geometry = {key: state[key]["box"] for key in geometry}
+                assert current_geometry == geometry, {
+                    "expectedGeometry": geometry,
+                    "actualGeometry": current_geometry,
+                    "state": state,
+                }
+                assert "12px" in state["sidebar"]["filter"]
+                assert "12px" in state["details"]["filter"]
+                for inner in ("toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
+                    assert state[inner]["filter"] == "none", {inner: state[inner]}
+                opacity_states[transparency] = state
+                checks += 1
+
+            for surface in ("sidebar", "details", "toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
+                assert (
+                    alpha(opacity_states[0][surface]["background"])
+                    > alpha(opacity_states[40][surface]["background"])
+                    > alpha(opacity_states[80][surface]["background"])
+                ), {surface: opacity_states}
+
+            for blur in (0, 12, 32):
+                set_surface_controls(page, 40, blur)
+                state = surface_state(page)
+                assert state["blur"] == f"{blur}px", state
+                assert f"blur({blur}px)" in state["sidebar"]["filter"]
+                assert f"blur({blur}px)" in state["details"]["filter"]
+                checks += 1
+
             context.close()
         browser.close()
-    print(f"[library-surface-controls] checks={checks}: ok")
+    print(f"[library-surfaces] checks={checks}: ok")
 
 
 if __name__ == "__main__":

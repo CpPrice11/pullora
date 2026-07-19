@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import NativeSelect from '../../../components/Select/NativeSelect'
 import StatePanel from '../../../components/State/StatePanel'
 import { useI18n, type AppLanguage } from '../../../i18n'
@@ -29,8 +29,14 @@ interface GeneralSettingsSectionProps {
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
-  onSaveSurfaceSettings: () => void
+  onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
+  onRequestReset: () => void
+  saving: boolean
 }
+
+const rangeProgressStyle = (value: number, min: number, max: number) => ({
+  '--range-progress': `${((value - min) / (max - min)) * 100}%`,
+}) as CSSProperties
 
 function GeneralSettingsSection({
   settings,
@@ -45,9 +51,13 @@ function GeneralSettingsSection({
   onChangeLauncherBackground,
   onClearLauncherBackground,
   onPreviewSurfaceSetting,
-  onSaveSurfaceSettings,
+  onCommitSurfaceSetting,
+  onRequestReset,
+  saving,
 }: GeneralSettingsSectionProps) {
   const { t } = useI18n()
+  const surfaceTransparency = settings.appearance?.surfaceTransparency ?? 42
+  const surfaceBlur = settings.appearance?.surfaceBlur ?? 12
 
   return (
     <section id="settings-general" className="settings-section">
@@ -147,13 +157,16 @@ function GeneralSettingsSection({
               min="0"
               max="80"
               step="1"
-              value={settings.appearance?.surfaceTransparency ?? 42}
+              value={surfaceTransparency}
+              style={rangeProgressStyle(surfaceTransparency, 0, 80)}
+              aria-valuetext={`${surfaceTransparency}%`}
+              aria-describedby="underlayAppearanceHelp"
               onChange={(event) => onPreviewSurfaceSetting('surfaceTransparency', Number(event.target.value))}
-              onKeyUp={onSaveSurfaceSettings}
-              onPointerUp={onSaveSurfaceSettings}
+              onKeyUp={(event) => onCommitSurfaceSetting('surfaceTransparency', Number(event.currentTarget.value))}
+              onPointerUp={(event) => onCommitSurfaceSetting('surfaceTransparency', Number(event.currentTarget.value))}
             />
-            <output htmlFor="surfaceTransparency">
-              {settings.appearance?.surfaceTransparency ?? 42}%
+            <output className="settings-range-value" htmlFor="surfaceTransparency">
+              {surfaceTransparency}%
             </output>
           </div>
           <div className="underlay-control">
@@ -164,17 +177,34 @@ function GeneralSettingsSection({
               min="0"
               max="32"
               step="1"
-              value={settings.appearance?.surfaceBlur ?? 12}
+              value={surfaceBlur}
+              style={rangeProgressStyle(surfaceBlur, 0, 32)}
+              aria-valuetext={`${surfaceBlur} px`}
+              aria-describedby="underlayAppearanceHelp"
               onChange={(event) => onPreviewSurfaceSetting('surfaceBlur', Number(event.target.value))}
-              onKeyUp={onSaveSurfaceSettings}
-              onPointerUp={onSaveSurfaceSettings}
+              onKeyUp={(event) => onCommitSurfaceSetting('surfaceBlur', Number(event.currentTarget.value))}
+              onPointerUp={(event) => onCommitSurfaceSetting('surfaceBlur', Number(event.currentTarget.value))}
             />
-            <output htmlFor="surfaceBlur">
-              {settings.appearance?.surfaceBlur ?? 12} px
+            <output className="settings-range-value" htmlFor="surfaceBlur">
+              {surfaceBlur} px
             </output>
           </div>
-          <p className="help-text">{t('settings.underlayAppearanceHelp')}</p>
+          <p id="underlayAppearanceHelp" className="help-text">{t('settings.underlayAppearanceHelp')}</p>
         </fieldset>
+        <div className="settings-reset-control">
+          <div>
+            <strong>{t('settings.resetGeneralTitle')}</strong>
+            <p>{t('settings.resetHelp')}</p>
+          </div>
+          <button
+            type="button"
+            className="settings-reset-btn settings-reset-trigger"
+            disabled={saving}
+            onClick={onRequestReset}
+          >
+            {t('settings.resetAction')}
+          </button>
+        </div>
       </div>
     </section>
   )
@@ -361,7 +391,6 @@ interface MaintenanceSettingsSectionProps {
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus
   githubQueue: GitHubQueueStatus
-  saving: boolean
   registryBusy: boolean
   formatRateLimit: (bucket: GitHubRateLimitStatus['core']) => string
   formatRateLimitReset: (bucket: GitHubRateLimitStatus['core']) => string
@@ -369,7 +398,6 @@ interface MaintenanceSettingsSectionProps {
   onRefreshStorageInfo: () => void
   onOpenDirectory: (path: string) => void
   onCleanupLauncherFiles: () => void
-  onRequestReset: () => void
   onClearCache: () => void
   onExportInstalledRegistry: () => void
   onImportInstalledRegistry: () => void
@@ -391,7 +419,6 @@ function MaintenanceSettingsSection({
   storageInfo,
   githubRateLimit,
   githubQueue,
-  saving,
   registryBusy,
   formatRateLimit,
   formatRateLimitReset,
@@ -399,7 +426,6 @@ function MaintenanceSettingsSection({
   onRefreshStorageInfo,
   onOpenDirectory,
   onCleanupLauncherFiles,
-  onRequestReset,
   onClearCache,
   onExportInstalledRegistry,
   onImportInstalledRegistry,
@@ -456,7 +482,6 @@ function MaintenanceSettingsSection({
         </div>
       </div>
       <div className="settings-maintenance-actions">
-        <button className="secondary-btn" onClick={onRequestReset} disabled={saving}>{t('settings.reset')}</button>
         <button className="secondary-btn" onClick={onClearCache}>{t('settings.clearCache')}</button>
         <button className="secondary-btn" onClick={onExportInstalledRegistry} disabled={registryBusy}>{t('settings.exportInstalledRegistry')}</button>
         <button className="secondary-btn" onClick={onImportInstalledRegistry} disabled={registryBusy}>{t('settings.importInstalledRegistry')}</button>
@@ -493,7 +518,7 @@ interface SettingsSectionsProps {
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
-  onSaveSurfaceSettings: () => void
+  onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onInstallationPathChange: (value: string) => void
   onInstallationPathBlur: () => void
   onInstallationPathKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void

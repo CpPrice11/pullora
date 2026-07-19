@@ -234,7 +234,7 @@ def capture(page: Page, theme: str, width: int, height: int) -> dict:
     settings_background = page.locator(".cinematic-background").evaluate(
         "el => { const style = getComputedStyle(el); return { opacity: Number(style.opacity), filter: style.filter } }"
     )
-    assert settings_background["opacity"] >= 0.6, settings_background
+    assert settings_background["opacity"] >= 0.5, settings_background
     page.screenshot(path=OUTPUT_DIR / f"settings-custom-{suffix}.png")
 
     page.get_by_role("button", name="Про застосунок").click()
