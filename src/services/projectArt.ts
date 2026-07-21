@@ -13,19 +13,11 @@ function launcherThemeRepo(theme: LauncherBackgroundTheme) {
 }
 
 export async function listProjectArt(): Promise<ProjectArt[]> {
-  try {
-    return await callTauri<ProjectArt[]>('list_project_art_assets')
-  } catch {
-    return []
-  }
+  return callTauri<ProjectArt[]>('list_project_art_assets')
 }
 
 async function getProjectArt(owner: string, repo: string): Promise<ProjectArt | null> {
-  try {
-    return await callTauri<ProjectArt | null>('get_project_art_asset', { owner, repo })
-  } catch {
-    return null
-  }
+  return callTauri<ProjectArt | null>('get_project_art_asset', { owner, repo })
 }
 
 export async function setProjectArt(

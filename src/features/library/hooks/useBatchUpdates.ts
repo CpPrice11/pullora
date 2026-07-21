@@ -35,12 +35,7 @@ function assetIsPortableInstall(asset: GitHubAsset) {
 
   return name.includes('portable') ||
     name.endsWith('.exe') ||
-    name.endsWith('.appimage') ||
-    name.endsWith('.zip') ||
-    name.endsWith('.tar.gz') ||
-    name.endsWith('.tgz') ||
-    name.endsWith('.tar.xz') ||
-    name.endsWith('.tar.bz2')
+    name.endsWith('.zip')
 }
 
 function pickPortableUpdateAsset(release: GitHubRelease | null) {

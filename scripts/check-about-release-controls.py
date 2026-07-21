@@ -5,7 +5,6 @@ import json
 import re
 import sys
 from pathlib import Path
-from time import time
 
 from playwright.sync_api import Page, sync_playwright
 
@@ -14,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BASELINE_PATH = ROOT / "scripts" / "capture-visual-baseline.py"
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
-CURRENT_VERSION = "v5.11.0"
+CURRENT_VERSION = "v5.12.0"
 
 
 def load_baseline():
@@ -58,26 +57,21 @@ def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool 
 
 def seed_release_matrix(page: Page, baseline) -> None:
     baseline.seed_cache(page)
-    now = int(time() * 1000)
     releases = [
-        release(5120, "v5.12.0"),
-        release(5103, CURRENT_VERSION),
+        release(5130, "v5.13.0"),
+        release(5120, CURRENT_VERSION),
         release(5101, "v5.10.1"),
         release(599, "v5.9.9", checksum=False),
     ]
-    payload = json.dumps({"now": now, "releases": releases}, ensure_ascii=False)
+    payload = json.dumps({"releases": releases}, ensure_ascii=False)
     page.add_init_script(
         script="""
         (() => {
-          const { now, releases } = JSON.parse(__PAYLOAD__);
-          const key = 'pullora.github.api-cache.v2';
-          const cache = JSON.parse(localStorage.getItem(key) || '{}');
-          cache['releases:cpprice11/pullora'] = {
-            cachedAt: now,
-            expiresAt: now + 6 * 60 * 60 * 1000,
-            data: releases,
+          const { releases } = JSON.parse(__PAYLOAD__);
+          window.__PULLORA_TEST_RELEASES__ = {
+            ...(window.__PULLORA_TEST_RELEASES__ ?? {}),
+            'cpprice11/pullora': releases,
           };
-          localStorage.setItem(key, JSON.stringify(cache));
         })()
         """.replace("__PAYLOAD__", json.dumps(payload)),
     )

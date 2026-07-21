@@ -609,12 +609,12 @@
   min-width: 180px;
 }
 
-.checkbox-label {
+.form-group .checkbox-label {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   cursor: pointer;
-  font-weight: normal !important;
+  font-weight: normal;
 }
 
 .checkbox-label input[type='checkbox'] {
@@ -658,7 +658,7 @@
 .help-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs) !important;
+  margin-top: var(--spacing-xs);
 }
 
 .form-actions {
@@ -865,12 +865,12 @@
   min-width: 0;
 }
 
-.about-release-title {
+.about-release-link .about-release-title {
   align-items: center;
-  display: flex !important;
-  flex-direction: row !important;
+  display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 8px !important;
+  gap: 8px;
 }
 
 .about-release-title span:first-child {
@@ -892,34 +892,34 @@
 }
 
 .about-release-status.current,
-.about-release-ready {
-  color: var(--color-primary) !important;
+.about-release-link .about-release-ready {
+  color: var(--color-primary);
 }
 
 .about-release-status.newer {
   border-color: color-mix(in srgb, var(--color-success) 60%, var(--color-border));
-  color: var(--color-success) !important;
+  color: var(--color-success);
 }
 
 .about-release-status.older {
-  color: var(--color-text-secondary) !important;
+  color: var(--color-text-secondary);
 }
 
 .about-release-status.missing {
   border-color: color-mix(in srgb, var(--color-error) 60%, var(--color-border));
-  color: var(--color-error) !important;
+  color: var(--color-error);
 }
 
-.about-release-warning {
-  color: var(--color-error) !important;
+.about-release-link .about-release-warning {
+  color: var(--color-error);
 }
 
-.about-release-actions {
+.about-release-link .about-release-actions {
   align-items: flex-end;
-  display: flex !important;
-  flex-direction: column !important;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  gap: 8px !important;
+  gap: 8px;
   max-width: 260px;
 }
 
@@ -2181,14 +2181,14 @@
     var(--surface-3);
   border: 1px solid var(--surface-border);
   border-radius: 14px;
-  display: flex !important;
+  display: flex;
   height: 38px;
   justify-content: center;
   width: 38px;
 }
 
 .about-release-orb span {
-  color: #ffffff !important;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 860;
 }
@@ -2201,7 +2201,7 @@
 }
 
 :root[data-theme='light'] .about-release-orb span {
-  color: var(--color-text) !important;
+  color: var(--color-text);
 }
 
 .cinematic-shell .about-release-main {
@@ -2240,7 +2240,7 @@
 .cinematic-shell .about-release-actions {
   align-items: center;
   display: flex;
-  flex-direction: row !important;
+  flex-direction: row;
   flex-wrap: nowrap;
   gap: 7px;
   justify-content: flex-end;
@@ -3202,10 +3202,10 @@
   z-index: 90;
 }
 
-.about-release-portable-badge {
+.about-release-link .about-release-portable-badge {
   border: 1px solid color-mix(in srgb, var(--about-status-current) 55%, transparent);
   border-radius: 999px;
-  color: var(--about-status-current) !important;
+  color: var(--about-status-current);
   font-size: 11px;
   font-weight: 840;
   line-height: 1;
@@ -3724,11 +3724,11 @@
   position: relative;
 }
 
-.repo-actions-submenu-trigger {
+.project-actions-popover .repo-actions-submenu-trigger {
   align-items: center;
-  display: flex !important;
+  display: flex;
   gap: 18px;
-  justify-content: space-between !important;
+  justify-content: space-between;
   width: 100%;
 }
 
@@ -3753,7 +3753,6 @@
 }
 
 .repo-actions-submenu-panel button {
-  justify-content: flex-start !important;
   min-height: 30px;
   text-align: left;
   width: 100%;
@@ -4517,13 +4516,9 @@
 .cinematic-shell .library-page .library-ops-action-row {
   align-items: center;
   display: grid;
-  gap: 4px;
-  grid-template-columns: minmax(200px, 270px) repeat(3, minmax(140px, 1fr));
   order: 1;
-  padding: 10px 12px;
 }
 
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,
 .cinematic-shell .library-page .library-ops-action-row .secondary-btn {
   border: 0;
   border-radius: 0;
@@ -4531,16 +4526,6 @@
   font-size: 13px;
   font-weight: 700;
   min-height: 46px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn {
-  background: linear-gradient(90deg, #75c83d, #43a72f);
-  color: #ffffff !important;
-  font-size: 20px;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .hero-primary-btn:hover {
-  background: linear-gradient(90deg, #91de4d, #59bf3d);
 }
 
 .cinematic-shell .library-page .library-ops-action-row .secondary-btn {

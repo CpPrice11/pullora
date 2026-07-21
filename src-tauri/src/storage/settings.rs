@@ -24,25 +24,16 @@ pub struct AppSettings {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AppAppearanceSettings {
-    pub preset: String,
-    pub accent: String,
-    pub accent_hover: String,
-    pub background: String,
-    pub surface: String,
-    pub surface2: String,
-    pub sidebar: String,
-    pub text: String,
-    pub muted: String,
-    pub border: String,
-    pub font_family: String,
-    pub font_size: u32,
-    pub radius: u32,
+    #[serde(default = "default_density")]
     pub density: String,
     #[serde(default = "default_surface_transparency")]
     pub surface_transparency: u32,
     #[serde(default = "default_surface_blur")]
     pub surface_blur: u32,
-    pub custom_css: String,
+}
+
+fn default_density() -> String {
+    "comfortable".to_string()
 }
 
 fn default_surface_transparency() -> u32 {

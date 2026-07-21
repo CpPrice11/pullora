@@ -30,7 +30,7 @@
 - **Settings** — композиція, навігація, autosave, reset, щільність, фони, повзунки та нативні select-контроли.
 - **About** — композиція, product header, фільтри й статуси релізів, меню, portal-діалоги, surface-контроли, фоновий continuity, SHA-256 і rollback.
 
-Фінальний `scripts/check-v5-11-parity-gates.py` підіймає зібрані `v5.10.1` і поточний frontend одночасно, використовує однакові GitHub-дані, Chromium, viewport, тему, мову й reduced-motion та порівнює ключову геометрію чотирьох робочих областей. Той самий сценарій перевіряє accessible names, labels, dialog semantics, focus-visible, відсутність позитивного `tabindex`, горизонтального overflow і підтримку української та англійської.
+Фінальний `scripts/check-ui-release.py` послідовно запускає актуальні headless-сценарії Library, Install, Settings і About. Матриця перевіряє геометрію, теми, viewport, accessible names, labels, dialog semantics, focus-visible, відсутність позитивного `tabindex`, горизонтального overflow і підтримку української та англійської.
 
 ## Дозволені локальні відмінності від v5.10.1
 

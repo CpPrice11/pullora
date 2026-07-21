@@ -17,7 +17,6 @@ impl InstallAssetKind {
     }
 }
 
-const ARCHIVE_EXTENSIONS: [&str; 5] = [".zip", ".tar.gz", ".tgz", ".tar.xz", ".tar.bz2"];
 const SOURCE_ARCHIVE_NAMES: [&str; 3] = ["source code", "source-code", "source_code"];
 
 pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<(), String> {
@@ -79,14 +78,11 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
         return Some(InstallAssetKind::Installer);
     }
 
-    if name.contains("portable") || name.ends_with(".appimage") {
+    if name.contains("portable") {
         return Some(InstallAssetKind::Portable);
     }
 
-    if ARCHIVE_EXTENSIONS
-        .iter()
-        .any(|extension| name.ends_with(extension))
-    {
+    if name.ends_with(".zip") {
         return Some(InstallAssetKind::Archive);
     }
 
@@ -122,23 +118,15 @@ mod tests {
             classify_install_asset_name("tool-windows-x64.zip"),
             Some(InstallAssetKind::Archive)
         );
-        assert_eq!(
-            classify_install_asset_name("tool-windows-x64.tar.gz"),
-            Some(InstallAssetKind::Archive)
-        );
     }
 
     #[test]
     fn rejects_source_and_unsupported_assets() {
         assert_eq!(classify_install_asset_name("Source code.zip"), None);
-        assert_eq!(classify_install_asset_name("source-code.tar.gz"), None);
-        assert_eq!(classify_install_asset_name("source_code.tar.xz"), None);
+        assert_eq!(classify_install_asset_name("source-code.zip"), None);
         assert_eq!(classify_install_asset_name("checksums.txt"), None);
         assert_eq!(classify_install_asset_name("tool.dmg"), None);
-        assert_eq!(
-            classify_install_asset_name("tool.AppImage"),
-            Some(InstallAssetKind::Portable)
-        );
+        assert_eq!(classify_install_asset_name("tool.AppImage"), None);
     }
 
     #[test]

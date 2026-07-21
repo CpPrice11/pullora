@@ -9,7 +9,7 @@ type Tab = 'library' | 'settings' | 'about'
 interface LayoutProps {
   children: React.ReactNode
   activeTab: Tab
-  contentKey?: string
+  mainRef?: React.Ref<HTMLElement>
   onTabChange: (tab: Tab) => void
   backgroundImage?: string | null
   settingsOpen?: boolean
@@ -22,7 +22,7 @@ function toCssUrl(value: string) {
 function Layout({
   children,
   activeTab,
-  contentKey,
+  mainRef,
   onTabChange,
   backgroundImage,
   settingsOpen = false,
@@ -44,7 +44,7 @@ function Layout({
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
       </Header>
       <div className="layout-container">
-        <main id="main-content" className="layout-content" key={contentKey ?? activeTab}>
+        <main id="main-content" className="layout-content" ref={mainRef}>
           {children}
         </main>
       </div>

@@ -16,9 +16,9 @@ import {
   type SettingsSectionId,
 } from '../features/settings/components/SettingsSections'
 import { useModalFocus } from '../hooks/useModalFocus'
-import { applyAppearanceSettings, applyThemePreference, notifyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
+import { applyAppearanceSettings, applyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
-import { notifyLanguage, useI18n, type AppLanguage } from '../i18n'
+import { useI18n, type AppLanguage } from '../i18n'
 import { redactSensitiveText } from '../utils/redactSensitiveText'
 import './PageStyles.css'
 
@@ -192,7 +192,6 @@ function SettingsPage({
 
     setSettings(nextSettings)
     applyThemePreference(theme, true)
-    notifyThemePreference(theme)
     setSaving(true)
     setError(null)
 
@@ -201,7 +200,6 @@ function SettingsPage({
     } catch (err) {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
-      notifyThemePreference(previousSettings.theme)
       setError(err instanceof Error ? err.message : t('settings.themeError'))
     } finally {
       setSaving(false)
@@ -253,8 +251,6 @@ function SettingsPage({
       setResetPending(false)
       applyThemePreference(savedSettings.theme, true)
       applyAppearanceSettings(savedSettings.appearance)
-      notifyThemePreference(savedSettings.theme)
-      notifyLanguage(savedSettings.language as AppLanguage)
       setActionMessage(t('settings.resetDone'))
     }
   }
@@ -432,9 +428,7 @@ function SettingsPage({
   const handleLanguageChange = async (language: AppLanguage) => {
     if (!settings) return
     const savedSettings = await persistSettings({ ...settings, language }, settings)
-    if (savedSettings) {
-      notifyLanguage(language)
-    }
+    if (!savedSettings) return
   }
 
   const previewSurfaceSetting = (

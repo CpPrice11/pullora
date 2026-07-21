@@ -1,10 +1,8 @@
 import type { AppSettings } from '../types'
-import { APPEARANCE_PRESETS, normalizeAppearance } from './settingsDefaults'
+import { normalizeAppearance } from './settingsDefaults'
 
 export type ThemePreference = AppSettings['theme']
 export type ResolvedTheme = 'light' | 'dark'
-
-export const THEME_CHANGE_EVENT = 'pullora-theme-change'
 
 export function resolveThemePreference(theme: ThemePreference): ResolvedTheme {
   if (theme === 'auto') {
@@ -28,19 +26,38 @@ export function applyThemePreference(theme: ThemePreference, animate = false) {
   return resolvedTheme
 }
 
-export function notifyThemePreference(theme: ThemePreference) {
-  window.dispatchEvent(
-    new CustomEvent<{ theme: ThemePreference }>(THEME_CHANGE_EVENT, {
-      detail: { theme },
-    }),
-  )
-}
+const THEME_PALETTES = {
+  dark: {
+    accent: '#60cdff',
+    accentHover: '#4cc2ff',
+    background: '#070b10',
+    surface: '#111820',
+    surface2: '#18222d',
+    sidebar: '#0b1118',
+    text: '#f4f6f8',
+    muted: '#a8b4c0',
+    border: '#334455',
+  },
+  light: {
+    accent: '#0067c0',
+    accentHover: '#005a9e',
+    background: '#dfe8f2',
+    surface: '#f8fafc',
+    surface2: '#e7eef6',
+    sidebar: '#e8eff7',
+    text: '#111827',
+    muted: '#40536a',
+    border: '#9fb0c3',
+  },
+} as const
 
-const CUSTOM_THEME_STYLE_ID = 'pullora-custom-theme'
-
-export function appearanceCssVariables(appearance: AppSettings['appearance'] | undefined) {
+export function appearanceCssVariables(
+  appearance: AppSettings['appearance'] | undefined,
+  theme: ResolvedTheme = 'dark',
+) {
   const normalized = normalizeAppearance(appearance)
-  const isLight = normalized.preset === 'githubLight'
+  const palette = THEME_PALETTES[theme]
+  const isLight = theme === 'light'
   const densityScale = normalized.density === 'compact' ? 0.86 : normalized.density === 'spacious' ? 1.12 : 1
   const surfaceOpacity = 100 - normalized.surfaceTransparency
   const shellOpacity = isLight ? Math.min(92, surfaceOpacity + 8) : surfaceOpacity
@@ -53,41 +70,41 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
   )
 
   return {
-    '--color-primary': normalized.accent,
-    '--color-primary-dark': normalized.accentHover,
-    '--color-primary-light': `${normalized.accent}24`,
-    '--color-bg': isLight ? normalized.background : `color-mix(in srgb, ${normalized.background} 58%, transparent)`,
-    '--color-bg-elevated': isLight ? normalized.surface : `color-mix(in srgb, ${normalized.surface} 52%, transparent)`,
-    '--color-bg-secondary': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 42%, transparent)`,
-    '--color-mica': isLight ? `color-mix(in srgb, ${normalized.surface} 94%, transparent)` : `color-mix(in srgb, ${normalized.surface} 42%, transparent)`,
-    '--color-sidebar': isLight ? `color-mix(in srgb, ${normalized.sidebar} 94%, transparent)` : `color-mix(in srgb, ${normalized.sidebar} 48%, transparent)`,
-    '--color-control': isLight ? normalized.surface : `color-mix(in srgb, ${normalized.surface2} 34%, transparent)`,
-    '--color-control-hover': isLight ? normalized.surface2 : `color-mix(in srgb, ${normalized.surface2} 52%, transparent)`,
-    '--color-text': normalized.text,
-    '--color-text-secondary': normalized.muted,
-    '--color-text-tertiary': isLight ? normalized.muted : `${normalized.muted}cc`,
-    '--color-border': normalized.border,
-    '--color-border-subtle': isLight ? normalized.border : `${normalized.border}99`,
-    '--font-family': normalized.fontFamily,
-    '--font-size-base': `${normalized.fontSize}px`,
-    '--border-radius': `${normalized.radius}px`,
-    '--border-radius-lg': `${normalized.radius + 6}px`,
+    '--color-primary': palette.accent,
+    '--color-primary-dark': palette.accentHover,
+    '--color-primary-light': `${palette.accent}24`,
+    '--color-bg': isLight ? palette.background : `color-mix(in srgb, ${palette.background} 58%, transparent)`,
+    '--color-bg-elevated': isLight ? palette.surface : `color-mix(in srgb, ${palette.surface} 52%, transparent)`,
+    '--color-bg-secondary': isLight ? palette.surface2 : `color-mix(in srgb, ${palette.surface2} 42%, transparent)`,
+    '--color-mica': isLight ? `color-mix(in srgb, ${palette.surface} 94%, transparent)` : `color-mix(in srgb, ${palette.surface} 42%, transparent)`,
+    '--color-sidebar': isLight ? `color-mix(in srgb, ${palette.sidebar} 94%, transparent)` : `color-mix(in srgb, ${palette.sidebar} 48%, transparent)`,
+    '--color-control': isLight ? palette.surface : `color-mix(in srgb, ${palette.surface2} 34%, transparent)`,
+    '--color-control-hover': isLight ? palette.surface2 : `color-mix(in srgb, ${palette.surface2} 52%, transparent)`,
+    '--color-text': palette.text,
+    '--color-text-secondary': palette.muted,
+    '--color-text-tertiary': isLight ? palette.muted : `${palette.muted}cc`,
+    '--color-border': palette.border,
+    '--color-border-subtle': isLight ? palette.border : `${palette.border}99`,
+    '--font-family': 'Segoe UI Variable, Segoe UI, Arial, sans-serif',
+    '--font-size-base': '14px',
+    '--border-radius': '8px',
+    '--border-radius-lg': '14px',
     '--density-scale': String(densityScale),
     '--surface-opacity': `${surfaceOpacity}%`,
     '--surface-opacity-strong': `${strongOpacity}%`,
     '--surface-blur': `${normalized.surfaceBlur}px`,
-    '--surface-canvas': normalized.background,
-    '--launcher-background-scrim': `color-mix(in srgb, ${normalized.background} ${backgroundScrimOpacity}%, transparent)`,
-    '--surface-1': `color-mix(in srgb, ${normalized.surface} ${shellOpacity}%, transparent)`,
-    '--surface-2': `color-mix(in srgb, ${normalized.surface2} ${nestedOpacity}%, transparent)`,
-    '--surface-3': `color-mix(in srgb, ${normalized.background} ${insetOpacity}%, transparent)`,
-    '--surface-border': `color-mix(in srgb, ${normalized.border} ${isLight ? 82 : 58}%, transparent)`,
-    '--surface-border-strong': `color-mix(in srgb, ${normalized.border} ${isLight ? 100 : 78}%, transparent)`,
+    '--surface-canvas': palette.background,
+    '--launcher-background-scrim': `color-mix(in srgb, ${palette.background} ${backgroundScrimOpacity}%, transparent)`,
+    '--surface-1': `color-mix(in srgb, ${palette.surface} ${shellOpacity}%, transparent)`,
+    '--surface-2': `color-mix(in srgb, ${palette.surface2} ${nestedOpacity}%, transparent)`,
+    '--surface-3': `color-mix(in srgb, ${palette.background} ${insetOpacity}%, transparent)`,
+    '--surface-border': `color-mix(in srgb, ${palette.border} ${isLight ? 82 : 58}%, transparent)`,
+    '--surface-border-strong': `color-mix(in srgb, ${palette.border} ${isLight ? 100 : 78}%, transparent)`,
     '--surface-shadow': isLight
-      ? `0 18px 48px color-mix(in srgb, ${normalized.border} 24%, transparent)`
-      : `0 18px 48px color-mix(in srgb, ${normalized.background} 58%, transparent)`,
+      ? `0 18px 48px color-mix(in srgb, ${palette.border} 24%, transparent)`
+      : `0 18px 48px color-mix(in srgb, ${palette.background} 58%, transparent)`,
     '--surface-material': 'var(--surface-1)',
-    '--surface-material-strong': `color-mix(in srgb, ${normalized.surface} ${strongOpacity}%, transparent)`,
+    '--surface-material-strong': `color-mix(in srgb, ${palette.surface} ${strongOpacity}%, transparent)`,
     '--material-mica': 'var(--surface-1)',
     '--material-mica-strong': 'var(--surface-material-strong)',
     '--material-acrylic': 'linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.024)), var(--surface-1)',
@@ -98,42 +115,13 @@ export function appearanceCssVariables(appearance: AppSettings['appearance'] | u
   }
 }
 
-export function appearanceCssText(appearance: AppSettings['appearance'] | undefined) {
-  const variables = appearanceCssVariables(appearance)
-  return `:root {\n${Object.entries(variables)
-    .map(([key, value]) => `  ${key}: ${value};`)
-    .join('\n')}\n}`
-}
-
 export function applyAppearanceSettings(
   appearance: AppSettings['appearance'] | undefined,
   theme: ResolvedTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
 ) {
   const root = document.documentElement
   const normalized = normalizeAppearance(appearance)
-  const themeAppearance = theme === 'light'
-    ? APPEARANCE_PRESETS.githubLight
-    : normalized.preset === 'custom'
-      ? normalized
-      : normalized.preset === 'githubLight'
-        ? APPEARANCE_PRESETS.github
-        : APPEARANCE_PRESETS[normalized.preset]
-  const effectiveAppearance = {
-    ...themeAppearance,
-    density: normalized.density,
-    surfaceTransparency: normalized.surfaceTransparency,
-    surfaceBlur: normalized.surfaceBlur,
-  }
-  const variables = appearanceCssVariables(effectiveAppearance)
+  const variables = appearanceCssVariables(normalized, theme)
 
   Object.entries(variables).forEach(([key, value]) => root.style.setProperty(key, value))
-  root.dataset.appearancePreset = effectiveAppearance.preset
-
-  let style = document.getElementById(CUSTOM_THEME_STYLE_ID) as HTMLStyleElement | null
-  if (!style) {
-    style = document.createElement('style')
-    style.id = CUSTOM_THEME_STYLE_ID
-    document.head.appendChild(style)
-  }
-  style.textContent = effectiveAppearance.customCss
 }

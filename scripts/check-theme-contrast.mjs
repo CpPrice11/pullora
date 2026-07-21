@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync(new URL('../src/utils/settingsDefaults.ts', import.meta.url), 'utf8')
-const presets = [...source.matchAll(/^  (\w+): \{\r?\n([\s\S]*?)^  \},?$/gm)]
+const source = readFileSync(new URL('../src/utils/theme.ts', import.meta.url), 'utf8')
+const palettes = [...source.matchAll(/^  (dark|light): \{\r?\n([\s\S]*?)^  \},?$/gm)]
 const surfaces = ['background', 'surface', 'surface2', 'sidebar']
 const foregrounds = { text: 4.5, muted: 4.5, accent: 3, accentHover: 3 }
 
-if (presets.length === 0) throw new Error('No appearance presets found')
+if (palettes.length === 0) throw new Error('No theme palettes found')
 
 function luminance(hex) {
   const channels = hex.slice(1).match(/../g).map((value) => {
@@ -23,7 +23,7 @@ function contrast(first, second) {
 const failures = []
 let checks = 0
 
-for (const [, preset, body] of presets) {
+for (const [, palette, body] of palettes) {
   const colors = Object.fromEntries(
     [...body.matchAll(/^    (\w+): '(#[0-9a-f]{6})',?$/gim)].map((match) => [match[1], match[2]]),
   )
@@ -32,7 +32,7 @@ for (const [, preset, body] of presets) {
     for (const [foreground, minimum] of Object.entries(foregrounds)) {
       const ratio = contrast(colors[foreground], colors[surface])
       checks += 1
-      if (ratio < minimum) failures.push(`${preset}: ${foreground}/${surface} ${ratio.toFixed(2)}:1 < ${minimum}:1`)
+      if (ratio < minimum) failures.push(`${palette}: ${foreground}/${surface} ${ratio.toFixed(2)}:1 < ${minimum}:1`)
     }
   }
 }
@@ -42,4 +42,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log(`[contrast] themes=${presets.length}, WCAG pairs=${checks}: ok`)
+console.log(`[contrast] themes=${palettes.length}, WCAG pairs=${checks}: ok`)

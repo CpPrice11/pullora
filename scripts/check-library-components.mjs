@@ -56,7 +56,6 @@ try {
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
   const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
-  const { APPEARANCE_PRESETS } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
 
   const noop = () => {}
   const repo = {
@@ -142,7 +141,11 @@ try {
     'token=<redacted> github=<redacted> C:\\Users\\<user>\\Downloads unix=/home/<user>/apps',
   )
 
-  const darkSurfaces = appearanceCssVariables({ ...APPEARANCE_PRESETS.github, surfaceTransparency: 40 })
+  const darkSurfaces = appearanceCssVariables({
+    density: 'comfortable',
+    surfaceTransparency: 40,
+    surfaceBlur: 12,
+  }, 'dark')
   assert.equal(darkSurfaces['--surface-1'], 'color-mix(in srgb, #111820 60%, transparent)')
   assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
   assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')

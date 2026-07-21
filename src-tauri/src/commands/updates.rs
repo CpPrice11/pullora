@@ -51,18 +51,6 @@ pub(crate) fn open_directory(path: &std::path::Path) -> Result<(), String> {
         .spawn()
         .map_err(|e| e.to_string())?;
 
-    #[cfg(target_os = "linux")]
-    std::process::Command::new("xdg-open")
-        .arg(path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
-    #[cfg(target_os = "macos")]
-    std::process::Command::new("open")
-        .arg(path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
     Ok(())
 }
 
@@ -79,18 +67,6 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     std::process::Command::new("rundll32")
         .arg("url.dll,FileProtocolHandler")
-        .arg(&url)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
-    #[cfg(target_os = "linux")]
-    std::process::Command::new("xdg-open")
-        .arg(&url)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
-    #[cfg(target_os = "macos")]
-    std::process::Command::new("open")
         .arg(&url)
         .spawn()
         .map_err(|e| e.to_string())?;

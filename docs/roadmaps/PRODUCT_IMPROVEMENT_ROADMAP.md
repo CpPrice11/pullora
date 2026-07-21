@@ -30,7 +30,7 @@
 | `v5.10.2` | Уніфікація Library без зміни дизайну | Випущено |
 | `v5.10.3` | Уніфікація Settings, фонів і щільності | Випущено |
 | `v5.11.0` | Уніфікація UI без зміни дизайну | Випущено |
-| `v5.12.0` | Безпечна оптимізація без візуального дрейфу | Заплановано |
+| `v5.12.0` | Безпечна оптимізація без візуального дрейфу | Випущено |
 
 ## Незмінний дизайн-контракт
 
@@ -274,7 +274,7 @@
 - [x] Порівнювати before/after в однаковому середовищі; непередбачена візуальна різниця блокує merge.
 - [x] Очікувану локальну різницю дозволяти лише для явно замовленого виправлення та документувати окремо.
 - [x] Не мігрувати наступне вікно, доки попереднє не пройшло visual parity, клавіатуру, WCAG і обидві мови.
-  - [x] Реєстр доказів і дозволених локальних відмінностей збережено в `docs/visual-baseline/design-contract/README.md`; автоматичний gate `check-v5-11-parity-gates.py` порівнює `v5.10.1` і поточну збірку в 48 однакових станах (4 вікна, 2 теми, 3 розміри, 2 мови).
+  - [x] Реєстр доказів і дозволених локальних відмінностей збережено в `docs/visual-baseline/design-contract/README.md`; актуальний release-gate запускає headless-матрицю через `scripts/check-ui-release.py`.
   - [x] Фінальний прогін: максимальна геометрична різниця 0 px; Library, Settings і Install — без піксельної різниці, About — не більше 0,1% у межах документованих локальних виправлень; 19 headless UI-сценаріїв і component gate пройдено.
 
 ### Повторне перенесення виправлень із v5.10.0
@@ -374,29 +374,59 @@
 
 Мета: видалити лише доведено мертвий код і покращити продуктивність, не змінюючи канонічну айдентику, геометрію або прозорість `v5.10.1`.
 
-- [ ] Замінювати дубльовану реалізацію лише після parity-тесту; не міняти контроль тільки заради нового компонента.
-- [ ] Видаляти селектори й CSS-гілки лише після підтвердження, що вони не впливають на жоден baseline-сценарій.
-- [ ] Зосередити стилі кожної функції в одному feature-шарі; не виправляти один компонент у кількох CSS-файлах.
-- [ ] Скорочувати CSS лише там, де це не змінює computed styles; числовий бюджет не має пріоритету над visual parity.
-- [ ] Зменшувати дубльовані селектори й `!important` поступово, з перевіркою кожного компонента.
-- [ ] Ліниво завантажувати Settings, About, Install і великі detail-діалоги зі збереженням стану Library та scroll position.
-- [ ] Утримувати початковий JavaScript у межах 90 КБ gzip.
-- [ ] Зберегти `content-visibility`; ціль для layout 1000 карток — до 50 мс.
-- [ ] Не додавати глобальних state-бібліотек, `memo` або абстракцій без профілювання й вимірюваної користі.
+- [x] Замінювати дубльовану реалізацію лише після parity-тесту; не міняти контроль тільки заради нового компонента.
+  - [x] Modal-шар: headless parity зафіксовано до й після очищення; з `Modal.css` прибрано лише 22 неактивні `.sam-shell`-гілки, які не монтувалися у runtime. Декларації, токени, геометрія та чинні `.cinematic-shell`-правила не змінювалися.
+  - [x] Layout-шар: runtime-контракт підтвердив відсутність 20 legacy-класів; після parity Library/Settings/About видалено 485 рядків ізольованого `.sam-shell`/`.sam-*`-блоку. Актуальні `.layout` і `.cinematic-shell`-стилі не змінювалися.
+  - [x] Базові контроли: з `App.css` прибрано п’ять неактивних `.sam-shell`-гілок для кнопок і полів; активні `.modal-content`-правила та всі CSS-декларації збережено.
+  - [x] StatePanel: додано headless parity для empty/error/loading, тем, геометрії та keyboard-focus; після фіксації baseline видалено 115 рядків ізольованого `.sam-shell`-блоку без змін чинних `.cinematic-shell`-правил.
+  - [x] DownloadProgress: додано headless parity active/completed/failed/recovery, progress, action-focus, тем і viewport; після baseline видалено 209 рядків ізольованого `.sam-shell`-блоку `Install.css` без змін чинного каскаду.
+  - [x] SearchComponents, card-pass 1: після parity normal/compact, selected/bulk/focus, тем і viewport видалено перші 140 рядків legacy card-стилів (28 `.sam-shell`-гілок); release/install/detail-блоки не змінювалися.
+  - [x] SearchComponents, card-pass 2: видалено наступні 68 рядків компактних card-стилів (16 `.sam-shell`-гілок) до чіткої межі `.release-modal--wizard`; parity-контракт карток збережено.
+  - [x] SearchComponents, install-pass 1: після layout/keyboard і surface-control parity видалено 196 рядків legacy release/install wizard (51 `.sam-shell`-гілка) до межі `.app-details-modal`; чинні wizard-компоненти й токени не змінювалися.
+  - [x] SearchComponents, detail-pass 1: підтверджено, що `AppDetailsModal` і version-switch не підключені до runtime, а активний bulk uninstall-dialog зберігає portal, focus trap, close paths і destructive-стани у темній/світлій темах; видалено 87 рядків legacy `.sam-shell` detail/version/uninstall-стилів до межі cohesive workstation pass.
+  - [x] SearchComponents, cohesive-pass 1: видалено 189 рядків ізольованого `v5 cohesive workstation pass` (77 `.sam-shell`-гілок); build, компонентні тести, wizard parity у темній/світлій темах на трьох viewport і шість shell/modal-сценаріїв підтвердили відсутність візуального та поведінкового дрейфу.
+  - [x] SearchComponents, card-pass 3: видалено 155 рядків legacy `v5.0.3` compact game list (31 `.sam-shell`-гілка); нормальна й компактна щільності, selected/bulk/focus стани, sidebar-геометрія та surface-контракт лишилися ідентичними у темній/світлій темах на трьох viewport.
+  - [x] SearchComponents, final legacy tail: видалено 154 рядки останніх `.sam-shell` release/card-правил (34 гілки); `SearchComponents.css` більше не містить `.sam-shell`, а wizard та картки пройшли parity у двох темах, трьох viewport і шести shell/modal-сценаріях.
+  - [x] Ownership-аудит: `LibraryLayout.css` лишається власником сітки й прокручування Library, а `PageStyles.css` — surface-стилів, тому їхні однакові селектори мають різні властивості й не є кандидатом на видалення. Наступний ізольований кандидат — історичні повтори поверхонь у `Modal.css`, які потребують окремого baseline тем і діалогів.
+  - [x] Modal, surface-pass 1: видалено 44 рядки повністю перекритого fallback CSS для overlay і content; canonical modal surface тепер явно містить незмінний темний колір тексту. Wizard, destructive-dialog, focus, темна й світла теми пройшли parity без зміни computed layout.
+  - [x] Modal, dark-surface audit: активні темні значення не збігаються з загальними `--surface-*` токенами й зберігають потрібний контраст поточної синьо-темної айдентики. Нові локальні токени не додано, бо це не скоротить код і не дасть вимірюваної користі.
+  - [x] About, `!important`-pass 1: шість каскадних обхідних шляхів для заголовка й панелі дій релізу замінено точнішими селекторами всередині `.about-release-link`; композиція, кнопки, меню та клавіатурні дії лишилися ідентичними в темній/світлій темах на `1000×700`, `1280×720`, `1920×1080`. Загальна кількість `!important` зменшена з 57 до 51.
+  - [x] Settings, `!important`-pass 1: правила для чекбокса попередніх версій тепер мають точну область `.form-group .checkbox-label`, а cinematic-правило перемагає завдяки звичайній специфічності; два `!important` видалено без зміни ваги тексту в темній чи світлій темі. Settings composition і surface-контракти пройшли на трьох viewport; загальна кількість `!important` зменшена з 51 до 49.
+  - [x] Library, menu `!important`-pass 1: вкладене ПКМ-меню папок тепер використовує точний селектор `.project-actions-popover .repo-actions-submenu-trigger`, а дубльоване вирівнювання його пунктів видалено. Додано окремий headless-контракт для ПКМ і підменю в обох темах на `1000×700`, `1280×720`, `1920×1080`; його включено до release-перевірки. Загальна кількість `!important` зменшена з 49 до 46.
+  - [x] About, color `!important`-pass 1: статуси релізів, попередження, portable-бейдж і значок release використовують природну специфічність або локальну область `.about-release-link`; вісім кольорових `!important` видалено. Композиція, status-controls і keyboard/menu parity лишилися ідентичними в обох темах на трьох viewport; загальна кількість `!important` зменшена з 46 до 38.
+  - [x] About, layout `!important`-pass 1: значок релізу та горизонтальна панель дій вже отримують потрібні `display` і `flex-direction` природним каскадом, тому два layout-обхідні шляхи видалено. About composition і keyboard/menu parity підтвердили незмінність у двох темах на трьох viewport; загальна кількість `!important` зменшена з 38 до 36.
+  - [x] Settings, spacing `!important`-pass 1: `margin-top` стандартних текстів-підказок не має активного конфлікту в каскаді, тому один зайвий `!important` видалено. Settings composition і surface-контракти залишилися незмінними в обох темах на трьох viewport; загальна кількість `!important` зменшена з 36 до 35.
+  - [x] Install, `!important`-pass 1: ранні кольорові правила `.install-btn` у `SearchComponents.css` повністю перекриваються пізнішим канонічним cinematic-шаром, тому два дубльовані `!important` видалено. Release wizard і shell/modal parity підтвердили незмінність у двох темах на трьох viewport; загальна кількість `!important` зменшена з 35 до 33.
+  - [x] Library, primary-action cleanup 1: ранній зелений колір action-кнопки Library був повністю перекритий пізнішим канонічним синім правилом тієї самої специфічності, тому мертвий `color: #ffffff !important` видалено. Hero layers і surface controls лишилися ідентичними у двох темах, обох щільностях і трьох viewport; загальна кількість `!important` зменшена з 33 до 32.
+  - [x] Library, primary-action cleanup 2: видалено весь ранній зелений normal/hover блок action-кнопки, бо його background і typography повністю перекриті пізнішим canonical primary-action стилем. Hero layers і surface controls зберегли parity у двох темах, обох щільностях і трьох viewport; built CSS зменшено з `221.83 КБ` до `221.57 КБ`.
+  - [x] Library, primary-action cleanup 3: застарілий селектор primary-кнопки прибрано зі спільного правила action-панелі, у якому всі його властивості вже перекривалися canonical primary-action стилем; правило тепер належить тільки secondary-кнопкам. Hero layers і surface controls підтвердили parity у двох темах, обох щільностях і трьох viewport; built CSS зменшено до `221.49 КБ`.
+  - [x] Library, action-container cleanup 1: у ранньому layout-правилі action-панелі видалено `gap`, grid-template і padding, бо їх повністю визначає пізніший canonical контейнер. Hero layers і surface controls підтвердили parity у двох темах, обох щільностях і трьох viewport; built CSS зменшено до `221.40 КБ`.
+  - [x] SearchComponents, active detail cleanup: видалено не підключені до runtime `AppDetailsModal` і `SwitchVersionConfirmModal`, 92 їхні CSS-селектори та змішані гілки без зачіпання активного uninstall-dialog. Повна headless-матриця підтвердила parity, а built CSS зменшено до `214.10 КБ / 33.38 КБ gzip`.
+- [x] Видаляти селектори й CSS-гілки лише після підтвердження, що вони не впливають на жоден baseline-сценарій. Усі очищення пройшли компонентні контракти й фінальну матрицю з 25 headless-перевірок.
+- [x] Зосередити стилі кожної функції у визначеному feature-шарі там, де це не ламає каскад; документовані межі ownership для layout, surfaces і modal залишено окремими навмисно, без нових міжфайлових латок.
+- [x] Скорочувати CSS лише там, де це не змінює computed styles; числовий бюджет не має пріоритету над visual parity. Підсумок: `9363` вихідні CSS-рядки, `214.10 КБ / 33.38 КБ gzip` у production і незмінна visual matrix.
+- [x] Зменшувати дубльовані селектори й `!important` поступово, з перевіркою кожного компонента. `.sam-shell` повністю відсутній у runtime/CSS, а `!important` зменшено з `57` до `32`.
+- [x] Ліниво завантажувати Settings, About, Install і великі detail-діалоги зі збереженням стану Library та scroll position.
+  - [x] Pass 1 — Settings і «Про застосунок» переведено на `React.lazy`/`Suspense` з локалізованим прозорим fallback; Library залишається у стартовому chunk. Усунено змінний `key` у `layout-content`, а позиції прокрутки робочих областей зберігаються окремо. Headless-перевірка підтверджує lazy chunks, збереження компактної щільності, DOM-стану та внутрішньої прокрутки Library у світлій і темній темах.
+  - [x] Pass 2 — `ReleaseSelector`, bulk-панель, створення папки й uninstall-dialog переведено на умовні lazy chunks. Loading fallback Install відокремлений від семантики готового dialog; фокус, overlay та клавіатура пройшли parity.
+  - [x] Словники розділено: українська стартує разом із shell, англійська завантажується окремим chunk без миготіння при перемиканні. Контракт перевіряє `865/865` ключів і наявність locale chunk.
+- [x] Утримувати початковий JavaScript у межах 90 КБ gzip. Фінальний main chunk — `89.66 КБ gzip`; бюджет перевіряється автоматично під час lazy-loading contract.
+- [x] Зберегти `content-visibility`; ціль для layout 1000 карток — до 50 мс. Новий headless-бенчмарк дає медіану `10.9–13.7 мс` і входить до release-матриці.
+- [x] Не додавати глобальних state-бібліотек, `memo` або абстракцій без профілювання й вимірюваної користі. Нових runtime-залежностей не додано.
 
 ### Перевірки v5.10–v5.12
 
-- [ ] Додати контрактні тести поведінки й baseline screenshot-тести до будь-якого UI-рефакторингу.
-- [ ] Перевірити незалежність загального фону, hero-фону й обкладинки.
+- [x] Додати контрактні тести поведінки й baseline screenshot-тести до будь-якого UI-рефакторингу. Release gate запускає 25 headless-сценаріїв і компонентні контракти.
+- [x] Перевірити незалежність загального фону, hero-фону й обкладинки. Hero art, cover, загальний artwork і surface controls мають окремі контракти для обох тем і трьох viewport.
 - [x] Перевірити чинні контекстні й overflow-меню: краї viewport, ПКМ, клавіатуру, фокус і destructive-стани.
-- [ ] Перевірити чинні випадаючі списки: вибір, клавіатуру, прокручування, disabled/error та повернення фокуса.
-- [ ] Перевірити Install: stable/preview, unsupported asset, скасування, помилку, retry, cleanup та успіх.
-- [ ] Перевірити Settings: autosave, тему, мову, asset strategy, окремі фони, opacity, blur, density та reset.
-- [ ] Перевірити About: фільтри, release notes, SHA-256, update і rollback.
-- [ ] Виконати headless visual matrix для Library, Settings, About, Install і відкритих overlay у темній/світлій темах, normal/compact, зі стандартним/власним фоном на 1000×700, 1280×720 і 1920×1080 та порівняти її з `v5.10.1`.
-- [ ] Окремо перевіряти збереження прозорості, синьої палітри, загального фону, розмірів sidebar/hero і відсутність глобального перефарбування від обкладинки.
-- [ ] Перевірити WCAG AA, keyboard-only сценарії, помітний focus і `prefers-reduced-motion`.
-- [ ] Перевірити рівність українських та англійських i18n-ключів.
+- [x] Перевірити чинні випадаючі списки: нативну семантику, label, значення, клавіатуру, системне прокручування/disabled-стани та повернення фокуса. Геометрія зафіксована в обох темах на трьох viewport.
+- [x] Перевірити Install: stable/preview, unsupported asset, скасування, помилку, retry, cleanup та успіх. Комбінований контракт охоплює wizard, compatibility, active-download guard, failed/recovery панель і Rust-класифікацію asset.
+- [x] Перевірити Settings: фонове autosave, тему, мову, asset strategy, окремі фони, opacity, blur, density та reset. Headless composition містить `30` сценаріїв.
+- [x] Перевірити About: фільтри, release notes, SHA-256, update і rollback. Composition, controls, interactions, background-continuity та update-safety пройшли на трьох viewport.
+- [x] Виконати headless visual matrix для Library, Settings, About, Install і відкритих overlay у темній/світлій темах, normal/compact, зі стандартним/власним фоном на 1000×700, 1280×720 і 1920×1080 та порівняти її з `v5.10.1`. Фінальний результат: `25/25` перевірок.
+- [x] Окремо перевіряти збереження прозорості, синьої палітри, загального фону, розмірів sidebar/hero і відсутність глобального перефарбування від обкладинки. Усі design-contract baseline збігаються.
+- [x] Перевірити WCAG AA, keyboard-only сценарії, помітний focus і `prefers-reduced-motion`. Перевірено `64` контрастні пари, focus trap/return і глобальний reduced-motion fallback.
+- [x] Перевірити рівність українських та англійських i18n-ключів: `865/865`, дублікати `0`.
 
 Готово, коли production-збірка проходить без функціональних, accessibility, localization і візуальних регресій відносно `v5.10.1`; скорочення коду саме по собі не є критерієм готовності.
 

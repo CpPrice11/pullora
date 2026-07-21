@@ -185,14 +185,21 @@ impl GitHubClient {
         self.check_rate_limit("core", 10)?;
 
         let per_page = 30;
-        let url = format!(
-            "https://api.github.com/users/{}/repos?type=owner&sort=updated&direction=desc&per_page={}&page={}",
-            urlencoding::encode(&normalized_owner),
-            per_page,
-            page
-        );
+        let page_query = page.to_string();
+        let mut url = reqwest::Url::parse("https://api.github.com")
+            .map_err(|_| command_error("errors.invalidUrl"))?;
+        url.path_segments_mut()
+            .map_err(|_| command_error("errors.invalidUrl"))?
+            .extend(["users", normalized_owner.as_str(), "repos"]);
+        url.query_pairs_mut().extend_pairs([
+            ("type", "owner"),
+            ("sort", "updated"),
+            ("direction", "desc"),
+            ("per_page", "30"),
+            ("page", page_query.as_str()),
+        ]);
 
-        let mut req = self.client.get(&url);
+        let mut req = self.client.get(url);
         if let Some(auth) = self.auth_header() {
             req = req.header(reqwest::header::AUTHORIZATION, auth);
         }
@@ -354,24 +361,5 @@ impl GitHubClient {
             core: state.resources.get("core").cloned().unwrap_or_default(),
             search: state.resources.get("search").cloned().unwrap_or_default(),
         }
-    }
-}
-
-// Simple URL encoding (avoid adding another dependency)
-mod urlencoding {
-    pub fn encode(s: &str) -> String {
-        let mut encoded = String::with_capacity(s.len());
-        for c in s.chars() {
-            match c {
-                'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => encoded.push(c),
-                ' ' => encoded.push('+'),
-                c => {
-                    for byte in c.to_string().as_bytes() {
-                        encoded.push_str(&format!("%{:02X}", byte));
-                    }
-                }
-            }
-        }
-        encoded
     }
 }
