@@ -285,6 +285,19 @@ def install_pending_download_mock(page: Page) -> None:
                 return args.handler
               }
               if (command === 'plugin:event|unlisten') return null
+              if (command === 'list_owner_repositories') {
+                const owner = String(args.owner ?? '').trim().toLowerCase()
+                const cache = window.__PULLORA_TEST_GITHUB_CACHE__ ?? {}
+                const key = `owner:${owner}:${args.page ?? 1}:${Boolean(args.releasesOnly)}`
+                return structuredClone(cache[key]?.data ?? { items: [], page: 1, has_more: false })
+              }
+              if (command === 'get_releases') {
+                const owner = String(args.owner ?? '').trim().toLowerCase()
+                const repo = String(args.repo ?? '').trim().toLowerCase()
+                const cache = window.__PULLORA_TEST_GITHUB_CACHE__ ?? {}
+                const override = window.__PULLORA_TEST_RELEASES__?.[`${owner}/${repo}`]
+                return structuredClone(override ?? cache[`releases:${owner}/${repo}`]?.data ?? [])
+              }
               if (command === 'get_settings') {
                 return {
                   version: 2,

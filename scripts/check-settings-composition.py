@@ -298,6 +298,7 @@ def check_select_contract(page):
     page.keyboard.press("Escape")
     assert theme_select.evaluate("el => el === document.activeElement")
     theme_select.select_option("light")
+    page.wait_for_function("document.documentElement.dataset.theme === 'light'")
     assert page.locator("html").get_attribute("data-theme") == "light"
     theme_select.select_option("auto")
     assert theme_select.input_value() == "auto"

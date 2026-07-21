@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './App.css'
 import Layout from './components/Layout/Layout'
-import { LibraryPage } from './features/library'
-import SettingsPage from './pages/SettingsPage'
-import AboutPage from './pages/AboutPage'
+import LibraryPage from './features/library/LibraryPage'
 import InstallationPathModal from './components/Modal/InstallationPathModal'
 import { useSettings } from './hooks/useSettings'
-import { applyAppearanceSettings, applyThemePreference, resolveThemePreference, THEME_CHANGE_EVENT, type ResolvedTheme, type ThemePreference } from './utils/theme'
-import { LanguageProvider } from './i18n'
+import { applyAppearanceSettings, applyThemePreference, resolveThemePreference, type ResolvedTheme, type ThemePreference } from './utils/theme'
+import { LanguageProvider, useI18n } from './i18n'
 import { pickImageFile } from './services/dialog'
 import {
   clearLauncherBackgroundArt,
@@ -19,10 +17,29 @@ import {
 type ContentTab = 'library' | 'about'
 type NavigationTab = ContentTab | 'settings'
 
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+
+function LazyPageFallback() {
+  const { t } = useI18n()
+
+  return (
+    <div className="page-lazy-fallback" role="status" aria-live="polite">
+      {t('app.loadingPage')}
+    </div>
+  )
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<ContentTab>('library')
   const [visitedTabs, setVisitedTabs] = useState<Set<ContentTab>>(() => new Set(['library']))
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const mainContentRef = useRef<HTMLElement>(null)
+  const scrollPositions = useRef<Record<NavigationTab, number>>({
+    library: 0,
+    settings: 0,
+    about: 0,
+  })
   const { settings, isFirstLaunch, setInstallationPath } = useSettings()
   const [themePreference, setThemePreference] = useState<ThemePreference>(settings.theme)
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveThemePreference(settings.theme))
@@ -45,23 +62,11 @@ function App() {
       applyAppearanceSettings(settings.appearance, resolvedTheme)
     }
 
-    const handleThemeChange = (event: Event) => {
-      const nextTheme = (event as CustomEvent<{ theme: ThemePreference }>).detail?.theme
-      if (nextTheme) {
-        setThemePreference(nextTheme)
-        const resolvedTheme = applyThemePreference(nextTheme, true)
-        setResolvedTheme(resolvedTheme)
-        applyAppearanceSettings(settings.appearance, resolvedTheme)
-      }
-    }
-
     applyTheme()
     media.addEventListener('change', applyTheme)
-    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
 
     return () => {
       media.removeEventListener('change', applyTheme)
-      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
     }
   }, [themePreference, settings.appearance])
 
@@ -77,6 +82,18 @@ function App() {
       return next
     })
   }, [activeTab])
+
+  const activeView: NavigationTab = settingsOpen ? 'settings' : activeTab
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTop = scrollPositions.current[activeView]
+      }
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [activeView])
 
   useEffect(() => {
     Promise.all([
@@ -113,12 +130,24 @@ function App() {
     setLauncherBackgrounds((current) => ({ ...current, [theme]: null }))
   }
 
+  const saveCurrentScroll = () => {
+    if (mainContentRef.current) {
+      scrollPositions.current[activeView] = mainContentRef.current.scrollTop
+    }
+  }
+
+  const openSettings = () => {
+    saveCurrentScroll()
+    setSettingsOpen(true)
+  }
+
   const handleTabChange = (tab: NavigationTab) => {
     if (tab === 'settings') {
-      setSettingsOpen(true)
+      openSettings()
       return
     }
 
+    saveCurrentScroll()
     setSettingsOpen(false)
     setActiveTab(tab)
   }
@@ -136,7 +165,7 @@ function App() {
       {shouldRenderTab('library') && (
         <div {...tabPanelProps('library')}>
           <LibraryPage
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={openSettings}
             suppressDiagnostics={showPathModal}
           />
         </div>
@@ -144,7 +173,9 @@ function App() {
 
       {shouldRenderTab('about') && (
         <div {...tabPanelProps('about')}>
-          <AboutPage />
+          <Suspense fallback={<LazyPageFallback />}>
+            <AboutPage />
+          </Suspense>
         </div>
       )}
     </>
@@ -154,7 +185,7 @@ function App() {
     <LanguageProvider initialLanguage={settings.language}>
       <Layout
         activeTab={settingsOpen ? 'settings' : activeTab}
-        contentKey={settingsOpen ? 'settings' : activeTab}
+        mainRef={mainContentRef}
         onTabChange={handleTabChange}
         backgroundImage={visibleBackground}
         settingsOpen={settingsOpen}
@@ -162,14 +193,16 @@ function App() {
         {renderContent()}
 
         {settingsOpen && (
-          <SettingsPage
-            hasLauncherBackground={{
-              light: Boolean(launcherBackgrounds.light),
-              dark: Boolean(launcherBackgrounds.dark),
-            }}
-            onChangeLauncherBackground={handleChangeLauncherBackground}
-            onClearLauncherBackground={handleClearLauncherBackground}
-          />
+          <Suspense fallback={<LazyPageFallback />}>
+            <SettingsPage
+              hasLauncherBackground={{
+                light: Boolean(launcherBackgrounds.light),
+                dark: Boolean(launcherBackgrounds.dark),
+              }}
+              onChangeLauncherBackground={handleChangeLauncherBackground}
+              onClearLauncherBackground={handleClearLauncherBackground}
+            />
+          </Suspense>
         )}
 
         {showPathModal && (

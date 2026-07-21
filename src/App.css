@@ -1,23 +1,4 @@
 :root {
-  color-scheme: light;
-  --color-primary: #66c0f4;
-  --color-primary-dark: #8fd3ff;
-  --color-primary-light: rgba(102, 192, 244, 0.14);
-  --color-bg: #1b2838;
-  --color-bg-elevated: #1e2a38;
-  --color-bg-secondary: #2a475e;
-  --color-mica: rgba(30, 42, 56, 0.86);
-  --color-sidebar: #171a21;
-  --color-control: rgba(42, 71, 94, 0.62);
-  --color-control-hover: rgba(42, 71, 94, 0.92);
-  --color-text: #c7d5e0;
-  --color-text-secondary: #8ba3b5;
-  --color-text-tertiary: #6f8799;
-  --color-border: #2a475e;
-  --color-border-subtle: rgba(0, 0, 0, 0.08);
-  --color-success: #0f7b0f;
-  --color-error: #c42b1c;
-  --color-warning: #f9d849;
   --launcher-background-scrim: color-mix(in srgb, #171a21 66%, transparent);
 
   --spacing-xs: 4px;
@@ -26,11 +7,6 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
 
-  --border-radius: 3px;
-  --border-radius-lg: 9px;
-  --density-scale: 0.86;
-
-  --font-family: 'Motiva Sans', 'Segoe UI', Arial, sans-serif;
   --font-size-sm: 12px;
   --font-size-base: 13px;
   --font-size-lg: 16px;
@@ -47,6 +23,24 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
+}
+
+.page-lazy-fallback {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: grid;
+  min-height: 180px;
+  padding: var(--spacing-xl);
+}
+
+.app-locale-loading {
+  background: var(--surface-canvas, var(--color-bg));
+  color: var(--color-text);
+  display: grid;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  min-height: 100vh;
+  place-items: center;
 }
 
 /* GitHub + Pullora direction: dense dark workstation, flat controls, blue selection. */
@@ -91,33 +85,6 @@
     color var(--motion-slow),
     box-shadow var(--motion-slow),
     opacity var(--motion-slow) !important;
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --color-primary: #66c0f4;
-  --color-primary-dark: #8fd3ff;
-  --color-primary-light: rgba(102, 192, 244, 0.18);
-  --color-bg: #171a21;
-  --color-bg-elevated: #16202d;
-  --color-bg-secondary: #1b2838;
-  --color-mica: #16202d;
-  --color-sidebar: #101821;
-  --color-control: #1f3445;
-  --color-control-hover: #2a475e;
-  --color-text: #e7eef6;
-  --color-text-secondary: #9fb4c6;
-  --color-text-tertiary: #73889a;
-  --color-border: #2a475e;
-  --color-border-subtle: #263848;
-  --color-success: #66c06f;
-  --color-error: #ff7d86;
-  --color-warning: #e7bd45;
-  --shadow-control: none;
-  --shadow-control-hover: none;
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.34);
 }
 
 :root[data-theme='dark'] button {
@@ -174,7 +141,6 @@ button {
   min-width: 0;
 }
 
-.sam-shell button,
 .modal-content button {
   background: #203346;
   border-color: #31506a;
@@ -184,7 +150,6 @@ button {
   font-weight: 650;
 }
 
-.sam-shell button:hover,
 .modal-content button:hover {
   background: #2a4860;
   border-color: #4ba3df;
@@ -234,9 +199,6 @@ select {
   min-width: 0;
 }
 
-.sam-shell input,
-.sam-shell textarea,
-.sam-shell select,
 .modal-content input,
 .modal-content textarea,
 .modal-content select {

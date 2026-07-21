@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { getReleases } from '../../../services/github'
 import { getInstalledApps } from '../../../services/installed'
+import { projectArtKey } from '../../../services/projectArt'
 
 interface LibraryStatusState {
   installedApps: InstalledApp[]
@@ -23,10 +24,6 @@ interface LatestVersionCacheHit {
 
 const latestVersionCacheKey = 'pullora.library.latestVersions.v1'
 const latestVersionCacheTtlMs = 24 * 60 * 60 * 1000
-
-function repoKey(owner: string, repo: string) {
-  return `${owner}/${repo}`.toLowerCase()
-}
 
 function readLatestVersionCache(): Record<string, LatestVersionCacheEntry> {
   try {
@@ -78,7 +75,7 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
 
   const installedByRepo = useMemo(() => {
     return new Map(
-      state.installedApps.map((app) => [repoKey(app.owner, app.repo), app]),
+      state.installedApps.map((app) => [projectArtKey(app.owner, app.repo), app]),
     )
   }, [state.installedApps])
 
@@ -121,7 +118,7 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
 
     const entries = await Promise.all(
       apps.map(async (app) => {
-        const key = repoKey(app.owner, app.repo)
+        const key = projectArtKey(app.owner, app.repo)
         const cached = forceRefresh ? null : readCachedLatestVersion(key)
         if (cached) {
           return cached.latestVersion ? [key, cached.latestVersion] as const : null
@@ -162,12 +159,12 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
   }, [state.installedApps])
 
   const getInstalledApp = useCallback(
-    (repo: GitHubSearchResult) => installedByRepo.get(repoKey(repo.owner.login, repo.name)),
+    (repo: GitHubSearchResult) => installedByRepo.get(projectArtKey(repo.owner.login, repo.name)),
     [installedByRepo],
   )
 
   const getLatestVersion = useCallback(
-    (repo: GitHubSearchResult) => state.latestVersions.get(repoKey(repo.owner.login, repo.name)),
+    (repo: GitHubSearchResult) => state.latestVersions.get(projectArtKey(repo.owner.login, repo.name)),
     [state.latestVersions],
   )
 

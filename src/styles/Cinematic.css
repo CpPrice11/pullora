@@ -831,7 +831,7 @@
   color: #d7dce1;
   display: inline-flex;
   font-size: 13px;
-  font-weight: 620 !important;
+  font-weight: 620;
   gap: calc(11px * var(--density-scale));
   min-height: calc(32px * var(--density-scale));
   width: fit-content;
@@ -1363,10 +1363,6 @@
     flex-basis: 58px;
     min-height: 58px;
     padding: 8px 14px;
-  }
-
-  .cinematic-shell .layout-container {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .cinematic-shell .layout-content {

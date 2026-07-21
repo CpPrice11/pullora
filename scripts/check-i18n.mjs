@@ -2,25 +2,17 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const source = readFileSync(new URL('../src/i18n.tsx', import.meta.url), 'utf8')
 const keys = { uk: new Set(), en: new Set() }
 const duplicates = { uk: [], en: [] }
-let language = null
 
-for (const line of source.split(/\r?\n/)) {
-  const section = line.match(/^\s{2}(uk|en): \{$/) ?? line.match(/^Object\.assign\(dictionaries\.(uk|en), \{$/)
-  if (section) {
-    language = section[1]
-    continue
-  }
-
-  const key = language && line.match(/^\s*'([^']+)':/i)?.[1]
-  if (key) {
+for (const language of ['uk', 'en']) {
+  const source = readFileSync(new URL(`../src/i18n/dictionaries/${language}.ts`, import.meta.url), 'utf8')
+  for (const line of source.split(/\r?\n/)) {
+    const key = line.match(/^\s*'([^']+)':/i)?.[1]
+    if (!key) continue
     if (keys[language].has(key)) duplicates[language].push(key)
     keys[language].add(key)
   }
-
-  if (/^\s*(?:\},|\}\))$/.test(line)) language = null
 }
 
 const missingUk = [...keys.en].filter((key) => !keys.uk.has(key))

@@ -1,41 +1,18 @@
-import type { GitHubAsset, GitHubRelease } from '../../types'
+import type { GitHubAsset } from '../../types'
 
 export type ReleaseAssetKind = 'portable' | 'installer' | 'archive' | 'unsupported'
-export type ReleaseAssetPlatform = 'windows' | 'macos' | 'linux' | 'android' | 'ios' | 'unknown'
 export type ReleaseAssetArchitecture = 'x64' | 'arm64' | 'x86' | 'arm' | 'universal' | 'unknown'
-
-export interface ReleaseRuntime {
-  platform: ReleaseAssetPlatform | 'other' | null
-  architecture: ReleaseAssetArchitecture
-}
 
 export interface ReleaseAssetCompatibility {
   kind: ReleaseAssetKind
-  platform: ReleaseAssetPlatform
   architecture: ReleaseAssetArchitecture
   compatible: boolean
 }
-
-const archiveExtensions = [
-  '.zip',
-  '.tar.gz',
-  '.tgz',
-  '.tar.xz',
-  '.tar.bz2',
-]
 
 const sourceArchiveNames = [
   'source code',
   'source-code',
   'source_code',
-]
-
-const platformNameMatchers: Array<[ReleaseAssetPlatform, RegExp]> = [
-  ['windows', /(^|[^a-z0-9])(windows|win32|win64|win)([^a-z0-9]|$)/i],
-  ['macos', /(^|[^a-z0-9])(mac|macos|mac-os|osx|darwin)([^a-z0-9]|$)/i],
-  ['linux', /(^|[^a-z0-9])(linux|ubuntu|debian)([^a-z0-9]|$)/i],
-  ['android', /(^|[^a-z0-9])android([^a-z0-9]|$)/i],
-  ['ios', /(^|[^a-z0-9])ios([^a-z0-9]|$)/i],
 ]
 
 const architectureMatchers: Array<[ReleaseAssetArchitecture, RegExp]> = [
@@ -61,30 +38,17 @@ export function classifyReleaseAsset(asset: GitHubAsset): ReleaseAssetKind {
 
   if (isInstaller) return 'installer'
 
-  if (name.includes('portable') || name.endsWith('.appimage')) {
+  if (name.includes('portable')) {
     return 'portable'
   }
 
-  if (archiveExtensions.some((extension) => name.endsWith(extension))) {
+  if (name.endsWith('.zip')) {
     return 'archive'
   }
 
   if (name.endsWith('.exe')) return 'portable'
 
   return 'unsupported'
-}
-
-export function classifyReleaseAssetPlatform(asset: GitHubAsset): ReleaseAssetPlatform {
-  const name = asset.name.trim().toLowerCase()
-  for (const [platform, matcher] of platformNameMatchers) {
-    if (matcher.test(name)) return platform
-  }
-  if (/\.(exe|msi)$/i.test(name)) return 'windows'
-  if (/\.(dmg|pkg)$/i.test(name)) return 'macos'
-  if (/\.(appimage|deb|rpm)$/i.test(name)) return 'linux'
-  if (/\.(apk|aab)$/i.test(name)) return 'android'
-  if (/\.ipa$/i.test(name)) return 'ios'
-  return 'unknown'
 }
 
 export function classifyReleaseAssetArchitecture(asset: GitHubAsset): ReleaseAssetArchitecture {
@@ -97,35 +61,19 @@ export function classifyReleaseAssetArchitecture(asset: GitHubAsset): ReleaseAss
 
 export function classifyReleaseAssetCompatibility(
   asset: GitHubAsset,
-  runtime?: ReleaseRuntime,
 ): ReleaseAssetCompatibility {
   const kind = classifyReleaseAsset(asset)
-  const platform = classifyReleaseAssetPlatform(asset)
   const architecture = classifyReleaseAssetArchitecture(asset)
-  const platformCompatible = !runtime?.platform
-    || runtime.platform === 'other'
-    || platform === 'unknown'
-    || platform === runtime.platform
-  const architectureCompatible = !runtime
-    || runtime.architecture === 'unknown'
-    || architecture === 'unknown'
-    || architecture === 'universal'
-    || architecture === runtime.architecture
 
   return {
     kind,
-    platform,
     architecture,
-    compatible: kind !== 'unsupported' && platformCompatible && architectureCompatible,
+    compatible: kind !== 'unsupported',
   }
 }
 
-export function isInstallableReleaseAsset(asset: GitHubAsset, runtime?: ReleaseRuntime) {
-  return classifyReleaseAssetCompatibility(asset, runtime).compatible
-}
-
-export function installableAssetsForRelease(release: GitHubRelease, runtime?: ReleaseRuntime) {
-  return release.assets.filter((asset) => isInstallableReleaseAsset(asset, runtime))
+export function isInstallableReleaseAsset(asset: GitHubAsset) {
+  return classifyReleaseAssetCompatibility(asset).compatible
 }
 
 export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {

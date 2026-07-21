@@ -105,7 +105,86 @@ def seed_cache(page: Page) -> None:
     }
     serialized_cache = json.dumps(cache, ensure_ascii=False)
     page.add_init_script(
-        script=f"localStorage.setItem('pullora.github.api-cache.v2', JSON.stringify({serialized_cache}))"
+        script="""
+        (() => {
+          const cache = __CACHE__;
+          window.__PULLORA_TEST_GITHUB_CACHE__ = cache;
+
+          const resolveGithubCommand = (command, args = {}) => {
+            const testCache = window.__PULLORA_TEST_GITHUB_CACHE__ ?? {};
+            if (command === 'list_owner_repositories') {
+              const owner = String(args.owner ?? '').trim().toLowerCase();
+              const key = `owner:${owner}:${args.page ?? 1}:${Boolean(args.releasesOnly)}`;
+              return structuredClone(testCache[key]?.data ?? { items: [], page: 1, has_more: false });
+            }
+            if (command === 'get_releases') {
+              const owner = String(args.owner ?? '').trim().toLowerCase();
+              const repo = String(args.repo ?? '').trim().toLowerCase();
+              const override = window.__PULLORA_TEST_RELEASES__?.[`${owner}/${repo}`];
+              return structuredClone(override ?? testCache[`releases:${owner}/${repo}`]?.data ?? []);
+            }
+            return undefined;
+          };
+
+          if (window.__TAURI_INTERNALS__) {
+            const invoke = window.__TAURI_INTERNALS__.invoke.bind(window.__TAURI_INTERNALS__);
+            window.__TAURI_INTERNALS__.invoke = async (command, args = {}) => {
+              const githubResult = resolveGithubCommand(command, args);
+              return githubResult === undefined ? invoke(command, args) : githubResult;
+            };
+            return;
+          }
+
+          const callbacks = new Map();
+          let callbackId = 1;
+          window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
+          window.__TAURI_INTERNALS__ = {
+            transformCallback(callback, once = false) {
+              const id = callbackId++;
+              callbacks.set(id, value => {
+                if (once) callbacks.delete(id);
+                callback?.(value);
+              });
+              return id;
+            },
+            unregisterCallback(id) { callbacks.delete(id); },
+            runCallback(id, value) { callbacks.get(id)?.(value); },
+            convertFileSrc(path) { return path; },
+            async invoke(command, args = {}) {
+              const githubResult = resolveGithubCommand(command, args);
+              if (githubResult !== undefined) return githubResult;
+              if (command === 'get_settings') {
+                return {
+                  version: 2,
+                  installationPath: 'C:\\\\PulloraApps',
+                  includePrereleases: false,
+                  assetStrategy: 'portableFirst',
+                  githubOwner: 'CpPrice11',
+                  githubToken: null,
+                  theme: 'auto',
+                  language: 'uk',
+                };
+              }
+              if (command === 'is_first_launch') return false;
+              if (command === 'get_launcher_version') return 'v5.12.0';
+              if (command === 'get_github_rate_limit_status') {
+                return {
+                  core: { remaining: null, limit: null, resetAt: null },
+                  search: { remaining: null, limit: null, resetAt: null },
+                };
+              }
+              if (command === 'validate_installation_path') return { ok: true, status: 'ok' };
+              if (command === 'check_is_favorite') return false;
+              if (command === 'get_project_art_asset') return null;
+              if (command === 'save_library_folders') return structuredClone(args.folders ?? []);
+              if (['get_downloads', 'get_installed_apps', 'get_favorites', 'get_library_folders', 'list_project_art_assets', 'get_event_log'].includes(command)) return [];
+              if (command === 'plugin:event|listen') return args.handler;
+              if (command === 'plugin:event|unlisten') return null;
+              return null;
+            },
+          };
+        })()
+        """.replace("__CACHE__", serialized_cache)
     )
 
 

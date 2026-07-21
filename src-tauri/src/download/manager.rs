@@ -532,7 +532,7 @@ async fn download_task(
         let fallback_executable = find_executable_in_dir(&partial_dir).ok_or_else(|| {
             let _ = fs::remove_file(&tmp_path);
             let _ = cleanup_path(&partial_dir);
-            "Архів не містить EXE/AppImage для запуску. Обери інший файл релізу або перевір структуру архіву.".to_string()
+            "Архів не містить EXE для запуску. Обери інший файл релізу або перевір структуру архіву.".to_string()
         })?;
         fallback_executable
             .strip_prefix(&partial_dir)

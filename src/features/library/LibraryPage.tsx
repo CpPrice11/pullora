@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
@@ -8,13 +8,9 @@ import { useBatchUpdates } from './hooks/useBatchUpdates'
 import { useLibraryBulkSelection } from './hooks/useLibraryBulkSelection'
 import RepoCard from './components/RepoCard'
 import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
-import { LibraryBulkActions, LibraryBulkConfirmDialog } from './components/LibraryBulkActions'
 import LibraryHero from './components/LibraryHero'
 import LibraryOperationsPanel from './components/LibraryOperationsPanel'
-import FolderManager from './components/FolderManager'
 import BatchUpdatePanel, { type BatchUpdateItem } from './components/BatchUpdatePanel'
-import ReleaseSelector from '../../components/Install/ReleaseSelector'
-import UninstallConfirmModal from './components/UninstallConfirmModal'
 import DownloadProgressPanel from '../../components/Install/DownloadProgress'
 import StatePanel from '../../components/State/StatePanel'
 import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion } from '../../services/installed'
@@ -49,9 +45,7 @@ type UninstallTarget = {
   installedApp: InstalledApp
 }
 
-function repoLookupKey(owner: string, repo: string) {
-  return `${owner}/${repo}`.toLowerCase()
-}
+const repoLookupKey = projectArtKey
 
 function isLauncherRepository(owner: string, repo: string) {
   return owner.trim().toLowerCase() === 'cpprice11' &&
@@ -125,9 +119,7 @@ const uncategorizedFolderId = 'uncategorized'
 const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
 const dismissedUpdatesStorageKey = 'pullora-dismissed-update-versions-v1'
 
-function normalizeRepoKey(owner: string, repo: string) {
-  return projectArtKey(owner, repo)
-}
+const normalizeRepoKey = projectArtKey
 
 function toCssUrl(value: string) {
   return `url("${value.replace(/\\/g, '/').replace(/"/g, '\\"')}")`
@@ -235,6 +227,16 @@ interface LibraryPageProps {
   onOpenSettings?: () => void
   suppressDiagnostics?: boolean
 }
+
+const ReleaseSelector = lazy(() => import('../../components/Install/ReleaseSelector'))
+const LibraryBulkActions = lazy(() => import('./components/LibraryBulkActions').then((module) => ({
+  default: module.LibraryBulkActions,
+})))
+const LibraryBulkConfirmDialog = lazy(() => import('./components/LibraryBulkActions').then((module) => ({
+  default: module.LibraryBulkConfirmDialog,
+})))
+const FolderManager = lazy(() => import('./components/FolderManager'))
+const UninstallConfirmModal = lazy(() => import('./components/UninstallConfirmModal'))
 
 function LibraryPage({
   onOpenSettings,
@@ -1495,35 +1497,37 @@ function LibraryPage({
                 )}
               </>
             )}
-            bulkActions={(
-              <LibraryBulkActions
-                selectedCount={bulkSelection.selectedKeys.size}
-                visibleCount={orderedVisibleKeys.length}
-                updateCount={bulkUpdateRepositories.length}
-                installedCount={bulkInstalledApps.length}
-                cleanupVersionCount={bulkInactiveVersions.length}
-                busy={bulkBusy}
-                folders={displayFolders
-                  .filter((folder) => folder.id !== favoritesFolderId)
-                  .map((folder) => ({ id: folder.id, name: folder.name }))}
-                message={bulkMessage}
-                error={bulkError}
-                onSelectAll={bulkSelection.selectAll}
-                onClear={bulkSelection.clear}
-                onUpdate={handleBulkUpdate}
-                onMoveToFolder={handleBulkMove}
-                onAddFavorite={() => handleBulkFavorite(true)}
-                onRemoveFavorite={() => handleBulkFavorite(false)}
-                onRequestCleanup={() => {
-                  setBulkError(null)
-                  setBulkConfirm('cleanup')
-                }}
-                onRequestUninstall={() => {
-                  setBulkError(null)
-                  setBulkConfirm('uninstall')
-                }}
-              />
-            )}
+            bulkActions={bulkSelection.selectedKeys.size > 0 ? (
+              <Suspense fallback={null}>
+                <LibraryBulkActions
+                  selectedCount={bulkSelection.selectedKeys.size}
+                  visibleCount={orderedVisibleKeys.length}
+                  updateCount={bulkUpdateRepositories.length}
+                  installedCount={bulkInstalledApps.length}
+                  cleanupVersionCount={bulkInactiveVersions.length}
+                  busy={bulkBusy}
+                  folders={displayFolders
+                    .filter((folder) => folder.id !== favoritesFolderId)
+                    .map((folder) => ({ id: folder.id, name: folder.name }))}
+                  message={bulkMessage}
+                  error={bulkError}
+                  onSelectAll={bulkSelection.selectAll}
+                  onClear={bulkSelection.clear}
+                  onUpdate={handleBulkUpdate}
+                  onMoveToFolder={handleBulkMove}
+                  onAddFavorite={() => handleBulkFavorite(true)}
+                  onRemoveFavorite={() => handleBulkFavorite(false)}
+                  onRequestCleanup={() => {
+                    setBulkError(null)
+                    setBulkConfirm('cleanup')
+                  }}
+                  onRequestUninstall={() => {
+                    setBulkError(null)
+                    setBulkConfirm('uninstall')
+                  }}
+                />
+              </Suspense>
+            ) : null}
             showLoading={showLoadingState}
             showEmpty={visibleRepositories.length === 0 && !state.loading}
             emptyTitle={t(emptyTitleKey)}
@@ -1576,64 +1580,80 @@ function LibraryPage({
         </div>
 
       {selectedRepo && (
-        <ReleaseSelector
-          owner={selectedRepo.owner.login}
-          repo={selectedRepo.name}
-          displayName={selectedRepo.name}
-          description={selectedRepo.description ?? undefined}
-          currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
-          onClose={() => setSelectedRepo(null)}
-          onInstalled={handleInstalledFromRelease}
-        />
+        <Suspense
+          fallback={(
+            <div className="modal-overlay">
+              <div className="modal-content release-modal-loading" role="status" aria-live="polite">
+                <StatePanel kind="loading" title={t('release.loading')} skeletonCount={3} />
+              </div>
+            </div>
+          )}
+        >
+          <ReleaseSelector
+            owner={selectedRepo.owner.login}
+            repo={selectedRepo.name}
+            displayName={selectedRepo.name}
+            description={selectedRepo.description ?? undefined}
+            currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
+            onClose={() => setSelectedRepo(null)}
+            onInstalled={handleInstalledFromRelease}
+          />
+        </Suspense>
       )}
 
       {uninstallTarget && (
-        <UninstallConfirmModal
-          installedApp={uninstallTarget.installedApp}
-          appPath={settings.installationPath
-            ? `${settings.installationPath}\\${uninstallTarget.installedApp.owner}-${uninstallTarget.installedApp.repo}`
-            : ''}
-          scope="app"
-          busy={uninstallBusy}
-          error={uninstallError}
-          onCancel={() => {
-            if (!uninstallBusy) {
-              setUninstallTarget(null)
-              setUninstallError(null)
-            }
-          }}
-          onConfirm={handleConfirmUninstall}
-        />
+        <Suspense fallback={null}>
+          <UninstallConfirmModal
+            installedApp={uninstallTarget.installedApp}
+            appPath={settings.installationPath
+              ? `${settings.installationPath}\\${uninstallTarget.installedApp.owner}-${uninstallTarget.installedApp.repo}`
+              : ''}
+            scope="app"
+            busy={uninstallBusy}
+            error={uninstallError}
+            onCancel={() => {
+              if (!uninstallBusy) {
+                setUninstallTarget(null)
+                setUninstallError(null)
+              }
+            }}
+            onConfirm={handleConfirmUninstall}
+          />
+        </Suspense>
       )}
 
       {folderDialogRepo && (
-        <FolderManager
-          key={folderDialogRepo.id}
-          targetName={folderDialogRepo.name}
-          existingNames={[
-            ...displayFolders.map((folder) => folder.name),
-            t('library.folder.favorites'),
-          ]}
-          onCancel={closeCreateFolderDialog}
-          onConfirm={handleConfirmCreateFolder}
-        />
+        <Suspense fallback={null}>
+          <FolderManager
+            key={folderDialogRepo.id}
+            targetName={folderDialogRepo.name}
+            existingNames={[
+              ...displayFolders.map((folder) => folder.name),
+              t('library.folder.favorites'),
+            ]}
+            onCancel={closeCreateFolderDialog}
+            onConfirm={handleConfirmCreateFolder}
+          />
+        </Suspense>
       )}
 
       {bulkConfirm && (
-        <LibraryBulkConfirmDialog
-          action={bulkConfirm}
-          appCount={bulkConfirm === 'cleanup'
-            ? new Set(bulkInactiveVersions.map((item) => normalizeRepoKey(item.app.owner, item.app.repo))).size
-            : bulkInstalledApps.length}
-          versionCount={bulkConfirm === 'cleanup'
-            ? bulkInactiveVersions.length
-            : bulkInstalledApps.reduce((sum, app) => sum + app.versions.length, 0)}
-          sizeBytes={bulkConfirm === 'cleanup' ? bulkCleanupSize : bulkUninstallSize}
-          busy={bulkBusy}
-          error={bulkError}
-          onCancel={() => !bulkBusy && setBulkConfirm(null)}
-          onConfirm={bulkConfirm === 'cleanup' ? handleBulkCleanup : handleBulkUninstall}
-        />
+        <Suspense fallback={null}>
+          <LibraryBulkConfirmDialog
+            action={bulkConfirm}
+            appCount={bulkConfirm === 'cleanup'
+              ? new Set(bulkInactiveVersions.map((item) => normalizeRepoKey(item.app.owner, item.app.repo))).size
+              : bulkInstalledApps.length}
+            versionCount={bulkConfirm === 'cleanup'
+              ? bulkInactiveVersions.length
+              : bulkInstalledApps.reduce((sum, app) => sum + app.versions.length, 0)}
+            sizeBytes={bulkConfirm === 'cleanup' ? bulkCleanupSize : bulkUninstallSize}
+            busy={bulkBusy}
+            error={bulkError}
+            onCancel={() => !bulkBusy && setBulkConfirm(null)}
+            onConfirm={bulkConfirm === 'cleanup' ? handleBulkCleanup : handleBulkUninstall}
+          />
+        </Suspense>
       )}
 
       {libraryActionMessage && (

@@ -80,23 +80,9 @@ export interface AppSettings {
 }
 
 export interface AppAppearanceSettings {
-  preset: 'github' | 'githubLight' | 'midnight' | 'custom'
-  accent: string
-  accentHover: string
-  background: string
-  surface: string
-  surface2: string
-  sidebar: string
-  text: string
-  muted: string
-  border: string
-  fontFamily: string
-  fontSize: number
-  radius: number
   density: 'compact' | 'comfortable' | 'spacious'
   surfaceTransparency: number
   surfaceBlur: number
-  customCss: string
 }
 
 export interface InstallPathValidation {
