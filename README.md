@@ -1,35 +1,30 @@
 # Pullora
 
-Pullora - desktop-лаунчер для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у публічних GitHub Releases, встановлює portable-версії, підтримує setup/MSI installer-flow, керує локальною бібліотекою та оновленнями.
+Pullora — настільний лаунчер для Windows 11 на Tauri, Rust і React. Він знаходить застосунки у публічних GitHub Releases, встановлює та оновлює їх, а також керує локальною бібліотекою версій.
 
-Інтерфейс за замовчуванням українською. Англійська мова також підтримується для всіх основних екранів і повідомлень.
+Інтерфейс доступний українською та англійською мовами.
 
 ## Можливості
 
-- `Store` для глобального пошуку публічних GitHub-проєктів.
-- `Library` з фільтрами, деталями застосунку, локальними версіями та install wizard.
-- Portable-first встановлення: portable EXE та архіви з EXE рекомендовані; setup/MSI залишаються ручним варіантом.
-- Запуск, rollback, видалення, перевірка оновлень і self-update самого лаунчера.
-- Store App Details: перегляд repo metadata, релізів, assets, stable/prerelease каналу та release notes перед встановленням.
-- Теми, глобальний фон лаунчера, українська й англійська мови.
+- бібліотека застосунків із пошуком, фільтрами, папками й обраним;
+- встановлення portable EXE, архівів з EXE та setup/MSI;
+- запуск, оновлення, відкат і видалення локальних версій;
+- ручна перевірка оновлень застосунків і самої Pullora;
+- перевірка релізних файлів за SHA-256;
+- світла й темна теми, власні фони, прозорість і розмиття підкладок;
+- українська та англійська локалізації.
 
-## Store Details
+## Релізні файли
 
-Store details-вікно відкривається з hero, карток, browse row і preview panel. Воно показує опис проєкту, owner/repo, мову, теми, локальний installed state, список релізів, stable/prerelease toggle, assets, тип файлу, розмір, downloads і release notes preview. Релізи завантажуються тільки після відкриття details-вікна, щоб не збільшувати автоматичні GitHub-запити.
+Кожен підтримуваний реліз Pullora містить:
 
-## Файли Релізу
+- `Pullora_<version>_portable_x64.exe` — portable-версію та джерело self-update;
+- `Pullora_<version>_x64-setup.exe` — інсталятор;
+- `SHA256SUMS.txt` — контрольні суми обох EXE.
 
-Кожен GitHub release Pullora має містити три завантажувані assets:
-
-- `Pullora_<version>_portable_x64.exe` - portable-версія та шлях self-update.
-- `Pullora_<version>_x64-setup.exe` - setup installer.
-- `SHA256SUMS.txt` - контрольні суми обох EXE.
-
-MSI та portable ZIP assets не публікуються без окремого рішення.
+На сторінці Releases зберігаються лише актуальні стабільні версії з повним набором перевірених файлів.
 
 ## Розробка
-
-Стек: Tauri 2, Rust, React, TypeScript, CSS і Vite.
 
 ```bash
 npm ci
@@ -39,23 +34,17 @@ cd src-tauri && cargo check
 npm run tauri-build
 ```
 
-Перевірка metadata та release-readiness:
+Перевірка готовності релізу:
 
 ```powershell
-npm run check:release -- -Version 5.2.1 -RcReadiness -SkipArtifacts
+npm run check:release -- -Version <version> -RcReadiness -SkipArtifacts
 ```
 
-## Release Policy
+Перед публікацією виконуються frontend build, Rust checks/tests, Tauri build, release-check і smoke-test portable EXE.
 
-- Build artifacts не зберігаються в Git.
-- Релізні файли зберігаються у `C:\Users\sasha\OneDrive\Документи\Projects\Pullora Builds\<version>`.
-- Перед user-facing release виконуються `npm run build`, `cargo check`, `npm run tauri-build`, release-check і smoke-test portable EXE.
-- GitHub release після публікації перевіряється на наявність portable EXE, setup EXE і `SHA256SUMS.txt`.
+## Документація
 
-Поточний напрям розвитку описаний у [ROADMAP.md](ROADMAP.md).
-
-Додаткові стабілізаційні документи:
-
-- [Release Process](docs/RELEASE_PROCESS.md)
-- [Regression Matrix](docs/REGRESSION_MATRIX.md)
-- [Design Guidelines](docs/DESIGN_GUIDELINES.md)
+- [Актуальний roadmap](docs/roadmaps/PRODUCT_IMPROVEMENT_ROADMAP.md)
+- [Процес релізу](docs/RELEASE_PROCESS.md)
+- [Матриця регресій](docs/REGRESSION_MATRIX.md)
+- [Правила дизайну](docs/DESIGN_GUIDELINES.md)

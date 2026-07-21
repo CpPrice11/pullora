@@ -7,7 +7,7 @@ Use this matrix before user-facing releases and after large roadmap patches.
 - Owner empty, invalid owner, valid owner, owner without releases.
 - Online, offline/cached, GitHub rate-limit or partial latest-version failures.
 - Search, filters, sort, favorites, update filter, hover/focus project-art preview.
-- Install, update, launch, open folder, details drawer, AI Workspace handoff.
+- Install, update, launch, open folder, context menu and details panels.
 
 ## Install And Versions
 
@@ -33,17 +33,6 @@ Use this matrix before user-facing releases and after large roadmap patches.
 - Portable self-update asset selection.
 - Rollback list and cleanup old launcher files.
 - No portable asset recovery state.
-
-## AI Workspace
-
-- Disabled onboarding and enabled workspace.
-- Runtime missing, installed/stopped, running, disconnected/crashed.
-- Auth missing and account ready.
-- Local folder workspace, clone URL, clone from Library.
-- Recent sessions search, workspace sessions, resume state.
-- Draft restore, clear current draft, clear all drafts.
-- Text turn, image attachment, approval allow/deny, interrupt active task.
-- Codex capabilities unsupported/available states and Desktop handoff.
 
 ## UI
 

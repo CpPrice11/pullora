@@ -1,43 +1,30 @@
-# Pullora Design Guidelines
+# Правила дизайну Pullora
 
-Pullora follows the final GitHub + Pullora visual system: GitHub provides the dark Library/Settings structure and directness; GitHub provides workstation density, flat panels, thin borders, status rails, and table-like surfaces.
+Pullora зберігає власну айдентику: темні й світлі напівпрозорі поверхні, синій акцент, помітний користувацький фон і компактна desktop-композиція.
 
-## Rules
+## Основні правила
 
-- Keep the main Library split between a compact repository list and a focused details/action pane.
-- Prefer flat dark panels, thin separators, compact rows, and blue active selection over glass, cinematic blur, or large card layouts.
-- Treat the shell as a workstation: titlebar status chips, sidebar telemetry, compact tables, and clear status rails are preferred over decorative hero surfaces.
-- Use GitHub-inspired tokens as the baseline: shell `#171a21`, library/surface `#1b2838` and `#16202d`, table borders `#2a475e`, active blue `#66c0f4`.
-- Use project art as optional supporting content. The UI must stay readable and functional without art.
-- Keep destructive actions behind explicit confirmation.
-- Preserve Ukrainian and English layouts; avoid hardcoded UI text outside `i18n.tsx`.
-- Respect reduced motion, keyboard focus states, and the 1000x700 minimum window.
-- Do not add extra platform release UX or packaging paths unless the release policy changes explicitly.
+- Темна та світла теми використовують однакову сітку, компоненти, розміри й поведінку; змінюються лише токени кольору та контрасту.
+- Загальний фон має бути видимим у Library, Settings, About і за діалогами.
+- Прозорість і розмиття підкладок застосовуються до всіх основних областей однаково.
+- Hero-фон і обкладинка застосунку незалежні від загального фону та не змінюють його.
+- Основний акцент — блакитний; success, warning і destructive кольори використовуються лише за змістом.
+- Sidebar і основна область займають однакову доступну висоту та не перекривають фон або сусідній контент.
+- Контекстні й overflow-меню відкриваються поверх інтерфейсу, мають спільну геометрію, набір іконок і клавіатурну поведінку.
+- Компактний режим реально зменшує відступи, висоту рядків, аватари та типографіку.
+- Довгі українські й англійські рядки не повинні ламати сітку.
+- Деструктивні дії потребують явного підтвердження.
 
-## GitHub Workstation Layer
+## Доступність і розміри
 
-- Use left-edge status rails to communicate state: blue for active/current, green for ready/completed, yellow for pending/update, red for failure/destructive.
-- Prefer table-like rows for repositories, launcher versions, updates, downloads, and AI activity.
-- Keep controls rectangular with 2px radius unless an existing platform control requires otherwise.
-- Avoid introducing new large gradients, glassmorphism, cinematic backdrop behavior, or oversized cards.
-- AI Workspace should read like an operations console: dense panes, terminal-like chat area, and compact inspector/activity rows.
-- Settings, Library, About, Release, App Details, confirmations, and AI Workspace should share the same rectangular controls and 2px-or-less geometry unless a native control requires otherwise.
+- Мінімальне підтримуване вікно — 1000×700; окремо перевіряється Full HD 1920×1080.
+- Інтерактивні елементи мають видимий focus, коректні disabled-стани та WCAG AA контраст.
+- Усі діалоги й меню працюють з клавіатури та закриваються через `Escape`.
+- Анімації поважають `prefers-reduced-motion`.
+- Кожен новий текст має український та англійський переклад.
 
-## Release UI
+## Релізний інтерфейс
 
-- Release surfaces should remain list/table-like and compact.
-- Portable EXE remains the primary launcher artifact; setup EXE remains the installer artifact.
-- Do not expose MSI, ZIP, Linux, or Arch packaging paths in release UI unless policy changes.
-- Release wizard, asset selection, update center, and confirmation dialogs should use facts grids, status rails, and sticky action rows instead of decorative modal cards.
-
-## Theme Editor
-
-- Presets are safe defaults, but the GitHub shell should remain the baseline visual language.
-- Custom colors, font, radius, density, and CSS are user-controlled advanced settings.
-- Theme import/export must not change GitHub owner, install folders, AI Workspace settings, or installed apps.
-
-## Roadmap Closure
-
-- `v5.0.0` closes the GitHub + Pullora roadmap as one cohesive workstation release.
-- Legacy cinematic selectors may remain only as inactive compatibility CSS; active UI styling should be expressed through `.sam-shell` and shared component selectors.
-- Future design work should be incremental polish, not a return to glass, glow, or platform expansion.
+- Portable EXE залишається основним артефактом, setup EXE — інсталятором.
+- Встановлення показує лише потрібні рішення, помилки й прогрес без дубльованих пояснень.
+- Версії, оновлення та завантаження використовують компактні рядки зі зрозумілими статусами.
