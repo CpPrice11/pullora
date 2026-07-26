@@ -18,9 +18,10 @@ export async function updateSettings(settings: AppSettings): Promise<void> {
   notifySettingsChange(settings)
 }
 
-export async function setInstallationPath(path: string): Promise<void> {
-  await callTauri('set_installation_path', { path })
-  notifySettingsChange({ installationPath: path })
+export async function setInstallationPath(path: string): Promise<string> {
+  const savedPath = await callTauri<string>('set_installation_path', { path })
+  notifySettingsChange({ installationPath: savedPath })
+  return savedPath
 }
 
 export async function checkIsFirstLaunch(): Promise<boolean> {

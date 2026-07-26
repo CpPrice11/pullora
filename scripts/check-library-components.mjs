@@ -217,6 +217,19 @@ try {
     assert.doesNotMatch(readFileSync(legacyStylesPath, 'utf8'), /library-density-compact/)
   }
 
+  const settingsSectionsSource = readFileSync('src/features/settings/components/SettingsSections.tsx', 'utf8')
+  const settingsPageSource = readFileSync('src/pages/SettingsPage.tsx', 'utf8')
+  const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
+  const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
+  const downloadServiceSource = readFileSync('src/services/download.ts', 'utf8')
+  assert.match(settingsSectionsSource, /value=\{installationPath\}[\s\S]*?readOnly/)
+  assert.match(settingsSectionsSource, /pathValidation === 'noWritePermission'[\s\S]*?settings\.pathNoWrite/)
+  assert.match(settingsPageSource, /setInstallationPath as saveInstallationPath/)
+  assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)
+  assert.match(releaseSelectorSource, /useState\(settings\.installationPath \?\? ''\)/)
+  assert.match(releaseSelectorSource, /setInstallPath\(await setInstallationPath\(dir\)\)/)
+  assert.doesNotMatch(downloadServiceSource, /installPath/)
+
   const hero = render(LibraryHero, {
     repo,
     installedApp,
@@ -245,18 +258,19 @@ try {
   assert.match(hero, /class="library-hero-content"/)
   assert.doesNotMatch(hero, /<section[^>]+style=/)
 
+  const effectiveInstallPath = 'C:\\Users\\demo\\AppData\\Local\\Pullora\\Apps'
   const operationsPanel = render(LibraryOperationsPanel, {
     repo,
     installedApp,
     latestVersion: 'v2.0.0',
-    installationPath: 'C:\\Pullora',
+    installationPath: effectiveInstallPath,
     onInstall: noop,
     onLaunch: noop,
   })
   assert.match(operationsPanel, /library-ops-panel update/)
   assert.match(operationsPanel, /library-inline-panel--versions/)
   assert.match(operationsPanel, /library-inline-panel--details/)
-  assert.match(operationsPanel, /C:\\Pullora\\CpPrice11-demo-app/)
+  assert.match(operationsPanel, new RegExp(`${effectiveInstallPath.replaceAll('\\', '\\\\')}\\\\CpPrice11-demo-app`))
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',

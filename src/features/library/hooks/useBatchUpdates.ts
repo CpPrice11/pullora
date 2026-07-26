@@ -11,6 +11,7 @@ interface BatchUpdateJob {
   owner: string
   repo: string
   tag: string
+  size: number
 }
 
 interface UseBatchUpdatesOptions {
@@ -67,7 +68,7 @@ export function useBatchUpdates({
   const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
 
   const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
-    const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
+    const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag, job.size)
     setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
     return id
   }, [startBatchDownload])
@@ -108,6 +109,7 @@ export function useBatchUpdates({
           owner: repo.owner.login,
           repo: repo.name,
           tag: release.tag_name,
+          size: asset.size,
         })
         return { key, status: 'started' as const }
       } catch (error) {
@@ -144,7 +146,7 @@ export function useBatchUpdates({
     setBatchUpdateError(null)
     setBatchUpdating(true)
     try {
-      const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag)
+      const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag, job.size)
       setBatchUpdateJobs((current) => {
         const next = { ...current }
         delete next[download.id]

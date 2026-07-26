@@ -4,15 +4,32 @@ use crate::error::command_error;
 
 pub fn installation_root(path: &str) -> Result<PathBuf, String> {
     let root = absolute_path(Path::new(path.trim()))?;
-    if root.parent().is_none() {
+    let root = resolve_path(&root).map_err(|_| command_error("errors.installPathUnavailable"))?;
+    if root.parent().is_none() || is_system_installation_path(&root) {
         return Err(command_error("errors.installPathUnsafe"));
     }
+    Ok(root)
+}
 
-    if root.exists() {
-        std::fs::canonicalize(root).map_err(|_| command_error("errors.installPathUnavailable"))
-    } else {
-        Ok(root)
-    }
+#[cfg(windows)]
+fn is_system_installation_path(path: &Path) -> bool {
+    [
+        "SystemRoot",
+        "WINDIR",
+        "ProgramFiles",
+        "ProgramW6432",
+        "ProgramFiles(x86)",
+        "ProgramData",
+    ]
+    .into_iter()
+    .filter_map(std::env::var_os)
+    .filter_map(|root| std::fs::canonicalize(root).ok())
+    .any(|root| path.starts_with(root))
+}
+
+#[cfg(not(windows))]
+fn is_system_installation_path(_path: &Path) -> bool {
+    false
 }
 
 pub fn ensure_within(path: &Path, root: &Path, allow_root: bool) -> Result<PathBuf, String> {
@@ -133,5 +150,40 @@ mod tests {
             "release_.._.._escape"
         );
         assert_eq!(safe_component(".."), "_");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn resolves_junctions_and_rejects_system_targets() {
+        fn junction(link: &std::path::Path, target: &std::path::Path) {
+            let status = std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(link)
+                .arg(target)
+                .status()
+                .unwrap();
+            assert!(status.success());
+        }
+
+        let base =
+            std::env::temp_dir().join(format!("pullora-path-junction-{}", std::process::id()));
+        let real = base.join("real");
+        let linked = base.join("linked");
+        std::fs::create_dir_all(&real).unwrap();
+        junction(&linked, &real);
+
+        assert_eq!(
+            installation_root(&linked.join("apps").display().to_string()).unwrap(),
+            std::fs::canonicalize(&real).unwrap().join("apps")
+        );
+
+        let system_link = base.join("system");
+        let windows = std::path::PathBuf::from(std::env::var_os("WINDIR").unwrap());
+        junction(&system_link, &windows);
+        assert!(installation_root(&system_link.display().to_string()).is_err());
+
+        std::fs::remove_dir(system_link).unwrap();
+        std::fs::remove_dir(linked).unwrap();
+        std::fs::remove_dir_all(base).unwrap();
     }
 }

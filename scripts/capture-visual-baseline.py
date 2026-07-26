@@ -166,7 +166,7 @@ def seed_cache(page: Page) -> None:
                 };
               }
               if (command === 'is_first_launch') return false;
-              if (command === 'get_launcher_version') return 'v5.12.0';
+              if (command === 'get_launcher_version') return 'v5.13.0';
               if (command === 'get_github_rate_limit_status') {
                 return {
                   core: { remaining: null, limit: null, resetAt: null },

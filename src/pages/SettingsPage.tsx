@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings } from '../types'
-import { getSettings, updateSettings, validateInstallationPath } from '../services/settings'
+import {
+  getSettings,
+  setInstallationPath as saveInstallationPath,
+  updateSettings,
+  validateInstallationPath,
+} from '../services/settings'
 import { cleanupLauncherUpdateFiles, getEventLog, getLauncherStorageInfo, openDir } from '../services/updates'
 import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
 import {
@@ -78,7 +83,7 @@ function SettingsPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'>('idle')
+  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'>('idle')
   const [resetPending, setResetPending] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
@@ -209,19 +214,16 @@ function SettingsPage({
   const handleBrowse = async () => {
     const dir = await pickDirectory()
     if (dir && settings) {
-      await persistSettings({ ...settings, installationPath: dir }, settings)
-    }
-  }
-
-  const handleInstallationPathBlur = async () => {
-    if (!settings) return
-    await persistSettings(settings, settings)
-    setPathValidation('idle')
-  }
-
-  const handleInstallationPathKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.currentTarget.blur()
+      setSaving(true)
+      setError(null)
+      try {
+        const installationPath = await saveInstallationPath(dir)
+        setSettings((current) => current ? { ...current, installationPath } : current)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t('settings.saveError'))
+      } finally {
+        setSaving(false)
+      }
     }
   }
 
@@ -543,9 +545,6 @@ function SettingsPage({
               onClearLauncherBackground={onClearLauncherBackground}
               onPreviewSurfaceSetting={previewSurfaceSetting}
               onCommitSurfaceSetting={commitSurfaceSetting}
-              onInstallationPathChange={(installationPath) => setSettings({ ...settings, installationPath })}
-              onInstallationPathBlur={() => void handleInstallationPathBlur()}
-              onInstallationPathKeyDown={handleInstallationPathKeyDown}
               onBrowse={() => void handleBrowse()}
               onValidatePath={() => void handleValidatePath()}
               onOpenDirectory={(path) => void openDir(path).catch(() => {})}

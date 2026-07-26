@@ -7,7 +7,7 @@ import type { AppSettings, DownloadProgress, GitHubAsset, GitHubRelease } from '
 import DownloadProgressPanel from './DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
 import { pickDirectory } from '../../services/dialog'
-import { validateInstallationPath } from '../../services/settings'
+import { setInstallationPath, validateInstallationPath } from '../../services/settings'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { useI18n } from '../../i18n'
@@ -308,15 +308,14 @@ function ReleaseSelector({
     try {
       const validation = await validateInstallationPath(targetInstallPath)
       if (!validation.ok) {
-        setDownloadError(validation.status === 'missing'
-          ? t('release.installPathRequired')
-          : t('release.installPathUnavailable'))
-        setStep('confirm')
-        return
-      }
-
-      if (validation.status === 'requiresElevation' && selectedAssetKind !== 'installer') {
-        setDownloadError(t('release.installPathRequiresWritable'))
+        const errorKey = validation.status === 'missing'
+          ? 'release.installPathRequired'
+          : validation.status === 'noWritePermission'
+            ? 'release.installPathRequiresWritable'
+            : validation.status === 'busy'
+              ? 'release.installPathBusy'
+              : 'release.installPathUnavailable'
+        setDownloadError(t(errorKey))
         setStep('confirm')
         return
       }
@@ -336,7 +335,7 @@ function ReleaseSelector({
         owner,
         repo,
         selectedRelease.tag_name,
-        targetInstallPath,
+        selectedAsset.size,
       )
       setActiveDownloadId(id)
     } catch (err) {
@@ -381,8 +380,12 @@ function ReleaseSelector({
   const handleChooseInstallPath = async () => {
     const dir = await pickDirectory()
     if (dir) {
-      setInstallPath(dir)
-      setDownloadError(null)
+      try {
+        setInstallPath(await setInstallationPath(dir))
+        setDownloadError(null)
+      } catch (err) {
+        setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
+      }
     }
   }
 

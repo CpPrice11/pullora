@@ -87,7 +87,7 @@ export interface AppAppearanceSettings {
 
 export interface InstallPathValidation {
   ok: boolean
-  status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'
+  status: 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'
 }
 
 // Installed app types
