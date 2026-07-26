@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BASELINE_PATH = ROOT / "scripts" / "capture-visual-baseline.py"
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
-CURRENT_VERSION = "v5.12.0"
+CURRENT_VERSION = "v5.13.0"
 
 
 def load_baseline():
@@ -58,8 +58,8 @@ def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool 
 def seed_release_matrix(page: Page, baseline) -> None:
     baseline.seed_cache(page)
     releases = [
-        release(5130, "v5.13.0"),
-        release(5120, CURRENT_VERSION),
+        release(5140, "v5.14.0"),
+        release(5130, CURRENT_VERSION),
         release(5101, "v5.10.1"),
         release(599, "v5.9.9", checksum=False),
     ]

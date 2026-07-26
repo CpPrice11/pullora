@@ -1,3 +1,4 @@
+pub mod disk_space;
 pub mod favorites;
 pub mod installed;
 pub mod library_folders;

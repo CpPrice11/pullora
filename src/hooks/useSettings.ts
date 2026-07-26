@@ -68,8 +68,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const setInstallationPath = useCallback(async (path: string) => {
     await saveInstallationPath(path)
-    setSettings((prev) => ({ ...prev, installationPath: path }))
-    setIsFirstLaunch(false)
   }, [])
 
   const value = useMemo(() => ({

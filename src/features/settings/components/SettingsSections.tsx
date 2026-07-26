@@ -13,7 +13,7 @@ import type { ResolvedTheme, ThemePreference } from '../../../utils/theme'
 
 export type SettingsSectionId = 'general' | 'installation' | 'updates' | 'events' | 'maintenance'
 
-type PathValidation = 'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'requiresElevation'
+type PathValidation = 'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'
 type SurfaceSetting = 'surfaceTransparency' | 'surfaceBlur'
 
 interface GeneralSettingsSectionProps {
@@ -213,9 +213,6 @@ function GeneralSettingsSection({
 interface InstallationSettingsSectionProps {
   installationPath: string
   pathValidation: PathValidation
-  onInstallationPathChange: (value: string) => void
-  onInstallationPathBlur: () => void
-  onInstallationPathKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onBrowse: () => void
   onValidatePath: () => void
   onOpenDirectory: (path: string) => void
@@ -224,9 +221,6 @@ interface InstallationSettingsSectionProps {
 function InstallationSettingsSection({
   installationPath,
   pathValidation,
-  onInstallationPathChange,
-  onInstallationPathBlur,
-  onInstallationPathKeyDown,
   onBrowse,
   onValidatePath,
   onOpenDirectory,
@@ -243,9 +237,8 @@ function InstallationSettingsSection({
             id="installPath"
             type="text"
             value={installationPath}
-            onBlur={onInstallationPathBlur}
-            onChange={(event) => onInstallationPathChange(event.target.value)}
-            onKeyDown={onInstallationPathKeyDown}
+            readOnly
+            title={installationPath}
             placeholder={t('settings.installPathPlaceholder')}
           />
           <button type="button" className="secondary-btn" onClick={onBrowse}>
@@ -266,12 +259,12 @@ function InstallationSettingsSection({
           )}
         </div>
         {pathValidation !== 'idle' && (
-          <span className={`settings-status ${pathValidation === 'ok' || pathValidation === 'requiresElevation' ? 'success' : 'error'}`}>
+          <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
             {pathValidation === 'ok' && t('settings.pathOk')}
-            {pathValidation === 'requiresElevation' && t('settings.pathRequiresElevation')}
             {pathValidation === 'missing' && t('settings.pathMissing')}
             {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
             {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
+            {pathValidation === 'busy' && t('settings.pathBusy')}
           </span>
         )}
       </div>
@@ -519,9 +512,6 @@ interface SettingsSectionsProps {
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
-  onInstallationPathChange: (value: string) => void
-  onInstallationPathBlur: () => void
-  onInstallationPathKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onBrowse: () => void
   onValidatePath: () => void
   onOpenDirectory: (path: string) => void
@@ -546,9 +536,6 @@ export function SettingsSections(props: SettingsSectionsProps) {
         <InstallationSettingsSection
           installationPath={props.settings.installationPath}
           pathValidation={props.pathValidation}
-          onInstallationPathChange={props.onInstallationPathChange}
-          onInstallationPathBlur={props.onInstallationPathBlur}
-          onInstallationPathKeyDown={props.onInstallationPathKeyDown}
           onBrowse={props.onBrowse}
           onValidatePath={props.onValidatePath}
           onOpenDirectory={props.onOpenDirectory}
