@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use super::secret_store::{load_github_token, save_github_token};
 use super::StorageError;
 
+pub const CATALOG_OWNER: &str = "CpPrice11";
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
@@ -141,7 +143,7 @@ impl Default for AppSettings {
             installation_path: Some(default_installation_path()),
             include_prereleases: false,
             asset_strategy: default_asset_strategy(),
-            github_owner: Some("CpPrice11".to_string()),
+            github_owner: Some(CATALOG_OWNER.to_string()),
             github_token: None,
             theme: "auto".to_string(),
             language: "uk".to_string(),
@@ -158,11 +160,12 @@ pub fn load_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
     let content = std::fs::read_to_string(&path)?;
     let settings: AppSettings = serde_json::from_str(&content)?;
     let default_path = PathBuf::from(default_installation_path());
-    Ok(migrate_installation_path(
-        config_dir,
-        settings,
-        &default_path,
-    ))
+    let mut settings = migrate_installation_path(config_dir, settings, &default_path);
+    if settings.github_owner.as_deref() != Some(CATALOG_OWNER) {
+        settings.github_owner = Some(CATALOG_OWNER.to_string());
+        save_settings(config_dir, &settings)?;
+    }
+    Ok(settings)
 }
 
 pub fn load_runtime_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
@@ -211,8 +214,9 @@ fn settings_json(settings: &AppSettings) -> Result<String, StorageError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        default_installation_path, installed_installation_path, is_portable,
-        migrate_installation_path, portable_installation_path, settings_json, AppSettings,
+        default_installation_path, installed_installation_path, is_portable, load_settings,
+        migrate_installation_path, portable_installation_path, save_settings, settings_json,
+        AppSettings, CATALOG_OWNER,
     };
 
     #[test]
@@ -229,6 +233,30 @@ mod tests {
                 installed_installation_path()
             );
         }
+    }
+
+    #[test]
+    fn catalog_owner_is_fixed() {
+        assert_eq!(
+            AppSettings::default().github_owner.as_deref(),
+            Some(CATALOG_OWNER)
+        );
+    }
+
+    #[test]
+    fn legacy_catalog_owner_is_migrated() {
+        let config_dir =
+            std::env::temp_dir().join(format!("pullora-owner-migration-{}", std::process::id()));
+        let settings = AppSettings {
+            github_owner: Some("OtherOwner".to_string()),
+            ..AppSettings::default()
+        };
+        save_settings(&config_dir, &settings).unwrap();
+
+        let loaded = load_settings(&config_dir).unwrap();
+
+        assert_eq!(loaded.github_owner.as_deref(), Some(CATALOG_OWNER));
+        std::fs::remove_dir_all(config_dir).unwrap();
     }
 
     #[test]

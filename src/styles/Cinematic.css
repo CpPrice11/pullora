@@ -9,6 +9,8 @@
   --surface-shadow: 0 18px 48px rgba(2, 6, 10, 0.58);
   --surface-material: var(--surface-1);
   --surface-material-strong: rgba(17, 24, 32, 0.7);
+  --surface-radius-shell: 22px;
+  --surface-radius-panel: 18px;
 }
 
 .cinematic-shell {
@@ -318,7 +320,7 @@
 
 .cinematic-shell .library-sam-workspace {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border-radius: var(--surface-radius-shell);
 }
 
 .cinematic-shell .library-sam-list-pane,
@@ -639,14 +641,15 @@
   background: transparent;
   border: 0;
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: calc(18px * var(--density-scale));
-  height: auto;
-  margin: 0 auto;
-  max-width: 1680px;
-  min-height: calc(100vh - 130px);
-  overflow: visible;
+  height: 100%;
+  margin: 0;
+  max-width: none;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
 }
 
 .cinematic-shell .settings-page-header {
@@ -661,34 +664,28 @@
 }
 
 .cinematic-shell .settings-page-kicker {
-  color: #55d6ff;
+  color: var(--color-primary);
   font-size: 10px;
   letter-spacing: 0.07em;
 }
 
 .cinematic-shell .settings-page-header h2 {
-  color: #f7f8fa;
+  color: var(--color-text);
   font-size: clamp(28px, 2.4vw, 36px);
   font-weight: 700;
   letter-spacing: -0.025em;
-}
-
-.cinematic-shell .settings-page-header p {
-  color: #9098a2;
-  font-size: 13px;
-  margin-top: 3px;
 }
 
 .cinematic-shell .settings-workspace {
   backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
   background: var(--surface-1);
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
+  border-radius: var(--surface-radius-shell);
   box-shadow: var(--surface-shadow);
   display: grid;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   grid-template-columns: 220px minmax(0, 1fr);
-  min-height: min(640px, calc(100vh - 210px));
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -707,7 +704,7 @@
   border: 1px solid transparent;
   border-radius: 9px;
   box-shadow: none;
-  color: #929ba6;
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 650;
   justify-content: flex-start;
@@ -723,9 +720,9 @@
 
 .cinematic-shell .settings-page .settings-nav button:hover,
 .cinematic-shell .settings-page .settings-nav button.active {
-  background: rgba(85, 214, 255, 0.11);
-  border-color: rgba(85, 214, 255, 0.2);
-  color: #f4f8fa;
+  background: color-mix(in srgb, var(--color-primary) 11%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--surface-border));
+  color: var(--color-text);
 }
 
 .cinematic-shell .settings-page .settings-nav button:hover {
@@ -733,11 +730,23 @@
 }
 
 .cinematic-shell .settings-page .settings-nav button.active {
-  box-shadow: inset 3px 0 0 #55d6ff;
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .cinematic-shell .settings-page .settings-nav button::before {
   content: none;
+}
+
+.cinematic-shell .settings-page .settings-nav .settings-nav-reset {
+  border-color: color-mix(in srgb, var(--color-error) 35%, var(--surface-border));
+  color: var(--color-error);
+  margin-top: auto;
+}
+
+.cinematic-shell .settings-page .settings-nav .settings-nav-reset:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-error) 55%, var(--surface-border));
+  color: var(--color-error);
 }
 
 .cinematic-shell .settings-page .settings-content {
@@ -758,7 +767,7 @@
 .cinematic-shell .settings-page .danger-zone {
   background: var(--surface-3);
   border: 1px solid var(--surface-border);
-  border-radius: 12px;
+  border-radius: var(--surface-radius-panel);
   box-shadow: none;
   margin: 0 auto;
   max-width: 1280px;
@@ -772,23 +781,22 @@
 
 .cinematic-shell .settings-page .settings-section h3,
 .cinematic-shell .settings-page .danger-zone h3 {
-  color: #f4f6f8;
+  color: var(--color-text);
   font-size: 18px;
   font-weight: 720;
   letter-spacing: 0.025em;
   margin: 0;
 }
 
-.cinematic-shell .settings-source-summary,
-.cinematic-shell .settings-diagnostics-card {
+.cinematic-shell .settings-source-summary {
   background: var(--surface-3);
   border-color: var(--surface-border);
-  border-radius: 10px;
+  border-radius: var(--border-radius-lg);
 }
 
 .cinematic-shell .settings-source-summary .settings-reset-kicker,
-.cinematic-shell .settings-diagnostics-card .settings-reset-kicker {
-  color: #63d9fa;
+.cinematic-shell .settings-maintenance-group .settings-reset-kicker {
+  color: var(--color-primary);
 }
 
 .cinematic-shell .settings-page .form-group {
@@ -796,13 +804,13 @@
 }
 
 .cinematic-shell .settings-page .form-group > label {
-  color: #d7dce1;
+  color: var(--color-text);
   font-size: 12px;
   font-weight: 680;
 }
 
 .cinematic-shell .settings-page .help-text {
-  color: #858e99;
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin-bottom: 0;
 }
@@ -821,14 +829,14 @@
 }
 
 .cinematic-shell .settings-page button:disabled:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--surface-border);
   box-shadow: var(--shadow-control);
   transform: none;
 }
 
 .cinematic-shell .settings-page .checkbox-label {
   align-items: center;
-  color: #d7dce1;
+  color: var(--color-text);
   display: inline-flex;
   font-size: 13px;
   font-weight: 620;
@@ -973,31 +981,6 @@
   padding-top: calc(18px * var(--density-scale));
 }
 
-.cinematic-shell .settings-content--installation .settings-section {
-  max-width: 1120px;
-  margin-left: 0;
-}
-
-.cinematic-shell .settings-content--installation .path-input-row {
-  background: rgba(5, 9, 14, 0.32);
-  border-color: rgba(255, 255, 255, 0.08);
-  padding: calc(10px * var(--density-scale));
-}
-
-.cinematic-shell .settings-content--updates .settings-section {
-  max-width: 920px;
-  margin-left: 0;
-}
-
-.cinematic-shell .settings-content--updates .form-group {
-  max-width: 620px;
-}
-
-.cinematic-shell .settings-content--updates .form-group + .form-group {
-  border-top: 1px solid rgba(255, 255, 255, 0.065);
-  padding-top: calc(16px * var(--density-scale));
-}
-
 .cinematic-shell .settings-content--appearance .settings-section-heading-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   padding-bottom: 18px;
@@ -1073,76 +1056,36 @@
   tab-size: 2;
 }
 
-.cinematic-shell .settings-content--updates .interval-input-control {
-  background: rgba(5, 9, 14, 0.36);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9px;
-  max-width: 190px;
-  padding: 6px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control input {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-  min-height: 32px;
-}
-
-.cinematic-shell .settings-content--updates .interval-input-control span {
-  padding-right: 8px;
-}
-
 .cinematic-shell .settings-content--maintenance .danger-zone {
   align-items: start;
   border-color: rgba(255, 255, 255, 0.075);
   display: grid;
   gap: calc(16px * var(--density-scale));
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .cinematic-shell .settings-content--maintenance .danger-zone > h3,
-.cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+.cinematic-shell .settings-content--maintenance .danger-zone > .help-text {
   grid-column: 1 / -1;
 }
 
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card {
+.cinematic-shell .settings-content--maintenance .settings-maintenance-group {
   align-content: start;
-  border-color: rgba(255, 255, 255, 0.085);
-  height: 100%;
   max-width: none;
-  padding: calc(16px * var(--density-scale));
   width: 100%;
 }
 
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dl {
+.cinematic-shell .settings-content--maintenance .settings-maintenance-group dl {
   gap: calc(12px * var(--density-scale)) calc(20px * var(--density-scale));
 }
 
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+.cinematic-shell .settings-content--maintenance .settings-maintenance-group dt {
   color: #7f8995;
 }
 
-.cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+.cinematic-shell .settings-content--maintenance .settings-maintenance-group dd {
   color: #b3bac3;
   line-height: 1.45;
-}
-
-.cinematic-shell .settings-content--maintenance .settings-storage-actions {
-  margin-top: auto;
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  max-width: none;
-  padding-top: calc(18px * var(--density-scale));
-}
-
-.cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions:last-child .secondary-btn:first-child {
-  border-color: rgba(255, 135, 151, 0.32);
-  color: #ff9aaa;
 }
 
 .cinematic-shell .settings-page .secondary-btn {
@@ -1172,7 +1115,7 @@
   backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
   background: var(--surface-1);
   border: 1px solid var(--surface-border);
-  border-radius: 14px;
+  border-radius: var(--surface-radius-shell);
   box-shadow: var(--surface-shadow);
 }
 
@@ -1354,7 +1297,7 @@
 .modal-overlay .modal-content {
   background: rgba(15, 20, 27, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
+  border-radius: var(--surface-radius-shell);
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.58);
 }
 
@@ -1405,12 +1348,15 @@
   }
 
   .cinematic-shell .settings-content--maintenance .danger-zone > h3,
-  .cinematic-shell .settings-content--maintenance .danger-zone > .help-text,
-  .cinematic-shell .settings-content--maintenance .danger-zone > .settings-maintenance-actions {
+  .cinematic-shell .settings-content--maintenance .danger-zone > .help-text {
     grid-column: auto;
   }
 
   .cinematic-shell .settings-content--general .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cinematic-shell .settings-source-summary {
     grid-template-columns: 1fr;
   }
 }
@@ -1489,6 +1435,12 @@
     overflow-x: auto;
   }
 
+  .cinematic-shell .settings-page .settings-nav .settings-nav-reset {
+  flex: 1 1 auto;
+    margin-inline-start: auto;
+    margin-top: 0;
+  }
+
   .cinematic-shell .settings-page {
     min-height: 0;
     overflow: visible;
@@ -1553,7 +1505,6 @@
 :root[data-theme] .cinematic-shell .settings-page .settings-section,
 :root[data-theme] .cinematic-shell .settings-page .danger-zone,
 :root[data-theme] .cinematic-shell .settings-source-summary,
-:root[data-theme] .cinematic-shell .settings-diagnostics-card,
 :root[data-theme] .cinematic-shell .launcher-background-theme {
   backdrop-filter: none;
   background: var(--surface-3);
@@ -1579,14 +1530,13 @@
 :root[data-theme='light'] .cinematic-shell .settings-page .danger-zone h3,
 :root[data-theme='light'] .cinematic-shell .settings-page .form-group > label,
 :root[data-theme='light'] .cinematic-shell .settings-page .checkbox-label,
-:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dd {
+:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-maintenance-group dd {
   color: var(--color-text);
 }
 
-:root[data-theme='light'] .cinematic-shell .settings-page-header p,
 :root[data-theme='light'] .cinematic-shell .settings-page .help-text,
 :root[data-theme='light'] .cinematic-shell .settings-content--appearance .appearance-color-field code,
-:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-diagnostics-card dt {
+:root[data-theme='light'] .cinematic-shell .settings-content--maintenance .settings-maintenance-group dt {
   color: var(--color-text-secondary);
 }
 

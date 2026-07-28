@@ -1,6 +1,7 @@
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties } from 'react'
 import NativeSelect from '../../../components/Select/NativeSelect'
 import StatePanel from '../../../components/State/StatePanel'
+import { StatusIcon } from '../../../components/ui/Icons'
 import { useI18n, type AppLanguage } from '../../../i18n'
 import type {
   AppSettings,
@@ -10,28 +11,26 @@ import type {
 } from '../../../types'
 import { formatBytes } from '../../../utils/format'
 import type { ResolvedTheme, ThemePreference } from '../../../utils/theme'
+import { parseEventLogEntry } from '../eventLog'
 
-export type SettingsSectionId = 'general' | 'installation' | 'updates' | 'events' | 'maintenance'
+export type SettingsSectionId = 'general' | 'events' | 'maintenance'
 
 type PathValidation = 'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'
 type SurfaceSetting = 'surfaceTransparency' | 'surfaceBlur'
 
 interface GeneralSettingsSectionProps {
   settings: AppSettings
-  recentGithubOwners: string[]
   hasLauncherBackground: Record<ResolvedTheme, boolean>
-  onGithubOwnerChange: (value: string) => void
-  onGithubOwnerBlur: () => void
-  onGithubOwnerKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
-  onSelectRecentGithubOwner: (owner: string) => void
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
-  onRequestReset: () => void
-  saving: boolean
+  pathValidation: PathValidation
+  onBrowse: () => void
+  onValidatePath: () => void
+  onOpenDirectory: (path: string) => void
 }
 
 const rangeProgressStyle = (value: number, min: number, max: number) => ({
@@ -40,20 +39,17 @@ const rangeProgressStyle = (value: number, min: number, max: number) => ({
 
 function GeneralSettingsSection({
   settings,
-  recentGithubOwners,
   hasLauncherBackground,
-  onGithubOwnerChange,
-  onGithubOwnerBlur,
-  onGithubOwnerKeyDown,
-  onSelectRecentGithubOwner,
   onThemeChange,
   onLanguageChange,
   onChangeLauncherBackground,
   onClearLauncherBackground,
   onPreviewSurfaceSetting,
   onCommitSurfaceSetting,
-  onRequestReset,
-  saving,
+  pathValidation,
+  onBrowse,
+  onValidatePath,
+  onOpenDirectory,
 }: GeneralSettingsSectionProps) {
   const { t } = useI18n()
   const surfaceTransparency = settings.appearance?.surfaceTransparency ?? 42
@@ -63,40 +59,15 @@ function GeneralSettingsSection({
     <section id="settings-general" className="settings-section">
       <h3>{t('settings.general')}</h3>
       <div className="settings-grid">
-        <div className="form-group compact-control">
-          <label htmlFor="githubOwner">{t('settings.githubOwner')}</label>
-          <input
-            id="githubOwner"
-            type="text"
-            value={settings.githubOwner ?? ''}
-            onBlur={onGithubOwnerBlur}
-            onChange={(event) => onGithubOwnerChange(event.target.value)}
-            onKeyDown={onGithubOwnerKeyDown}
-            placeholder={t('settings.githubOwnerPlaceholder')}
-            data-autofocus="true"
-          />
-          <p className="help-text">{t('settings.githubSourceHelp')}</p>
-          {recentGithubOwners.length > 0 && (
-            <div className="settings-owner-chips" aria-label={t('settings.recentOwners')}>
-              {recentGithubOwners.map((owner) => (
-                <button
-                  key={owner}
-                  type="button"
-                  className={owner.toLowerCase() === (settings.githubOwner ?? '').toLowerCase() ? 'active' : ''}
-                  onClick={() => onSelectRecentGithubOwner(owner)}
-                >
-                  {owner}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="settings-source-summary">
-          <span className="settings-reset-kicker">{t('settings.sourceSummary')}</span>
-          <strong>{settings.githubOwner || t('settings.notSet')}</strong>
-          <p>{t('settings.sourceSummaryText')}</p>
-          <small>{t('settings.githubTokenHelp')}</small>
+        <div className="settings-source-summary settings-grid-wide">
+          <div className="settings-source-summary-owner">
+            <span className="settings-reset-kicker">{t('settings.sourceSummary')}</span>
+            <strong>CpPrice11</strong>
+          </div>
+          <div className="settings-source-summary-copy">
+            <p>{t('settings.sourceSummaryText')}</p>
+            <p>{t('settings.githubTokenHelp')}</p>
+          </div>
         </div>
 
         <div className="form-group compact-control">
@@ -133,12 +104,22 @@ function GeneralSettingsSection({
               <div className="launcher-background-theme" key={theme}>
                 <strong>{t(`settings.${theme}`)}</strong>
                 <div className="settings-inline-actions">
-                  <button type="button" className="secondary-btn" onClick={() => onChangeLauncherBackground(theme)}>
-                    {t('art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    aria-label={t('art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
+                    onClick={() => onChangeLauncherBackground(theme)}
+                  >
+                    {t('settings.editAction')}
                   </button>
                   {hasLauncherBackground[theme] && (
-                    <button type="button" className="secondary-btn" onClick={() => onClearLauncherBackground(theme)}>
-                      {t('art.resetThemeBackground', { theme: t(`settings.${theme}`) })}
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      aria-label={t('art.resetThemeBackground', { theme: t(`settings.${theme}`) })}
+                      onClick={() => onClearLauncherBackground(theme)}
+                    >
+                      {t('settings.resetAction')}
                     </button>
                   )}
                 </div>
@@ -160,7 +141,6 @@ function GeneralSettingsSection({
               value={surfaceTransparency}
               style={rangeProgressStyle(surfaceTransparency, 0, 80)}
               aria-valuetext={`${surfaceTransparency}%`}
-              aria-describedby="underlayAppearanceHelp"
               onChange={(event) => onPreviewSurfaceSetting('surfaceTransparency', Number(event.target.value))}
               onKeyUp={(event) => onCommitSurfaceSetting('surfaceTransparency', Number(event.currentTarget.value))}
               onPointerUp={(event) => onCommitSurfaceSetting('surfaceTransparency', Number(event.currentTarget.value))}
@@ -180,7 +160,6 @@ function GeneralSettingsSection({
               value={surfaceBlur}
               style={rangeProgressStyle(surfaceBlur, 0, 32)}
               aria-valuetext={`${surfaceBlur} px`}
-              aria-describedby="underlayAppearanceHelp"
               onChange={(event) => onPreviewSurfaceSetting('surfaceBlur', Number(event.target.value))}
               onKeyUp={(event) => onCommitSurfaceSetting('surfaceBlur', Number(event.currentTarget.value))}
               onPointerUp={(event) => onCommitSurfaceSetting('surfaceBlur', Number(event.currentTarget.value))}
@@ -189,129 +168,54 @@ function GeneralSettingsSection({
               {surfaceBlur} px
             </output>
           </div>
-          <p id="underlayAppearanceHelp" className="help-text">{t('settings.underlayAppearanceHelp')}</p>
         </fieldset>
-        <div className="settings-reset-control">
-          <div>
-            <strong>{t('settings.resetGeneralTitle')}</strong>
-            <p>{t('settings.resetHelp')}</p>
-          </div>
-          <button
-            type="button"
-            className="settings-reset-btn settings-reset-trigger"
-            disabled={saving}
-            onClick={onRequestReset}
-          >
-            {t('settings.resetAction')}
-          </button>
-        </div>
-      </div>
-    </section>
-  )
-}
 
-interface InstallationSettingsSectionProps {
-  installationPath: string
-  pathValidation: PathValidation
-  onBrowse: () => void
-  onValidatePath: () => void
-  onOpenDirectory: (path: string) => void
-}
-
-function InstallationSettingsSection({
-  installationPath,
-  pathValidation,
-  onBrowse,
-  onValidatePath,
-  onOpenDirectory,
-}: InstallationSettingsSectionProps) {
-  const { t } = useI18n()
-
-  return (
-    <section id="settings-folders" className="settings-section">
-      <h3>{t('settings.installation')}</h3>
-      <div className="form-group">
-        <label htmlFor="installPath">{t('settings.installPath')}</label>
-        <div className="path-input-row">
-          <input
-            id="installPath"
-            type="text"
-            value={installationPath}
-            readOnly
-            title={installationPath}
-            placeholder={t('settings.installPathPlaceholder')}
-          />
-          <button type="button" className="secondary-btn" onClick={onBrowse}>
-            {t('settings.choose')}
-          </button>
-          <button type="button" className="secondary-btn" onClick={onValidatePath}>
-            {t('settings.checkFolder')}
-          </button>
-          {installationPath && (
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => onOpenDirectory(installationPath)}
-              title={t('settings.open')}
-            >
-              {t('settings.open')}
+        <div className="form-group settings-grid-wide">
+          <label htmlFor="installPath">{t('settings.installPath')}</label>
+          <div className="path-input-row">
+            <input
+              id="installPath"
+              type="text"
+              value={settings.installationPath}
+              readOnly
+              aria-describedby={pathValidation !== 'idle' ? 'installPath-status' : undefined}
+              aria-invalid={pathValidation !== 'idle' && pathValidation !== 'ok' ? true : undefined}
+              title={settings.installationPath}
+              placeholder={t('settings.installPathPlaceholder')}
+            />
+            <button type="button" className="secondary-btn" onClick={onBrowse}>
+              {t('settings.choose')}
             </button>
+            <button type="button" className="secondary-btn" onClick={onValidatePath}>
+              {t('settings.checkFolder')}
+            </button>
+            {settings.installationPath && (
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => onOpenDirectory(settings.installationPath)}
+                title={t('settings.open')}
+              >
+                {t('settings.open')}
+              </button>
+            )}
+          </div>
+          {pathValidation !== 'idle' && (
+            <span
+              id="installPath-status"
+              className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}
+              role="status"
+              aria-live="polite"
+            >
+              {pathValidation === 'ok' && t('settings.pathOk')}
+              {pathValidation === 'missing' && t('settings.pathMissing')}
+              {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
+              {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
+              {pathValidation === 'busy' && t('settings.pathBusy')}
+            </span>
           )}
         </div>
-        {pathValidation !== 'idle' && (
-          <span className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}>
-            {pathValidation === 'ok' && t('settings.pathOk')}
-            {pathValidation === 'missing' && t('settings.pathMissing')}
-            {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
-            {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
-            {pathValidation === 'busy' && t('settings.pathBusy')}
-          </span>
-        )}
-      </div>
-    </section>
-  )
-}
 
-interface UpdatesSettingsSectionProps {
-  settings: AppSettings
-  onIncludePrereleasesChange: (value: boolean) => void
-  onAssetStrategyChange: (value: AppSettings['assetStrategy']) => void
-}
-
-function UpdatesSettingsSection({
-  settings,
-  onIncludePrereleasesChange,
-  onAssetStrategyChange,
-}: UpdatesSettingsSectionProps) {
-  const { t } = useI18n()
-
-  return (
-    <section id="settings-updates" className="settings-section">
-      <h3>{t('settings.updates')}</h3>
-      <div className="form-group">
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={Boolean(settings.includePrereleases)}
-            onChange={(event) => onIncludePrereleasesChange(event.target.checked)}
-          />
-          {t('settings.prerelease')}
-        </label>
-      </div>
-
-      <div className="form-group compact-control">
-        <label htmlFor="assetStrategy">{t('settings.assets')}</label>
-        <NativeSelect
-          id="assetStrategy"
-          value={settings.assetStrategy ?? 'portableFirst'}
-          onValueChange={(value) => onAssetStrategyChange(value as AppSettings['assetStrategy'])}
-          options={([
-            ['portableFirst', t('settings.portableFirst')],
-            ['installerFirst', t('settings.installerFirst')],
-            ['manual', t('settings.manual')],
-          ] as const).map(([value, label]) => ({ value, label }))}
-        />
-        <p className="help-text">{t('settings.assetStrategyHelp')}</p>
       </div>
     </section>
   )
@@ -325,7 +229,12 @@ interface EventLogSettingsSectionProps {
 }
 
 function EventLogSettingsSection({ entries, loading, error, onRefresh }: EventLogSettingsSectionProps) {
-  const { t } = useI18n()
+  const { language, t } = useI18n()
+  const timeFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'uk-UA', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 
   return (
     <section
@@ -366,11 +275,31 @@ function EventLogSettingsSection({ entries, loading, error, onRefresh }: EventLo
             {t('settings.eventLogSummary', { count: entries.length })}
           </p>
           <ol className="settings-event-log-list">
-            {entries.map((entry, index) => (
-              <li key={`${entry}-${index}`}>
-                <code>{entry}</code>
-              </li>
-            ))}
+            {entries.map((entry, index) => {
+              const parsed = parseEventLogEntry(entry)
+              const date = parsed.timestamp ? new Date(parsed.timestamp) : null
+              const time = date && !Number.isNaN(date.getTime()) ? timeFormatter.format(date) : '—'
+              const sourceKey = `settings.eventSource.${parsed.source}`
+              const sourceLabel = t(sourceKey) === sourceKey ? parsed.source : t(sourceKey)
+
+              return (
+                <li key={`${entry}-${index}`} data-level={parsed.level}>
+                  <time dateTime={parsed.timestamp ?? undefined}>{time}</time>
+                  <span className={`settings-event-level ${parsed.level}`}>
+                    <StatusIcon kind={parsed.level} />
+                    {t(`settings.eventLevel.${parsed.level}`)}
+                  </span>
+                  <span className="settings-event-source">{sourceLabel}</span>
+                  <p className="settings-event-message">{parsed.message}</p>
+                  {parsed.technical && (
+                    <details className="settings-event-details">
+                      <summary>{t('settings.eventDetails')}</summary>
+                      <code>{parsed.technical}</code>
+                    </details>
+                  )}
+                </li>
+              )
+            })}
           </ol>
         </>
       )}
@@ -384,7 +313,6 @@ interface MaintenanceSettingsSectionProps {
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus
   githubQueue: GitHubQueueStatus
-  registryBusy: boolean
   formatRateLimit: (bucket: GitHubRateLimitStatus['core']) => string
   formatRateLimitReset: (bucket: GitHubRateLimitStatus['core']) => string
   formatQueuePause: () => string
@@ -392,8 +320,6 @@ interface MaintenanceSettingsSectionProps {
   onOpenDirectory: (path: string) => void
   onCleanupLauncherFiles: () => void
   onClearCache: () => void
-  onExportInstalledRegistry: () => void
-  onImportInstalledRegistry: () => void
   onCopyDiagnostics: () => void
 }
 
@@ -412,7 +338,6 @@ function MaintenanceSettingsSection({
   storageInfo,
   githubRateLimit,
   githubQueue,
-  registryBusy,
   formatRateLimit,
   formatRateLimitReset,
   formatQueuePause,
@@ -420,8 +345,6 @@ function MaintenanceSettingsSection({
   onOpenDirectory,
   onCleanupLauncherFiles,
   onClearCache,
-  onExportInstalledRegistry,
-  onImportInstalledRegistry,
   onCopyDiagnostics,
 }: MaintenanceSettingsSectionProps) {
   const { t } = useI18n()
@@ -430,7 +353,24 @@ function MaintenanceSettingsSection({
     <section id="settings-maintenance" className="danger-zone">
       <h3>{t('settings.maintenance')}</h3>
       <p className="help-text">{t('settings.maintenanceHelp')}</p>
-      <div className="settings-diagnostics-card">
+      <section className="settings-maintenance-group" aria-labelledby="settings-storage-title">
+        <h4 id="settings-storage-title">{t('settings.storage')}</h4>
+        <dl>
+          <div><dt>{t('settings.launcherFolder')}</dt><dd>{storageInfo?.launcherDir ?? t('settings.notChecked')}</dd></div>
+          <div><dt>{t('settings.updateCache')}</dt><dd>{storageInfo ? `${storageInfo.updateCacheCount} · ${storageInfo.updateCachePath}` : t('settings.notChecked')}</dd></div>
+          <div><dt>{t('settings.backups')}</dt><dd>{storageInfo ? `${storageInfo.backupCount} · ${storageInfo.backupPath}` : t('settings.notChecked')}</dd></div>
+          <div><dt>{t('settings.cleanupSize')}</dt><dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes, language) : t('settings.notChecked')}</dd></div>
+        </dl>
+        <div className="settings-maintenance-actions">
+          <button className="secondary-btn" onClick={onRefreshStorageInfo}>{t('settings.refreshDiagnostics')}</button>
+          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.launcherDir)} disabled={!storageInfo}>{t('settings.openLauncherFolder')}</button>
+          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.updateCachePath)} disabled={!storageInfo}>{t('settings.openUpdateCache')}</button>
+          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.backupPath)} disabled={!storageInfo}>{t('settings.openBackups')}</button>
+          <button className="secondary-btn" onClick={onCleanupLauncherFiles} disabled={!storageInfo || storageInfo.cleanupBytes === 0}>{t('settings.cleanupLauncherFiles')}</button>
+        </div>
+      </section>
+      <section className="settings-maintenance-group" aria-labelledby="settings-diagnostics-title">
+        <h4 id="settings-diagnostics-title">{t('settings.diagnostics')}</h4>
         <span className="settings-reset-kicker">{t('settings.githubDiagnostics')}</span>
         <dl>
           <div><dt>{t('settings.githubOwner')}</dt><dd>{settings.githubOwner || t('settings.notSet')}</dd></div>
@@ -440,46 +380,15 @@ function MaintenanceSettingsSection({
           <div><dt>{t('settings.githubSearchLimit')}</dt><dd>{formatRateLimit(githubRateLimit.search)}</dd></div>
           <div><dt>{t('settings.githubCoreReset')}</dt><dd>{formatRateLimitReset(githubRateLimit.core)}</dd></div>
           <div><dt>{t('settings.githubSearchReset')}</dt><dd>{formatRateLimitReset(githubRateLimit.search)}</dd></div>
-          <div>
-            <dt>{t('settings.githubQueue')}</dt>
-            <dd>{t('settings.githubQueueValue', {
-              active: githubQueue.active,
-              queued: githubQueue.queued,
-              concurrency: githubQueue.concurrency,
-            })}</dd>
-          </div>
-          <div>
-            <dt>{t('settings.githubQueuePriority')}</dt>
-            <dd>{t('settings.githubQueuePriorityValue', {
-              high: githubQueue.highPriority,
-              normal: githubQueue.normalPriority,
-            })}</dd>
-          </div>
+          <div><dt>{t('settings.githubQueue')}</dt><dd>{t('settings.githubQueueValue', { active: githubQueue.active, queued: githubQueue.queued, concurrency: githubQueue.concurrency })}</dd></div>
+          <div><dt>{t('settings.githubQueuePriority')}</dt><dd>{t('settings.githubQueuePriorityValue', { high: githubQueue.highPriority, normal: githubQueue.normalPriority })}</dd></div>
           <div><dt>{t('settings.githubQueueState')}</dt><dd>{formatQueuePause()}</dd></div>
         </dl>
-      </div>
-      <div className="settings-diagnostics-card">
-        <span className="settings-reset-kicker">{t('settings.storageDiagnostics')}</span>
-        <dl>
-          <div><dt>{t('settings.launcherFolder')}</dt><dd>{storageInfo?.launcherDir ?? t('settings.notChecked')}</dd></div>
-          <div><dt>{t('settings.updateCache')}</dt><dd>{storageInfo ? `${storageInfo.updateCacheCount} · ${storageInfo.updateCachePath}` : t('settings.notChecked')}</dd></div>
-          <div><dt>{t('settings.backups')}</dt><dd>{storageInfo ? `${storageInfo.backupCount} · ${storageInfo.backupPath}` : t('settings.notChecked')}</dd></div>
-          <div><dt>{t('settings.cleanupSize')}</dt><dd>{storageInfo ? formatBytes(storageInfo.cleanupBytes, language) : t('settings.notChecked')}</dd></div>
-        </dl>
-        <div className="settings-maintenance-actions settings-storage-actions">
-          <button className="secondary-btn" onClick={onRefreshStorageInfo}>{t('settings.refreshDiagnostics')}</button>
-          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.launcherDir)} disabled={!storageInfo}>{t('settings.openLauncherFolder')}</button>
-          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.updateCachePath)} disabled={!storageInfo}>{t('settings.openUpdateCache')}</button>
-          <button className="secondary-btn" onClick={() => storageInfo && onOpenDirectory(storageInfo.backupPath)} disabled={!storageInfo}>{t('settings.openBackups')}</button>
-          <button className="secondary-btn" onClick={onCleanupLauncherFiles} disabled={!storageInfo || storageInfo.cleanupBytes === 0}>{t('settings.cleanupLauncherFiles')}</button>
+        <div className="settings-maintenance-actions">
+          <button className="secondary-btn" onClick={onClearCache}>{t('settings.clearCache')}</button>
+          <button className="secondary-btn" onClick={onCopyDiagnostics}>{t('settings.copyDiagnostics')}</button>
         </div>
-      </div>
-      <div className="settings-maintenance-actions">
-        <button className="secondary-btn" onClick={onClearCache}>{t('settings.clearCache')}</button>
-        <button className="secondary-btn" onClick={onExportInstalledRegistry} disabled={registryBusy}>{t('settings.exportInstalledRegistry')}</button>
-        <button className="secondary-btn" onClick={onImportInstalledRegistry} disabled={registryBusy}>{t('settings.importInstalledRegistry')}</button>
-        <button className="secondary-btn" onClick={onCopyDiagnostics}>{t('settings.copyDiagnostics')}</button>
-      </div>
+      </section>
     </section>
   )
 }
@@ -488,24 +397,17 @@ interface SettingsSectionsProps {
   activeSection: SettingsSectionId
   settings: AppSettings
   language: AppLanguage
-  recentGithubOwners: string[]
   hasLauncherBackground: Record<ResolvedTheme, boolean>
   pathValidation: PathValidation
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus
   githubQueue: GitHubQueueStatus
-  saving: boolean
-  registryBusy: boolean
   eventLog: string[]
   eventLogLoading: boolean
   eventLogError: string | null
   formatRateLimit: MaintenanceSettingsSectionProps['formatRateLimit']
   formatRateLimitReset: MaintenanceSettingsSectionProps['formatRateLimitReset']
   formatQueuePause: () => string
-  onGithubOwnerChange: (value: string) => void
-  onGithubOwnerBlur: () => void
-  onGithubOwnerKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
-  onSelectRecentGithubOwner: (owner: string) => void
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
@@ -515,14 +417,9 @@ interface SettingsSectionsProps {
   onBrowse: () => void
   onValidatePath: () => void
   onOpenDirectory: (path: string) => void
-  onIncludePrereleasesChange: (value: boolean) => void
-  onAssetStrategyChange: (value: AppSettings['assetStrategy']) => void
   onRefreshStorageInfo: () => void
   onCleanupLauncherFiles: () => void
-  onRequestReset: () => void
   onClearCache: () => void
-  onExportInstalledRegistry: () => void
-  onImportInstalledRegistry: () => void
   onCopyDiagnostics: () => void
   onRefreshEventLog: () => void
 }
@@ -531,24 +428,6 @@ export function SettingsSections(props: SettingsSectionsProps) {
   switch (props.activeSection) {
     case 'general':
       return <GeneralSettingsSection {...props} />
-    case 'installation':
-      return (
-        <InstallationSettingsSection
-          installationPath={props.settings.installationPath}
-          pathValidation={props.pathValidation}
-          onBrowse={props.onBrowse}
-          onValidatePath={props.onValidatePath}
-          onOpenDirectory={props.onOpenDirectory}
-        />
-      )
-    case 'updates':
-      return (
-        <UpdatesSettingsSection
-          settings={props.settings}
-          onIncludePrereleasesChange={props.onIncludePrereleasesChange}
-          onAssetStrategyChange={props.onAssetStrategyChange}
-        />
-      )
     case 'events':
       return (
         <EventLogSettingsSection

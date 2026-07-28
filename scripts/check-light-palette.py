@@ -131,8 +131,7 @@ with sync_playwright() as playwright:
 
     page.get_by_role("button", name="Налаштування").click()
     page.get_by_role("heading", name="Налаштування").wait_for()
-    assert_muted(page.locator(".settings-page-header p"), composite(surfaces[0], canvas))
-    assert_muted(page.locator(".help-text").first, composite(surfaces[1], canvas))
+    assert_muted(page.locator(".settings-source-summary-copy p").first, composite(surfaces[2], canvas))
 
     page.get_by_role("button", name="Про застосунок").click()
     page.get_by_role("heading", name="Про застосунок").wait_for()

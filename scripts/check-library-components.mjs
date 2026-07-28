@@ -35,6 +35,9 @@ try {
   const { default: DownloadProgressPanel } = await server.ssrLoadModule('/src/components/Install/DownloadProgress.tsx')
   const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
   const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
+  const { normalizeSettings } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
+  const { default: ukDictionary } = await server.ssrLoadModule('/src/i18n/dictionaries/uk.ts')
+  const { default: enDictionary } = await server.ssrLoadModule('/src/i18n/dictionaries/en.ts')
   const { sortLibraryRepositories } = await server.ssrLoadModule('/src/features/library/hooks/useLibraryFiltering.ts')
   const {
     toggleSelectedKey,
@@ -56,6 +59,7 @@ try {
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
   const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
+  const { parseEventLogEntry } = await server.ssrLoadModule('/src/features/settings/eventLog.ts')
 
   const noop = () => {}
   const repo = {
@@ -140,6 +144,40 @@ try {
     diagnostics,
     'token=<redacted> github=<redacted> C:\\Users\\<user>\\Downloads unix=/home/<user>/apps',
   )
+  assert.deepEqual(
+    parseEventLogEntry('[2026-07-18T10:01:00Z] install CpPrice11/demo@v2: download installed successfully'),
+    {
+      timestamp: '2026-07-18T10:01:00Z',
+      level: 'success',
+      source: 'install',
+      message: 'download installed successfully',
+      technical: 'CpPrice11/demo@v2',
+    },
+  )
+  assert.equal(parseEventLogEntry('[2026-07-18T10:02:00Z] startup cleanup failed: denied').level, 'error')
+  assert.equal(parseEventLogEntry('2026-07-18T10:03:00Z settings.loaded').source, 'settings')
+  assert.equal(parseEventLogEntry('[2026-07-18T10:04:00Z] install CpPrice11/demo@v2: download canceled').level, 'warning')
+  assert.equal(parseEventLogEntry('[2026-07-18T10:05:00Z] install CpPrice11/demo@v2: download started').level, 'info')
+  assert.deepEqual(
+    parseEventLogEntry('[2026-07-18T10:06:00Z] launch CpPrice11/demo@v2: launched C:\\Users\\tester\\Pullora Apps\\demo.exe'),
+    {
+      timestamp: '2026-07-18T10:06:00Z',
+      level: 'success',
+      source: 'launch',
+      message: 'launched',
+      technical: 'CpPrice11/demo@v2\nC:\\Users\\tester\\Pullora Apps\\demo.exe',
+    },
+  )
+  assert.deepEqual(
+    parseEventLogEntry('[2026-07-18T10:07:00Z] install CpPrice11/demo@v2: download failed\nC:\\Temp\\package.zip\nAccess denied'),
+    {
+      timestamp: '2026-07-18T10:07:00Z',
+      level: 'error',
+      source: 'install',
+      message: 'download failed',
+      technical: 'CpPrice11/demo@v2\nC:\\Temp\\package.zip\nAccess denied',
+    },
+  )
 
   const darkSurfaces = appearanceCssVariables({
     density: 'comfortable',
@@ -219,10 +257,65 @@ try {
 
   const settingsSectionsSource = readFileSync('src/features/settings/components/SettingsSections.tsx', 'utf8')
   const settingsPageSource = readFileSync('src/pages/SettingsPage.tsx', 'utf8')
+  const pageStylesSource = readFileSync('src/pages/PageStyles.css', 'utf8')
+  const cinematicStylesSource = readFileSync('src/styles/Cinematic.css', 'utf8')
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
   const downloadServiceSource = readFileSync('src/services/download.ts', 'utf8')
-  assert.match(settingsSectionsSource, /value=\{installationPath\}[\s\S]*?readOnly/)
+  assert.match(settingsSectionsSource, /value=\{settings\.installationPath\}[\s\S]*?readOnly/)
+  const migratedSettings = normalizeSettings({ includePrereleases: true, assetStrategy: 'manual', githubOwner: 'OtherOwner' })
+  assert.equal(migratedSettings.githubOwner, 'CpPrice11')
+  assert.deepEqual(
+    migratedSettings,
+    normalizeSettings({ includePrereleases: false, assetStrategy: 'portableFirst', githubOwner: 'CpPrice11' }),
+  )
+  assert.doesNotMatch(settingsPageSource, /id: 'installation'/)
+  assert.doesNotMatch(settingsPageSource, /id: 'updates'/)
+  assert.doesNotMatch(settingsPageSource, /workspaceSubtitle/)
+  assert.doesNotMatch(settingsSectionsSource, /githubOwnerPlaceholder|recentGithubOwners|settings-owner-chips/)
+  assert.deepEqual(
+    [
+      ukDictionary['settings.launcherBackground'],
+      ukDictionary['settings.editAction'],
+      ukDictionary['settings.resetAction'],
+      ukDictionary['settings.underlayAppearance'],
+      ukDictionary['art.changeThemeBackground'].replace('{theme}', ukDictionary['settings.light']),
+      ukDictionary['art.resetThemeBackground'].replace('{theme}', ukDictionary['settings.dark']),
+    ],
+    ['Фон', 'Редагувати', 'Скинути', 'Підкладки', 'Редагувати фон — Світла', 'Скинути фон — Темна'],
+  )
+  assert.deepEqual(
+    [
+      enDictionary['settings.launcherBackground'],
+      enDictionary['settings.editAction'],
+      enDictionary['settings.resetAction'],
+      enDictionary['settings.underlayAppearance'],
+      enDictionary['art.changeThemeBackground'].replace('{theme}', enDictionary['settings.light']),
+      enDictionary['art.resetThemeBackground'].replace('{theme}', enDictionary['settings.dark']),
+    ],
+    ['Background', 'Edit', 'Reset', 'Surfaces', 'Edit background — Light', 'Reset background — Dark'],
+  )
+  assert.match(settingsSectionsSource, /settings-source-summary settings-grid-wide/)
+  assert.match(settingsSectionsSource, /settings-source-summary-owner[\s\S]*?<strong>CpPrice11<\/strong>/)
+  assert.match(settingsSectionsSource, /settings-source-summary-copy[\s\S]*?sourceSummaryText[\s\S]*?githubTokenHelp/)
+  assert.match(settingsSectionsSource, /settings-source-summary settings-grid-wide[\s\S]*?id="theme"[\s\S]*?id="language"[\s\S]*?launcher-background-control[\s\S]*?underlay-controls[\s\S]*?id="installPath"/)
+  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.changeThemeBackground'[\s\S]*?settings\.editAction/)
+  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.resetThemeBackground'[\s\S]*?settings\.resetAction/)
+  assert.doesNotMatch(settingsSectionsSource, /underlayAppearanceHelp/)
+  assert.doesNotMatch(settingsSectionsSource, /settings-reset-control|onRequestReset/)
+  assert.match(settingsPageSource, /className="settings-nav-reset"[\s\S]*?setConfirmation\('reset'\)/)
+  assert.doesNotMatch(settingsPageSource, /exportInstalledRegistry|importInstalledRegistry|pickJsonFile|pickJsonSavePath|window\.confirm/)
+  assert.doesNotMatch(settingsSectionsSource, /exportInstalledRegistry|importInstalledRegistry|registryBusy|settings-diagnostics-card/)
+  assert.match(settingsSectionsSource, /settings-storage-title[\s\S]*?settings-diagnostics-title/)
+  assert.match(settingsSectionsSource, /settings-storage-title[\s\S]*?openUpdateCache[\s\S]*?cleanupLauncherFiles/)
+  assert.match(settingsSectionsSource, /settings-diagnostics-title[\s\S]*?clearCache[\s\S]*?copyDiagnostics/)
+  assert.match(settingsPageSource, /normalizeAppearance\(DEFAULT_SETTINGS\.appearance\)/)
+  assert.match(settingsPageSource, /saveInstallationPath\(''\)/)
+  assert.doesNotMatch(pageStylesSource, /\.settings-reset-control/)
+  assert.match(cinematicStylesSource, /\.settings-nav-reset\s*\{[^}]*margin-top:\s*auto/)
+  assert.doesNotMatch(pageStylesSource, /\.launcher-background-control\s*\{[^}]*grid-column/)
+  assert.doesNotMatch(pageStylesSource, /\.underlay-controls\s*\{[^}]*grid-column/)
+  assert.match(pageStylesSource, /\.path-input-row input\s*\{[^}]*text-overflow:\s*ellipsis/)
   assert.match(settingsSectionsSource, /pathValidation === 'noWritePermission'[\s\S]*?settings\.pathNoWrite/)
   assert.match(settingsPageSource, /setInstallationPath as saveInstallationPath/)
   assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)
