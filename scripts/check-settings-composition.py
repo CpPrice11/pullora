@@ -12,16 +12,12 @@ BASELINE = runpy.run_path("scripts/capture-visual-baseline.py")
 BASE_URL = BASELINE["BASE_URL"]
 SECTIONS = (
     ("Загальне", "settings-general"),
-    ("Встановлення", "settings-folders"),
-    ("Оновлення", "settings-updates"),
     ("Журнал подій", "settings-events"),
     ("Обслуговування", "settings-maintenance"),
 )
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 EXPECTED_GROUP_COUNTS = {
     "settings-general": 5,
-    "settings-folders": 1,
-    "settings-updates": 2,
     "settings-events": 0,
     "settings-maintenance": 0,
 }
@@ -43,15 +39,19 @@ def check_settings_surface_source_contract() -> None:
 
     assert "settings-open .settings-workspace" not in cinematic
     assert "--density-scale:" not in cinematic
+    assert "settings-content--installation" not in cinematic
+    assert "settings-content--updates" not in cinematic
+    assert ".interval-input-control" not in cinematic
+    assert ".interval-input-control" not in pages
     for source, selector, expected in (
-        (cinematic, ".cinematic-shell .settings-workspace", ("var(--surface-1)", "blur(var(--surface-blur))")),
+        (cinematic, ".cinematic-shell .settings-workspace", ("var(--surface-1)", "blur(var(--surface-blur))", "var(--surface-radius-shell)")),
         (cinematic, ".cinematic-shell .settings-page .settings-nav", ("var(--surface-2)", "var(--surface-border)")),
         (cinematic, ".cinematic-shell .settings-page .settings-content", ("var(--surface-2)",)),
-        (cinematic, ".cinematic-shell .settings-page .settings-section", ("var(--surface-3)", "var(--surface-border)")),
-        (pages, ".settings-page .settings-form", ("var(--surface-1)", "blur(var(--surface-blur))")),
+        (cinematic, ".cinematic-shell .settings-page .settings-section", ("var(--surface-3)", "var(--surface-border)", "var(--surface-radius-panel)")),
+        (pages, ".settings-page .settings-form", ("var(--surface-1)", "blur(var(--surface-blur))", "var(--surface-radius-shell)")),
         (pages, ".settings-page .settings-nav", ("var(--surface-2)", "var(--surface-border)")),
         (pages, ".settings-page .settings-content", ("var(--surface-2)",)),
-        (pages, ".settings-page .settings-section", ("var(--surface-3)", "var(--surface-border)")),
+        (pages, ".settings-page .settings-section", ("var(--surface-3)", "var(--surface-border)", "var(--surface-radius-panel)")),
     ):
         rule = css_rule(source, selector)
         for fragment in expected:
@@ -65,6 +65,8 @@ def install_settings_mock(page):
         script=r"""
         (() => {
           const callbacks = new Map();
+          const commands = [];
+          const calls = [];
           let callbackId = 1;
           let settingsUpdateCount = 0;
           let settings = {
@@ -97,14 +99,23 @@ def install_settings_mock(page):
               updatedAt: '2026-07-18T00:00:00Z',
             }],
           ]);
+          let eventLog = [
+            '[2026-07-18T10:00:00Z] launch CpPrice11/demo@v1: launched C:\\Users\\tester\\AppData\\Local\\Pullora\\Apps\\A very long application folder\\demo.exe',
+            '[2026-07-18T10:01:00Z] install CpPrice11/demo@v2: download failed\nC:\\Temp\\package.zip\nAccess denied',
+            '[2026-07-18T10:02:00Z] install CpPrice11/demo@v2: download canceled',
+            '[2026-07-18T10:03:00Z] install CpPrice11/demo@v2: download started',
+          ];
           window.__PULLORA_SETTINGS_TEST__ = {
             get updateCount() { return settingsUpdateCount; },
+            get commands() { return [...commands]; },
+            get calls() { return structuredClone(calls); },
             get settings() { return structuredClone(settings); },
             get launcherBackgrounds() {
               return Object.fromEntries(
                 [...launcherArt.entries()].map(([key, art]) => [key, art.backgroundPath ?? null]),
               );
             },
+            setEventLog(entries) { eventLog = structuredClone(entries); },
           };
           window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
           window.__TAURI_INTERNALS__ = {
@@ -122,26 +133,47 @@ def install_settings_mock(page):
             async invoke(command, args = {}) {
               if (command === 'plugin:event|listen') return args.handler;
               if (command === 'plugin:event|unlisten') return null;
+              commands.push(command);
+              calls.push({ command, args: structuredClone(args) });
               if (command === 'get_settings') return structuredClone(settings);
               if (command === 'update_settings') {
                 settings = structuredClone(args.newSettings);
                 settingsUpdateCount += 1;
                 return null;
               }
+              if (command === 'set_installation_path') {
+                settings.installationPath = args.path?.trim() || 'C:\\Users\\tester\\AppData\\Local\\Pullora\\Apps';
+                return settings.installationPath;
+              }
+              if (command === 'validate_installation_path') return { ok: true, status: 'ok' };
               if (command === 'is_first_launch') return false;
-            if (command === 'get_event_log') {
-              return [
-                '2026-07-18T10:00:00Z settings.loaded',
-                '2026-07-18T10:01:00Z settings.updated',
-              ];
-            }
+            if (command === 'get_event_log') return structuredClone(eventLog);
             if (command === 'get_github_rate_limit_status') {
               return {
                 core: { remaining: null, limit: null, resetAt: null },
                 search: { remaining: null, limit: null, resetAt: null },
               };
             }
-            if (command === 'get_launcher_storage_info') return null;
+            if (command === 'get_launcher_storage_info') {
+              return {
+                launcherDir: 'C:\\Users\\tester\\AppData\\Local\\Pullora',
+                updateCachePath: 'C:\\Users\\tester\\AppData\\Local\\Pullora\\updates',
+                backupPath: 'C:\\Users\\tester\\AppData\\Local\\Pullora\\backups',
+                cleanupBytes: 4096,
+                updateCacheCount: 2,
+                backupCount: 1,
+              };
+            }
+            if (command === 'cleanup_launcher_update_files') {
+              return {
+                launcherDir: 'C:\\Users\\tester\\AppData\\Local\\Pullora',
+                updateCachePath: 'C:\\Users\\tester\\AppData\\Local\\Pullora\\updates',
+                backupPath: 'C:\\Users\\tester\\AppData\\Local\\Pullora\\backups',
+                cleanupBytes: 0,
+                updateCacheCount: 0,
+                backupCount: 0,
+              };
+            }
               if (command === 'get_project_art_asset') {
                 if (args.owner === '__pullora__') {
                   return structuredClone(launcherArt.get(args.repo) ?? null);
@@ -176,6 +208,24 @@ def boxes(page):
     )
 
 
+def element_geometry(page, selector):
+    return page.locator(selector).evaluate(
+        """
+        element => {
+          const box = element.getBoundingClientRect();
+          return {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+            bottom: box.bottom,
+            borderRadius: getComputedStyle(element).borderRadius,
+          };
+        }
+        """
+    )
+
+
 def composition(box_list):
     header, workspace, navigation = box_list
     return {
@@ -190,12 +240,14 @@ def navigation_state(page):
         """
         nav => {
           const bounds = nav.getBoundingClientRect();
+          const reset = nav.querySelector('.settings-nav-reset')?.getBoundingClientRect();
           return {
             flexDirection: getComputedStyle(nav).flexDirection,
             clientWidth: nav.clientWidth,
             scrollWidth: nav.scrollWidth,
             clientHeight: nav.clientHeight,
             scrollHeight: nav.scrollHeight,
+            resetBottomGap: reset ? bounds.bottom - reset.bottom : null,
             buttonsInside: [...nav.querySelectorAll('button')].every(button => {
               const box = button.getBoundingClientRect();
               return box.left >= bounds.left && box.right <= bounds.right + 1
@@ -298,7 +350,10 @@ def check_select_contract(page):
     page.keyboard.press("Escape")
     assert theme_select.evaluate("el => el === document.activeElement")
     theme_select.select_option("light")
-    page.wait_for_function("document.documentElement.dataset.theme === 'light'")
+    page.wait_for_function(
+        "document.documentElement.dataset.theme === 'light' && "
+        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+    )
     assert page.locator("html").get_attribute("data-theme") == "light"
     theme_select.select_option("auto")
     assert theme_select.input_value() == "auto"
@@ -313,34 +368,14 @@ def check_select_contract(page):
     language_select.select_option("uk")
     page.get_by_role("heading", name="Налаштування", exact=True).wait_for()
 
-    page.get_by_role("button", name="Оновлення", exact=True).click()
-    page.locator("#settings-updates").wait_for()
-    asset_select = page.locator("#assetStrategy")
-    asset_state = select_state(page, "#assetStrategy")
-    assert [option["value"] for option in asset_state["options"]] == [
-        "portableFirst", "installerFirst", "manual"
-    ]
-    assert asset_state["labelled"]
-    asset_select.focus()
-    asset_select.press("Alt+ArrowDown")
-    page.keyboard.press("Escape")
-    assert asset_select.evaluate("el => el === document.activeElement")
-    update_count = page.evaluate("window.__PULLORA_SETTINGS_TEST__.updateCount")
-    asset_select.select_option("manual")
-    page.wait_for_function(
-        "count => window.__PULLORA_SETTINGS_TEST__.updateCount > count",
-        arg=update_count,
-    )
-    assert asset_select.input_value() == "manual"
-    assert page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings.assetStrategy") == "manual"
-
-    page.get_by_role("button", name="Загальне", exact=True).click()
-    page.get_by_role("button", name="Оновлення", exact=True).click()
-    assert page.locator("#assetStrategy").input_value() == "manual"
-    asset_style = select_state(page, "#assetStrategy")["style"]
-    page.get_by_role("button", name="Загальне", exact=True).click()
-    assert select_state(page, "#theme")["style"] == select_state(page, "#language")["style"]
-    assert select_state(page, "#theme")["style"] == asset_style
+    language_select.evaluate("el => el.blur()")
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(200)
+    theme_style = select_state(page, "#theme")["style"]
+    language_style = select_state(page, "#language")["style"]
+    theme_style.pop("borderColor")
+    language_style.pop("borderColor")
+    assert theme_style == language_style, {"theme": theme_style, "language": language_style}
 
 
 def root_appearance_state(page):
@@ -368,13 +403,19 @@ def check_appearance_contract(page, target_theme):
     theme_select = page.locator("#theme")
 
     theme_select.select_option("light")
-    page.wait_for_function("document.documentElement.dataset.theme === 'light'")
+    page.wait_for_function(
+        "document.documentElement.dataset.theme === 'light' && "
+        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+    )
     assert "light-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
     light_state = root_appearance_state(page)
     assert light_state["densityScale"] == "0.86", light_state
 
     theme_select.select_option("dark")
-    page.wait_for_function("document.documentElement.dataset.theme === 'dark'")
+    page.wait_for_function(
+        "document.documentElement.dataset.theme === 'dark' && "
+        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('dark-bg.png')"
+    )
     assert "dark-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
     theme_select.select_option(target_theme)
     page.wait_for_function(
@@ -447,7 +488,7 @@ def density_metrics(page):
           const style = selector => getComputedStyle(document.querySelector(selector));
           return {
             navHeight: box('.settings-nav button').height,
-            inputHeight: box('#githubOwner').height,
+            inputHeight: box('#theme').height,
             secondaryHeight: box('.launcher-background-theme .secondary-btn').height,
             contentPadding: Number.parseFloat(style('.settings-content').paddingTop),
             sectionPadding: Number.parseFloat(style('.settings-content > section').paddingTop),
@@ -476,14 +517,7 @@ def density_metrics(page):
 def preview_range_value(page, selector, value, css_variable, expected_value):
     control = page.locator(selector)
     control.scroll_into_view_if_needed()
-    box = control.bounding_box()
-    assert box, {"selector": selector, "reason": "missing bounding box"}
-    limits = control.evaluate("el => ({ min: Number(el.min), max: Number(el.max) })")
-    ratio = (value - limits["min"]) / (limits["max"] - limits["min"])
-    usable_width = max(1, box["width"] - 18)
-    x = box["x"] + 9 + usable_width * ratio
-    y = box["y"] + box["height"] / 2
-    page.mouse.click(x, y)
+    control.fill(str(value))
     try:
         page.wait_for_function(
             "([controlSelector, name, controlValue, expected]) => "
@@ -549,25 +583,53 @@ def drag_range_control(page, selector, target_ratio):
 def check_general_reset_contract(page):
     page.get_by_role("button", name="Загальне", exact=True).click()
     page.locator("#settings-general").wait_for()
+    page.locator("#theme").select_option("dark")
+    page.locator("#language").select_option("en")
+    page.wait_for_function(
+        "window.__PULLORA_SETTINGS_TEST__.settings.theme === 'dark' && "
+        "window.__PULLORA_SETTINGS_TEST__.settings.language === 'en' && "
+        "document.documentElement.lang === 'en'"
+    )
     before = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
     assert before["installationPath"] == "C:\\PulloraApps", before
-    assert before["assetStrategy"] == "manual", before
+    assert before["assetStrategy"] == "portableFirst", before
     assert before["appearance"]["surfaceTransparency"] != 42, before
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).some(Boolean)"
     )
 
-    page.get_by_role("button", name="Скинути", exact=True).click()
+    page.wait_for_function(
+        "window.__PULLORA_SETTINGS_TEST__.commands.includes('save_library_folders')"
+    )
+    folder_state = page.evaluate(
+        "window.__PULLORA_SETTINGS_TEST__.calls.filter(call => "
+        "call.command === 'save_library_folders').at(-1).args"
+    )
+    call_offset = page.evaluate("window.__PULLORA_SETTINGS_TEST__.calls.length")
+    reset_trigger = page.get_by_role("button", name="Reset", exact=True)
+    reset_trigger.click()
     dialog = page.get_by_role("alertdialog")
     dialog.wait_for()
     assert dialog.get_attribute("aria-describedby") == "settings-reset-description"
-    cancel = dialog.get_by_role("button", name="Скасувати", exact=True)
+    cancel = dialog.get_by_role("button", name="Cancel", exact=True)
     page.wait_for_function(
         "el => el === document.activeElement",
         arg=cancel.element_handle(),
     )
+    confirm = dialog.get_by_role("button", name="Reset", exact=True)
+    confirm.focus()
+    confirm.press("Tab")
+    close = dialog.get_by_role("button", name="Close", exact=True)
+    assert close.evaluate("el => el === document.activeElement")
+    page.keyboard.press("Escape")
+    dialog.wait_for(state="hidden")
+    page.wait_for_function("el => el === document.activeElement", arg=reset_trigger.element_handle())
+
+    reset_trigger.click()
+    dialog.wait_for()
+    page.wait_for_function("el => el === document.activeElement", arg=cancel.element_handle())
     update_count = page.evaluate("window.__PULLORA_SETTINGS_TEST__.updateCount")
-    dialog.get_by_role("button", name="Скинути", exact=True).click()
+    confirm.click()
     dialog.wait_for(state="hidden")
     page.wait_for_function(
         "count => window.__PULLORA_SETTINGS_TEST__.updateCount > count",
@@ -580,12 +642,195 @@ def check_general_reset_contract(page):
     assert after["language"] == "uk", after
     assert after["appearance"]["surfaceTransparency"] == 42, after
     assert after["appearance"]["surfaceBlur"] == 12, after
-    assert after["installationPath"] == before["installationPath"], after
+    assert after["appearance"]["density"] == "comfortable", after
+    assert after["installationPath"].endswith("\\AppData\\Local\\Pullora\\Apps"), after
     assert after["includePrereleases"] == before["includePrereleases"], after
     assert after["assetStrategy"] == before["assetStrategy"], after
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(value => value === null)"
     )
+    reset_calls = page.evaluate(
+        "offset => window.__PULLORA_SETTINGS_TEST__.calls.slice(offset)",
+        call_offset,
+    )
+    reset_commands = [
+        call["command"] for call in reset_calls if call["command"] != "save_library_folders"
+    ]
+    assert sorted(reset_commands) == sorted([
+        "update_settings",
+        "set_installation_path",
+        "clear_project_art_asset_command",
+        "clear_project_art_asset_command",
+    ]), reset_commands
+    assert all(
+        call["args"] == folder_state
+        for call in reset_calls
+        if call["command"] == "save_library_folders"
+    ), reset_calls
+
+
+def check_settings_accessibility_contract(page):
+    page.get_by_role("button", name=SECTIONS[0][0], exact=True).click()
+    page.locator("#settings-general").wait_for()
+    audit = page.locator(".settings-page").evaluate(
+        """
+        root => {
+          const visible = element => element.getClientRects().length > 0;
+          const controls = [...root.querySelectorAll('button, input, select, textarea, summary, a[href]')]
+            .filter(visible);
+          const nameOf = element => (
+            element.getAttribute('aria-label')
+            || [...(element.labels || [])].map(label => label.textContent.trim()).join(' ')
+            || element.textContent.trim()
+            || element.getAttribute('title')
+            || ''
+          );
+          const ids = [...root.querySelectorAll('[id]')].map(element => element.id);
+          return {
+            unnamed: controls.filter(element => !nameOf(element)).map(element => element.outerHTML),
+            positiveTabIndex: controls.filter(element => element.tabIndex > 0).map(element => element.outerHTML),
+            duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
+            brokenControls: [...root.querySelectorAll('[aria-controls]')]
+              .filter(element => !document.getElementById(element.getAttribute('aria-controls')))
+              .map(element => element.outerHTML),
+          };
+        }
+        """
+    )
+    assert audit == {
+        "unnamed": [],
+        "positiveTabIndex": [],
+        "duplicateIds": [],
+        "brokenControls": [],
+    }, audit
+
+    general_button = page.get_by_role("button", name=SECTIONS[0][0], exact=True)
+    events_button = page.get_by_role("button", name=SECTIONS[1][0], exact=True)
+    general_button.focus()
+    general_button.press("Tab")
+    assert events_button.evaluate("el => el === document.activeElement")
+    assert events_button.evaluate("el => el.matches(':focus-visible')")
+    assert events_button.evaluate("el => getComputedStyle(el).outlineStyle !== 'none'")
+    events_button.press("Enter")
+    page.locator("#settings-events").wait_for()
+    assert events_button.get_attribute("aria-current") == "page"
+
+    general_button.focus()
+    general_button.press("Enter")
+    page.locator("#settings-general").wait_for()
+
+    transparency = page.locator("#surfaceTransparency")
+    transparency.focus()
+    transparency.press("Home")
+    assert transparency.evaluate("el => el.matches(':focus-visible')")
+    assert transparency.input_value() == "0"
+    transparency.press("ArrowRight")
+    assert transparency.input_value() == "1"
+    assert root_appearance_state(page)["surfaceOpacity"] == "99%"
+
+    page.get_by_role("button", name="Перевірити", exact=True).click()
+    status = page.locator("#installPath-status")
+    status.wait_for()
+    assert status.get_attribute("role") == "status"
+    assert page.locator("#installPath").get_attribute("aria-describedby") == "installPath-status"
+    assert page.locator("#installPath").get_attribute("aria-invalid") is None
+
+
+def check_background_label_contract(page):
+    page.get_by_role("button", name="Загальне", exact=True).click()
+    page.locator("#settings-general").wait_for()
+    assert page.get_by_text("Фон", exact=True).count() == 1
+    assert page.get_by_text("Підкладки", exact=True).count() == 1
+    for theme in ("Світла", "Темна"):
+        edit = page.get_by_role("button", name=f"Редагувати фон — {theme}", exact=True)
+        reset = page.get_by_role("button", name=f"Скинути фон — {theme}", exact=True)
+        assert edit.inner_text() == "Редагувати"
+        assert reset.inner_text() == "Скинути"
+
+
+def check_event_log_contract(page, width):
+    page.get_by_role("button", name="Журнал подій", exact=True).click()
+    items = page.locator(".settings-event-log-list li")
+    items.first.wait_for()
+    assert items.count() == 4
+    for index, level in enumerate(("success", "error", "warning", "info")):
+        assert items.nth(index).locator(f".settings-event-level.{level} .ui-icon").count() == 1
+        assert items.nth(index).locator(".settings-event-level").inner_text().strip()
+    assert items.first.locator(".settings-event-source").inner_text() == "Запуск застосунку"
+    first_message = items.first.locator(".settings-event-message").inner_text()
+    assert first_message == "launched", first_message
+    assert items.nth(1).locator(".settings-event-message").inner_text() == "download failed"
+    assert page.locator(".settings-event-log-list").evaluate(
+        "el => el.scrollWidth <= el.clientWidth + 1"
+    )
+
+    details = items.first.locator("details")
+    assert details.get_attribute("open") is None
+    summary = details.locator("summary")
+    summary.focus()
+    assert summary.evaluate("el => el === document.activeElement")
+    summary.press("Enter")
+    assert details.get_attribute("open") is not None
+    technical = details.locator("code").inner_text()
+    assert "CpPrice11/demo@v1" in technical
+    assert "A very long application folder" in technical
+
+    error_details = items.nth(1).locator("details")
+    assert error_details.get_attribute("open") is None
+    error_details.locator("summary").click()
+    error_technical = error_details.locator("code").inner_text()
+    assert "C:\\Temp\\package.zip" in error_technical
+    assert "Access denied" in error_technical
+    assert "\n" in error_technical
+
+    layout = items.first.evaluate(
+        """
+        item => {
+          const time = item.querySelector('time').getBoundingClientRect();
+          const message = item.querySelector('.settings-event-message').getBoundingClientRect();
+          return {
+            columns: getComputedStyle(item).gridTemplateColumns.split(' ').length,
+            metadataAbove: message.top >= time.bottom - 1,
+          };
+        }
+        """
+    )
+    if width == 1000:
+        assert layout["columns"] == 3 and layout["metadataAbove"], layout
+    if width == 1920:
+        assert layout["columns"] == 4 and not layout["metadataAbove"], layout
+
+    page.evaluate("window.__PULLORA_SETTINGS_TEST__.setEventLog([])")
+    page.get_by_role("button", name="Оновити журнал", exact=True).click()
+    page.get_by_text("Журнал поки порожній", exact=True).wait_for()
+    assert items.count() == 0
+    assert page.get_by_role("button", name="Оновити журнал", exact=True).is_enabled()
+
+
+def check_maintenance_contract(page):
+    page.get_by_role("button", name="Обслуговування", exact=True).click()
+    section = page.locator("#settings-maintenance")
+    section.wait_for()
+    assert section.locator("h4").all_inner_texts() == ["Сховище", "Діагностика"]
+    assert section.get_by_role("button", name="Експорт бібліотеки").count() == 0
+    assert section.get_by_role("button", name="Імпорт бібліотеки").count() == 0
+    assert section.evaluate("el => el.scrollWidth <= el.clientWidth + 1")
+
+    cleanup = section.get_by_role("button", name="Очистити старі файли лаунчера", exact=True)
+    cleanup.click()
+    dialog = page.get_by_role("alertdialog", name="Очистити старі файли?")
+    dialog.wait_for()
+    assert "4" in dialog.locator("#settings-reset-description").inner_text()
+    cancel = dialog.get_by_role("button", name="Скасувати", exact=True)
+    page.wait_for_function("el => el === document.activeElement", arg=cancel.element_handle())
+    page.keyboard.press("Escape")
+    dialog.wait_for(state="hidden")
+
+    cleanup.click()
+    dialog.wait_for()
+    dialog.get_by_role("button", name="Очистити", exact=True).click()
+    dialog.wait_for(state="hidden")
+    page.get_by_role("status").filter(has_text="Старі файли лаунчера очищено").wait_for()
 
 
 def check_surface_and_density_contract(page, theme):
@@ -703,6 +948,65 @@ def check_surface_and_density_contract(page, theme):
     assert "dark-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
 
 
+def check_settings_baseline_matrix(page, theme, width, height, scale):
+    page.get_by_role("button", name=SECTIONS[0][0], exact=True).click()
+    page.locator("#settings-general").wait_for()
+    states = {}
+    background = page.locator(".cinematic-background")
+
+    for density in ("comfortable", "compact"):
+        set_density(page, density)
+        for custom_background in (False, True):
+            background.evaluate(
+                "(el, visible) => el.classList.toggle('is-visible', visible)",
+                custom_background,
+            )
+            state = page.evaluate(
+                """
+                () => {
+                  const page = document.querySelector('.settings-page');
+                  const workspace = document.querySelector('.settings-workspace');
+                  const content = document.querySelector('.settings-content');
+                  const section = document.querySelector('#settings-general');
+                  const background = document.querySelector('.cinematic-background');
+                  const pageBox = page.getBoundingClientRect();
+                  const workspaceBox = workspace.getBoundingClientRect();
+                  const sectionStyle = getComputedStyle(section);
+                  const backgroundStyle = getComputedStyle(background);
+                  return {
+                    dpr: window.devicePixelRatio,
+                    page: pageBox.toJSON(),
+                    workspace: workspaceBox.toJSON(),
+                    pageOverflow: page.scrollWidth > page.clientWidth + 1,
+                    contentOverflow: content.scrollWidth > content.clientWidth + 1,
+                    sectionPadding: Number.parseFloat(sectionStyle.paddingTop),
+                    backgroundVisible: background.classList.contains('is-visible'),
+                    backgroundOpacity: Number(backgroundStyle.opacity),
+                    backgroundImage: backgroundStyle.backgroundImage,
+                  };
+                }
+                """
+            )
+            assert abs(state["dpr"] - scale) < 0.01, state
+            assert not state["pageOverflow"] and not state["contentOverflow"], state
+            assert state["page"]["x"] >= 0 and state["page"]["right"] <= width + 1, state
+            assert state["page"]["y"] >= 0 and state["page"]["bottom"] <= height + 1, state
+            assert state["workspace"]["right"] <= width + 1, state
+            assert state["workspace"]["bottom"] <= height + 1, state
+            assert state["backgroundVisible"] is custom_background, state
+            if custom_background:
+                assert state["backgroundOpacity"] > 0, state
+                assert f"{theme}-bg.png" in state["backgroundImage"], state
+            else:
+                assert state["backgroundOpacity"] == 0, state
+            states[density] = state
+
+    assert states["compact"]["sectionPadding"] < states["comfortable"]["sectionPadding"], states
+    set_density(page, "compact")
+    background.evaluate("el => el.classList.add('is-visible')")
+    return 4
+
+
 def main() -> None:
     check_settings_surface_source_contract()
     if "--static" in sys.argv:
@@ -722,8 +1026,36 @@ def main() -> None:
                 install_settings_mock(page)
                 BASELINE["seed_cache"](page)
                 BASELINE["open_library"](page)
+                library_page = element_geometry(page, ".library-page")
+                library_surface = element_geometry(page, ".library-sam-list-pane")
                 page.get_by_role("button", name="Налаштування").click()
                 page.get_by_role("heading", name="Налаштування").wait_for()
+                settings_page = element_geometry(page, ".settings-page")
+                settings_workspace = element_geometry(page, ".settings-workspace")
+                nav_labels = page.locator(
+                    ".settings-nav button:not(.settings-nav-reset)"
+                ).all_inner_texts()
+                assert nav_labels == [label for label, _ in SECTIONS], nav_labels
+                assert page.get_by_role("button", name="Встановлення", exact=True).count() == 0
+                assert page.get_by_role("button", name="Оновлення", exact=True).count() == 0
+                assert page.locator("#githubOwner").count() == 0
+                owner_summary = page.locator(".settings-source-summary-owner")
+                assert owner_summary.locator("strong").inner_text() == "CpPrice11"
+                assert owner_summary.locator(
+                    "input, select, textarea, [contenteditable='true']"
+                ).count() == 0
+                for dimension in ("x", "y", "width", "height"):
+                    assert abs(settings_page[dimension] - library_page[dimension]) <= 1, {
+                        "theme": theme,
+                        "viewport": [width, height],
+                        "dimension": dimension,
+                        "library": library_page,
+                        "settings": settings_page,
+                    }
+                assert abs(settings_workspace["x"] - settings_page["x"]) <= 1
+                assert abs(settings_workspace["width"] - settings_page["width"]) <= 1
+                assert abs(settings_workspace["bottom"] - settings_page["bottom"]) <= 1
+                assert settings_workspace["borderRadius"] == library_surface["borderRadius"]
                 assert page.locator(".settings-autosave-status").count() == 0
                 assert page.locator(".settings-done-btn").count() == 0
                 initial_boxes = composition(boxes(page))
@@ -733,6 +1065,10 @@ def main() -> None:
                 assert initial_navigation["buttonsInside"], initial_navigation
                 if width == 1000:
                     assert initial_navigation["flexDirection"] == "column", initial_navigation
+                if initial_navigation["flexDirection"] == "column":
+                    assert 0 <= initial_navigation["resetBottomGap"] <= 24, initial_navigation
+
+                checked += check_settings_baseline_matrix(page, theme, width, height, 1)
 
                 for label, panel_id in SECTIONS:
                     button = page.get_by_role("button", name=label, exact=True)
@@ -773,11 +1109,32 @@ def main() -> None:
                     assert grouping["hasHeading"], grouping
                     checked += 1
 
+                check_settings_accessibility_contract(page)
                 check_select_contract(page)
+                check_background_label_contract(page)
                 check_appearance_contract(page, theme)
                 check_surface_and_density_contract(page, theme)
                 check_general_reset_contract(page)
+                check_event_log_contract(page, width)
+                check_maintenance_contract(page)
 
+                context.close()
+
+        for theme in ("dark", "light"):
+            for width, height in VIEWPORTS:
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    color_scheme=theme,
+                    locale="uk-UA",
+                    device_scale_factor=1.25,
+                )
+                page = context.new_page()
+                install_settings_mock(page)
+                BASELINE["seed_cache"](page)
+                BASELINE["open_library"](page)
+                page.get_by_role("button", name="Налаштування").click()
+                page.get_by_role("heading", name="Налаштування").wait_for()
+                checked += check_settings_baseline_matrix(page, theme, width, height, 1.25)
                 context.close()
         browser.close()
     print(f"[settings-composition] checks={checked}: ok")

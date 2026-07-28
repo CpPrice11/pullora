@@ -12,6 +12,7 @@
 - normal density зі стандартним фоном;
 - Library у compact density;
 - власний глобальний фон у Library, Settings, About та Install;
+- Settings у normal/compact зі стандартним/власним фоном на всіх трьох viewport; матриця також виконується headless із Windows scale 125% через `scripts/check-settings-composition.py`;
 - контекстне меню картки, overflow-меню релізу About, bulk overflow і destructive overlay у відкритому стані;
 - перевірка меж viewport, початкового фокуса, `Shift+F10`, `Escape` і повернення фокуса;
 - перевірка однакової геометрії sidebar і hero card між темами;

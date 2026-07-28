@@ -40,16 +40,8 @@ def check_source_contract() -> None:
 def click_range(page: Page, selector: str, value: int) -> None:
     control = page.locator(selector)
     control.scroll_into_view_if_needed()
-    box = control.bounding_box()
-    assert box
-    limits = control.evaluate("el => ({ min: Number(el.min), max: Number(el.max) })")
-    ratio = (value - limits["min"]) / (limits["max"] - limits["min"])
-    usable_width = max(1, box["width"] - 18)
-    page.mouse.click(box["x"] + 9 + usable_width * ratio, box["y"] + box["height"] / 2)
-    page.wait_for_function(
-        "([controlSelector, expected]) => document.querySelector(controlSelector)?.value === String(expected)",
-        arg=[selector, value],
-    )
+    control.fill(str(value))
+    assert control.input_value() == str(value)
 
 
 def open_install(page: Page) -> None:

@@ -4,7 +4,9 @@ use tauri::State;
 use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::secret_store::save_github_token;
-use crate::storage::settings::{save_settings, AppSettings};
+use crate::storage::settings::{
+    default_installation_path, save_settings, AppSettings, CATALOG_OWNER,
+};
 use crate::AppState;
 
 #[derive(Debug, Serialize)]
@@ -27,6 +29,7 @@ pub async fn update_settings(
 ) -> Result<(), String> {
     let current_settings = state.settings.lock().await;
     new_settings.installation_path = current_settings.installation_path.clone();
+    new_settings.github_owner = Some(CATALOG_OWNER.to_string());
     let previous_token = current_settings.github_token.clone();
     drop(current_settings);
 
@@ -179,12 +182,9 @@ fn install_path_io_status(error: &std::io::Error) -> &'static str {
 }
 
 fn prepare_installation_path_setting(path: &str) -> Result<String, String> {
-    let trimmed = path.trim();
-    if trimmed.is_empty() {
-        return Ok(String::new());
-    }
+    let requested = requested_installation_path(path);
 
-    let folder = crate::storage::path_scope::installation_root(trimmed)?;
+    let folder = crate::storage::path_scope::installation_root(&requested)?;
     if folder.exists() {
         if folder.is_dir() {
             return Ok(folder.display().to_string());
@@ -204,9 +204,24 @@ fn prepare_installation_path_setting(path: &str) -> Result<String, String> {
         .map(|path| path.display().to_string())
 }
 
+fn requested_installation_path(path: &str) -> String {
+    if path.trim().is_empty() {
+        default_installation_path()
+    } else {
+        path.trim().to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{ensure_installation_path, install_path_io_status};
+    use super::{ensure_installation_path, install_path_io_status, requested_installation_path};
+    use crate::storage::settings::default_installation_path;
+
+    #[test]
+    fn empty_installation_path_selects_the_default() {
+        assert_eq!(requested_installation_path(""), default_installation_path());
+        assert_eq!(requested_installation_path("  C:\\Apps  "), "C:\\Apps");
+    }
 
     #[test]
     fn ensure_installation_path_creates_a_missing_writable_folder() {

@@ -7,13 +7,12 @@ import {
   validateInstallationPath,
 } from '../services/settings'
 import { cleanupLauncherUpdateFiles, getEventLog, getLauncherStorageInfo, openDir } from '../services/updates'
-import { pickDirectory, pickJsonFile, pickJsonSavePath } from '../services/dialog'
+import { pickDirectory } from '../services/dialog'
 import {
   clearGithubCache,
   getGithubQueueStatus,
   getGithubRateLimitStatus,
 } from '../services/github'
-import { exportInstalledRegistry, importInstalledRegistry } from '../services/installed'
 import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import {
@@ -25,6 +24,7 @@ import { applyAppearanceSettings, applyThemePreference, type ResolvedTheme, type
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { useI18n, type AppLanguage } from '../i18n'
 import { redactSensitiveText } from '../utils/redactSensitiveText'
+import { formatBytes } from '../utils/format'
 import './PageStyles.css'
 
 interface SettingsPageProps {
@@ -33,43 +33,12 @@ interface SettingsPageProps {
   onClearLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
 }
 
-const RECENT_GITHUB_OWNERS_KEY = 'pullora.recentGithubOwners.v1'
-const LEGACY_RECENT_GITHUB_OWNERS_KEY = 'airLauncher.recentGithubOwners.v1'
-
 function emptyRateLimitStatus(): GitHubRateLimitStatus {
   const emptyBucket = { remaining: null, limit: null, resetAt: null }
   return {
     core: { ...emptyBucket },
     search: { ...emptyBucket },
   }
-}
-
-function readRecentGithubOwners() {
-  try {
-    const storedValue = window.localStorage.getItem(RECENT_GITHUB_OWNERS_KEY) ??
-      window.localStorage.getItem(LEGACY_RECENT_GITHUB_OWNERS_KEY) ??
-      '[]'
-    const value = JSON.parse(storedValue)
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-function writeRecentGithubOwner(owner: string) {
-  const normalized = owner.trim()
-  if (!normalized) return readRecentGithubOwners()
-
-  const nextOwners = [
-    normalized,
-    ...readRecentGithubOwners().filter((item) => item.toLowerCase() !== normalized.toLowerCase()),
-  ].slice(0, 5)
-  try {
-    window.localStorage.setItem(RECENT_GITHUB_OWNERS_KEY, JSON.stringify(nextOwners))
-  } catch {
-    // Recent owners are a convenience list only.
-  }
-  return nextOwners
 }
 
 function SettingsPage({
@@ -84,13 +53,12 @@ function SettingsPage({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'>('idle')
-  const [resetPending, setResetPending] = useState(false)
+  const [confirmation, setConfirmation] = useState<'reset' | 'cleanup' | null>(null)
+  const [cleanupBusy, setCleanupBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [githubRateLimit, setGithubRateLimit] = useState<GitHubRateLimitStatus>(emptyRateLimitStatus)
   const [githubQueue, setGithubQueue] = useState<GitHubQueueStatus>(() => getGithubQueueStatus())
-  const [recentGithubOwners, setRecentGithubOwners] = useState<string[]>([])
-  const [registryBusy, setRegistryBusy] = useState(false)
   const [eventLog, setEventLog] = useState<string[]>([])
   const [eventLogLoading, setEventLogLoading] = useState(false)
   const [eventLogError, setEventLogError] = useState<string | null>(null)
@@ -124,13 +92,9 @@ function SettingsPage({
       .finally(() => setLoading(false))
   }, [])
 
-  useEffect(() => {
-    setRecentGithubOwners(readRecentGithubOwners())
-  }, [])
-
   useModalFocus(resetModalRef, {
-    active: resetPending,
-    onEscape: saving ? undefined : () => setResetPending(false),
+    active: confirmation !== null,
+    onEscape: saving || cleanupBusy ? undefined : () => setConfirmation(null),
   })
 
   useEffect(() => {
@@ -227,16 +191,11 @@ function SettingsPage({
     }
   }
 
-  const handleResetGeneralSettings = async () => {
+  const handleResetSettings = async () => {
     if (!settings) return
-    const resetAppearance = normalizeAppearance({
-      ...settings.appearance,
-      surfaceTransparency: DEFAULT_SETTINGS.appearance?.surfaceTransparency,
-      surfaceBlur: DEFAULT_SETTINGS.appearance?.surfaceBlur,
-    })
+    const resetAppearance = normalizeAppearance(DEFAULT_SETTINGS.appearance)
     const resetSettings = normalizeSettings({
       ...settings,
-      githubOwner: DEFAULT_SETTINGS.githubOwner,
       theme: DEFAULT_SETTINGS.theme,
       language: DEFAULT_SETTINGS.language,
       appearance: resetAppearance,
@@ -244,16 +203,24 @@ function SettingsPage({
     const savedSettings = await persistSettings(resetSettings, settings)
     if (savedSettings) {
       const backgroundResults = await Promise.allSettled([
+        saveInstallationPath(''),
         onClearLauncherBackground('light'),
         onClearLauncherBackground('dark'),
       ])
-      if (backgroundResults.some((result) => result.status === 'rejected')) {
+      const pathResult = backgroundResults[0]
+      const resetSucceeded = backgroundResults.every((result) => result.status === 'fulfilled')
+      if (pathResult.status === 'fulfilled') {
+        setSettings({ ...savedSettings, installationPath: pathResult.value })
+      }
+      if (pathResult.status === 'rejected') {
+        setError(t('settings.saveError'))
+      } else if (backgroundResults.slice(1).some((result) => result.status === 'rejected')) {
         setError(t('art.clearError'))
       }
-      setResetPending(false)
+      setConfirmation(null)
       applyThemePreference(savedSettings.theme, true)
       applyAppearanceSettings(savedSettings.appearance)
-      setActionMessage(t('settings.resetDone'))
+      if (resetSucceeded) setActionMessage(t('settings.resetDone'))
     }
   }
 
@@ -265,43 +232,6 @@ function SettingsPage({
       setActionMessage(t('settings.cacheCleared'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cacheError'))
-    }
-  }
-
-  const handleExportInstalledRegistry = async () => {
-    const path = await pickJsonSavePath('pullora-installed-registry.json')
-    if (!path) return
-
-    setRegistryBusy(true)
-    try {
-      const result = await exportInstalledRegistry(path)
-      setActionMessage(t('settings.registryExported', {
-        apps: result.appCount,
-        versions: result.versionCount,
-      }))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('settings.registryExportError'))
-    } finally {
-      setRegistryBusy(false)
-    }
-  }
-
-  const handleImportInstalledRegistry = async () => {
-    const path = await pickJsonFile()
-    if (!path) return
-    if (!window.confirm(t('settings.registryImportConfirm'))) return
-
-    setRegistryBusy(true)
-    try {
-      const result = await importInstalledRegistry(path)
-      setActionMessage(t('settings.registryImported', {
-        apps: result.appCount,
-        versions: result.versionCount,
-      }))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('settings.registryImportError'))
-    } finally {
-      setRegistryBusy(false)
     }
   }
 
@@ -353,13 +283,16 @@ function SettingsPage({
   }
 
   const handleCleanupLauncherFiles = async () => {
-    if (!window.confirm(t('settings.cleanupConfirm'))) return
+    setCleanupBusy(true)
     try {
       const info = await cleanupLauncherUpdateFiles()
       setStorageInfo(info)
       setActionMessage(t('settings.cleanupDone'))
+      setConfirmation(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cleanupError'))
+    } finally {
+      setCleanupBusy(false)
     }
   }
 
@@ -372,28 +305,6 @@ function SettingsPage({
     } catch (err) {
       setPathValidation('inaccessible')
       setError(err instanceof Error ? err.message : t('settings.pathCheckError'))
-    }
-  }
-
-  const handleGithubOwnerBlur = async () => {
-    if (!settings) return
-    await persistSettings(settings, settings)
-    setRecentGithubOwners(writeRecentGithubOwner(settings.githubOwner ?? ''))
-    await clearGithubCache().catch(() => {})
-  }
-
-  const selectRecentGithubOwner = async (owner: string) => {
-    if (!settings) return
-    const savedSettings = await persistSettings({ ...settings, githubOwner: owner }, settings)
-    if (savedSettings) {
-      setRecentGithubOwners(writeRecentGithubOwner(owner))
-      await clearGithubCache().catch(() => {})
-    }
-  }
-
-  const handleGithubOwnerKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.currentTarget.blur()
     }
   }
 
@@ -465,14 +376,20 @@ function SettingsPage({
 
   const sections: Array<{ id: SettingsSectionId; label: string }> = [
     { id: 'general', label: t('settings.general') },
-    { id: 'installation', label: t('settings.installation') },
-    { id: 'updates', label: t('settings.updates') },
     { id: 'events', label: t('settings.eventLog') },
     { id: 'maintenance', label: t('settings.maintenance') },
   ]
 
-  const settingsPanelId = (sectionId: SettingsSectionId) =>
-    sectionId === 'installation' ? 'settings-folders' : `settings-${sectionId}`
+  const settingsPanelId = (sectionId: SettingsSectionId) => `settings-${sectionId}`
+  const confirmationBusy = confirmation === 'cleanup' ? cleanupBusy : saving
+  const confirmationTitle = confirmation === 'cleanup'
+    ? t('settings.cleanupConfirmTitle')
+    : t('settings.resetConfirmTitle')
+  const confirmationText = confirmation === 'cleanup'
+    ? t('settings.cleanupConfirm', {
+        size: storageInfo ? formatBytes(storageInfo.cleanupBytes, language) : t('settings.notChecked'),
+      })
+    : t('settings.resetConfirmText')
 
   const handleSectionSelect = (sectionId: SettingsSectionId) => {
     setActiveSection(sectionId)
@@ -485,7 +402,6 @@ function SettingsPage({
           <div>
             <span className="settings-page-kicker">{t('settings.workspaceKicker')}</span>
             <h2 id="settings-title">{t('settings.title')}</h2>
-            <p>{t('settings.workspaceSubtitle')}</p>
           </div>
         </div>
 
@@ -497,13 +413,21 @@ function SettingsPage({
                 type="button"
                 className={activeSection === section.id ? 'active' : ''}
                 aria-current={activeSection === section.id ? 'page' : undefined}
-                aria-controls={settingsPanelId(section.id)}
+                aria-controls={activeSection === section.id ? settingsPanelId(section.id) : undefined}
                 onClick={() => handleSectionSelect(section.id)}
                 data-autofocus={activeSection === section.id ? 'true' : undefined}
               >
                 {section.label}
               </button>
             ))}
+            <button
+              type="button"
+              className="settings-nav-reset"
+              disabled={saving}
+              onClick={() => setConfirmation('reset')}
+            >
+              {t('settings.resetAction')}
+            </button>
           </nav>
 
           <div
@@ -521,24 +445,17 @@ function SettingsPage({
               activeSection={activeSection}
               settings={settings}
               language={language}
-              recentGithubOwners={recentGithubOwners}
               hasLauncherBackground={hasLauncherBackground}
               pathValidation={pathValidation}
               storageInfo={storageInfo}
               githubRateLimit={githubRateLimit}
               githubQueue={githubQueue}
-              saving={saving}
-              registryBusy={registryBusy}
               eventLog={eventLog}
               eventLogLoading={eventLogLoading}
               eventLogError={eventLogError}
               formatRateLimit={formatRateLimit}
               formatRateLimitReset={formatRateLimitReset}
               formatQueuePause={formatQueuePause}
-              onGithubOwnerChange={(githubOwner) => setSettings({ ...settings, githubOwner })}
-              onGithubOwnerBlur={() => void handleGithubOwnerBlur()}
-              onGithubOwnerKeyDown={handleGithubOwnerKeyDown}
-              onSelectRecentGithubOwner={(owner) => void selectRecentGithubOwner(owner)}
               onThemeChange={(theme) => void handleThemeChange(theme)}
               onLanguageChange={(nextLanguage) => void handleLanguageChange(nextLanguage)}
               onChangeLauncherBackground={onChangeLauncherBackground}
@@ -548,29 +465,20 @@ function SettingsPage({
               onBrowse={() => void handleBrowse()}
               onValidatePath={() => void handleValidatePath()}
               onOpenDirectory={(path) => void openDir(path).catch(() => {})}
-              onIncludePrereleasesChange={(includePrereleases) => {
-                void persistSettings({ ...settings, includePrereleases }, settings)
-              }}
-              onAssetStrategyChange={(assetStrategy) => {
-                void persistSettings({ ...settings, assetStrategy }, settings)
-              }}
               onRefreshStorageInfo={() => void handleRefreshStorageInfo()}
-              onCleanupLauncherFiles={() => void handleCleanupLauncherFiles()}
-              onRequestReset={() => setResetPending(true)}
+              onCleanupLauncherFiles={() => setConfirmation('cleanup')}
               onClearCache={() => void handleClearCache()}
-              onExportInstalledRegistry={() => void handleExportInstalledRegistry()}
-              onImportInstalledRegistry={() => void handleImportInstalledRegistry()}
               onCopyDiagnostics={() => void handleCopyMaintenanceDiagnostics()}
               onRefreshEventLog={() => void refreshEventLog()}
             />
           </div>
         </div>
       </section>
-    {resetPending && (
+    {confirmation && (
       <div
         className="settings-reset-overlay"
         role="presentation"
-        onClick={() => !saving && setResetPending(false)}
+        onClick={() => !confirmationBusy && setConfirmation(null)}
       >
         <section
           ref={resetModalRef}
@@ -584,37 +492,41 @@ function SettingsPage({
         >
           <header className="settings-reset-header">
             <div>
-              <span className="settings-reset-kicker">{t('settings.general')}</span>
-              <h3 id="settings-reset-title">{t('settings.resetConfirmTitle')}</h3>
+              <span className="settings-reset-kicker">{t('settings.title')}</span>
+              <h3 id="settings-reset-title">{confirmationTitle}</h3>
             </div>
             <button
               type="button"
               className="close-btn"
-              disabled={saving}
+              disabled={confirmationBusy}
               aria-label={t('settings.close')}
-              onClick={() => setResetPending(false)}
+              onClick={() => setConfirmation(null)}
             >
               {'\u00d7'}
             </button>
           </header>
-          <p id="settings-reset-description">{t('settings.resetConfirmText')}</p>
+          <p id="settings-reset-description">{confirmationText}</p>
           <div className="settings-reset-actions">
             <button
               type="button"
               className="secondary-btn"
-              disabled={saving}
+              disabled={confirmationBusy}
               data-autofocus="true"
-              onClick={() => setResetPending(false)}
+              onClick={() => setConfirmation(null)}
             >
               {t('installed.uninstallCancel')}
             </button>
             <button
               type="button"
               className="settings-reset-btn"
-              disabled={saving}
-              onClick={handleResetGeneralSettings}
+              disabled={confirmationBusy}
+              onClick={confirmation === 'cleanup' ? handleCleanupLauncherFiles : handleResetSettings}
             >
-              {saving ? t('settings.saving') : t('settings.resetAction')}
+              {confirmationBusy
+                ? t('settings.saving')
+                : confirmation === 'cleanup'
+                  ? t('settings.cleanupAction')
+                  : t('settings.resetAction')}
             </button>
           </div>
         </section>

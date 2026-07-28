@@ -93,11 +93,6 @@ with sync_playwright() as playwright:
             page.keyboard.press("Escape")
             assert theme_select.evaluate("el => el === document.activeElement")
 
-            page.get_by_role("button", name="Оновлення").click()
-            asset_select = page.locator("#assetStrategy")
-            assert_native_select(asset_select)
-            assert option_values(asset_select) == ["portableFirst", "installerFirst", "manual"]
-
             context.close()
 
     browser.close()
