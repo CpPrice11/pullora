@@ -267,7 +267,6 @@
 }
 
 .release-modal--wizard > .modal-header,
-.release-modal--wizard > .release-wizard-steps,
 .release-modal--wizard > .release-wizard-context {
   flex: 0 0 auto;
 }

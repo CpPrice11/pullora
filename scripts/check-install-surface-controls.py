@@ -112,7 +112,6 @@ def surface_state(page: Page) -> dict:
             overlay: read('.modal-overlay'),
             modal: read('.release-modal--wizard'),
             header: read('.release-modal--wizard > .modal-header'),
-            steps: read('.release-modal--wizard > .release-wizard-steps'),
             body: read('.release-modal--wizard > .release-body'),
             card: read('.release-modal--wizard .release-version-card'),
             footer: read('.release-modal--wizard .release-nav-actions'),
@@ -151,7 +150,7 @@ def main() -> None:
             BASELINE["apply_custom_background"](page)
             open_install(page)
             initial = surface_state(page)
-            geometry = {key: initial[key]["box"] for key in ("modal", "header", "steps", "body", "footer")}
+            geometry = {key: initial[key]["box"] for key in ("modal", "header", "body", "footer")}
 
             opacity_states = {}
             for transparency in (0, 40, 80):

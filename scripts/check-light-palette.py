@@ -145,8 +145,7 @@ with sync_playwright() as playwright:
     page.locator(".release-modal").wait_for()
     assert_primary(page.locator(".release-action-primary"))
     assert_muted(page.locator(".release-wizard-context p"), composite(surfaces[1], canvas))
-    disabled_step = page.locator(".release-step-pill:disabled").first
-    assert float(disabled_step.evaluate("el => getComputedStyle(el).opacity")) <= 0.6
+    assert page.locator(".release-wizard-steps, .release-step-pill").count() == 0
 
     context.close()
     browser.close()

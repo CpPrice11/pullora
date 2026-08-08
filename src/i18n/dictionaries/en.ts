@@ -497,7 +497,6 @@ Object.assign(dictionary,
   'about.portableShort': 'Portable',
 },
   {
-  'release.wizardSteps': 'Install steps',
   'release.stepVersion': 'Version',
   'release.stepFile': 'File',
   'release.stepConfirm': 'Confirm',
