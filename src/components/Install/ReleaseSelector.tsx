@@ -577,7 +577,6 @@ function ReleaseSelector({
                         )}
                       </div>
                       <span>{selectedAsset.name}</span>
-                      {selectedAssetKind === 'installer' && <p>{t('release.installerSupportedText')}</p>}
                       {selectedAssetKind === 'unsupported' && <p>{t('release.unsupportedWarning')}</p>}
                       {selectedAssetAutoInstallable && (
                         <p>{t('release.installSummary', { version: selectedRelease.tag_name, file: selectedAsset.name })}</p>
