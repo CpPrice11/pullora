@@ -1071,7 +1071,7 @@
   flex: 0 0 auto;
   min-height: var(--release-action-height);
   min-width: 0;
-  padding: 0 18px;
+  padding: 0 16px;
 }
 
 :root[data-theme='light'] .release-blocked-note,
@@ -1467,15 +1467,6 @@
   .release-modal--wizard .release-asset-list,
   .release-confirm-grid {
     grid-template-columns: 1fr;
-  }
-
-  .release-nav-actions {
-    justify-content: stretch;
-  }
-
-  .release-nav-actions > * {
-    flex: 1 1 auto;
-    justify-content: center;
   }
 
   .uninstall-confirm-actions button {
