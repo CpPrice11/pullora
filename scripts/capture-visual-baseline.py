@@ -181,7 +181,14 @@ def seed_cache(page: Page) -> None:
                   search: { remaining: null, limit: null, resetAt: null },
                 };
               }
-              if (command === 'validate_installation_path') return { ok: true, status: 'ok' };
+              if (command === 'validate_installation_path') {
+                if (window.__PULLORA_TEST_INSTALL_PATH_VALIDATION_PENDING__) {
+                  return new Promise(resolve => {
+                    window.__PULLORA_TEST_RESOLVE_INSTALL_PATH_VALIDATION__ = resolve;
+                  });
+                }
+                return { ok: true, status: 'ok' };
+              }
               if (command === 'check_is_favorite') return false;
               if (command === 'get_project_art_asset') return null;
               if (command === 'save_library_folders') return structuredClone(args.folders ?? []);
