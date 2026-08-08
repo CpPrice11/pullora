@@ -780,7 +780,6 @@ Object.assign(dictionary,
 },
   {
   'release.installerSupportedTitle': 'Інсталятор підтримується',
-  'release.installerSupportedText': 'Pullora завантажить інсталятор, запустить майстер і після завершення спробує знайти встановлений EXE для бібліотеки.',
   'download.stageExtractingText': 'Розпаковуємо архів або переносимо portable EXE у папку застосунку.',
   'download.stageCompletedText': 'Версію встановлено. Можна запустити застосунок або відкрити його папку.',
 },

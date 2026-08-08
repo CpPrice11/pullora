@@ -69,7 +69,15 @@ def release(tag: str) -> dict:
                 "size": 88_080_384,
                 "content_type": "application/octet-stream",
                 "download_count": 12,
-            }
+            },
+            {
+                "id": 102,
+                "name": f"Pullora_{tag}_setup_x64.exe",
+                "browser_download_url": "https://example.com/pullora-setup.exe",
+                "size": 94_371_840,
+                "content_type": "application/octet-stream",
+                "download_count": 8,
+            },
         ],
     }
 

@@ -144,6 +144,16 @@ def check_step_navigation(
     assert asset_card.locator(".release-asset-architecture").inner_text().strip()
     assert asset_card.locator(".asset-compatibility").count() == 1
     assert asset_card.locator(".asset-recommended").count() == 1
+    assert modal.locator(".release-installer-note").count() == 0
+    installer_card = modal.locator(".release-asset-card--installer").first
+    assert installer_card.count() == 1
+    installer_card.click()
+    installer_note = modal.locator(".release-installer-note")
+    assert installer_note.count() == 1
+    assert installer_note.locator("strong").inner_text().strip()
+    assert installer_note.locator("p").inner_text().strip()
+    asset_card.click()
+    assert modal.locator(".release-installer-note").count() == 0
     page.screenshot(path=file_screenshot)
 
     modal.locator(".release-nav-actions .release-secondary-btn").click()

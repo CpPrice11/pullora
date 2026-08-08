@@ -780,7 +780,6 @@ Object.assign(dictionary,
 },
   {
   'release.installerSupportedTitle': 'Installer supported',
-  'release.installerSupportedText': 'Pullora will download the installer, run its wizard, then try to find the installed EXE for the library.',
   'download.stageExtractingText': 'Extracting the archive or moving the portable EXE into the app folder.',
   'download.stageCompletedText': 'The version is installed. You can launch the app or open its folder.',
 },
