@@ -108,6 +108,11 @@ def check_step_navigation(
     assert badge_layout["direction"] == "row", badge_layout
     assert badge_layout["wrap"] == "nowrap", badge_layout
     assert len(set(badge_layout["tops"])) == 1, badge_layout
+    summary = modal.locator(".release-selection-summary")
+    assert summary.locator(".release-version-badges").count() == 0
+    assert summary.locator(".release-summary-main strong").inner_text().strip()
+    assert summary.locator("p").inner_text().strip()
+    assert summary.locator(".release-summary-assets").inner_text().strip()
 
     modal.locator(".release-nav-actions .release-action-primary").click()
     assert_current_step(page, modal, "file")

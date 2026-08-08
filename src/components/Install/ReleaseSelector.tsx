@@ -211,9 +211,6 @@ function ReleaseSelector({
   const selectedReleaseDate = selectedRelease?.published_at
     ? formatDate(selectedRelease.published_at, language)
     : t('about.noDate')
-  const selectedReleaseStatus = selectedRelease
-    ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
-    : null
   const installIntent = getInstallIntent(selectedRelease?.tag_name, currentVersion)
   const currentStepLabel = stepLabel(step, t, failedResult)
 
@@ -498,16 +495,6 @@ function ReleaseSelector({
                       <span className="release-summary-kicker">{t('release.selectedVersion')}</span>
                       <div className="release-summary-main">
                         <strong>{selectedRelease.tag_name}</strong>
-                        {selectedReleaseStatus && (
-                          <span className="release-version-badges release-version-badges--summary">
-                            <span className={`release-status-pill release-stability-pill ${selectedRelease.prerelease ? 'prerelease' : ''}`}>
-                              {t(releaseStabilityKey(selectedRelease))}
-                            </span>
-                            <span className="release-status-pill">
-                              {selectedReleaseStatus}
-                            </span>
-                          </span>
-                        )}
                       </div>
                       <p>{selectedReleaseDate}</p>
                       <span className="release-summary-assets">
