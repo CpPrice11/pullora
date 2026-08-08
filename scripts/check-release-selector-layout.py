@@ -56,6 +56,21 @@ def assert_action_hierarchy(actions) -> None:
         classes = (button.get_attribute("class") or "").split()
         assert "release-secondary-btn" in classes or "release-github-link" in classes, classes
 
+    primary_layout = primary.evaluate(
+        """el => ({
+            flexGrow: getComputedStyle(el).flexGrow,
+            flexBasis: getComputedStyle(el).flexBasis,
+            minHeight: getComputedStyle(el).minHeight,
+            minWidth: getComputedStyle(el).minWidth,
+        })"""
+    )
+    assert primary_layout == {
+        "flexGrow": "0",
+        "flexBasis": "auto",
+        "minHeight": "42px",
+        "minWidth": "0px",
+    }, primary_layout
+
 
 def assert_actions_fit_viewport(page: Page, modal) -> None:
     viewport = page.viewport_size
