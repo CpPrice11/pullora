@@ -176,6 +176,8 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
                 bodyOverflowY: bodyStyle.overflowY,
                 bodyMaxHeight: bodyStyle.maxHeight,
                 bodyOverscroll: bodyStyle.overscrollBehavior,
+                actionsPosition: getComputedStyle(el.querySelector('.release-nav-actions')).position,
+                actionsBottom: getComputedStyle(el.querySelector('.release-nav-actions')).bottom,
             }
         }"""
     )
@@ -184,6 +186,8 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert overflow["bodyHorizontal"] <= 1, overflow
     assert overflow["bodyOverflowY"] == "auto", overflow
     assert overflow["bodyOverscroll"] == "contain", overflow
+    assert overflow["actionsPosition"] == "sticky", overflow
+    assert overflow["actionsBottom"] == "0px", overflow
 
     assert modal.locator(".release-wizard-steps, .release-step-pill, .release-wizard-context").count() == 0
 
@@ -209,10 +213,16 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
         }"""
     )
     page.wait_for_timeout(50)
-    fixed_before = rounded_box(header)
+    fixed_before = {
+        "header": rounded_box(header),
+        "actions": rounded_box(actions),
+    }
     body.evaluate("el => { el.scrollTop = el.scrollHeight }")
     page.wait_for_timeout(50)
-    fixed_after = rounded_box(header)
+    fixed_after = {
+        "header": rounded_box(header),
+        "actions": rounded_box(actions),
+    }
     assert fixed_before == fixed_after, {"before": fixed_before, "after": fixed_after}
     scrolled_actions = rounded_box(actions)
     scrolled_body = rounded_box(body)
