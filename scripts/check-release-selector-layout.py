@@ -135,10 +135,15 @@ def check_step_navigation(
     assert_actions_fit_viewport(page, modal)
     assert modal.locator(".release-strategy-note").count() == 0
     asset_card = modal.locator(".release-asset-card").first
+    assert asset_card.locator(":scope > .release-asset-main").count() == 1
+    assert asset_card.locator(":scope > .release-asset-badges").count() == 1
+    assert asset_card.locator(":scope > :not(.release-asset-main):not(.release-asset-badges)").count() == 0
+    assert asset_card.locator(".release-asset-main > strong").inner_text().strip()
     assert asset_card.locator(".asset-kind").count() == 1
     assert asset_card.locator(".release-asset-size").inner_text().strip()
     assert asset_card.locator(".release-asset-architecture").inner_text().strip()
     assert asset_card.locator(".asset-compatibility").count() == 1
+    assert asset_card.locator(".asset-recommended").count() == 1
     page.screenshot(path=file_screenshot)
 
     modal.locator(".release-nav-actions .release-secondary-btn").click()
