@@ -15,7 +15,6 @@ pub struct AppState {
     pub github_client: Arc<GitHubClient>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
     pub download_manager: Arc<DownloadManager>,
-    pub launcher_update_lock: Mutex<()>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,7 +52,6 @@ pub fn run() {
         )),
         settings: Arc::new(Mutex::new(settings)),
         download_manager: Arc::new(DownloadManager::new()),
-        launcher_update_lock: Mutex::new(()),
     };
 
     tauri::Builder::default()
@@ -108,7 +106,6 @@ pub fn run() {
             commands::updates::open_external_url,
             commands::updates::get_launcher_storage_info,
             commands::updates::cleanup_launcher_update_files,
-            commands::updates::install_launcher_release,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

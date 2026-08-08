@@ -47,6 +47,8 @@ yarn-error.log*
 .eslintcache
 .codex-build/
 .codex-tools/
+__pycache__/
+*.py[cod]
 
 # Temporary
 *.tmp

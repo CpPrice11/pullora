@@ -25,12 +25,3 @@ export async function getLauncherStorageInfo(): Promise<LauncherStorageInfo> {
 export async function cleanupLauncherUpdateFiles(): Promise<LauncherStorageInfo> {
   return callTauri<LauncherStorageInfo>('cleanup_launcher_update_files')
 }
-
-export async function installLauncherRelease(
-  version: string,
-  assetUrl: string,
-  assetName: string,
-  checksumUrl: string,
-): Promise<void> {
-  return callTauri('install_launcher_release', { version, assetUrl, assetName, checksumUrl })
-}
