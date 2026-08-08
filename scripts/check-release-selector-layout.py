@@ -181,9 +181,17 @@ def check_step_navigation(
     assert_current_step(page, modal, "confirm")
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
-    assert modal.locator(".release-confirm-grid > div").count() == 6
+    facts = modal.locator(".release-confirm-grid > div")
+    assert facts.count() == 6
+    for index in range(facts.count()):
+        fact = facts.nth(index)
+        assert fact.locator(":scope > span").inner_text().strip()
+        assert fact.locator(":scope > strong").inner_text().strip()
     assert modal.locator(".release-confirm-grid").get_by_text("v1.0.0", exact=True).count() >= 1
-    assert modal.locator(".release-install-path strong").inner_text().strip()
+    install_path = modal.locator(".release-install-path")
+    assert install_path.locator(":scope > span").inner_text().strip()
+    assert install_path.locator(":scope > strong").inner_text().strip()
+    assert install_path.locator(":scope > button").count() == 1
     assert modal.locator(".release-confirm-warning").count() == 0
     page.screenshot(path=confirm_screenshot)
 
