@@ -136,7 +136,7 @@ def check_context(page: Page, theme: str, width: int, height: int, baseline) -> 
     page.locator(".release-modal .close-btn").click()
     page.locator(".release-modal").wait_for(state="hidden")
 
-    page.locator(".library-density-toggle button").nth(1).click()
+    page.locator(".library-density-toggle button").click()
     page.locator(".library-page.library-density-compact").wait_for()
     compact = inspect_layers(page)
     page.screenshot(path=OUTPUT_DIR / f"library-hero-layers-{theme}-{width}x{height}-compact.png")

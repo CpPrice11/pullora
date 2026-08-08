@@ -769,8 +769,8 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--surface-radius-panel);
   box-shadow: none;
-  margin: 0 auto;
-  max-width: 1280px;
+  margin: 0;
+  max-width: none;
   padding: clamp(
     calc(20px * var(--density-scale)),
     calc(2vw * var(--density-scale)),
@@ -977,7 +977,6 @@
 }
 
 .cinematic-shell .settings-content--general .launcher-background-control {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding-top: calc(18px * var(--density-scale));
 }
 

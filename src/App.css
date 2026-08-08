@@ -23,6 +23,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
+  --z-menu: 90;
 }
 
 .page-lazy-fallback {
@@ -125,6 +126,14 @@ body {
   display: flex;
   flex-direction: column;
   overscroll-behavior: none;
+}
+
+#app-overlay-root {
+  pointer-events: none;
+}
+
+#app-overlay-root > * {
+  pointer-events: auto;
 }
 
 button {

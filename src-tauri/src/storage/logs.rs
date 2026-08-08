@@ -10,6 +10,12 @@ const MAX_LOG_BYTES: u64 = 1024 * 1024;
 const ROTATED_LOG_FILES: usize = 3;
 static LOG_WRITE_LOCK: Mutex<()> = Mutex::new(());
 
+fn user_home_dir() -> Option<PathBuf> {
+    dirs::home_dir()
+        .or_else(|| std::env::var_os("USERPROFILE").map(PathBuf::from))
+        .or_else(|| std::env::var_os("HOME").map(PathBuf::from))
+}
+
 fn log_path(config_dir: &Path, index: usize) -> PathBuf {
     if index == 0 {
         config_dir.join("pullora.log")
@@ -71,7 +77,7 @@ fn redact_after_marker(mut text: String, marker: &str, include_marker: bool) -> 
 
 pub fn redact_sensitive_text(value: &str) -> String {
     let mut redacted = value.to_owned();
-    if let Some(home) = dirs::home_dir().and_then(|path| path.to_str().map(str::to_owned)) {
+    if let Some(home) = user_home_dir().and_then(|path| path.to_str().map(str::to_owned)) {
         redacted = redacted.replace(&home, "<home>");
         redacted = redacted.replace(&home.replace('\\', "/"), "<home>");
     }
@@ -140,7 +146,7 @@ pub fn read_recent_logs(config_dir: &Path, limit: usize) -> Result<Vec<String>, 
 
 #[cfg(test)]
 mod tests {
-    use super::{append_log, read_recent_logs, MAX_LOG_BYTES};
+    use super::{append_log, read_recent_logs, user_home_dir, MAX_LOG_BYTES};
 
     #[test]
     fn reads_newest_entries_first_and_respects_limit() {
@@ -159,7 +165,7 @@ mod tests {
     fn redacts_secrets_and_personal_paths_on_write_and_read() {
         let dir =
             std::env::temp_dir().join(format!("pullora-log-redaction-{}", uuid::Uuid::new_v4()));
-        let home = dirs::home_dir().unwrap();
+        let home = user_home_dir().unwrap();
         let secret = "ghp_super_secret_value";
         append_log(
             &dir,

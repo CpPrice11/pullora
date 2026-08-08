@@ -684,7 +684,6 @@ function LibraryPage({
     changeSort: handleSortChange,
   } = useLibraryFiltering({
     repositories: libraryRepositories,
-    favoriteKeys,
     dismissedUpdateKeys,
     getInstalledApp,
     getLatestVersion,

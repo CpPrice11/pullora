@@ -123,8 +123,7 @@ def check_context(page: Page, theme: str, width: int, height: int, baseline) -> 
     normal_geometry = assert_panel_below_results(page)
     page.screenshot(path=OUTPUT_DIR / f"library-card-states-{theme}-{width}x{height}-normal.png")
 
-    density_buttons = page.locator(".library-density-toggle button")
-    density_buttons.nth(1).click()
+    page.locator(".library-density-toggle button").click()
     page.locator(".library-page.library-density-compact").wait_for()
     compact_height = cards.first.evaluate("el => el.getBoundingClientRect().height")
     assert compact_height < normal_height, {"normal": normal_height, "compact": compact_height}

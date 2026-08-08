@@ -1,12 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
-import { projectArtKey } from '../../../services/projectArt'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
 import { getLibraryAppStatus, getUpdateDismissKey } from '../libraryStatus'
 import type { LibraryFilter, LibrarySort } from '../libraryViewControls'
 
 interface UseLibraryFilteringOptions {
   repositories: GitHubSearchResult[]
-  favoriteKeys: Set<string>
   dismissedUpdateKeys: Set<string>
   getInstalledApp: (repo: GitHubSearchResult) => InstalledApp | undefined
   getLatestVersion: (repo: GitHubSearchResult) => string | undefined
@@ -17,7 +15,6 @@ interface UseLibraryFilteringOptions {
 
 export function useLibraryFiltering({
   repositories,
-  favoriteKeys,
   dismissedUpdateKeys,
   getInstalledApp,
   getLatestVersion,
@@ -40,7 +37,6 @@ export function useLibraryFiltering({
     const filtered = repositories.filter((repo) => {
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
-      const repoKey = projectArtKey(repo.owner.login, repo.name)
       const status = getLibraryAppStatus(installedApp, latestVersion)
       const updateDismissed = Boolean(
         latestVersion && dismissedUpdateKeys.has(
@@ -49,7 +45,6 @@ export function useLibraryFiltering({
       )
 
       if (filter === 'installed' && status === 'available') return false
-      if (filter === 'favorites' && !favoriteKeys.has(repoKey)) return false
       if (filter === 'updates' && (status !== 'update' || updateDismissed)) return false
       if (!normalizedQuery) return true
 
@@ -65,7 +60,6 @@ export function useLibraryFiltering({
     return sortLibraryRepositories(filtered, sort, getInstalledApp)
   }, [
     dismissedUpdateKeys,
-    favoriteKeys,
     filter,
     getInstalledApp,
     getLatestVersion,
