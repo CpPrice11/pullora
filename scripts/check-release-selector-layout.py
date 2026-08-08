@@ -32,8 +32,18 @@ def rounded_box(locator) -> dict:
 def assert_current_step(page: Page, modal, step: str, *, expect_focus: bool = True) -> None:
     context = modal.locator(f'.release-wizard-context[data-wizard-step="{step}"]')
     context.wait_for()
+    heading = context.locator("h3.release-wizard-heading")
+    assert heading.count() == 1
+    assert heading.inner_text().strip()
+
+    status = context.locator('[role="status"]')
+    assert status.count() == 1
+    assert status.get_attribute("aria-live") == "polite"
+    assert status.get_attribute("aria-atomic") == "true"
+    assert heading.inner_text().strip() in status.inner_text().strip()
+
     if expect_focus:
-        page.wait_for_function("el => el === document.activeElement", arg=context.element_handle())
+        page.wait_for_function("el => el === document.activeElement", arg=heading.element_handle())
 
 
 def assert_action_hierarchy(actions) -> None:
