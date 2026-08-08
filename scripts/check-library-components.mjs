@@ -378,6 +378,8 @@ try {
   )
   assert.match(releaseSelectorSource, /useState\(settings\.installationPath \?\? ''\)/)
   assert.match(releaseSelectorSource, /setInstallPath\(await setInstallationPath\(dir\)\)/)
+  assert.match(releaseSelectorSource, /validateInstallationPath\(path\)[\s\S]*?installPathValidation !== 'valid'/)
+  assert.match(releaseSelectorSource, /release-install-path[\s\S]*?aria-busy=\{installPathValidation === 'checking'\}/)
   assert.doesNotMatch(downloadServiceSource, /installPath/)
 
   const hero = render(LibraryHero, {

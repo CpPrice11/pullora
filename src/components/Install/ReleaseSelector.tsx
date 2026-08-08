@@ -3,7 +3,13 @@ import { useReleases } from '../../features/library/hooks/useGitHub'
 import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
 import { useModalFocus } from '../../hooks/useModalFocus'
-import type { AppSettings, DownloadProgress, GitHubAsset, GitHubRelease } from '../../types'
+import type {
+  AppSettings,
+  DownloadProgress,
+  GitHubAsset,
+  GitHubRelease,
+  InstallPathValidation,
+} from '../../types'
 import DownloadProgressPanel from './DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
 import { pickDirectory } from '../../services/dialog'
@@ -38,6 +44,7 @@ type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
 type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
 type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
 type CleanupResult = { tone: 'success' | 'warning'; message: string }
+type InstallPathValidationState = 'idle' | 'checking' | 'valid' | 'invalid'
 
 function getAssetKind(asset: GitHubAsset): AssetKind {
   return classifyReleaseAsset(asset)
@@ -123,6 +130,13 @@ function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = 
   }
 }
 
+function installPathErrorKey(status: InstallPathValidation['status']) {
+  if (status === 'missing') return 'release.installPathRequired'
+  if (status === 'noWritePermission') return 'release.installPathRequiresWritable'
+  if (status === 'busy') return 'release.installPathBusy'
+  return 'release.installPathUnavailable'
+}
+
 function ReleaseSelector({
   owner,
   repo,
@@ -145,6 +159,7 @@ function ReleaseSelector({
   const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null)
   const [activeDownloadId, setActiveDownloadId] = useState<string | null>(null)
   const [installPath, setInstallPath] = useState(settings.installationPath ?? '')
+  const [installPathValidation, setInstallPathValidation] = useState<InstallPathValidationState>('idle')
   const modalRef = useRef<HTMLDivElement | null>(null)
   const previousStepRef = useRef<WizardStep>(step)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
@@ -216,6 +231,36 @@ function ReleaseSelector({
     }
   }, [installPath, settings.installationPath])
 
+  useEffect(() => {
+    if (step !== 'confirm') return
+
+    const path = installPath.trim()
+    if (!path) {
+      setInstallPathValidation('invalid')
+      setDownloadError(t('release.installPathRequired'))
+      return
+    }
+
+    let cancelled = false
+    setInstallPathValidation('checking')
+    setDownloadError(null)
+    void validateInstallationPath(path)
+      .then((validation) => {
+        if (cancelled) return
+        setInstallPathValidation(validation.ok ? 'valid' : 'invalid')
+        setDownloadError(validation.ok ? null : t(installPathErrorKey(validation.status)))
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setInstallPathValidation('invalid')
+        setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [installPath, step, t])
+
   useModalFocus(modalRef, { onEscape: installActive ? undefined : requestClose })
 
   useEffect(() => {
@@ -271,33 +316,12 @@ function ReleaseSelector({
   }
 
   const handleDownload = async () => {
-    if (!selectedAsset || !selectedRelease || !selectedAssetAutoInstallable) return
-    const targetInstallPath = installPath.trim()
-    if (!targetInstallPath) {
-      setDownloadError(t('release.installPathRequired'))
-      setStep('confirm')
-      return
-    }
-
-    try {
-      const validation = await validateInstallationPath(targetInstallPath)
-      if (!validation.ok) {
-        const errorKey = validation.status === 'missing'
-          ? 'release.installPathRequired'
-          : validation.status === 'noWritePermission'
-            ? 'release.installPathRequiresWritable'
-            : validation.status === 'busy'
-              ? 'release.installPathBusy'
-              : 'release.installPathUnavailable'
-        setDownloadError(t(errorKey))
-        setStep('confirm')
-        return
-      }
-    } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
-      setStep('confirm')
-      return
-    }
+    if (
+      !selectedAsset
+      || !selectedRelease
+      || !selectedAssetAutoInstallable
+      || installPathValidation !== 'valid'
+    ) return
 
     setDownloading(true)
     setDownloadError(null)
@@ -654,12 +678,18 @@ function ReleaseSelector({
                         {selectedRelease.body?.trim() || t('release.notesEmpty')}
                       </div>
                     </section>
-                    <div className="release-install-path">
+                    <div
+                      className="release-install-path"
+                      aria-busy={installPathValidation === 'checking'}
+                    >
                       <span>{t('release.installPath')}</span>
                       <strong>{installPath || t('release.installPathNotSelected')}</strong>
                       <button type="button" className="release-secondary-btn" onClick={handleChooseInstallPath} disabled={downloading}>
                         {t('release.chooseInstallPath')}
                       </button>
+                      <span className="visually-hidden" role="status" aria-live="polite">
+                        {installPathValidation === 'checking' ? t('release.installPathChecking') : ''}
+                      </span>
                     </div>
                     {selectedAssetKind === 'installer' && (
                       <div className="release-blocked-note" role="note">
@@ -669,7 +699,7 @@ function ReleaseSelector({
                     )}
                   </div>
 
-                  {downloadError && <div className="error-message" role="alert">{downloadError}</div>}
+                  {downloadError && <div id="release-install-error" className="error-message" role="alert">{downloadError}</div>}
 
                   <div className="release-nav-actions">
                     <button type="button" className="release-secondary-btn" onClick={() => setStep('file')} disabled={downloading}>
@@ -678,7 +708,9 @@ function ReleaseSelector({
                     <button
                       type="button"
                       onClick={handleDownload}
-                      disabled={!selectedAssetAutoInstallable || downloading}
+                      disabled={!selectedAssetAutoInstallable || downloading || installPathValidation !== 'valid'}
+                      aria-describedby={downloadError ? 'release-install-error' : undefined}
+                      aria-busy={installPathValidation === 'checking'}
                       className="download-btn release-action-primary"
                     >
                       {downloading

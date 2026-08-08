@@ -180,6 +180,7 @@ def check_step_navigation(
     assert_current_step(page, modal, "file")
     modal.locator(".release-nav-actions .release-action-primary").click()
     assert_current_step(page, modal, "confirm")
+    modal.locator(".release-nav-actions .release-action-primary:enabled").wait_for()
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
     facts = modal.locator(".release-confirm-grid > div")
@@ -443,6 +444,32 @@ def check_active_download_close_guard(page: Page, baseline) -> None:
     assert trigger.evaluate("el => el === document.activeElement")
 
 
+def check_install_path_prevalidation(page: Page, baseline) -> None:
+    baseline.seed_cache(page)
+    baseline.open_library(page)
+    page.evaluate("window.__PULLORA_TEST_INSTALL_PATH_VALIDATION_PENDING__ = true")
+
+    page.locator(".library-ops-action-row .hero-primary-btn").click()
+    modal = page.locator(".release-modal--wizard")
+    modal.wait_for()
+    modal.locator(".release-nav-actions .release-action-primary").click()
+    modal.locator(".release-nav-actions .release-action-primary").click()
+
+    install_path = modal.locator('.release-install-path[aria-busy="true"]')
+    install_path.wait_for()
+    install_button = modal.locator(".release-nav-actions .release-action-primary")
+    assert install_button.is_disabled()
+    assert install_button.get_attribute("aria-busy") == "true"
+
+    page.evaluate(
+        "window.__PULLORA_TEST_RESOLVE_INSTALL_PATH_VALIDATION__({ ok: false, status: 'noWritePermission' })"
+    )
+    modal.locator('.release-install-path[aria-busy="false"]').wait_for()
+    assert install_button.is_disabled()
+    assert install_button.get_attribute("aria-describedby") == "release-install-error"
+    assert modal.locator("#release-install-error[role='alert']").inner_text().strip()
+
+
 def check_context(page: Page, theme: str, width: int, height: int, baseline) -> dict:
     baseline.seed_cache(page)
     baseline.open_library(page)
@@ -493,6 +520,14 @@ def main() -> None:
         )
         check_active_download_close_guard(guard_context.new_page(), baseline)
         guard_context.close()
+
+        validation_context = browser.new_context(
+            viewport={"width": 1280, "height": 720},
+            color_scheme="dark",
+            locale="uk-UA",
+        )
+        check_install_path_prevalidation(validation_context.new_page(), baseline)
+        validation_context.close()
         browser.close()
 
     for width, height in VIEWPORTS:
