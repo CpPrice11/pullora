@@ -870,30 +870,6 @@
   width: min(94vw, 1040px);
 }
 
-.release-wizard-context {
-  border-bottom: 1px solid rgba(91, 215, 255, 0.16);
-  display: grid;
-  gap: 4px;
-  margin: 12px 26px 0;
-  min-width: 0;
-  padding: 0 0 10px;
-}
-
-.release-wizard-heading {
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 820;
-  margin: 0;
-}
-
-.release-wizard-context p {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  line-height: 1.45;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
 .cinematic-shell .release-modal--wizard .release-body {
   display: block;
   max-height: min(650px, calc(100vh - 205px));
@@ -1441,10 +1417,6 @@
   color: #b91c1c;
 }
 
-:root[data-theme='light'] .release-wizard-context {
-  border-color: color-mix(in srgb, var(--color-primary) 24%, var(--surface-border));
-}
-
 :root[data-theme='light'] .release-nav-actions {
   background: linear-gradient(180deg, transparent, var(--surface-material-strong) 22%);
 }
@@ -1758,8 +1730,7 @@
 }
 
 /* Release wizard surface hierarchy: shared by dark and light themes. */
-:root[data-theme] .cinematic-shell .release-modal--wizard > .modal-header,
-:root[data-theme] .cinematic-shell .release-modal--wizard > .release-wizard-context {
+:root[data-theme] .cinematic-shell .release-modal--wizard > .modal-header {
   background: var(--surface-2);
   border-color: var(--surface-border);
 }

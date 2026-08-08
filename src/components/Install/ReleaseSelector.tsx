@@ -131,17 +131,6 @@ function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = 
   }
 }
 
-function stepHelpKey(step: WizardStep) {
-  switch (step) {
-    case 'version': return 'release.stepVersionHelp'
-    case 'file': return 'release.stepFileHelp'
-    case 'confirm': return 'release.stepConfirmHelp'
-    case 'progress': return 'release.stepProgressHelp'
-    case 'result': return 'release.stepResultHelp'
-    default: return 'release.stepVersionHelp'
-  }
-}
-
 function ReleaseSelector({
   owner,
   repo,
@@ -424,15 +413,21 @@ function ReleaseSelector({
           </button>
         </div>
 
-        <div className="release-wizard-context" data-wizard-step={step}>
-          <h3 className="release-wizard-heading" tabIndex={-1}>
-            {currentStepLabel}
-          </h3>
-          <p>{t(stepHelpKey(step))}</p>
-          <span className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-            {t('release.currentStep', { step: currentStepLabel })}
-          </span>
-        </div>
+        <h3
+          className="release-wizard-heading visually-hidden"
+          data-wizard-step={step}
+          tabIndex={-1}
+        >
+          {currentStepLabel}
+        </h3>
+        <span
+          className="release-wizard-status visually-hidden"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {t('release.currentStep', { step: currentStepLabel })}
+        </span>
 
         <div className="release-body">
           {loading && <StatePanel kind="loading" title={t('release.loading')} skeletonCount={3} />}

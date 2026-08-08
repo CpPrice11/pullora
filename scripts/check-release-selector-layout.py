@@ -30,13 +30,12 @@ def rounded_box(locator) -> dict:
 
 
 def assert_current_step(page: Page, modal, step: str, *, expect_focus: bool = True) -> None:
-    context = modal.locator(f'.release-wizard-context[data-wizard-step="{step}"]')
-    context.wait_for()
-    heading = context.locator("h3.release-wizard-heading")
+    heading = modal.locator(f'h3.release-wizard-heading[data-wizard-step="{step}"]')
+    heading.wait_for(state="attached")
     assert heading.count() == 1
     assert heading.inner_text().strip()
 
-    status = context.locator('[role="status"]')
+    status = modal.locator(".release-wizard-status")
     assert status.count() == 1
     assert status.get_attribute("aria-live") == "polite"
     assert status.get_attribute("aria-atomic") == "true"
@@ -137,7 +136,6 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     overlay = page.locator(".modal-overlay")
     modal = page.locator(".release-modal--wizard")
     header = modal.locator(".modal-header")
-    context = modal.locator(".release-wizard-context")
     body = modal.locator(".release-body")
     actions = modal.locator(".release-nav-actions")
 
@@ -149,7 +147,6 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     overlay_box = rounded_box(overlay)
     modal_box = rounded_box(modal)
     header_box = rounded_box(header)
-    context_box = rounded_box(context)
     body_box = rounded_box(body)
     actions_box = rounded_box(actions)
 
@@ -161,8 +158,7 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert modal_box["height"] <= height * 0.9 + 1
 
     assert header_box["y"] >= modal_box["y"]
-    assert context_box["y"] >= header_box["y"] + header_box["height"] - 0.5
-    assert body_box["y"] >= context_box["y"] + context_box["height"] - 0.5
+    assert body_box["y"] >= header_box["y"] + header_box["height"] - 0.5
     assert actions_box["x"] >= body_box["x"] - 0.5
     assert actions_box["x"] + actions_box["width"] <= body_box["x"] + body_box["width"] + 0.5
 
@@ -187,7 +183,7 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert overflow["bodyOverflowY"] == "auto", overflow
     assert overflow["bodyOverscroll"] == "contain", overflow
 
-    assert modal.locator(".release-wizard-steps, .release-step-pill").count() == 0
+    assert modal.locator(".release-wizard-steps, .release-step-pill, .release-wizard-context").count() == 0
 
     assert actions.get_by_role("button").count() == 1
     assert actions.get_by_role("button").first.is_enabled()
@@ -211,16 +207,10 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
         }"""
     )
     page.wait_for_timeout(50)
-    fixed_before = {
-        "header": rounded_box(header),
-        "context": rounded_box(context),
-    }
+    fixed_before = rounded_box(header)
     body.evaluate("el => { el.scrollTop = el.scrollHeight }")
     page.wait_for_timeout(50)
-    fixed_after = {
-        "header": rounded_box(header),
-        "context": rounded_box(context),
-    }
+    fixed_after = rounded_box(header)
     assert fixed_before == fixed_after, {"before": fixed_before, "after": fixed_after}
     scrolled_actions = rounded_box(actions)
     scrolled_body = rounded_box(body)
@@ -235,7 +225,6 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     return {
         "modal": modal_box,
         "header": header_box,
-        "context": context_box,
         "body": body_box,
         "actions": actions_box,
         "overflow": overflow,
@@ -352,7 +341,7 @@ def check_active_download_close_guard(page: Page, baseline) -> None:
     for _ in range(3):
         modal.locator(".release-nav-actions .release-action-primary").click()
 
-    modal.locator('.release-wizard-context[data-wizard-step="progress"]').wait_for()
+    modal.locator('.release-wizard-heading[data-wizard-step="progress"]').wait_for(state="attached")
     assert modal.get_attribute("aria-busy") == "true"
     assert modal.locator(".close-btn").is_disabled()
 
@@ -362,7 +351,7 @@ def check_active_download_close_guard(page: Page, baseline) -> None:
     assert modal.is_visible()
 
     page.evaluate("window.__PULLORA_DOWNLOAD_TEST__.complete()")
-    modal.locator('.release-wizard-context[data-wizard-step="result"]').wait_for()
+    modal.locator('.release-wizard-heading[data-wizard-step="result"]').wait_for(state="attached")
     assert modal.get_attribute("aria-busy") == "false"
     page.locator(".modal-overlay").evaluate("el => el.click()")
     modal.wait_for(state="hidden")
@@ -424,7 +413,7 @@ def main() -> None:
     for width, height in VIEWPORTS:
         dark = next(item for item in results if item["theme"] == "dark" and item["viewport"] == [width, height])
         light = next(item for item in results if item["theme"] == "light" and item["viewport"] == [width, height])
-        for key in ("modal", "header", "context", "body", "actions"):
+        for key in ("modal", "header", "body", "actions"):
             assert dark[key] == light[key], {"viewport": [width, height], "key": key}
     print(json.dumps(results, ensure_ascii=False))
 
