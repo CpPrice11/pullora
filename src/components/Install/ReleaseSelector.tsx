@@ -39,8 +39,6 @@ type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
 type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
 type CleanupResult = { tone: 'success' | 'warning'; message: string }
 
-const wizardSteps: WizardStep[] = ['version', 'file', 'confirm', 'progress', 'result']
-
 function getAssetKind(asset: GitHubAsset): AssetKind {
   return classifyReleaseAsset(asset)
 }
@@ -246,11 +244,8 @@ function ReleaseSelector({
     previousStepRef.current = step
 
     const focusTimer = window.setTimeout(() => {
-      const currentStep = modalRef.current?.querySelector<HTMLButtonElement>(
-        `[data-wizard-step="${step}"]`,
-      )
       const stepContext = modalRef.current?.querySelector<HTMLElement>('.release-wizard-context')
-      ;(currentStep && !currentStep.disabled ? currentStep : stepContext)?.focus()
+      stepContext?.focus()
     }, 0)
 
     return () => window.clearTimeout(focusTimer)
@@ -428,29 +423,7 @@ function ReleaseSelector({
           </button>
         </div>
 
-        <div className="release-wizard-steps" role="group" aria-label={t('release.wizardSteps')}>
-          {wizardSteps.map((item) => {
-            const currentIndex = wizardSteps.indexOf(step)
-            const itemIndex = wizardSteps.indexOf(item)
-            return (
-              <button
-                key={item}
-                type="button"
-                data-wizard-step={item}
-                className={`release-step-pill ${item === step ? 'active' : ''} ${itemIndex < currentIndex ? 'done' : ''}`}
-                onClick={() => itemIndex <= currentIndex && setStep(item)}
-                disabled={itemIndex > currentIndex || installActive}
-                aria-current={item === step ? 'step' : undefined}
-                aria-label={`${stepLabel(item, t, failedResult)}. ${t(stepHelpKey(item))}`}
-                data-autofocus={item === step ? 'true' : undefined}
-              >
-                {stepLabel(item, t, failedResult)}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="release-wizard-context" tabIndex={-1}>
+        <div className="release-wizard-context" data-wizard-step={step} tabIndex={-1}>
           <span>{stepLabel(step, t, failedResult)}</span>
           <p>{t(stepHelpKey(step))}</p>
         </div>

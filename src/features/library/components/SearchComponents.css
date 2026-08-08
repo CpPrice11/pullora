@@ -870,45 +870,6 @@
   width: min(94vw, 1040px);
 }
 
-.release-wizard-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 14px 26px 0;
-}
-
-.cinematic-shell .release-wizard-steps {
-  padding-top: 16px;
-}
-
-.release-step-pill {
-  background: var(--color-control);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 999px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
-  min-height: 34px;
-  padding: 0 12px;
-}
-
-.release-step-pill.active {
-  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-control));
-  border-color: var(--color-primary);
-  color: var(--color-text);
-}
-
-.release-step-pill.done {
-  border-color: color-mix(in srgb, var(--color-success) 58%, var(--color-border-subtle));
-  color: var(--color-success);
-}
-
-.release-step-pill:disabled {
-  cursor: default;
-  opacity: 0.56;
-}
-
 .release-wizard-context {
   border-bottom: 1px solid rgba(91, 215, 255, 0.16);
   display: grid;
@@ -1797,7 +1758,6 @@
 
 /* Release wizard surface hierarchy: shared by dark and light themes. */
 :root[data-theme] .cinematic-shell .release-modal--wizard > .modal-header,
-:root[data-theme] .cinematic-shell .release-modal--wizard > .release-wizard-steps,
 :root[data-theme] .cinematic-shell .release-modal--wizard > .release-wizard-context {
   background: var(--surface-2);
   border-color: var(--surface-border);
