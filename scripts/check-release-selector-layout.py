@@ -156,6 +156,8 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert modal_box["y"] + modal_box["height"] <= height + 0.5
     assert modal_box["width"] <= min(width * 0.94, 1040) + 1
     assert modal_box["height"] <= height * 0.9 + 1
+    assert header_box["height"] <= 132
+    assert body_box["height"] <= 300
 
     assert header_box["y"] >= modal_box["y"]
     assert body_box["y"] >= header_box["y"] + header_box["height"] - 0.5

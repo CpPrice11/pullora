@@ -870,12 +870,16 @@
   width: min(94vw, 1040px);
 }
 
+.cinematic-shell .release-modal--wizard .modal-header {
+  padding: 18px 22px 14px;
+}
+
 .cinematic-shell .release-modal--wizard .release-body {
   display: block;
   max-height: min(650px, calc(100vh - 205px));
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 14px 26px 0;
+  padding: 10px 26px 0;
 }
 
 .release-wizard-panel {
