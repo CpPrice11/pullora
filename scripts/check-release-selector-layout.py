@@ -12,6 +12,7 @@ BASELINE_PATH = ROOT / "scripts" / "capture-visual-baseline.py"
 OUTPUT_DIR = ROOT / "docs" / "visual-baseline" / "design-contract"
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
+DEFAULT_INSTALL_PATH = r"C:\Users\Tester\AppData\Local\Pullora\Apps"
 
 
 def load_baseline():
@@ -190,7 +191,7 @@ def check_step_navigation(
     assert modal.locator(".release-confirm-grid").get_by_text("v1.0.0", exact=True).count() >= 1
     install_path = modal.locator(".release-install-path")
     assert install_path.locator(":scope > span").inner_text().strip()
-    assert install_path.locator(":scope > strong").inner_text().strip()
+    assert install_path.locator(":scope > strong").inner_text().strip() == DEFAULT_INSTALL_PATH
     assert install_path.locator(":scope > button").count() == 1
     assert modal.locator(".release-confirm-warning").count() == 0
     page.screenshot(path=confirm_screenshot)
@@ -362,7 +363,7 @@ def install_pending_download_mock(page: Page) -> None:
               if (command === 'get_settings') {
                 return {
                   version: 2,
-                  installationPath: 'C:\\\\PulloraApps',
+                  installationPath: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps',
                   includePrereleases: false,
                   assetStrategy: 'portableFirst',
                   githubOwner: 'CpPrice11',
@@ -401,7 +402,7 @@ def install_pending_download_mock(page: Page) -> None:
                       owner: 'CpPrice11',
                       repo: 'fandom-translator',
                       tag: 'v1.0.0',
-                      installPath: 'C:\\\\PulloraApps',
+                      installPath: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps',
                     },
                   })
                 }
