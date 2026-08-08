@@ -144,8 +144,8 @@ with sync_playwright() as playwright:
     page.locator(".hero-primary-btn:visible").first.click()
     page.locator(".release-modal").wait_for()
     assert_primary(page.locator(".release-action-primary"))
-    assert_muted(page.locator(".release-wizard-context p"), composite(surfaces[1], canvas))
-    assert page.locator(".release-wizard-steps, .release-step-pill").count() == 0
+    assert page.locator(".release-wizard-heading").count() == 1
+    assert page.locator(".release-wizard-steps, .release-step-pill, .release-wizard-context").count() == 0
 
     context.close()
     browser.close()

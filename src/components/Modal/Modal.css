@@ -266,8 +266,7 @@
   overflow: hidden;
 }
 
-.release-modal--wizard > .modal-header,
-.release-modal--wizard > .release-wizard-context {
+.release-modal--wizard > .modal-header {
   flex: 0 0 auto;
 }
 
