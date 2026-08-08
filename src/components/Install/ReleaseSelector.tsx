@@ -391,15 +391,22 @@ function ReleaseSelector({
             </div>
             {description && <p className="modal-subtitle">{description}</p>}
           </div>
-          <button
-            type="button"
-            className="close-btn"
-            onClick={requestClose}
-            disabled={installActive}
-            aria-label={t('release.close')}
-          >
-            {'\u00d7'}
-          </button>
+          <div className="release-header-actions">
+            {selectedRelease && (
+              <button type="button" className="view-release-link release-github-link" onClick={handleOpenGithubRelease}>
+                GitHub
+              </button>
+            )}
+            <button
+              type="button"
+              className="close-btn"
+              onClick={requestClose}
+              disabled={installActive}
+              aria-label={t('release.close')}
+            >
+              {'\u00d7'}
+            </button>
+          </div>
         </div>
 
         <h3
@@ -602,9 +609,6 @@ function ReleaseSelector({
                       disabled={!selectedAssetAutoInstallable}
                     >
                       {t('release.next')}
-                    </button>
-                    <button type="button" className="view-release-link release-github-link" onClick={handleOpenGithubRelease}>
-                      GitHub
                     </button>
                   </div>
                 </>

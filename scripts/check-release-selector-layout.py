@@ -54,7 +54,7 @@ def assert_action_hierarchy(actions) -> None:
         if "release-action-primary" in (button.get_attribute("class") or "").split():
             continue
         classes = (button.get_attribute("class") or "").split()
-        assert "release-secondary-btn" in classes or "release-github-link" in classes, classes
+        assert "release-secondary-btn" in classes, classes
 
     primary_layout = primary.evaluate(
         """el => ({
@@ -190,6 +190,9 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert modal.get_attribute("aria-modal") == "true"
     assert modal.get_attribute("aria-labelledby") == "release-selector-title"
     assert modal.locator("#release-selector-title").count() == 1
+    assert header.locator(".release-github-link").count() == 1
+    assert header.locator(".release-github-link").inner_text().strip() == "GitHub"
+    assert modal.locator(".release-nav-actions .release-github-link").count() == 0
 
     overlay_box = rounded_box(overlay)
     modal_box = rounded_box(modal)
