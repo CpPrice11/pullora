@@ -97,6 +97,17 @@ def check_step_navigation(
     assert release_card.locator(".release-version-main span").first.inner_text().strip()
     assert release_card.locator(".release-stability-pill").count() == 1
     assert release_card.locator(".release-status-pill").count() == 2
+    badges = release_card.locator(".release-version-badges")
+    badge_layout = badges.evaluate(
+        """el => ({
+            direction: getComputedStyle(el).flexDirection,
+            wrap: getComputedStyle(el).flexWrap,
+            tops: [...el.children].map((child) => Math.round(child.getBoundingClientRect().top)),
+        })"""
+    )
+    assert badge_layout["direction"] == "row", badge_layout
+    assert badge_layout["wrap"] == "nowrap", badge_layout
+    assert len(set(badge_layout["tops"])) == 1, badge_layout
 
     modal.locator(".release-nav-actions .release-action-primary").click()
     assert_current_step(page, modal, "file")

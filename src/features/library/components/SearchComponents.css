@@ -536,7 +536,6 @@
 }
 
 .release-version-main,
-.release-version-badges,
 .release-asset-main,
 .release-asset-badges {
   align-items: flex-start;
@@ -546,9 +545,17 @@
   min-width: 0;
 }
 
-.release-version-badges--summary {
+.release-version-badges {
   align-items: center;
+  display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.release-version-badges--summary {
   flex-wrap: wrap;
 }
 
@@ -1653,6 +1660,11 @@
 }
 
 @media (max-width: 760px) {
+  .release-version-card > .release-version-badges {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .cinematic-shell .repo-card {
     grid-template-columns: 56px minmax(0, 1fr);
   }
