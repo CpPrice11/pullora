@@ -652,30 +652,6 @@
   width: 100%;
 }
 
-.cinematic-shell .settings-page-header {
-  align-items: flex-end;
-  background: transparent;
-  border: 0;
-  flex: 0 0 auto;
-  max-width: none;
-  min-height: calc(64px * var(--density-scale));
-  padding: 0;
-  width: 100%;
-}
-
-.cinematic-shell .settings-page-kicker {
-  color: var(--color-primary);
-  font-size: 10px;
-  letter-spacing: 0.07em;
-}
-
-.cinematic-shell .settings-page-header h2 {
-  color: var(--color-text);
-  font-size: clamp(28px, 2.4vw, 36px);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-
 .cinematic-shell .settings-workspace {
   backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
   background: var(--surface-1);
@@ -1338,10 +1314,6 @@
     grid-template-columns: 180px minmax(0, 1fr);
   }
 
-  .cinematic-shell .settings-page-header {
-    align-items: flex-start;
-  }
-
   .cinematic-shell .settings-content--maintenance .danger-zone {
     grid-template-columns: 1fr;
   }
@@ -1524,7 +1496,6 @@
   color: var(--color-primary-dark);
 }
 
-:root[data-theme='light'] .cinematic-shell .settings-page-header h2,
 :root[data-theme='light'] .cinematic-shell .settings-page .settings-section h3,
 :root[data-theme='light'] .cinematic-shell .settings-page .danger-zone h3,
 :root[data-theme='light'] .cinematic-shell .settings-page .form-group > label,

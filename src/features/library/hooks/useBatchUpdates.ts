@@ -168,13 +168,21 @@ export function useBatchUpdates({
   }
 
   const handleBatchCleanup = async () => {
+    setBatchUpdateError(null)
     try {
       const count = await cleanupIncompleteInstalls()
       setBatchCleanupMessage(t('download.cleanupDone', { count }))
     } catch (error) {
-      setBatchCleanupMessage(error instanceof Error ? error.message : t('download.cleanupError'))
+      setBatchCleanupMessage(null)
+      setBatchUpdateError(error instanceof Error ? error.message : t('download.cleanupError'))
     }
   }
+
+  useEffect(() => {
+    if (!batchUpdateError) return
+    const timer = window.setTimeout(() => setBatchUpdateError(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [batchUpdateError])
 
   useEffect(() => {
     if (!batchUpdating) return

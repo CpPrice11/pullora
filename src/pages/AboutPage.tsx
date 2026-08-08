@@ -21,7 +21,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.15.0'
+const FALLBACK_CURRENT_VERSION = 'v5.16.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type PendingLauncherAction = {
@@ -315,9 +315,7 @@ function AboutPage() {
 
   return (
     <div className="page about-page">
-      <div className="page-header">
-        <h2>{t('about.title')}</h2>
-      </div>
+      <h2 className="visually-hidden">{t('about.title')}</h2>
 
       <section className="about-hero">
         <div className="about-hero-mark" aria-hidden="true">

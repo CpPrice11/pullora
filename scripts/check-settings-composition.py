@@ -201,7 +201,7 @@ def install_settings_mock(page):
 
 def boxes(page):
     return page.locator(
-        ".settings-page-header, .settings-workspace, .settings-nav"
+        ".settings-workspace, .settings-nav"
     ).evaluate_all(
         "els => els.map(el => { const box = el.getBoundingClientRect(); return "
         "{ className: el.className, x: box.x, y: box.y, width: box.width, height: box.height } })"
@@ -227,9 +227,8 @@ def element_geometry(page, selector):
 
 
 def composition(box_list):
-    header, workspace, navigation = box_list
+    workspace, navigation = box_list
     return {
-        "header": header,
         "workspace": {key: workspace[key] for key in ("x", "y", "width")},
         "navigation": {key: navigation[key] for key in ("x", "y", "width")},
     }

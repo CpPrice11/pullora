@@ -19,7 +19,6 @@ interface BatchUpdatePanelProps {
   versionErrorCount: number
   updateMessage?: string | null
   cleanupMessage?: string | null
-  error?: string | null
   children?: ReactNode
   onCheck: () => void
   onUpdateAll: () => void
@@ -74,9 +73,9 @@ export function BatchUpdateConfirmDialog({
           <ul className="updates-center-list batch-update-confirm-list">
             {visibleItems.map(({ repo, currentVersion, latestVersion }) => (
               <li key={`${repo.owner.login}/${repo.name}`} className="updates-center-row">
-                <div>
+                <div className="updates-center-row-main">
                   <strong>{repo.name}</strong>
-                  <span>{currentVersion} {'->'} {latestVersion}</span>
+                  <span className="updates-center-version-change">{currentVersion} → {latestVersion}</span>
                 </div>
               </li>
             ))}
@@ -112,7 +111,6 @@ export default function BatchUpdatePanel({
   versionErrorCount,
   updateMessage,
   cleanupMessage,
-  error,
   children,
   onCheck,
   onUpdateAll,
@@ -139,10 +137,22 @@ export default function BatchUpdatePanel({
         aria-busy={checking || updating}
       >
       <div className="updates-center-main">
-        <div>
-          <span className="updates-center-kicker">{t('updates.kicker')}</span>
+        <div className="updates-center-heading">
           <h3>{t('updates.centerTitle')}</h3>
-          <p>{t('updates.centerText')}</p>
+          <div className="updates-center-statuses" role="status" aria-live="polite" aria-atomic="true">
+            <span className="updates-center-status">
+              <span>{t('updates.available')}</span>
+              <strong>{items.length}</strong>
+            </span>
+            <span className="updates-center-status">
+              <span>{t('updates.skipped')}</span>
+              <strong>{skippedCount}</strong>
+            </span>
+            <span className="updates-center-status">
+              <span>{t('updates.lastChecked')}</span>
+              <strong>{lastChecked ?? t('details.unknown')}</strong>
+            </span>
+          </div>
         </div>
         <div className="updates-center-actions">
           <button type="button" className="secondary-btn" onClick={onCheck} disabled={checking || updating}>
@@ -157,21 +167,6 @@ export default function BatchUpdatePanel({
           >
             {updating ? t('updates.updatingAll') : t('updates.updateAllPortable')}
           </button>
-        </div>
-      </div>
-
-      <div className="updates-center-stats">
-        <div>
-          <span>{t('updates.available')}</span>
-          <strong>{items.length}</strong>
-        </div>
-        <div>
-          <span>{t('updates.skipped')}</span>
-          <strong>{skippedCount}</strong>
-        </div>
-        <div>
-          <span>{t('updates.lastChecked')}</span>
-          <strong>{lastChecked ?? t('details.unknown')}</strong>
         </div>
       </div>
 
@@ -191,15 +186,14 @@ export default function BatchUpdatePanel({
           {cleanupMessage}
         </div>
       )}
-      {error && <div className="error-message" role="alert">{error}</div>}
-
       {items.length > 0 ? (
         <div className="updates-center-list">
           {items.slice(0, 6).map(({ repo, currentVersion, latestVersion }) => (
             <div key={`${repo.owner.login}/${repo.name}`} className="updates-center-row">
-              <div>
+              <div className="updates-center-row-main">
                 <strong>{repo.name}</strong>
-                <span>{currentVersion} {'->'} {latestVersion}</span>
+                <span className="updates-center-version-change">{currentVersion} → {latestVersion}</span>
+                <span className="updates-center-row-status">{t('updates.available')}</span>
               </div>
               <div className="updates-center-row-actions">
                 <button type="button" className="secondary-btn" onClick={() => onUpdate(repo)}>{t('repo.updateAction')}</button>
