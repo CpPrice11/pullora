@@ -98,11 +98,11 @@ fn version_install_dir(
         .as_ref()
         .filter(|path| !path.trim().is_empty())
     {
-        return crate::storage::path_scope::ensure_within_any(
-            std::path::Path::new(path),
-            &roots,
-            false,
-        );
+        let path = std::path::Path::new(path);
+        if let Ok(path) = crate::storage::path_scope::ensure_within_any(path, &roots, false) {
+            return Ok(path);
+        }
+        return recorded_version_install_dir(path, owner, repo, &version.tag);
     }
 
     let candidates = legacy_version_candidates(install_path, owner, repo, &version.tag);
@@ -118,6 +118,28 @@ fn version_install_dir(
     }
 
     Err(command_error("errors.legacyInstallPathMissing"))
+}
+
+fn recorded_version_install_dir(
+    path: &std::path::Path,
+    owner: &str,
+    repo: &str,
+    tag: &str,
+) -> Result<std::path::PathBuf, String> {
+    let app_dir = path
+        .parent()
+        .ok_or_else(|| command_error("errors.pathOutsideAllowedRoots"))?;
+    let root = app_dir
+        .parent()
+        .ok_or_else(|| command_error("errors.pathOutsideAllowedRoots"))?;
+    let root = crate::storage::path_scope::installation_root(&root.to_string_lossy())?;
+    let path = crate::storage::path_scope::ensure_within(path, &root, false)?;
+    let expected = installed_app_dir(&root.to_string_lossy(), owner, repo)
+        .join(crate::storage::path_scope::safe_component(tag));
+    if path != expected {
+        return Err(command_error("errors.pathOutsideAllowedRoots"));
+    }
+    Ok(path)
 }
 
 fn version_executable_path(
@@ -574,7 +596,41 @@ fn log_launch_event(owner: &str, repo: &str, tag: &str, message: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::cleanup_install_root;
+    use super::{cleanup_install_root, version_install_dir};
+    use crate::storage::installed::VersionInfo;
+
+    #[test]
+    fn recorded_version_dir_survives_an_install_root_change() {
+        let base =
+            std::env::temp_dir().join(format!("pullora-recorded-path-{}", uuid::Uuid::new_v4()));
+        let previous = base.join("previous");
+        let current = base.join("current");
+        let version_dir = previous.join("owner-repo").join("v1");
+        std::fs::create_dir_all(&version_dir).unwrap();
+        std::fs::create_dir_all(&current).unwrap();
+
+        let mut version = VersionInfo {
+            tag: "v1".to_string(),
+            installed_at: chrono::Utc::now(),
+            executable: "app.exe".to_string(),
+            size_bytes: 1,
+            asset_name: None,
+            install_kind: Some("portable".to_string()),
+            install_dir: Some(version_dir.display().to_string()),
+        };
+
+        assert_eq!(
+            version_install_dir(&current.display().to_string(), "owner", "repo", &version).unwrap(),
+            std::fs::canonicalize(&version_dir).unwrap()
+        );
+
+        version.install_dir = Some(previous.join("other-repo").join("v1").display().to_string());
+        assert!(
+            version_install_dir(&current.display().to_string(), "owner", "repo", &version).is_err()
+        );
+
+        std::fs::remove_dir_all(base).unwrap();
+    }
 
     #[test]
     fn cleanup_restores_interrupted_replacement_and_removes_leftovers() {
