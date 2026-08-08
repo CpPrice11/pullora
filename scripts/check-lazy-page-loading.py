@@ -80,7 +80,7 @@ def check_navigation_state(page: Page) -> dict:
     BASELINE["seed_cache"](page)
     BASELINE["open_library"](page)
 
-    page.get_by_role("button", name="Компактний", exact=True).click()
+    page.get_by_role("switch", name="Компактний", exact=True).click()
     library = page.locator(".library-page.library-density-compact")
     library.wait_for()
     library.evaluate("element => { element.dataset.lazyProbe = 'preserved' }")

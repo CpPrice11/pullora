@@ -29,8 +29,8 @@ VIEWPORT_CONTRACT = {
 COMMON_CONTRACT = {
     "normal": {
         "workspace": [14, 16, 20],
-        "toolstrip": [239, 12, 12],
-        "controls": [44, 52, 44, 44],
+        "toolstrip": [278, 12, 12],
+        "controls": [44, 50, 44, 44],
         "controlFonts": [13, 14, 12, 12],
         "resultsPadding": [12, 18],
         "folder": [17, 31, 3, 16],
@@ -40,8 +40,8 @@ COMMON_CONTRACT = {
     },
     "compact": {
         "workspace": [10, 10, 14],
-        "toolstrip": [183, 8, 8],
-        "controls": [34, 42, 34, 34],
+        "toolstrip": [216, 8, 8],
+        "controls": [34, 38, 34, 34],
         "controlFonts": [13, 14, 12, 12],
         "resultsPadding": [8, 10],
         "folder": [14, 25, 1, 13],
@@ -72,7 +72,7 @@ def metrics(page) -> dict:
             const detailsPane = read('.library-sam-details-pane')
             const toolstrip = read('.library-toolstrip')
             const filterButton = read('.library-sidebar-filter-nav .library-sidebar-nav-btn')
-            const search = read('.library-sidebar-query-row .search-input')
+            const search = read('.library-toolstrip > .search-form .search-input')
             const densityButton = read('.library-density-toggle button')
             const sort = read('.library-sort-control select')
             const results = read('.search-results')
@@ -140,7 +140,7 @@ with sync_playwright() as playwright:
             normal = normalize(metrics(page))
             assert normal == expected(viewport, "normal"), {"theme": theme, "viewport": viewport, "normal": normal}
 
-            page.locator(".library-density-toggle button").nth(1).click()
+            page.locator(".library-density-toggle button").click()
             page.locator(".library-page.library-density-compact").wait_for()
             compact = normalize(metrics(page))
             assert compact == expected(viewport, "compact"), {"theme": theme, "viewport": viewport, "compact": compact}

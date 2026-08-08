@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTROLS = runpy.run_path(str(ROOT / "scripts" / "check-about-release-controls.py"))
 BASELINE = CONTROLS["load_baseline"]()
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
-CURRENT_VERSION = "v5.14.0"
+CURRENT_VERSION = "v5.15.0"
 
 
 def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool = True) -> dict:
@@ -27,8 +27,8 @@ def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool 
 def seed_safety_matrix(page: Page) -> None:
     BASELINE.seed_cache(page)
     releases = [
-        release(5150, "v5.15.0"),
-        release(5140, CURRENT_VERSION),
+        release(5160, "v5.16.0"),
+        release(5150, CURRENT_VERSION),
         release(5101, "v5.10.1"),
         release(599, "v5.9.9", checksum=False),
         release(598, "v5.9.8", portable=False),

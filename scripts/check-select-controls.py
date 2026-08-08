@@ -55,7 +55,8 @@ with sync_playwright() as playwright:
             assert sort_select.evaluate("el => el === document.activeElement")
 
             filter_buttons = page.locator(".library-sidebar-filter-nav .library-sidebar-nav-btn")
-            assert filter_buttons.count() == 4
+            assert filter_buttons.count() == 3
+            assert filter_buttons.locator(".library-filter-icon").count() == 2
             filter_buttons.nth(1).click()
             assert filter_buttons.nth(1).get_attribute("aria-pressed") == "true"
             filter_buttons.first.click()
@@ -68,14 +69,28 @@ with sync_playwright() as playwright:
             search.fill("")
             page.wait_for_function("document.querySelectorAll('.repo-card').length >= 2")
 
-            density_buttons = page.locator(".library-density-toggle button")
-            assert density_buttons.count() == 2
-            density_buttons.nth(1).click()
+            density_toggle = page.locator(".library-density-toggle button")
+            assert density_toggle.count() == 1
+            assert density_toggle.get_attribute("role") == "switch"
+            assert density_toggle.get_attribute("aria-checked") == "false"
+            density_toggle.click()
             page.locator(".library-page.library-density-compact").wait_for()
-            assert density_buttons.nth(1).get_attribute("aria-pressed") == "true"
-            density_buttons.first.click()
+            assert density_toggle.get_attribute("aria-checked") == "true"
+            page.wait_for_timeout(200)
+            assert page.evaluate(
+                "JSON.parse(localStorage.getItem('pullora-library-view-v1')).density"
+            ) == "compact"
+            search.focus()
+            page.keyboard.press("Tab")
+            assert density_toggle.evaluate("el => el === document.activeElement")
+            assert density_toggle.evaluate("el => el.matches(':focus-visible')")
+            density_toggle.press("Space")
             page.locator(".library-page.library-density-normal").wait_for()
-            assert density_buttons.first.get_attribute("aria-pressed") == "true"
+            assert density_toggle.get_attribute("aria-checked") == "false"
+            page.wait_for_timeout(200)
+            assert page.evaluate(
+                "JSON.parse(localStorage.getItem('pullora-library-view-v1')).density"
+            ) == "normal"
 
             page.get_by_role("button", name="Налаштування").click()
             page.get_by_role("heading", name="Налаштування").wait_for()

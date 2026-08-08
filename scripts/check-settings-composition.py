@@ -971,6 +971,9 @@ def check_settings_baseline_matrix(page, theme, width, height, scale):
                   const background = document.querySelector('.cinematic-background');
                   const pageBox = page.getBoundingClientRect();
                   const workspaceBox = workspace.getBoundingClientRect();
+                  const contentBox = content.getBoundingClientRect();
+                  const sectionBox = section.getBoundingClientRect();
+                  const contentStyle = getComputedStyle(content);
                   const sectionStyle = getComputedStyle(section);
                   const backgroundStyle = getComputedStyle(background);
                   return {
@@ -979,6 +982,10 @@ def check_settings_baseline_matrix(page, theme, width, height, scale):
                     workspace: workspaceBox.toJSON(),
                     pageOverflow: page.scrollWidth > page.clientWidth + 1,
                     contentOverflow: content.scrollWidth > content.clientWidth + 1,
+                    sectionWidthGap: contentBox.width
+                      - Number.parseFloat(contentStyle.paddingLeft)
+                      - Number.parseFloat(contentStyle.paddingRight)
+                      - sectionBox.width,
                     sectionPadding: Number.parseFloat(sectionStyle.paddingTop),
                     backgroundVisible: background.classList.contains('is-visible'),
                     backgroundOpacity: Number(backgroundStyle.opacity),
@@ -989,6 +996,7 @@ def check_settings_baseline_matrix(page, theme, width, height, scale):
             )
             assert abs(state["dpr"] - scale) < 0.01, state
             assert not state["pageOverflow"] and not state["contentOverflow"], state
+            assert abs(state["sectionWidthGap"]) <= 1, state
             assert state["page"]["x"] >= 0 and state["page"]["right"] <= width + 1, state
             assert state["page"]["y"] >= 0 and state["page"]["bottom"] <= height + 1, state
             assert state["workspace"]["right"] <= width + 1, state

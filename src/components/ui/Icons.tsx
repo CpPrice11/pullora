@@ -75,3 +75,20 @@ export function CloseIcon({ className = 'ui-icon' }: IconProps) {
     </svg>
   )
 }
+
+export function PlayIcon({ className = 'ui-icon' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <path d="m7 5 7 5-7 5V5Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+export function UpdateIcon({ className = 'ui-icon' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <path d="M15.5 7V4m0 0h-3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      <path d="M15 5.5a6 6 0 1 0 .6 7" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+    </svg>
+  )
+}

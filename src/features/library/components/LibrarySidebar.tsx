@@ -1,10 +1,10 @@
 import type { ReactNode, Ref, UIEventHandler } from 'react'
 import StatePanel from '../../../components/State/StatePanel'
 import NativeSelect from '../../../components/Select/NativeSelect'
+import { PlayIcon, UpdateIcon } from '../../../components/ui/Icons'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
 import {
-  LIBRARY_DENSITIES,
   LIBRARY_FILTERS,
   LIBRARY_SORTS,
   type LibraryDensity,
@@ -80,48 +80,24 @@ function LibrarySidebarControls({
   return (
     <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
       <div className="library-sidebar-nav library-sidebar-filter-nav" aria-label={t('library.sidebar.navigation')}>
-        {LIBRARY_FILTERS.map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            className={`library-sidebar-nav-btn ${filter === mode ? 'active' : ''}`}
-            aria-pressed={filter === mode}
-            onClick={() => onFilterChange(mode)}
-          >
-            {t(`library.${mode}`)}
-          </button>
-        ))}
-      </div>
+        {LIBRARY_FILTERS.map((mode) => {
+          const label = t(`library.${mode}`)
+          const Icon = mode === 'updates' ? UpdateIcon : mode === 'installed' ? PlayIcon : null
 
-      <div className="library-sidebar-query-row">
-        <div className="search-form">
-          <label className="visually-hidden" htmlFor="library-search">
-            {t('library.searchLabel')}
-          </label>
-          <input
-            id="library-search"
-            type="text"
-            placeholder={t('library.searchPlaceholder')}
-            value={query}
-            onChange={(event) => onQueryChange(event.currentTarget.value)}
-            className="search-input"
-            aria-label={t('library.searchLabel')}
-          />
-        </div>
-
-        <div className="library-density-toggle" role="group" aria-label={t('library.viewDensity')}>
-          {LIBRARY_DENSITIES.map((mode) => (
+          return (
             <button
               key={mode}
               type="button"
-              className={density === mode ? 'active' : ''}
-              aria-pressed={density === mode}
-              onClick={() => onDensityChange(mode)}
+              className={`library-sidebar-nav-btn ${Icon ? 'icon-only' : ''} ${filter === mode ? 'active' : ''}`}
+              aria-label={Icon ? label : undefined}
+              aria-pressed={filter === mode}
+              title={Icon ? label : undefined}
+              onClick={() => onFilterChange(mode)}
             >
-              {t(mode === 'normal' ? 'library.viewNormal' : 'library.viewCompact')}
+              {Icon ? <Icon className="library-filter-icon" /> : label}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
       <label className="library-sort-control">
@@ -135,6 +111,34 @@ function LibrarySidebarControls({
           }))}
         />
       </label>
+
+      <div className="search-form">
+        <label className="visually-hidden" htmlFor="library-search">
+          {t('library.searchLabel')}
+        </label>
+        <input
+          id="library-search"
+          type="text"
+          placeholder={t('library.searchPlaceholder')}
+          value={query}
+          onChange={(event) => onQueryChange(event.currentTarget.value)}
+          className="search-input"
+          aria-label={t('library.searchLabel')}
+        />
+      </div>
+
+      <div className="library-density-toggle">
+        <button
+          type="button"
+          className={density === 'compact' ? 'active' : ''}
+          role="switch"
+          aria-checked={density === 'compact'}
+          onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
+        >
+          <span>{t('library.viewCompact')}</span>
+          <span className="library-density-switch-indicator" aria-hidden="true" />
+        </button>
+      </div>
     </section>
   )
 }

@@ -27,11 +27,11 @@ export function focusFirstMenuItem(menu: HTMLElement | null) {
 export function handleMenuKeyboard(
   event: ReactKeyboardEvent<HTMLElement>,
   onEscape: () => void,
+  rootMenu: HTMLElement = event.currentTarget,
 ) {
   const activeItem = document.activeElement instanceof HTMLButtonElement
     ? document.activeElement
     : null
-  const rootMenu = event.currentTarget
   const activeMenu = activeItem?.closest<HTMLElement>('[role="menu"]') ?? rootMenu
 
   if (event.key === 'Escape') {
@@ -45,14 +45,21 @@ export function handleMenuKeyboard(
     event.preventDefault()
     if (activeItem.getAttribute('aria-expanded') !== 'true') activeItem.click()
     window.requestAnimationFrame(() => {
-      focusFirstMenuItem(activeItem.parentElement?.querySelector<HTMLElement>(':scope > [role="menu"]') ?? null)
+      const submenuId = activeItem.getAttribute('aria-controls')
+      focusFirstMenuItem(
+        (submenuId ? document.getElementById(submenuId) : null)
+          ?? activeItem.parentElement?.querySelector<HTMLElement>(':scope > [role="menu"]')
+          ?? null,
+      )
     })
     return
   }
 
   if (event.key === 'ArrowLeft' && activeMenu !== rootMenu) {
     event.preventDefault()
-    const trigger = activeMenu.parentElement?.querySelector<HTMLButtonElement>(':scope > [aria-haspopup="menu"]')
+    const triggerId = activeMenu.getAttribute('aria-labelledby')
+    const trigger = (triggerId ? document.getElementById(triggerId) : null) as HTMLButtonElement | null
+      ?? activeMenu.parentElement?.querySelector<HTMLButtonElement>(':scope > [aria-haspopup="menu"]')
     if (trigger?.getAttribute('aria-expanded') === 'true') trigger.click()
     trigger?.focus()
     return

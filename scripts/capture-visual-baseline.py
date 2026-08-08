@@ -166,7 +166,7 @@ def seed_cache(page: Page) -> None:
                 };
               }
               if (command === 'is_first_launch') return false;
-              if (command === 'get_launcher_version') return 'v5.14.0';
+              if (command === 'get_launcher_version') return 'v5.15.0';
               if (command === 'get_github_rate_limit_status') {
                 return {
                   core: { remaining: null, limit: null, resetAt: null },
@@ -177,7 +177,8 @@ def seed_cache(page: Page) -> None:
               if (command === 'check_is_favorite') return false;
               if (command === 'get_project_art_asset') return null;
               if (command === 'save_library_folders') return structuredClone(args.folders ?? []);
-              if (['get_downloads', 'get_installed_apps', 'get_favorites', 'get_library_folders', 'list_project_art_assets', 'get_event_log'].includes(command)) return [];
+              if (command === 'get_library_folders') return structuredClone(window.__PULLORA_TEST_LIBRARY_FOLDERS__ ?? []);
+              if (['get_downloads', 'get_installed_apps', 'get_favorites', 'list_project_art_assets', 'get_event_log'].includes(command)) return [];
               if (command === 'plugin:event|listen') return args.handler;
               if (command === 'plugin:event|unlisten') return null;
               return null;
@@ -268,7 +269,7 @@ def capture(page: Page, theme: str, width: int, height: int) -> dict:
     page.screenshot(path=OUTPUT_DIR / f"install-{suffix}.png")
     page.locator(".release-modal .close-btn").click()
 
-    page.get_by_role("button", name="Компактний").click()
+    page.get_by_role("switch", name="Компактний").click()
     page.locator(".library-page.library-density-compact").wait_for()
     compact_card_height = page.locator(".repo-card:visible").first.evaluate(
         "el => el.getBoundingClientRect().height"
