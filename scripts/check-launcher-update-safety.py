@@ -4,15 +4,17 @@ import json
 import runpy
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from playwright.sync_api import Page, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import Page
 
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTROLS = runpy.run_path(str(ROOT / "scripts" / "check-about-release-controls.py"))
-BASELINE = CONTROLS["load_baseline"]()
+BASELINE = None if "--static" in sys.argv else CONTROLS["load_baseline"]()
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
-CURRENT_VERSION = "v5.15.0"
+CURRENT_VERSION = "v5.16.1"
 
 
 def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool = True) -> dict:
@@ -27,8 +29,8 @@ def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool 
 def seed_safety_matrix(page: Page) -> None:
     BASELINE.seed_cache(page)
     releases = [
-        release(5160, "v5.16.0"),
-        release(5150, CURRENT_VERSION),
+        release(5170, "v5.17.0"),
+        release(5161, CURRENT_VERSION),
         release(5101, "v5.10.1"),
         release(599, "v5.9.9", checksum=False),
         release(598, "v5.9.8", portable=False),
@@ -51,33 +53,25 @@ def check_source_contract() -> None:
     about = (ROOT / "src" / "pages" / "AboutPage.tsx").read_text(encoding="utf-8")
     service = (ROOT / "src" / "services" / "updates.ts").read_text(encoding="utf-8")
     backend = (ROOT / "src-tauri" / "src" / "commands" / "updates.rs").read_text(encoding="utf-8")
+    downloads = (ROOT / "src-tauri" / "src" / "download" / "manager.rs").read_text(encoding="utf-8")
 
     for fragment in (
         "const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'",
         "name.includes('setup')",
         "name.includes('installer')",
         "name.endsWith('.msi')",
-        "const canActivate = Boolean(portableAsset && checksumAsset) && !isCurrent",
-        "pendingAction.asset.browser_download_url",
-        "pendingAction.asset.name",
-        "pendingAction.checksumAsset.browser_download_url",
+        "onClick={() => void openReleaseInBrowser(release)}",
+        "{t('about.openGitHubReleaseShort')}",
     ):
         assert fragment in about, fragment
-    assert "'install_launcher_release'" in service
-
-    for fragment in (
-        'const CHECKSUM_MANIFEST_NAME: &str = "SHA256SUMS.txt";',
-        "validate_versioned_release_asset_url(\n            &asset_url",
-        "validate_versioned_release_asset_url(\n            &checksum_url",
-        "download_launcher_bytes(&checksum_url, Some(MAX_CHECKSUM_MANIFEST_BYTES))",
-        "verify_sha256(&asset_bytes, &expected_checksum)?;",
-        "prepare_portable_launcher_asset(&downloaded_asset, &downloaded_exe, &update_dir)?;",
-        "let script_path = fail_closed(&update_dir, preparation)?;",
-        "Copy-Item -LiteralPath $backup -Destination $target -Force",
-        "$restoredHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256)",
-        "for (_, path) in backups.into_iter().skip(1)",
-    ):
-        assert fragment in backend, fragment
+    assert "installLauncherRelease" not in about
+    assert "install_launcher_release" not in service
+    assert "install_launcher_release" not in backend
+    for forbidden in ("powershell", "ExecutionPolicy", "Start-Process", ".ps1"):
+        assert forbidden.lower() not in backend.lower(), forbidden
+        assert forbidden.lower() not in downloads.lower(), forbidden
+    assert "ShellExecuteExW" in downloads
+    assert "SEE_MASK_NOCLOSEPROCESS" in downloads
     print("[launcher-update-safety] source contract: ok")
 
 
@@ -104,22 +98,15 @@ def check_ui(page: Page) -> dict:
     assert newer.locator(".about-release-actions > .secondary-btn").is_enabled()
     assert older.locator(".about-release-actions > .secondary-btn").is_enabled()
     assert all(
-        missing.nth(index).locator(".about-release-actions > .secondary-btn").is_disabled()
+        missing.nth(index).locator(".about-release-actions > .secondary-btn").is_enabled()
         for index in range(missing.count())
     )
     assert missing.locator(".about-release-warning").count() == 2
 
-    for row in (newer, older):
+    for row in (newer, older, missing.nth(0), missing.nth(1)):
         button = row.locator(".about-release-actions > .secondary-btn")
         button.click()
-        dialog = page.locator(".confirm-modal")
-        dialog.wait_for()
-        assert dialog.locator(".confirm-facts > div").count() == 4
-        assert dialog.locator(".confirm-list > li").count() == 3
-        assert dialog.locator(".confirm-primary-btn").is_enabled()
-        page.keyboard.press("Escape")
-        dialog.wait_for(state="hidden")
-        assert button.evaluate("el => el === document.activeElement")
+        assert page.locator(".confirm-modal").count() == 0
 
     return {
         "rows": rows.count(),
@@ -132,6 +119,8 @@ def main() -> None:
     check_source_contract()
     if "--static" in sys.argv:
         return
+
+    from playwright.sync_api import sync_playwright
 
     results = []
     with sync_playwright() as playwright:

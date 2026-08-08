@@ -4,13 +4,15 @@ import json
 import runpy
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from playwright.sync_api import Page, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import Page
 
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTROLS = runpy.run_path(str(ROOT / "scripts" / "check-about-release-controls.py"))
-BASELINE = CONTROLS["load_baseline"]()
+BASELINE = None if "--static" in sys.argv else CONTROLS["load_baseline"]()
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 
 
@@ -23,7 +25,6 @@ def check_source_contract() -> None:
         "returnFocusRef: notesReturnFocusRef",
         "notesReturnFocusRef.current = releaseMenuTriggerRef.current",
         "notesRelease && createPortal(",
-        "pendingAction && createPortal(",
         "document.querySelector('.layout') ?? document.body",
     ):
         assert fragment in about, fragment
@@ -57,7 +58,7 @@ def assert_focused(locator) -> None:
 def inspect_interactions(page: Page, width: int, height: int) -> dict:
     release = page.locator(".about-release-link--older")
     trigger = release.locator(".project-actions-trigger")
-    activate = release.locator(".about-release-actions > .secondary-btn")
+    open_release = release.locator(".about-release-actions > .secondary-btn")
 
     trigger.click()
     menu_portal = page.locator(".about-release-menu-portal")
@@ -119,32 +120,13 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     notes.wait_for(state="hidden")
     assert_focused(trigger)
 
-    activate.click()
-    confirm = page.locator(".confirm-modal")
-    confirm.wait_for()
-    confirm_overlay = confirm.locator("xpath=parent::*")
-    assert confirm_overlay.evaluate("el => el.parentElement?.classList.contains('layout')")
-    cancel = confirm.locator('[data-autofocus="true"]')
-    primary = confirm.locator(".confirm-primary-btn")
-    page.wait_for_function("el => el === document.activeElement", arg=cancel.element_handle())
-    assert_focused(cancel)
-    page.keyboard.press("Shift+Tab")
-    assert_focused(confirm.locator(".confirm-close-btn"))
-    page.keyboard.press("Shift+Tab")
-    assert_focused(primary)
-    page.keyboard.press("Tab")
-    assert_focused(confirm.locator(".confirm-close-btn"))
-    confirm_box = rounded_box(confirm)
-
-    page.keyboard.press("Escape")
-    confirm.wait_for(state="hidden")
-    assert_focused(activate)
+    open_release.click()
+    assert page.locator(".confirm-modal").count() == 0
 
     return {
         "viewport": [width, height],
         "menu": menu_box,
         "notes": notes_box,
-        "confirm": confirm_box,
     }
 
 
@@ -152,6 +134,8 @@ def main() -> None:
     check_source_contract()
     if "--static" in sys.argv:
         return
+
+    from playwright.sync_api import sync_playwright
 
     results = []
     with sync_playwright() as playwright:
@@ -172,7 +156,7 @@ def main() -> None:
     for width, height in VIEWPORTS:
         dark = next(item for item in results if item["theme"] == "dark" and item["viewport"] == [width, height])
         light = next(item for item in results if item["theme"] == "light" and item["viewport"] == [width, height])
-        for key in ("menu", "notes", "confirm"):
+        for key in ("menu", "notes"):
             assert dark[key] == light[key], {
                 "viewport": [width, height],
                 "key": key,

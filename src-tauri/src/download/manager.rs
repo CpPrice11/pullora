@@ -858,41 +858,86 @@ fn installer_exit_result(status: std::process::ExitStatus) -> Result<(), String>
 
 #[cfg(target_os = "windows")]
 fn run_elevated_installer_process(installer_path: &Path, extension: &str) -> Result<(), String> {
-    let script = r#"
-$ErrorActionPreference = 'Stop'
-$path = $env:PULLORA_INSTALLER_PATH
-if ([string]::IsNullOrWhiteSpace($path)) {
-  throw 'Missing installer path.'
-}
+    use std::{ffi::OsStr, os::windows::ffi::OsStrExt, ptr::null};
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, WAIT_FAILED, WAIT_OBJECT_0},
+        System::Threading::{GetExitCodeProcess, WaitForSingleObject},
+        UI::{
+            Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW},
+            WindowsAndMessaging::SW_SHOWNORMAL,
+        },
+    };
 
-if ($env:PULLORA_INSTALLER_KIND -eq 'msi') {
-  $process = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $path) -Verb RunAs -Wait -PassThru
-} else {
-  $process = Start-Process -FilePath $path -Verb RunAs -Wait -PassThru
-}
+    fn wide(value: &OsStr) -> Vec<u16> {
+        value.encode_wide().chain(std::iter::once(0)).collect()
+    }
 
-if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
-  exit $process.ExitCode
-}
-"#;
+    let verb = wide(OsStr::new("runas"));
+    let (file, parameters) = if extension == "msi" {
+        (
+            wide(OsStr::new("msiexec.exe")),
+            Some(wide(OsStr::new(&format!(
+                "/i \"{}\"",
+                installer_path.display()
+            )))),
+        )
+    } else {
+        (wide(installer_path.as_os_str()), None)
+    };
 
-    let mut child = std::process::Command::new("powershell")
-        .arg("-NoProfile")
-        .arg("-ExecutionPolicy")
-        .arg("Bypass")
-        .arg("-Command")
-        .arg(script)
-        .env("PULLORA_INSTALLER_PATH", installer_path)
-        .env("PULLORA_INSTALLER_KIND", extension)
-        .spawn()
-        .map_err(|error| {
-            format!(
-                "Не вдалося запустити інсталятор з правами адміністратора: {}",
-                error
-            )
-        })?;
+    let mut execute_info: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+    execute_info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+    execute_info.fMask = SEE_MASK_NOCLOSEPROCESS;
+    execute_info.lpVerb = verb.as_ptr();
+    execute_info.lpFile = file.as_ptr();
+    execute_info.lpParameters = parameters.as_ref().map_or(null(), |value| value.as_ptr());
+    execute_info.nShow = SW_SHOWNORMAL;
 
-    wait_for_installer_launcher(&mut child)
+    if unsafe { ShellExecuteExW(&mut execute_info) } == 0 {
+        return Err(format!(
+            "Не вдалося запустити інсталятор з правами адміністратора: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    let process = execute_info.hProcess;
+    if process.is_null() {
+        return Ok(());
+    }
+
+    let wait_result = unsafe {
+        WaitForSingleObject(
+            process,
+            INSTALLER_PROCESS_WAIT_TIMEOUT
+                .as_millis()
+                .min(u32::MAX as u128) as u32,
+        )
+    };
+    if wait_result == WAIT_FAILED {
+        let error = std::io::Error::last_os_error();
+        unsafe { CloseHandle(process) };
+        return Err(format!("Не вдалося дочекатися інсталятора: {}", error));
+    }
+    if wait_result != WAIT_OBJECT_0 {
+        unsafe { CloseHandle(process) };
+        return Ok(());
+    }
+
+    let mut exit_code = 0u32;
+    let read_exit_code = unsafe { GetExitCodeProcess(process, &mut exit_code) };
+    unsafe { CloseHandle(process) };
+
+    if read_exit_code == 0 {
+        return Err(format!(
+            "Не вдалося перевірити результат інсталятора: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+    if exit_code == 0 || exit_code == 3010 {
+        Ok(())
+    } else {
+        Err(format!("Інсталятор завершився з кодом {}.", exit_code))
+    }
 }
 
 fn wait_for_installed_executable(
@@ -1259,136 +1304,7 @@ fn install_version_dir(
     version_dir: &std::path::Path,
     backup_dir: &std::path::Path,
 ) -> Result<(), String> {
-    match replace_version_dir(partial_dir, version_dir, backup_dir) {
-        Ok(()) => Ok(()),
-        Err(error) => {
-            #[cfg(target_os = "windows")]
-            {
-                elevated_replace_version_dir(partial_dir, version_dir, backup_dir).map_err(
-                    |elevated_error| {
-                        format!(
-                            "{} Elevated install також не вдався: {}",
-                            error, elevated_error
-                        )
-                    },
-                )
-            }
-
-            #[cfg(not(target_os = "windows"))]
-            {
-                Err(error)
-            }
-        }
-    }
-}
-
-#[cfg(target_os = "windows")]
-fn elevated_replace_version_dir(
-    partial_dir: &std::path::Path,
-    version_dir: &std::path::Path,
-    backup_dir: &std::path::Path,
-) -> Result<(), String> {
-    let script_dir = package_cache_root();
-    fs::create_dir_all(&script_dir).map_err(|e| e.to_string())?;
-    let script_path = script_dir.join(format!("elevated-install-{}.ps1", uuid::Uuid::new_v4()));
-    let script = r#"
-param(
-  [Parameter(Mandatory = $true)]
-  [string]$Source,
-  [Parameter(Mandatory = $true)]
-  [string]$Target,
-  [Parameter(Mandatory = $true)]
-  [string]$Backup
-)
-
-$ErrorActionPreference = 'Stop'
-
-if ([string]::IsNullOrWhiteSpace($Source) -or [string]::IsNullOrWhiteSpace($Target) -or [string]::IsNullOrWhiteSpace($Backup)) {
-  throw 'Missing install paths.'
-}
-if (-not (Test-Path -LiteralPath $Source)) {
-  throw "Source does not exist: $Source"
-}
-
-if (Test-Path -LiteralPath $Backup) {
-  Remove-Item -LiteralPath $Backup -Recurse -Force
-}
-if (Test-Path -LiteralPath $Target) {
-  Move-Item -LiteralPath $Target -Destination $Backup -Force
-}
-
-try {
-  New-Item -ItemType Directory -Force -Path $Target | Out-Null
-  Get-ChildItem -LiteralPath $Source -Force | Copy-Item -Destination $Target -Recurse -Force
-  if (Test-Path -LiteralPath $Backup) {
-    Remove-Item -LiteralPath $Backup -Recurse -Force
-  }
-} catch {
-  if (Test-Path -LiteralPath $Target) {
-    Remove-Item -LiteralPath $Target -Recurse -Force
-  }
-  if (Test-Path -LiteralPath $Backup) {
-    Move-Item -LiteralPath $Backup -Destination $Target -Force
-  }
-  throw
-}
-"#;
-
-    fs::write(&script_path, script).map_err(|e| e.to_string())?;
-
-    let launcher = r#"
-$ErrorActionPreference = 'Stop'
-$script = $env:PULLORA_ELEVATED_SCRIPT
-$source = $env:PULLORA_SOURCE_DIR
-$target = $env:PULLORA_TARGET_DIR
-$backup = $env:PULLORA_BACKUP_DIR
-
-function Quote-Argument([string]$value) {
-  '"' + $value.Replace('"', '\"') + '"'
-}
-
-$arguments = @(
-  '-NoProfile',
-  '-ExecutionPolicy',
-  'Bypass',
-  '-File',
-  (Quote-Argument $script),
-  '-Source',
-  (Quote-Argument $source),
-  '-Target',
-  (Quote-Argument $target),
-  '-Backup',
-  (Quote-Argument $backup)
-) -join ' '
-
-$process = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -Verb RunAs -Wait -PassThru
-
-if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0 -and $process.ExitCode -ne 3010) {
-  exit $process.ExitCode
-}
-"#;
-
-    let status = std::process::Command::new("powershell")
-        .arg("-NoProfile")
-        .arg("-ExecutionPolicy")
-        .arg("Bypass")
-        .arg("-Command")
-        .arg(launcher)
-        .env("PULLORA_ELEVATED_SCRIPT", &script_path)
-        .env("PULLORA_SOURCE_DIR", partial_dir)
-        .env("PULLORA_TARGET_DIR", version_dir)
-        .env("PULLORA_BACKUP_DIR", backup_dir)
-        .status()
-        .map_err(|error| {
-            format!(
-                "Не вдалося запустити elevated встановлення у вибрану папку: {}",
-                error
-            )
-        })?;
-
-    let result = installer_exit_result(status);
-    let _ = fs::remove_file(script_path);
-    result
+    replace_version_dir(partial_dir, version_dir, backup_dir)
 }
 
 fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {

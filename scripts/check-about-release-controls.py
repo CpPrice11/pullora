@@ -5,15 +5,17 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from playwright.sync_api import Page, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import Page
 
 
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE_PATH = ROOT / "scripts" / "capture-visual-baseline.py"
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
-CURRENT_VERSION = "v5.15.0"
+CURRENT_VERSION = "v5.16.1"
 
 
 def load_baseline():
@@ -58,8 +60,8 @@ def release(release_id: int, tag: str, *, portable: bool = True, checksum: bool 
 def seed_release_matrix(page: Page, baseline) -> None:
     baseline.seed_cache(page)
     releases = [
-        release(5160, "v5.16.0"),
-        release(5150, CURRENT_VERSION),
+        release(5170, "v5.17.0"),
+        release(5161, CURRENT_VERSION),
         release(5101, "v5.10.1"),
         release(599, "v5.9.9", checksum=False),
     ]
@@ -201,6 +203,8 @@ def main() -> None:
     check_source_contract()
     if "--static" in sys.argv:
         return
+
+    from playwright.sync_api import sync_playwright
 
     baseline = load_baseline()
     results = []

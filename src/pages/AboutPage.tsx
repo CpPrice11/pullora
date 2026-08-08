@@ -6,7 +6,6 @@ import {
   cleanupLauncherUpdateFiles,
   getLauncherStorageInfo,
   getLauncherVersion,
-  installLauncherRelease,
   openDir,
   openExternalUrl,
 } from '../services/updates'
@@ -21,15 +20,8 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.16.0'
+const FALLBACK_CURRENT_VERSION = 'v5.16.1'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
-
-type PendingLauncherAction = {
-  release: GitHubRelease
-  asset: GitHubAsset
-  checksumAsset: GitHubAsset
-  action: 'update' | 'rollback'
-}
 
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
 
@@ -95,14 +87,10 @@ function AboutPage() {
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [loadingReleases, setLoadingReleases] = useState(true)
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
-  const [installingVersion, setInstallingVersion] = useState<string | null>(null)
-  const [installError, setInstallError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
-  const [pendingAction, setPendingAction] = useState<PendingLauncherAction | null>(null)
-  const confirmModalRef = useRef<HTMLDivElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
   const notesReturnFocusRef = useRef<HTMLButtonElement | null>(null)
   const releaseMenuRef = useRef<HTMLDivElement | null>(null)
@@ -123,7 +111,6 @@ function AboutPage() {
     try {
       const items = await getReleases(LAUNCHER_OWNER, LAUNCHER_REPO, forceRefresh)
       setReleases(items)
-      setInstallError(null)
       setLastRefreshedAt(new Date())
       setRefreshState('success')
       await loadLauncherStorageInfo()
@@ -184,10 +171,6 @@ function AboutPage() {
     }
   }, [menuReleaseId])
 
-  useModalFocus(confirmModalRef, {
-    active: Boolean(pendingAction),
-    onEscape: pendingAction && !installingVersion ? () => setPendingAction(null) : undefined,
-  })
   useModalFocus(notesModalRef, {
     active: Boolean(notesRelease),
     onEscape: notesRelease ? () => setNotesRelease(null) : undefined,
@@ -228,50 +211,6 @@ function AboutPage() {
     return compareVersionTags(tagName, currentVersion) > 0
       ? t('about.newerStatus')
       : t('about.olderStatus')
-  }
-
-  const requestActivateRelease = (release: GitHubRelease) => {
-    const asset = pickPortableLauncherAsset(release.assets)
-    const checksumAsset = pickChecksumAsset(release.assets)
-
-    if (!asset) {
-      setInstallError(t('about.noPortableAsset'))
-      return
-    }
-
-    if (!checksumAsset) {
-      setInstallError(t('about.noChecksumManifest'))
-      return
-    }
-
-    setInstallError(null)
-    setPendingAction({
-      release,
-      asset,
-      checksumAsset,
-      action: compareVersionTags(release.tag_name, currentVersion) > 0 ? 'update' : 'rollback',
-    })
-  }
-
-  const confirmActivateRelease = async () => {
-    if (!pendingAction) return
-
-    setInstallError(null)
-    setInstallingVersion(pendingAction.release.tag_name)
-    try {
-      await installLauncherRelease(
-        pendingAction.release.tag_name,
-        pendingAction.asset.browser_download_url,
-        pendingAction.asset.name,
-        pendingAction.checksumAsset.browser_download_url,
-      )
-    } catch (err) {
-      setInstallError(
-        err instanceof Error ? err.message : t('about.activateError'),
-      )
-      setInstallingVersion(null)
-      setPendingAction(null)
-    }
   }
 
   const openLauncherFolder = async () => {
@@ -380,7 +319,7 @@ function AboutPage() {
             </div>
           </div>
           <div className="about-panel-toolbar" aria-label={t('about.launcherActions')}>
-            <button type="button" className="secondary-btn" onClick={() => void loadLauncherReleases(true)} disabled={loadingReleases || installingVersion !== null}>
+            <button type="button" className="secondary-btn" onClick={() => void loadLauncherReleases(true)} disabled={loadingReleases}>
               {loadingReleases ? t('library.refreshing') : t('library.refresh')}
             </button>
             <button
@@ -392,17 +331,6 @@ function AboutPage() {
               {t('about.cleanupOldVersionsShort')}
             </button>
           </div>
-          {installError && (
-            <div className="error-banner about-recovery-banner">
-              <div>
-                <strong>{installError}</strong>
-                <span>{t('about.recoveryHint')}</span>
-              </div>
-              <button type="button" onClick={() => void loadLauncherReleases(true)}>
-                {t('about.retryRefresh')}
-              </button>
-            </div>
-          )}
           {releaseLoadError && (
             <StatePanel
               kind="error"
@@ -439,7 +367,6 @@ function AboutPage() {
                 const portableAsset = pickPortableLauncherAsset(release.assets)
                 const checksumAsset = pickChecksumAsset(release.assets)
                 const isCurrent = release.tag_name === currentVersion
-                const canActivate = Boolean(portableAsset && checksumAsset) && !isCurrent
                 const statusClass = isCurrent
                   ? 'current'
                   : !portableAsset || !checksumAsset
@@ -496,14 +423,9 @@ function AboutPage() {
                         <button
                           type="button"
                           className="secondary-btn"
-                          disabled={!canActivate || installingVersion !== null}
-                          onClick={() => requestActivateRelease(release)}
+                          onClick={() => void openReleaseInBrowser(release)}
                         >
-                          {installingVersion === release.tag_name
-                            ? t('about.activating')
-                            : compareVersionTags(release.tag_name, currentVersion) > 0
-                              ? t('about.update')
-                              : t('about.rollback')}
+                          {t('about.openGitHubReleaseShort')}
                         </button>
                       )}
                       <div className={`project-actions-menu about-release-menu ${menuOpen ? 'open' : ''}`}>
@@ -629,97 +551,6 @@ function AboutPage() {
         document.querySelector('.layout') ?? document.body,
       )}
 
-      {pendingAction && createPortal(
-        <div
-          className="modal-overlay about-dialog-overlay"
-          role="presentation"
-          onClick={() => {
-            if (!installingVersion) setPendingAction(null)
-          }}
-        >
-          <div
-            ref={confirmModalRef}
-            className="modal-content confirm-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="launcher-confirm-title"
-            tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="confirm-modal-header">
-              <div>
-                <span className="confirm-modal-kicker">
-                  {pendingAction.action === 'update' ? t('about.update') : t('about.rollback')}
-                </span>
-                <h3 id="launcher-confirm-title">
-                  {pendingAction.action === 'update'
-                    ? t('about.updateConfirmTitle', { version: pendingAction.release.tag_name })
-                    : t('about.rollbackConfirmTitle', { version: pendingAction.release.tag_name })}
-                </h3>
-              </div>
-              <button
-                type="button"
-                className="close-btn confirm-close-btn"
-                disabled={installingVersion !== null}
-                onClick={() => setPendingAction(null)}
-                aria-label={t('about.cancel')}
-              >
-                {'\u00d7'}
-              </button>
-            </div>
-            <p className="confirm-copy">
-              {t(pendingAction.action === 'update' ? 'about.updateConfirmDetail' : 'about.rollbackConfirmDetail')}
-            </p>
-            <div className="confirm-facts">
-              <div>
-                <span>{t('about.confirmCurrent')}</span>
-                <strong>{currentVersion}</strong>
-              </div>
-              <div>
-                <span>{t('about.confirmTarget')}</span>
-                <strong>{pendingAction.release.tag_name}</strong>
-              </div>
-              <div>
-                <span>{t('about.confirmAsset')}</span>
-                <strong>{pendingAction.asset.name}</strong>
-              </div>
-              <div>
-                <span>{t('about.confirmLauncherDir')}</span>
-                <strong>{storageInfo?.launcherDir ?? t('details.unknown')}</strong>
-              </div>
-            </div>
-            <ul className="confirm-list">
-              <li>{t('about.confirmReplace')}</li>
-              <li>{t('about.confirmClose')}</li>
-              <li>{t('about.confirmBackup')}</li>
-            </ul>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="secondary-btn"
-                disabled={installingVersion !== null}
-                onClick={() => setPendingAction(null)}
-                data-autofocus="true"
-              >
-                {t('about.cancel')}
-              </button>
-              <button
-                type="button"
-                className="primary-btn confirm-primary-btn"
-                disabled={installingVersion !== null}
-                onClick={confirmActivateRelease}
-              >
-                {installingVersion
-                  ? t('about.activating')
-                  : pendingAction.action === 'update'
-                    ? t('about.confirmUpdate')
-                    : t('about.confirmRollback')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.querySelector('.layout') ?? document.body,
-      )}
     </div>
   )
 }
