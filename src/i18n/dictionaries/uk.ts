@@ -906,9 +906,5 @@ Object.assign(dictionary,
   'library.bulk.retryFailed': 'Не вдалося обробити: {count}. Вони залишилися вибраними для повтору.',
   'library.bulk.cardHint': 'Ctrl+Space перемикає вибір, Shift+Space вибирає діапазон.',
 },
-  {
-  'release.confirmWarningTitle': 'Перевір перед стартом',
-  'release.confirmWarningText': 'Переконайся, що вибрано правильні версію, файл і папку. Відкат або повторне встановлення змінить активну версію застосунку.',
-},
 )
 export default dictionary

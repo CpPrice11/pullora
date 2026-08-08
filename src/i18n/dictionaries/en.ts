@@ -906,9 +906,5 @@ Object.assign(dictionary,
   'library.bulk.retryFailed': 'Could not process: {count}. They remain selected for retry.',
   'library.bulk.cardHint': 'Ctrl+Space toggles selection; Shift+Space selects a range.',
 },
-  {
-  'release.confirmWarningTitle': 'Check before starting',
-  'release.confirmWarningText': 'Make sure the version, file, and folder are correct. A downgrade or reinstall will change the app’s active version.',
-},
 )
 export default dictionary

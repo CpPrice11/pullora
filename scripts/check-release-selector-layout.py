@@ -184,9 +184,7 @@ def check_step_navigation(
     assert modal.locator(".release-confirm-grid > div").count() == 6
     assert modal.locator(".release-confirm-grid").get_by_text("v1.0.0", exact=True).count() >= 1
     assert modal.locator(".release-install-path strong").inner_text().strip()
-    warning = modal.locator(".release-confirm-warning[role='note']")
-    assert warning.count() == 1
-    warning.scroll_into_view_if_needed()
+    assert modal.locator(".release-confirm-warning").count() == 0
     page.screenshot(path=confirm_screenshot)
 
     modal.locator(".release-nav-actions .release-secondary-btn").click()

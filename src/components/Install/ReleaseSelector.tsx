@@ -661,13 +661,12 @@ function ReleaseSelector({
                         {t('release.chooseInstallPath')}
                       </button>
                     </div>
-                    <div className="release-blocked-note release-confirm-warning" role="note">
-                      <strong>{t('release.confirmWarningTitle')}</strong>
-                      <p>{t('release.confirmWarningText')}</p>
-                      {selectedAssetKind === 'installer' && (
+                    {selectedAssetKind === 'installer' && (
+                      <div className="release-blocked-note" role="note">
+                        <strong>{t('release.installerSupportedTitle')}</strong>
                         <p>{t('release.installerSupportedHelp')}</p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {downloadError && <div className="error-message" role="alert">{downloadError}</div>}
