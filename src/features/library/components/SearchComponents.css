@@ -555,10 +555,6 @@
   min-width: 0;
 }
 
-.release-version-badges--summary {
-  flex-wrap: wrap;
-}
-
 .release-version-main strong,
 .release-asset-main strong {
   overflow-wrap: anywhere;
