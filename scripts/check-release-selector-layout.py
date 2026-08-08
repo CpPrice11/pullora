@@ -133,6 +133,7 @@ def check_step_navigation(
     assert_current_step(page, modal, "file")
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
+    assert modal.locator(".release-strategy-note").count() == 0
     asset_card = modal.locator(".release-asset-card").first
     assert asset_card.locator(".asset-kind").count() == 1
     assert asset_card.locator(".release-asset-size").inner_text().strip()
