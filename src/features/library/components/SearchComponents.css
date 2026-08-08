@@ -1021,6 +1021,7 @@
 }
 
 .release-nav-actions {
+  --release-action-height: 42px;
   align-items: center;
   background:
     linear-gradient(180deg, rgba(22, 24, 30, 0.4), rgba(22, 24, 30, 0.98) 22%);
@@ -1043,7 +1044,7 @@
   color: var(--color-text);
   cursor: pointer;
   font-weight: 780;
-  min-height: 42px;
+  min-height: var(--release-action-height, 42px);
   padding: 0 16px;
 }
 
@@ -1061,7 +1062,10 @@
 }
 
 .release-modal--wizard .release-action-primary {
-  flex: 0 1 220px;
+  flex: 0 0 auto;
+  min-height: var(--release-action-height);
+  min-width: 0;
+  padding: 0 18px;
 }
 
 :root[data-theme='light'] .release-blocked-note,
