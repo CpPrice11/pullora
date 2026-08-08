@@ -342,6 +342,18 @@
   padding: 4px 9px;
 }
 
+.release-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.release-modal--wizard .release-header-actions .release-github-link {
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
 .cinematic-shell .release-body {
   display: grid;
   gap: 14px;
