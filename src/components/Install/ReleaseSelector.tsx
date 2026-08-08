@@ -226,6 +226,7 @@ function ReleaseSelector({
     ? t(releaseStatusKey(selectedRelease, latestStableTag, currentVersion))
     : null
   const installIntent = getInstallIntent(selectedRelease?.tag_name, currentVersion)
+  const currentStepLabel = stepLabel(step, t, failedResult)
 
   useEffect(() => {
     fetchReleases()
@@ -244,8 +245,8 @@ function ReleaseSelector({
     previousStepRef.current = step
 
     const focusTimer = window.setTimeout(() => {
-      const stepContext = modalRef.current?.querySelector<HTMLElement>('.release-wizard-context')
-      stepContext?.focus()
+      const stepHeading = modalRef.current?.querySelector<HTMLElement>('.release-wizard-heading')
+      stepHeading?.focus()
     }, 0)
 
     return () => window.clearTimeout(focusTimer)
@@ -423,9 +424,14 @@ function ReleaseSelector({
           </button>
         </div>
 
-        <div className="release-wizard-context" data-wizard-step={step} tabIndex={-1}>
-          <span>{stepLabel(step, t, failedResult)}</span>
+        <div className="release-wizard-context" data-wizard-step={step}>
+          <h3 className="release-wizard-heading" tabIndex={-1}>
+            {currentStepLabel}
+          </h3>
           <p>{t(stepHelpKey(step))}</p>
+          <span className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+            {t('release.currentStep', { step: currentStepLabel })}
+          </span>
         </div>
 
         <div className="release-body">
