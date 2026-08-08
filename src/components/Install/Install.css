@@ -27,6 +27,12 @@
   margin: 0;
 }
 
+.download-panel-head-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .download-panel-count {
   border: 1px solid var(--color-border-subtle);
   border-radius: 999px;
@@ -36,6 +42,51 @@
   min-width: 28px;
   padding: 3px 8px;
   text-align: center;
+}
+
+.download-completed-toggle {
+  font-size: 12px;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.download-panel--compact {
+  box-sizing: border-box;
+  margin-top: 10px;
+  min-width: 0;
+  padding: 10px;
+  width: 100%;
+}
+
+.download-panel--compact .download-panel-head {
+  margin-bottom: 8px;
+}
+
+.download-panel--compact .download-list {
+  gap: 8px;
+}
+
+.download-panel--compact .download-item {
+  gap: 8px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  min-width: 0;
+  padding: 9px;
+}
+
+.download-panel--compact .download-stage-mark {
+  border-radius: 12px;
+  height: 40px;
+  width: 40px;
+}
+
+.download-panel--compact .download-stage-note,
+.download-panel--compact .download-timeline {
+  display: none;
+}
+
+.download-panel--compact .download-meta span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .download-list {

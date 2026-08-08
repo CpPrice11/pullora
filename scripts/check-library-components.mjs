@@ -259,7 +259,10 @@ try {
   const settingsSectionsSource = readFileSync('src/features/settings/components/SettingsSections.tsx', 'utf8')
   const settingsPageSource = readFileSync('src/pages/SettingsPage.tsx', 'utf8')
   const pageStylesSource = readFileSync('src/pages/PageStyles.css', 'utf8')
+  const appStylesSource = readFileSync('src/App.css', 'utf8')
   const cinematicStylesSource = readFileSync('src/styles/Cinematic.css', 'utf8')
+  const searchComponentsStyles = readFileSync('src/features/library/components/SearchComponents.css', 'utf8')
+  const installStyles = readFileSync('src/components/Install/Install.css', 'utf8')
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
   const repoCardSource = readFileSync('src/features/library/components/RepoCard.tsx', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
@@ -330,9 +333,49 @@ try {
   assert.doesNotMatch(pageStylesSource, /\.launcher-background-control\s*\{[^}]*grid-column/)
   assert.doesNotMatch(pageStylesSource, /\.underlay-controls\s*\{[^}]*grid-column/)
   assert.match(pageStylesSource, /\.path-input-row input\s*\{[^}]*text-overflow:\s*ellipsis/)
+  assert.match(
+    appStylesSource,
+    /:where\([\s\S]*?button[\s\S]*?\):focus-visible\s*\{[^}]*outline:\s*3px solid var\(--color-primary\)/,
+  )
+  assert.match(
+    appStylesSource,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration:\s*0\.001ms !important/,
+  )
+  assert.match(
+    pageStylesSource,
+    /\.about-toast,\s*\.library-toast\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*120;/s,
+  )
   assert.match(settingsSectionsSource, /pathValidation === 'noWritePermission'[\s\S]*?settings\.pathNoWrite/)
   assert.match(settingsPageSource, /setInstallationPath as saveInstallationPath/)
   assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)
+  assert.match(
+    libraryPageSource,
+    /filter === 'updates' \? \(\s*renderUpdatesCenter\(\)\s*\) : \(\s*<>[\s\S]*?renderHero\(\)[\s\S]*?renderOperationsPanel\(\)/,
+  )
+  assert.match(
+    libraryPageSource,
+    /initialLibraryView\.filter === 'updates' \? 0 : initialLibraryView\.detailsScrollTop/,
+  )
+  assert.match(
+    libraryPageSource,
+    /nextFilter === 'updates'[\s\S]*?detailsScrollTopRef\.current = 0[\s\S]*?detailsPaneRef\.current\.scrollTop = 0/,
+  )
+  assert.match(
+    libraryPageSource,
+    /batchUpdateError \|\| libraryActionMessage[\s\S]*?library-toast--\$\{batchUpdateError \? 'error' : 'success'\}[\s\S]*?role=\{batchUpdateError \? 'alert' : 'status'\}/,
+  )
+  assert.match(
+    searchComponentsStyles,
+    /\.updates-center[\s\S]*?box-sizing: border-box;[\s\S]*?width: 100%;/,
+  )
+  assert.match(
+    searchComponentsStyles,
+    /@media \(max-width: 1180px\)[\s\S]*?\.updates-center-main[\s\S]*?grid-template-columns: 1fr;/,
+  )
+  assert.match(
+    installStyles,
+    /\.download-panel--compact[\s\S]*?min-width: 0;[\s\S]*?width: 100%;/,
+  )
   assert.match(releaseSelectorSource, /useState\(settings\.installationPath \?\? ''\)/)
   assert.match(releaseSelectorSource, /setInstallPath\(await setInstallationPath\(dir\)\)/)
   assert.doesNotMatch(downloadServiceSource, /installPath/)
@@ -506,7 +549,8 @@ try {
   assert.match(folderManager, /tabindex="-1"/)
   const batchPanel = render(BatchUpdatePanel, {
     items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
-    skippedCount: 0,
+    skippedCount: 1,
+    lastChecked: '12:34',
     checking: false,
     updating: false,
     versionErrorCount: 0,
@@ -518,8 +562,17 @@ try {
     onSkip: noop,
   })
   assert.match(batchPanel, /updates-center-row/)
+  assert.match(batchPanel, /updates-center-row-main/)
+  assert.match(batchPanel, /updates-center-version-change/)
+  assert.match(batchPanel, /updates-center-row-status/)
+  assert.match(batchPanel, /v1\.0\.0[^<]*→[^<]*v2\.0\.0/)
+  assert.equal((batchPanel.match(/class="updates-center-status"/g) ?? []).length, 3)
+  assert.match(batchPanel, /updates-center-statuses" role="status" aria-live="polite"/)
+  assert.doesNotMatch(batchPanel, /updates-center-stats/)
+  assert.doesNotMatch(batchPanel, /Перевіряй усі встановлені застосунки тут/)
   assert.match(batchPanel, /aria-haspopup="dialog"/)
   assert.match(batchPanel, /aria-busy="false"/)
+  assert.match(batchPanel, /updates-clear-skipped/)
 
   const busyBatchPanel = render(BatchUpdatePanel, {
     items: [],
@@ -528,7 +581,6 @@ try {
     updating: false,
     versionErrorCount: 0,
     updateMessage: 'Updated',
-    error: 'Failed',
     onCheck: noop,
     onUpdateAll: noop,
     onClearSkipped: noop,
@@ -538,7 +590,37 @@ try {
   })
   assert.match(busyBatchPanel, /aria-busy="true"/)
   assert.match(busyBatchPanel, /role="status" aria-live="polite"/)
-  assert.match(busyBatchPanel, /role="alert"/)
+  assert.ok(busyBatchPanel.includes(ukDictionary['updates.emptyChecking']))
+  assert.doesNotMatch(busyBatchPanel, /role="alert"/)
+  assert.doesNotMatch(busyBatchPanel, /updates-clear-skipped/)
+
+  const emptyBatchPanelProps = {
+    items: [],
+    skippedCount: 0,
+    checking: false,
+    updating: false,
+    versionErrorCount: 0,
+    onCheck: noop,
+    onUpdateAll: noop,
+    onClearSkipped: noop,
+    onUpdate: noop,
+    onShowDetails: noop,
+    onSkip: noop,
+  }
+  const notCheckedBatchPanel = render(BatchUpdatePanel, emptyBatchPanelProps)
+  const currentBatchPanel = render(BatchUpdatePanel, { ...emptyBatchPanelProps, lastChecked: '12:34' })
+  const partialBatchPanel = render(BatchUpdatePanel, {
+    ...emptyBatchPanelProps,
+    lastChecked: '12:34',
+    versionErrorCount: 2,
+  })
+  assert.ok(notCheckedBatchPanel.includes(ukDictionary['updates.emptyNotChecked'].split('"')[0]))
+  assert.ok(currentBatchPanel.includes(ukDictionary['updates.emptyCurrent']))
+  assert.ok(partialBatchPanel.includes(ukDictionary['updates.emptyPartial'].replace('{count}', '2')))
+  assert.match(notCheckedBatchPanel, /class="hero-primary-btn"[^>]*disabled=""/)
+  assert.equal((notCheckedBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
+  assert.equal((currentBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
+  assert.equal((partialBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
 
   const download = render(DownloadProgressPanel, {
     downloads: [{
@@ -568,6 +650,8 @@ try {
       downloadedSize: 1024,
       status: 'completed',
       stage: 'completed',
+      owner: 'CpPrice11',
+      repo: 'demo-app',
     }],
     onCancel: noop,
     onLaunch: noop,
@@ -577,6 +661,51 @@ try {
   assert.match(completedDownload, /download-item--completed/)
   assert.match(completedDownload, /aria-busy="false"/)
   assert.equal((completedDownload.match(/download-action-btn primary/g) ?? []).length, 1)
+  assert.ok(completedDownload.includes(ukDictionary['download.launch']))
+  assert.ok(completedDownload.includes(ukDictionary['download.openFolder']))
+  assert.doesNotMatch(completedDownload, /download-recovery/)
+
+  const completedDownloadWithoutTarget = render(DownloadProgressPanel, {
+    downloads: [{
+      id: 'download-completed-without-target',
+      fileName: 'demo.zip',
+      progress: 100,
+      totalSize: 1024,
+      downloadedSize: 1024,
+      status: 'completed',
+      stage: 'completed',
+    }],
+    onCancel: noop,
+    onLaunch: noop,
+    onOpenFolder: noop,
+  })
+  assert.doesNotMatch(completedDownloadWithoutTarget, /download-actions/)
+
+  const compactDownload = render(DownloadProgressPanel, {
+    compact: true,
+    downloads: [{
+      id: 'download-active',
+      fileName: 'active.zip',
+      progress: 50,
+      totalSize: 1024,
+      downloadedSize: 512,
+      status: 'downloading',
+      stage: 'downloading',
+    }, {
+      id: 'download-finished',
+      fileName: 'finished.zip',
+      progress: 100,
+      totalSize: 1024,
+      downloadedSize: 1024,
+      status: 'completed',
+      stage: 'completed',
+    }],
+    onCancel: noop,
+  })
+  assert.match(compactDownload, /download-panel--compact/)
+  assert.match(compactDownload, /aria-expanded="false"/)
+  assert.match(compactDownload, /active\.zip/)
+  assert.doesNotMatch(compactDownload, /finished\.zip/)
 
   const failedDownload = render(DownloadProgressPanel, {
     downloads: [{
@@ -591,11 +720,16 @@ try {
     onCancel: noop,
     onRetry: noop,
     onChooseAnother: noop,
+    onOpenFolder: noop,
     onCleanup: noop,
   })
   assert.match(failedDownload, /download-item--failed/)
   assert.match(failedDownload, /download-recovery" role="alert"/)
   assert.equal((failedDownload.match(/download-action-btn primary/g) ?? []).length, 1)
+  assert.equal((failedDownload.match(/download-action-btn/g) ?? []).length, 3)
+  assert.ok(failedDownload.includes(ukDictionary['download.retry']))
+  assert.ok(failedDownload.includes(ukDictionary['download.cleanup']))
+  assert.ok(!failedDownload.includes(ukDictionary['download.openFolder']))
 
   const errorState = render(StatePanel, { kind: 'error', title: 'Failed' })
   assert.match(errorState, /role="alert" aria-live="assertive"/)

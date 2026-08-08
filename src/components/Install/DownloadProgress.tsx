@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { DownloadProgress as DL, DownloadStage } from '../../types'
 import { useI18n } from '../../i18n'
 import { getLocalizedErrorMessage } from '../../services/tauri'
@@ -13,6 +14,7 @@ interface DownloadProgressProps {
   onRetry?: (download: DL) => void
   onChooseAnother?: () => void
   onCleanup?: () => void
+  compact?: boolean
 }
 
 const installStages: DownloadStage[] = [
@@ -76,24 +78,43 @@ function DownloadProgressPanel({
   onRetry,
   onChooseAnother,
   onCleanup,
+  compact = false,
 }: DownloadProgressProps) {
   const { language, t } = useI18n()
+  const [showCompleted, setShowCompleted] = useState(false)
 
   if (downloads.length === 0) return null
   const busy = downloads.some((download) => !['completed', 'failed'].includes(currentStage(download)))
+  const completedCount = downloads.filter((download) => currentStage(download) === 'completed').length
+  const visibleDownloads = compact && !showCompleted
+    ? downloads.filter((download) => currentStage(download) !== 'completed')
+    : downloads
 
   return (
-    <div className="download-panel" aria-busy={busy}>
+    <div className={`download-panel ${compact ? 'download-panel--compact' : ''}`} aria-busy={busy}>
       <div className="download-panel-head">
         <h3 className="download-panel-title">{t('download.title')}</h3>
-        <span className="download-panel-count">{downloads.length}</span>
+        <div className="download-panel-head-actions">
+          {compact && completedCount > 0 && (
+            <button
+              type="button"
+              className="secondary-btn download-completed-toggle"
+              aria-expanded={showCompleted}
+              onClick={() => setShowCompleted((visible) => !visible)}
+            >
+              {t(showCompleted ? 'download.hideCompleted' : 'download.showCompleted', { count: completedCount })}
+            </button>
+          )}
+          <span className="download-panel-count">{downloads.length}</span>
+        </div>
       </div>
       <div className="download-list">
-        {downloads.map((download) => {
+        {visibleDownloads.map((download) => {
           const stage = currentStage(download)
           const stageIndex = installStages.indexOf(stage)
           const failed = download.status === 'failed' || stage === 'failed'
           const completed = download.status === 'completed' || stage === 'completed'
+          const hasInstalledTarget = Boolean(download.owner && download.repo)
           const progress = Math.max(0, Math.min(100, Math.round(download.progress)))
 
           return (
@@ -175,14 +196,14 @@ function DownloadProgressPanel({
                 <span className="download-pct">{progress}%</span>
               </div>
 
-              {completed && (
+              {completed && (onBackToLibrary || (hasInstalledTarget && (onLaunch || onOpenFolder))) && (
                 <div className="download-actions">
-                  {onLaunch && (
+                  {onLaunch && hasInstalledTarget && (
                     <button type="button" className="download-action-btn primary" onClick={() => onLaunch(download)}>
                       {t('download.launch')}
                     </button>
                   )}
-                  {onOpenFolder && (
+                  {onOpenFolder && hasInstalledTarget && (
                     <button type="button" className="download-action-btn" onClick={() => onOpenFolder(download)}>
                       {t('download.openFolder')}
                     </button>
@@ -210,28 +231,30 @@ function DownloadProgressPanel({
                       <pre>{getLocalizedErrorMessage(download.error)}</pre>
                     </details>
                   )}
-                  <div className="download-actions">
-                    {onRetry && (
-                      <button type="button" className="download-action-btn primary" onClick={() => onRetry(download)}>
-                        {t('download.retry')}
-                      </button>
-                    )}
-                    {onChooseAnother && (
-                      <button type="button" className="download-action-btn" onClick={onChooseAnother}>
-                        {t('download.chooseAnother')}
-                      </button>
-                    )}
-                    {onOpenFolder && (
-                      <button type="button" className="download-action-btn" onClick={() => onOpenFolder(download)}>
-                        {t('download.openFolder')}
-                      </button>
-                    )}
-                    {onCleanup && (
-                      <button type="button" className="download-action-btn" onClick={onCleanup}>
-                        {t('download.cleanup')}
-                      </button>
-                    )}
-                  </div>
+                  {(onRetry || onChooseAnother || onCleanup || (onOpenFolder && hasInstalledTarget)) && (
+                    <div className="download-actions">
+                      {onRetry && (
+                        <button type="button" className="download-action-btn primary" onClick={() => onRetry(download)}>
+                          {t('download.retry')}
+                        </button>
+                      )}
+                      {onChooseAnother && (
+                        <button type="button" className="download-action-btn" onClick={onChooseAnother}>
+                          {t('download.chooseAnother')}
+                        </button>
+                      )}
+                      {onOpenFolder && hasInstalledTarget && (
+                        <button type="button" className="download-action-btn" onClick={() => onOpenFolder(download)}>
+                          {t('download.openFolder')}
+                        </button>
+                      )}
+                      {onCleanup && (
+                        <button type="button" className="download-action-btn" onClick={onCleanup}>
+                          {t('download.cleanup')}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -398,12 +398,7 @@ function SettingsPage({
   return (
     <>
       <section className="page settings-page" aria-labelledby="settings-title">
-        <div className="settings-page-header">
-          <div>
-            <span className="settings-page-kicker">{t('settings.workspaceKicker')}</span>
-            <h2 id="settings-title">{t('settings.title')}</h2>
-          </div>
-        </div>
+        <h2 id="settings-title" className="visually-hidden">{t('settings.title')}</h2>
 
         <div className="settings-form settings-workspace">
           <nav className="settings-nav" aria-label={t('settings.title')}>

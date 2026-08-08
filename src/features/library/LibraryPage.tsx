@@ -704,7 +704,9 @@ function LibraryPage({
   const sidebarResultsRef = useRef<HTMLDivElement>(null)
   const detailsPaneRef = useRef<HTMLElement>(null)
   const sidebarScrollTopRef = useRef(initialLibraryView.sidebarScrollTop)
-  const detailsScrollTopRef = useRef(initialLibraryView.detailsScrollTop)
+  const detailsScrollTopRef = useRef(
+    initialLibraryView.filter === 'updates' ? 0 : initialLibraryView.detailsScrollTop,
+  )
   const lastFeaturedRepoKeyRef = useRef(initialLibraryView.featuredRepoKey)
   const viewPersistenceTimerRef = useRef<number | null>(null)
   const scrollRestoredRef = useRef(false)
@@ -763,7 +765,7 @@ function LibraryPage({
         sidebarResultsRef.current.scrollTop = initialLibraryView.sidebarScrollTop
       }
       if (detailsPaneRef.current) {
-        detailsPaneRef.current.scrollTop = initialLibraryView.detailsScrollTop
+        detailsPaneRef.current.scrollTop = detailsScrollTopRef.current
       }
     })
     return () => window.cancelAnimationFrame(frame)
@@ -1160,7 +1162,6 @@ function LibraryPage({
         versionErrorCount={latestVersionErrorCount}
         updateMessage={batchUpdateMessage}
         cleanupMessage={batchCleanupMessage}
-        error={batchUpdateError}
         onCheck={handleCheckUpdates}
         onUpdateAll={handleUpdateAllPortable}
         onClearSkipped={handleClearSkippedUpdates}
@@ -1169,6 +1170,7 @@ function LibraryPage({
         onSkip={handleSkipUpdate}
       >
         <DownloadProgressPanel
+          compact
           downloads={batchDownloads}
           onCancel={cancelBatchDownload}
           onLaunch={(download) => {
@@ -1295,7 +1297,7 @@ function LibraryPage({
   }
 
   const renderDetailsEmpty = () => {
-    if (featuredRepo || filter === 'updates') return null
+    if (featuredRepo) return null
 
     return (
       <section className="library-details-empty" aria-label={t('library.detailsEmptyTitle')}>
@@ -1536,6 +1538,10 @@ function LibraryPage({
             hasMore={state.hasMore}
             onFilterChange={(nextFilter) => {
               bulkSelection.clear()
+              if (nextFilter === 'updates') {
+                detailsScrollTopRef.current = 0
+                if (detailsPaneRef.current) detailsPaneRef.current.scrollTop = 0
+              }
               handleFilterChange(nextFilter)
             }}
             onSortChange={(nextSort) => {
@@ -1570,11 +1576,16 @@ function LibraryPage({
               scheduleLibraryViewPersistence()
             }}
           >
-            {renderDetailsEmpty()}
-            {renderHero()}
-            {renderOperationsPanel()}
-            {renderUpdatesCenter()}
-            {heroPanel === 'details' && renderLibraryTrustPanel()}
+            {filter === 'updates' ? (
+              renderUpdatesCenter()
+            ) : (
+              <>
+                {renderDetailsEmpty()}
+                {renderHero()}
+                {renderOperationsPanel()}
+                {heroPanel === 'details' && renderLibraryTrustPanel()}
+              </>
+            )}
           </aside>
         </div>
 
@@ -1655,9 +1666,14 @@ function LibraryPage({
         </Suspense>
       )}
 
-      {libraryActionMessage && (
-        <div className="library-toast library-toast--success" role="status" aria-live="polite" aria-atomic="true">
-          {libraryActionMessage}
+      {(batchUpdateError || libraryActionMessage) && (
+        <div
+          className={`library-toast library-toast--${batchUpdateError ? 'error' : 'success'}`}
+          role={batchUpdateError ? 'alert' : 'status'}
+          aria-live={batchUpdateError ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {batchUpdateError ?? libraryActionMessage}
         </div>
       )}
     </div>

@@ -27,7 +27,7 @@ def check_source_contract() -> None:
     source = (ROOT / "src/pages/AboutPage.tsx").read_text(encoding="utf-8")
     ordered_fragments = (
         '<div className="page about-page">',
-        '<div className="page-header">',
+        '<h2 className="visually-hidden">{t(\'about.title\')}</h2>',
         '<section className="about-hero">',
         '<h3>Pullora</h3>',
         '<div className="about-hero-meta">',
@@ -77,7 +77,7 @@ def open_about(page: Page, baseline) -> None:
 
 def inspect_composition(page: Page, width: int, height: int) -> dict:
     root = page.locator(".about-page")
-    header = root.locator(":scope > .page-header")
+    hidden_heading = root.locator(":scope > .visually-hidden")
     hero = root.locator(":scope > .about-hero")
     grid = root.locator(":scope > .about-grid")
     panel = grid.locator(":scope > .about-panel-wide")
@@ -95,7 +95,8 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
     toolbar = panel.locator(":scope > .about-panel-toolbar")
     release = panel.locator(".about-release-link").first
 
-    assert header.count() == hero.count() == grid.count() == panel.count() == 1
+    assert hidden_heading.count() == hero.count() == grid.count() == panel.count() == 1
+    assert hidden_heading.inner_text().strip()
     assert hero_mark.count() == hero_main.count() == hero_actions.count() == 1
     assert product_name.count() == product_description.count() == version_meta.count() == 1
     assert current_version.count() == 1 and version_values.count() == 2
@@ -116,7 +117,6 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
 
     boxes = {
         "root": rounded_box(root),
-        "header": rounded_box(header),
         "hero": rounded_box(hero),
         "heroMark": rounded_box(hero_mark),
         "heroMain": rounded_box(hero_main),
@@ -129,7 +129,7 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
         "release": rounded_box(release),
     }
 
-    assert boxes["header"]["y"] <= boxes["hero"]["y"] <= boxes["grid"]["y"]
+    assert boxes["hero"]["y"] <= boxes["grid"]["y"]
     for label in ("heroMark", "heroMain", "heroActions"):
         assert_inside(boxes[label], boxes["hero"], label)
     for label in ("heading", "filters", "toolbar", "release"):
