@@ -475,12 +475,6 @@
   width: 100%;
 }
 
-.release-strategy-note {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  margin: 0;
-}
-
 .release-picker {
   display: flex;
   flex-direction: column;

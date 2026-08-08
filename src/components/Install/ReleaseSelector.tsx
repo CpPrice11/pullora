@@ -113,14 +113,6 @@ function pickRecommendedAsset(assets: GitHubAsset[], strategy: AssetStrategy): G
   return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
 }
 
-function strategyHelpKey(strategy: AssetStrategy) {
-  switch (strategy) {
-    case 'portableFirst': return 'release.strategyPortableFirst'
-    case 'installerFirst': return 'release.strategyInstallerFirst'
-    case 'manual': return 'release.strategyManual'
-  }
-}
-
 function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = false) {
   switch (step) {
     case 'version': return t('release.stepVersion')
@@ -521,8 +513,6 @@ function ReleaseSelector({
                   {sortedAssets.length > 0 ? (
                     <div className="release-picker">
                       <span className="release-section-label">{t('release.file')}</span>
-                      <p className="release-strategy-note">{t(strategyHelpKey(assetStrategy))}</p>
-                      <p className="release-strategy-note">{t('release.autoInstallOnly')}</p>
                       <div className="release-asset-list">
                         {sortedAssets.map((asset) => {
                           const compatibility = classifyReleaseAssetCompatibility(asset)
