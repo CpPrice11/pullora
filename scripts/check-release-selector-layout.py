@@ -71,6 +71,22 @@ def assert_action_hierarchy(actions) -> None:
         "minWidth": "0px",
     }, primary_layout
 
+    secondary = actions.locator("button.release-secondary-btn:enabled").first
+    if secondary.count() == 1:
+        button_layouts = [
+            button.evaluate(
+                """el => ({
+                    height: getComputedStyle(el).height,
+                    paddingLeft: getComputedStyle(el).paddingLeft,
+                    paddingRight: getComputedStyle(el).paddingRight,
+                    flexGrow: getComputedStyle(el).flexGrow,
+                    flexBasis: getComputedStyle(el).flexBasis,
+                })"""
+            )
+            for button in (secondary, primary)
+        ]
+        assert button_layouts[0] == button_layouts[1], button_layouts
+
 
 def assert_actions_fit_viewport(page: Page, modal) -> None:
     viewport = page.viewport_size
