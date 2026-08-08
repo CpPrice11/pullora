@@ -164,7 +164,7 @@ def seed_cache(page: Page) -> None:
               if (command === 'get_settings') {
                 return {
                   version: 2,
-                  installationPath: 'C:\\\\PulloraApps',
+                  installationPath: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps',
                   includePrereleases: false,
                   assetStrategy: 'portableFirst',
                   githubOwner: 'CpPrice11',
