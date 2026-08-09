@@ -77,6 +77,7 @@ fn install_path_guard_error(install_path: &str) -> Option<String> {
     if !path_status.ok {
         let code = match path_status.status.as_str() {
             "missing" => "errors.installPathRequired",
+            "unsafe" => "errors.installPathUnsafe",
             "noWritePermission" => "errors.installPathRequiresWritable",
             "busy" => "errors.installPathBusy",
             _ => "errors.installPathUnavailable",
@@ -110,7 +111,7 @@ mod tests {
         let error = install_path_guard_error("relative/does-not-resolve");
         assert_eq!(
             error.as_deref(),
-            Some("PULLORA_ERROR:errors.installPathUnavailable")
+            Some("PULLORA_ERROR:errors.installPathUnsafe")
         );
     }
 

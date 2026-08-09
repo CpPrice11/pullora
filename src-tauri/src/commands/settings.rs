@@ -107,12 +107,26 @@ pub fn ensure_installation_path(path: &str) -> InstallPathValidation {
         };
     }
 
-    let Ok(folder) = crate::storage::path_scope::installation_root(trimmed) else {
+    let folder = match crate::storage::path_scope::installation_root(trimmed) {
+        Ok(folder) => folder,
+        Err(error) => {
+            return InstallPathValidation {
+                ok: false,
+                status: if error == command_error("errors.installPathUnsafe") {
+                    "unsafe"
+                } else {
+                    "inaccessible"
+                }
+                .to_string(),
+            };
+        }
+    };
+    if is_pullora_service_path(&folder) {
         return InstallPathValidation {
             ok: false,
-            status: "inaccessible".to_string(),
+            status: "unsafe".to_string(),
         };
-    };
+    }
     if !folder.exists() {
         if let Err(error) = std::fs::create_dir_all(&folder) {
             return InstallPathValidation {
@@ -181,10 +195,39 @@ fn install_path_io_status(error: &std::io::Error) -> &'static str {
     }
 }
 
+fn is_pullora_service_path(path: &std::path::Path) -> bool {
+    let allowed_apps = std::path::PathBuf::from(default_installation_path());
+    let mut protected_roots = vec![get_config_dir()];
+    if let Ok(executable) = std::env::current_exe() {
+        if let Some(launcher_dir) = executable.parent() {
+            protected_roots.push(launcher_dir.to_path_buf());
+        }
+    }
+
+    is_protected_installation_path(path, &allowed_apps, &protected_roots)
+}
+
+fn is_protected_installation_path(
+    path: &std::path::Path,
+    allowed_apps: &std::path::Path,
+    protected_roots: &[std::path::PathBuf],
+) -> bool {
+    if crate::storage::path_scope::ensure_within(path, allowed_apps, true).is_ok() {
+        return false;
+    }
+
+    protected_roots
+        .iter()
+        .any(|root| crate::storage::path_scope::ensure_within(path, root, true).is_ok())
+}
+
 fn prepare_installation_path_setting(path: &str) -> Result<String, String> {
     let requested = requested_installation_path(path);
 
     let folder = crate::storage::path_scope::installation_root(&requested)?;
+    if is_pullora_service_path(&folder) {
+        return Err(command_error("errors.installPathUnsafe"));
+    }
     if folder.exists() {
         if folder.is_dir() {
             return Ok(folder.display().to_string());
@@ -214,7 +257,10 @@ fn requested_installation_path(path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{ensure_installation_path, install_path_io_status, requested_installation_path};
+    use super::{
+        ensure_installation_path, install_path_io_status, is_protected_installation_path,
+        requested_installation_path,
+    };
     use crate::storage::settings::default_installation_path;
 
     #[test]
@@ -253,6 +299,48 @@ mod tests {
         assert!(!result.ok);
         assert_eq!(result.status, "inaccessible");
         std::fs::remove_file(target).unwrap();
+    }
+
+    #[test]
+    fn installation_path_reports_unsafe_paths() {
+        let result = ensure_installation_path("relative/apps");
+
+        assert!(!result.ok);
+        assert_eq!(result.status, "unsafe");
+    }
+
+    #[test]
+    fn protects_pullora_storage_but_allows_its_apps_folder() {
+        let root = std::env::temp_dir().join(format!(
+            "pullora-protected-install-path-{}",
+            std::process::id()
+        ));
+        let protected_root = root.join("pullora");
+        let allowed_apps = protected_root.join("apps");
+        std::fs::create_dir_all(&allowed_apps).unwrap();
+
+        assert!(is_protected_installation_path(
+            &protected_root,
+            &allowed_apps,
+            std::slice::from_ref(&protected_root),
+        ));
+        assert!(is_protected_installation_path(
+            &protected_root.join("package-cache"),
+            &allowed_apps,
+            std::slice::from_ref(&protected_root),
+        ));
+        assert!(!is_protected_installation_path(
+            &allowed_apps,
+            &allowed_apps,
+            std::slice::from_ref(&protected_root),
+        ));
+        assert!(!is_protected_installation_path(
+            &allowed_apps.join("CpPrice11-demo"),
+            &allowed_apps,
+            std::slice::from_ref(&protected_root),
+        ));
+
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

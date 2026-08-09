@@ -7,6 +7,7 @@ import type {
   AppSettings,
   GitHubQueueStatus,
   GitHubRateLimitStatus,
+  InstallPathValidation,
   LauncherStorageInfo,
 } from '../../../types'
 import { formatBytes } from '../../../utils/format'
@@ -15,7 +16,7 @@ import { parseEventLogEntry } from '../eventLog'
 
 export type SettingsSectionId = 'general' | 'events' | 'maintenance'
 
-type PathValidation = 'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'
+type PathValidation = 'idle' | InstallPathValidation['status']
 type SurfaceSetting = 'surfaceTransparency' | 'surfaceBlur'
 
 interface GeneralSettingsSectionProps {
@@ -209,6 +210,7 @@ function GeneralSettingsSection({
             >
               {pathValidation === 'ok' && t('settings.pathOk')}
               {pathValidation === 'missing' && t('settings.pathMissing')}
+              {pathValidation === 'unsafe' && t('settings.pathUnsafe')}
               {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}
               {pathValidation === 'noWritePermission' && t('settings.pathNoWrite')}
               {pathValidation === 'busy' && t('settings.pathBusy')}

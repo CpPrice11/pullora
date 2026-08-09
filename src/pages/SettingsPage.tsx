@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AppSettings } from '../types'
+import type { AppSettings, InstallPathValidation } from '../types'
 import {
   getSettings,
   setInstallationPath as saveInstallationPath,
@@ -52,7 +52,7 @@ function SettingsPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pathValidation, setPathValidation] = useState<'idle' | 'ok' | 'missing' | 'inaccessible' | 'noWritePermission' | 'busy'>('idle')
+  const [pathValidation, setPathValidation] = useState<'idle' | InstallPathValidation['status']>('idle')
   const [confirmation, setConfirmation] = useState<'reset' | 'cleanup' | null>(null)
   const [cleanupBusy, setCleanupBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
