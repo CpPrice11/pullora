@@ -392,6 +392,10 @@ pub async fn open_installed_app_dir(
 
 #[tauri::command]
 pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<usize, String> {
+    if state.download_manager.has_running_downloads().await {
+        return Err(command_error("errors.cleanupDownloadsActive"));
+    }
+
     let settings = state.settings.lock().await;
     let install_path = settings.installation_path.clone();
     drop(settings);
@@ -644,6 +648,7 @@ mod tests {
         let partial = app.join("v1.partial-job");
         let orphan = app.join("v2.partial-orphan");
         let finished_backup = app.join("v3.backup-finished");
+        let unrelated_version = app.join("v4");
         let download_dir = root.join(".pullora-downloads");
 
         for dir in [
@@ -654,11 +659,13 @@ mod tests {
             &finished_backup,
             &download_dir,
             &app.join("v3"),
+            &unrelated_version,
         ] {
             std::fs::create_dir_all(dir).unwrap();
         }
         std::fs::write(current.join("broken.exe"), b"broken").unwrap();
         std::fs::write(backup.join("working.exe"), b"working").unwrap();
+        std::fs::write(unrelated_version.join("user.dat"), b"keep").unwrap();
         std::fs::write(download_dir.join("asset.tmp"), b"partial").unwrap();
 
         assert_eq!(cleanup_install_root(&root).unwrap(), 5);
@@ -669,6 +676,10 @@ mod tests {
         assert!(!orphan.exists());
         assert!(!finished_backup.exists());
         assert!(!download_dir.exists());
+        assert_eq!(
+            std::fs::read(unrelated_version.join("user.dat")).unwrap(),
+            b"keep"
+        );
 
         std::fs::remove_dir_all(root).unwrap();
     }
