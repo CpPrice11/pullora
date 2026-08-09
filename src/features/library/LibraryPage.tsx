@@ -1366,6 +1366,7 @@ function LibraryPage({
         installedApp={installedApp}
         latestVersion={latestVersion}
         installationPath={settings.installationPath}
+        updating={batchUpdating}
         onInstall={() => setSelectedRepo(featuredRepo)}
         onUpdate={() => { void handleUpdatePortable(featuredRepo) }}
         onLaunch={() => handleLaunch(featuredRepo)}

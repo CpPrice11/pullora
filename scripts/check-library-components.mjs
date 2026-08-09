@@ -453,6 +453,18 @@ try {
   assert.match(operationsPanel, /library-inline-panel--versions/)
   assert.match(operationsPanel, /library-inline-panel--details/)
   assert.match(operationsPanel, new RegExp(`${effectiveInstallPath.replaceAll('\\', '\\\\')}\\\\CpPrice11-demo-app`))
+  const updatingOperationsPanel = render(LibraryOperationsPanel, {
+    repo,
+    installedApp,
+    latestVersion: 'v2.0.0',
+    installationPath: effectiveInstallPath,
+    updating: true,
+    onInstall: noop,
+    onUpdate: noop,
+    onLaunch: noop,
+  })
+  assert.match(updatingOperationsPanel, /disabled="" aria-busy="true"/)
+  assert.ok(updatingOperationsPanel.includes(ukDictionary['updates.updatingAll']))
   assert.match(libraryPageSource, /onUpdate=\{handleUpdatePortable\}/)
   assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleUpdatePortable\(featuredRepo\) \}\}/)
   assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
@@ -613,6 +625,23 @@ try {
   assert.match(batchPanel, /aria-haspopup="dialog"/)
   assert.match(batchPanel, /aria-busy="false"/)
   assert.match(batchPanel, /updates-clear-skipped/)
+
+  const updatingBatchPanel = render(BatchUpdatePanel, {
+    items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
+    skippedCount: 0,
+    lastChecked: '12:34',
+    checking: false,
+    updating: true,
+    versionErrorCount: 0,
+    onCheck: noop,
+    onUpdateAll: noop,
+    onClearSkipped: noop,
+    onUpdate: noop,
+    onShowDetails: noop,
+    onSkip: noop,
+  })
+  assert.match(updatingBatchPanel, /disabled="" aria-busy="true"/)
+  assert.ok(updatingBatchPanel.includes(ukDictionary['updates.updatingAll']))
 
   const busyBatchPanel = render(BatchUpdatePanel, {
     items: [],
