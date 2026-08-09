@@ -58,6 +58,7 @@ try {
   const { nextMenuItemIndex } = await server.ssrLoadModule('/src/utils/menuKeyboard.ts')
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
   const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
+  const { pickPortableReleaseAsset } = await server.ssrLoadModule('/src/features/library/releaseAssetClassifier.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
   const { parseEventLogEntry } = await server.ssrLoadModule('/src/features/settings/eventLog.ts')
 
@@ -197,6 +198,25 @@ try {
   assert.equal(projectArtBackgroundUrl(coverOnlyArt, { fallbackToCover: false }), null)
   assert.equal(projectArtBackgroundUrl(independentArt, { fallbackToCover: false }), independentArt.backgroundDataUrl)
 
+  const releaseAsset = (id, name) => ({
+    id,
+    name,
+    browser_download_url: `https://example.com/${name}`,
+    size: 1024,
+    content_type: 'application/octet-stream',
+    download_count: 0,
+  })
+  assert.equal(
+    pickPortableReleaseAsset([
+      releaseAsset(1, 'demo-setup.exe'),
+      releaseAsset(2, 'source-code.zip'),
+      releaseAsset(3, 'demo.exe'),
+      releaseAsset(4, 'demo-portable.zip'),
+    ])?.id,
+    4,
+  )
+  assert.equal(pickPortableReleaseAsset([releaseAsset(1, 'demo-setup.exe')]), null)
+
   const olderRepo = { ...repo, id: 2, name: 'alpha-app', updated_at: '2026-07-14T10:00:00Z' }
   const newerInstall = {
     ...installedApp,
@@ -264,6 +284,7 @@ try {
   const searchComponentsStyles = readFileSync('src/features/library/components/SearchComponents.css', 'utf8')
   const installStyles = readFileSync('src/components/Install/Install.css', 'utf8')
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
+  const batchUpdatesSource = readFileSync('src/features/library/hooks/useBatchUpdates.ts', 'utf8')
   const libraryOperationsSource = readFileSync('src/features/library/components/LibraryOperationsPanel.tsx', 'utf8')
   const repoCardSource = readFileSync('src/features/library/components/RepoCard.tsx', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
@@ -436,6 +457,9 @@ try {
   assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleUpdatePortable\(featuredRepo\) \}\}/)
   assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
   assert.match(libraryOperationsSource, /onClick=\{hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
+  assert.match(batchUpdatesSource, /!item\.draft && !item\.prerelease && item\.tag_name === latestVersion/)
+  assert.match(batchUpdatesSource, /pickPortableReleaseAsset\(release\.assets\)/)
+  assert.match(batchUpdatesSource, /await startBatchUpdateJob\(/)
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',

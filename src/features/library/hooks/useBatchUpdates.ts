@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useDownload } from '../../../hooks/useDownload'
 import { getReleases } from '../../../services/github'
 import { cleanupIncompleteInstalls, openInstalledAppDir } from '../../../services/installed'
-import type { DownloadProgress, GitHubAsset, GitHubRelease, GitHubSearchResult } from '../../../types'
+import type { DownloadProgress, GitHubSearchResult } from '../../../types'
 import { useI18n } from '../../../i18n'
+import { pickPortableReleaseAsset } from '../releaseAssetClassifier'
 
 interface BatchUpdateJob {
   url: string
@@ -28,26 +29,6 @@ export interface BatchUpdateStartResult {
 
 function repositoryKey(repo: GitHubSearchResult) {
   return `${repo.owner.login}/${repo.name}`.toLowerCase()
-}
-
-function assetIsPortableInstall(asset: GitHubAsset) {
-  const name = asset.name.toLowerCase()
-  if (name.includes('setup') || name.includes('installer') || name.endsWith('.msi')) return false
-
-  return name.includes('portable') ||
-    name.endsWith('.exe') ||
-    name.endsWith('.zip')
-}
-
-function pickPortableUpdateAsset(release: GitHubRelease | null) {
-  if (!release) return null
-  return [...release.assets]
-    .sort((left, right) => {
-      const leftPortable = left.name.toLowerCase().includes('portable') ? 0 : 1
-      const rightPortable = right.name.toLowerCase().includes('portable') ? 0 : 1
-      return leftPortable - rightPortable || left.name.localeCompare(right.name)
-    })
-    .find(assetIsPortableInstall) ?? null
 }
 
 export function useBatchUpdates({
@@ -96,10 +77,12 @@ export function useBatchUpdates({
 
       try {
         const releases = await getReleases(repo.owner.login, repo.name)
-        const release = releases.find((item) => item.tag_name === latestVersion)
+        const release = releases.find((item) =>
+          !item.draft && !item.prerelease && item.tag_name === latestVersion,
+        )
           ?? releases.find((item) => !item.draft && !item.prerelease)
           ?? null
-        const asset = pickPortableUpdateAsset(release)
+        const asset = release ? pickPortableReleaseAsset(release.assets) : null
         if (!release || !asset) {
           return { key, status: 'skipped' as const }
         }
