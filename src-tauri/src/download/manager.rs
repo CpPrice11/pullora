@@ -10,12 +10,14 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::{Mutex, Semaphore};
 
 use super::extractor;
-use crate::error::normalize_command_error;
+use crate::error::{install_io_error, is_busy_io_error, normalize_command_error};
 
 const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
 const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
 const INSTALLER_PROCESS_WAIT_TIMEOUT: Duration = Duration::from_secs(20);
 const DOWNLOAD_ATTEMPTS: u8 = 3;
+const FILE_OPERATION_ATTEMPTS: u8 = 3;
+const FILE_OPERATION_RETRY_DELAY: Duration = Duration::from_millis(200);
 const MAX_PARALLEL_DOWNLOADS: usize = 3;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -485,7 +487,8 @@ async fn download_task(
     if install_kind == "installer" {
         cleanup_path(&backup_dir)?;
         if version_dir.exists() {
-            fs::rename(&version_dir, &backup_dir).map_err(|e| e.to_string())?;
+            retry_file_operation(|| fs::rename(&version_dir, &backup_dir))
+                .map_err(|error| install_io_error(&error))?;
         }
 
         emit_progress(&app, &active, &id, |p| {
@@ -801,7 +804,7 @@ async fn download_asset_once(
     let mut stream = response.bytes_stream();
     let mut out = tokio::fs::File::create(tmp_path)
         .await
-        .map_err(|error| DownloadAttemptError::Fatal(error.to_string()))?;
+        .map_err(|error| DownloadAttemptError::Fatal(install_io_error(&error)))?;
     let mut downloaded = 0;
 
     while let Some(chunk) = stream.next().await {
@@ -818,7 +821,7 @@ async fn download_asset_once(
             .await
             .map_err(|error| {
                 let _ = fs::remove_file(tmp_path);
-                DownloadAttemptError::Fatal(error.to_string())
+                DownloadAttemptError::Fatal(install_io_error(&error))
             })?;
         downloaded += chunk.len() as u64;
 
@@ -890,12 +893,15 @@ fn install_with_external_installer(
     version_dir: &Path,
     file_name: &str,
 ) -> Result<(), String> {
-    fs::create_dir_all(version_dir).map_err(|e| e.to_string())?;
+    retry_file_operation(|| fs::create_dir_all(version_dir))
+        .map_err(|error| install_io_error(&error))?;
 
     let installer_dir = version_dir.join(".installer");
-    fs::create_dir_all(&installer_dir).map_err(|e| e.to_string())?;
+    retry_file_operation(|| fs::create_dir_all(&installer_dir))
+        .map_err(|error| install_io_error(&error))?;
     let cached_installer = installer_dir.join(safe_file_name(file_name));
-    fs::copy(installer_path, &cached_installer).map_err(|e| e.to_string())?;
+    retry_file_operation(|| fs::copy(installer_path, &cached_installer))
+        .map_err(|error| install_io_error(&error))?;
 
     run_installer_process(&cached_installer)?;
     Ok(())
@@ -1326,11 +1332,28 @@ fn cleanup_path(path: &std::path::Path) -> Result<(), String> {
         return Ok(());
     }
 
-    let metadata = fs::metadata(path).map_err(|e| e.to_string())?;
+    let metadata =
+        retry_file_operation(|| fs::metadata(path)).map_err(|error| install_io_error(&error))?;
     if metadata.is_dir() {
-        fs::remove_dir_all(path).map_err(|e| e.to_string())
+        retry_file_operation(|| fs::remove_dir_all(path)).map_err(|error| install_io_error(&error))
     } else {
-        fs::remove_file(path).map_err(|e| e.to_string())
+        retry_file_operation(|| fs::remove_file(path)).map_err(|error| install_io_error(&error))
+    }
+}
+
+pub(super) fn retry_file_operation<T>(
+    mut operation: impl FnMut() -> std::io::Result<T>,
+) -> std::io::Result<T> {
+    let mut attempt = 1;
+    loop {
+        match operation() {
+            Ok(value) => return Ok(value),
+            Err(error) if is_busy_io_error(&error) && attempt < FILE_OPERATION_ATTEMPTS => {
+                std::thread::sleep(FILE_OPERATION_RETRY_DELAY);
+                attempt += 1;
+            }
+            Err(error) => return Err(error),
+        }
     }
 }
 
@@ -1342,16 +1365,23 @@ fn replace_version_dir(
     cleanup_path(backup_dir)?;
 
     if version_dir.exists() {
-        fs::rename(version_dir, backup_dir).map_err(|e| e.to_string())?;
+        retry_file_operation(|| fs::rename(version_dir, backup_dir))
+            .map_err(|error| install_io_error(&error))?;
     }
 
     if let Some(parent) = version_dir.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        retry_file_operation(|| fs::create_dir_all(parent))
+            .map_err(|error| install_io_error(&error))?;
     }
 
-    match fs::rename(partial_dir, version_dir) {
+    match retry_file_operation(|| fs::rename(partial_dir, version_dir)) {
         Ok(()) => Ok(()),
         Err(rename_error) => {
+            if is_busy_io_error(&rename_error) {
+                let _ = restore_backup_dir(backup_dir, version_dir);
+                return Err(install_io_error(&rename_error));
+            }
+
             if let Err(copy_error) = copy_version_dir(partial_dir, version_dir) {
                 let _ = cleanup_path(version_dir);
                 let _ = restore_backup_dir(backup_dir, version_dir);
@@ -1370,21 +1400,23 @@ fn copy_version_dir(
     source_dir: &std::path::Path,
     target_dir: &std::path::Path,
 ) -> Result<(), String> {
-    fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
+    retry_file_operation(|| fs::create_dir_all(target_dir))
+        .map_err(|error| install_io_error(&error))?;
 
-    for entry in fs::read_dir(source_dir)
-        .map_err(|e| e.to_string())?
-        .flatten()
-    {
+    let entries = retry_file_operation(|| fs::read_dir(source_dir))
+        .map_err(|error| install_io_error(&error))?;
+    for entry in entries.flatten() {
         let source = entry.path();
         let target = target_dir.join(entry.file_name());
         if source.is_dir() {
             copy_version_dir(&source, &target)?;
         } else {
             if let Some(parent) = target.parent() {
-                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                retry_file_operation(|| fs::create_dir_all(parent))
+                    .map_err(|error| install_io_error(&error))?;
             }
-            fs::copy(&source, &target).map_err(|e| e.to_string())?;
+            retry_file_operation(|| fs::copy(&source, &target))
+                .map_err(|error| install_io_error(&error))?;
         }
     }
 
@@ -1400,7 +1432,8 @@ fn restore_backup_dir(
     }
 
     cleanup_path(version_dir)?;
-    fs::rename(backup_dir, version_dir).map_err(|e| e.to_string())
+    retry_file_operation(|| fs::rename(backup_dir, version_dir))
+        .map_err(|error| install_io_error(&error))
 }
 
 fn install_version_dir(
@@ -1444,8 +1477,9 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::{
-        retryable_download_status, save_pending_downloads, DownloadManager, DownloadProgress,
-        DownloadStage, DownloadStatus, MAX_PARALLEL_DOWNLOADS,
+        install_version_dir, retry_file_operation, retryable_download_status,
+        save_pending_downloads, DownloadManager, DownloadProgress, DownloadStage, DownloadStatus,
+        FILE_OPERATION_ATTEMPTS, MAX_PARALLEL_DOWNLOADS,
     };
 
     #[tokio::test]
@@ -1473,6 +1507,39 @@ mod tests {
         assert!(!retryable_download_status(
             reqwest::StatusCode::UNAUTHORIZED
         ));
+    }
+
+    #[test]
+    fn retries_only_the_busy_file_operation() {
+        let mut attempts = 0;
+        let result = retry_file_operation(|| {
+            attempts += 1;
+            if attempts < FILE_OPERATION_ATTEMPTS {
+                Err(std::io::Error::from_raw_os_error(32))
+            } else {
+                Ok("installed")
+            }
+        });
+
+        assert_eq!(result.unwrap(), "installed");
+        assert_eq!(attempts, FILE_OPERATION_ATTEMPTS);
+    }
+
+    #[test]
+    fn restores_working_version_when_replacement_fails() {
+        let root =
+            std::env::temp_dir().join(format!("pullora-version-rollback-{}", uuid::Uuid::new_v4()));
+        let missing_partial = root.join("missing.partial");
+        let version = root.join("v1");
+        let backup = root.join("v1.backup");
+        std::fs::create_dir_all(&version).unwrap();
+        std::fs::write(version.join("app.exe"), b"working").unwrap();
+
+        assert!(install_version_dir(&missing_partial, &version, &backup).is_err());
+        assert_eq!(std::fs::read(version.join("app.exe")).unwrap(), b"working");
+        assert!(!backup.exists());
+
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

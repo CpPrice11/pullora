@@ -2,8 +2,12 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use super::manager::retry_file_operation;
+use crate::error::install_io_error;
+
 pub fn extract(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
-    fs::create_dir_all(dest_dir).map_err(|e| e.to_string())?;
+    retry_file_operation(|| fs::create_dir_all(dest_dir))
+        .map_err(|error| install_io_error(&error))?;
 
     let name = archive_path
         .file_name()
@@ -15,13 +19,15 @@ pub fn extract(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
         extract_zip(archive_path, dest_dir)
     } else {
         let dest = dest_dir.join(archive_path.file_name().unwrap());
-        fs::copy(archive_path, &dest).map_err(|e| e.to_string())?;
+        retry_file_operation(|| fs::copy(archive_path, &dest))
+            .map_err(|error| install_io_error(&error))?;
         Ok(dest.file_name().unwrap().to_string_lossy().to_string())
     }
 }
 
 fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
-    let file = fs::File::open(archive_path).map_err(|e| e.to_string())?;
+    let file = retry_file_operation(|| fs::File::open(archive_path))
+        .map_err(|error| install_io_error(&error))?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
 
     let mut main_exe: Option<(String, u8)> = None;
@@ -35,13 +41,17 @@ fn extract_zip(archive_path: &Path, dest_dir: &Path) -> Result<String, String> {
         let out_path = dest_dir.join(&safe_path);
 
         if entry.is_dir() {
-            fs::create_dir_all(&out_path).map_err(|e| e.to_string())?;
+            retry_file_operation(|| fs::create_dir_all(&out_path))
+                .map_err(|error| install_io_error(&error))?;
         } else {
             if let Some(parent) = out_path.parent() {
-                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                retry_file_operation(|| fs::create_dir_all(parent))
+                    .map_err(|error| install_io_error(&error))?;
             }
-            let mut out = fs::File::create(&out_path).map_err(|e| e.to_string())?;
-            io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
+            let mut out = retry_file_operation(|| fs::File::create(&out_path))
+                .map_err(|error| install_io_error(&error))?;
+            retry_file_operation(|| io::copy(&mut entry, &mut out))
+                .map_err(|error| install_io_error(&error))?;
             let score = executable_score(&entry_name);
             if score > 0 && main_exe.as_ref().is_none_or(|(_, s)| score > *s) {
                 main_exe = Some((entry_name, score));
