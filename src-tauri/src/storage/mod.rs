@@ -40,7 +40,7 @@ impl From<serde_json::Error> for StorageError {
 }
 
 pub fn get_config_dir() -> std::path::PathBuf {
-    if is_portable_executable() {
+    if settings::is_portable() {
         if let Ok(exe_path) = std::env::current_exe() {
             if let Some(exe_dir) = exe_path.parent() {
                 return exe_dir.to_path_buf();
@@ -239,21 +239,4 @@ fn copy_dir_entries_if_missing(source: &std::path::Path, target: &std::path::Pat
             copy_file_if_missing(&source_path, &target_path);
         }
     }
-}
-
-fn is_portable_executable() -> bool {
-    if let Ok(exe_path) = std::env::current_exe() {
-        let portable_file_name = exe_path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| name.to_ascii_lowercase().contains("portable"));
-        let portable_marker = exe_path
-            .parent()
-            .map(|dir| dir.join(".portable").exists())
-            .unwrap_or(false);
-
-        return portable_file_name || portable_marker;
-    }
-
-    false
 }

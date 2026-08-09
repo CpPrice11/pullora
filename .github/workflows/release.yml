@@ -47,7 +47,9 @@ jobs:
         run: cargo check
 
       - name: Build Tauri bundle
-        run: npm run tauri-build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: npm run tauri-build -- --config src-tauri/tauri.release.conf.json
 
       - name: Assert no MSI or ZIP release assets are produced
         shell: pwsh
@@ -57,3 +59,9 @@ jobs:
             throw "Release workflow must not produce MSI/ZIP assets: $($blocked.Name -join ', ')"
           }
           Write-Host "[ok] Release workflow produced no MSI/ZIP assets"
+
+          $signatures = @(Get-ChildItem -Path src-tauri\target\release\bundle\nsis -File -Filter *.exe.sig -ErrorAction SilentlyContinue)
+          if ($signatures.Count -ne 1) {
+            throw "Release workflow must produce one updater signature. Found: $($signatures.Name -join ', ')"
+          }
+          Write-Host "[ok] Updater signature: $($signatures[0].Name)"

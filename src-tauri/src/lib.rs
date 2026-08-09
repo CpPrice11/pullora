@@ -15,10 +15,15 @@ pub struct AppState {
     pub github_client: Arc<GitHubClient>,
     pub settings: Arc<Mutex<storage::settings::AppSettings>>,
     pub download_manager: Arc<DownloadManager>,
+    pub launcher_update_lock: Arc<Mutex<()>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if commands::updates::apply_portable_update_if_requested() {
+        return;
+    }
+
     let config_dir = get_config_dir();
     let settings = load_runtime_settings(&config_dir).unwrap_or_default();
     let token = settings.github_token.clone();
@@ -52,11 +57,13 @@ pub fn run() {
         )),
         settings: Arc::new(Mutex::new(settings)),
         download_manager: Arc::new(DownloadManager::new(&config_dir)),
+        launcher_update_lock: Arc::new(Mutex::new(())),
     };
 
     tauri::Builder::default()
         .manage(state)
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -101,6 +108,8 @@ pub fn run() {
             commands::download::get_downloads,
             commands::download::cancel_download,
             commands::updates::get_launcher_version,
+            commands::updates::get_launcher_installation_mode,
+            commands::updates::install_launcher_update,
             commands::updates::get_event_log,
             commands::updates::open_dir,
             commands::updates::open_external_url,
