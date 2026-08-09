@@ -59,6 +59,7 @@ try {
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
   const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
   const { pickPortableReleaseAsset } = await server.ssrLoadModule('/src/features/library/releaseAssetClassifier.ts')
+  const { selectAutomaticUpdate } = await server.ssrLoadModule('/src/features/library/hooks/useBatchUpdates.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
   const { parseEventLogEntry } = await server.ssrLoadModule('/src/features/settings/eventLog.ts')
 
@@ -159,6 +160,34 @@ try {
   assert.equal(parseEventLogEntry('2026-07-18T10:03:00Z settings.loaded').source, 'settings')
   assert.equal(parseEventLogEntry('[2026-07-18T10:04:00Z] install CpPrice11/demo@v2: download canceled').level, 'warning')
   assert.equal(parseEventLogEntry('[2026-07-18T10:05:00Z] install CpPrice11/demo@v2: download started').level, 'info')
+
+  const automaticUpdateAsset = {
+    id: 201,
+    name: 'demo-v2.0.0-portable-x64.exe',
+    browser_download_url: 'https://example.com/demo.exe',
+    size: 2048,
+    content_type: 'application/octet-stream',
+    download_count: 0,
+  }
+  const stableRelease = {
+    id: 200,
+    tag_name: 'v2.0.0',
+    name: 'v2.0.0',
+    draft: false,
+    prerelease: false,
+    published_at: '2026-07-18T10:00:00Z',
+    body: null,
+    assets: [automaticUpdateAsset],
+  }
+  assert.equal(selectAutomaticUpdate([stableRelease], undefined), null)
+  assert.equal(selectAutomaticUpdate([stableRelease], 'v3.0.0'), null)
+  assert.equal(selectAutomaticUpdate([{ ...stableRelease, draft: true }], 'v2.0.0'), null)
+  assert.equal(selectAutomaticUpdate([{ ...stableRelease, prerelease: true }], 'v2.0.0'), null)
+  assert.equal(selectAutomaticUpdate([{ ...stableRelease, assets: [] }], 'v2.0.0'), null)
+  assert.deepEqual(selectAutomaticUpdate([stableRelease], 'v2.0.0'), {
+    release: stableRelease,
+    asset: automaticUpdateAsset,
+  })
   assert.deepEqual(
     parseEventLogEntry('[2026-07-18T10:06:00Z] launch CpPrice11/demo@v2: launched C:\\Users\\tester\\Pullora Apps\\demo.exe'),
     {

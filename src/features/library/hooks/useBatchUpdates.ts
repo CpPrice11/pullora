@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useDownload } from '../../../hooks/useDownload'
 import { getReleases } from '../../../services/github'
 import { cleanupIncompleteInstalls, openInstalledAppDir } from '../../../services/installed'
-import type { DownloadProgress, GitHubSearchResult } from '../../../types'
+import type { DownloadProgress, GitHubRelease, GitHubSearchResult } from '../../../types'
 import { useI18n } from '../../../i18n'
 import { pickPortableReleaseAsset } from '../releaseAssetClassifier'
 
@@ -29,6 +29,19 @@ export interface BatchUpdateStartResult {
 
 function repositoryKey(repo: GitHubSearchResult) {
   return `${repo.owner.login}/${repo.name}`.toLowerCase()
+}
+
+export function selectAutomaticUpdate(
+  releases: GitHubRelease[],
+  latestVersion: string | undefined,
+) {
+  if (!latestVersion) return null
+  const release = releases.find((item) =>
+    !item.draft && !item.prerelease && item.tag_name === latestVersion,
+  )
+  if (!release) return null
+  const asset = pickPortableReleaseAsset(release.assets)
+  return asset ? { release, asset } : null
 }
 
 export function useBatchUpdates({
@@ -85,23 +98,18 @@ export function useBatchUpdates({
 
       try {
         const releases = await getReleases(repo.owner.login, repo.name)
-        const release = releases.find((item) =>
-          !item.draft && !item.prerelease && item.tag_name === latestVersion,
-        )
-          ?? releases.find((item) => !item.draft && !item.prerelease)
-          ?? null
-        const asset = release ? pickPortableReleaseAsset(release.assets) : null
-        if (!release || !asset) {
+        const update = selectAutomaticUpdate(releases, latestVersion)
+        if (!update) {
           return { key, status: 'skipped' as const }
         }
 
         await startBatchUpdateJob({
-          url: asset.browser_download_url,
-          fileName: asset.name,
+          url: update.asset.browser_download_url,
+          fileName: update.asset.name,
           owner: repo.owner.login,
           repo: repo.name,
-          tag: release.tag_name,
-          size: asset.size,
+          tag: update.release.tag_name,
+          size: update.asset.size,
         })
         return { key, status: 'started' as const }
       } catch (error) {
