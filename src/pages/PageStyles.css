@@ -2062,7 +2062,7 @@
   position: fixed;
   right: 24px;
   width: fit-content;
-  z-index: 120;
+  z-index: var(--z-notification);
 }
 
 .about-toast::before,

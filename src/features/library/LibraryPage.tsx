@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
@@ -265,6 +266,7 @@ function LibraryPage({
   const [uninstallBusy, setUninstallBusy] = useState(false)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
   const [libraryActionMessage, setLibraryActionMessage] = useState<string | null>(null)
+  const [libraryActionError, setLibraryActionError] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkMessage, setBulkMessage] = useState<string | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
@@ -599,10 +601,18 @@ function LibraryPage({
   }, [])
 
   useEffect(() => {
-    if (!libraryActionMessage) return
-    const timer = window.setTimeout(() => setLibraryActionMessage(null), 4200)
+    if (!libraryActionMessage && !libraryActionError) return
+    const timer = window.setTimeout(() => {
+      setLibraryActionMessage(null)
+      setLibraryActionError(null)
+    }, 4200)
     return () => window.clearTimeout(timer)
-  }, [libraryActionMessage])
+  }, [libraryActionError, libraryActionMessage])
+
+  const handleInstallPathError = useCallback((message: string) => {
+    setLibraryActionMessage(null)
+    setLibraryActionError(message)
+  }, [])
 
   const libraryRepositories = useMemo(() => {
     const reposByKey = new Map(
@@ -1452,6 +1462,9 @@ function LibraryPage({
     )
   }
 
+  const libraryToastError = batchUpdateError ?? libraryActionError
+  const libraryToastMessage = libraryToastError ?? libraryActionMessage
+
   return (
     <div
       className={`page library-page library-density-${libraryDensity}`}
@@ -1607,6 +1620,7 @@ function LibraryPage({
             currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
             onClose={() => setSelectedRepo(null)}
             onInstalled={handleInstalledFromRelease}
+            onInstallPathError={handleInstallPathError}
           />
         </Suspense>
       )}
@@ -1666,15 +1680,16 @@ function LibraryPage({
         </Suspense>
       )}
 
-      {(batchUpdateError || libraryActionMessage) && (
+      {libraryToastMessage && typeof document !== 'undefined' && createPortal(
         <div
-          className={`library-toast library-toast--${batchUpdateError ? 'error' : 'success'}`}
-          role={batchUpdateError ? 'alert' : 'status'}
-          aria-live={batchUpdateError ? 'assertive' : 'polite'}
+          className={`library-toast library-toast--${libraryToastError ? 'error' : 'success'}`}
+          role={libraryToastError ? 'alert' : 'status'}
+          aria-live={libraryToastError ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
-          {batchUpdateError ?? libraryActionMessage}
-        </div>
+          {libraryToastMessage}
+        </div>,
+        document.body,
       )}
     </div>
   )

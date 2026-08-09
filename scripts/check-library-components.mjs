@@ -343,8 +343,9 @@ try {
   )
   assert.match(
     pageStylesSource,
-    /\.about-toast,\s*\.library-toast\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*120;/s,
+    /\.about-toast,\s*\.library-toast\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*var\(--z-notification\);/s,
   )
+  assert.match(appStylesSource, /--z-notification:\s*1100;/)
   assert.match(settingsSectionsSource, /pathValidation === 'noWritePermission'[\s\S]*?settings\.pathNoWrite/)
   assert.match(settingsPageSource, /setInstallationPath as saveInstallationPath/)
   assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)
@@ -362,7 +363,7 @@ try {
   )
   assert.match(
     libraryPageSource,
-    /batchUpdateError \|\| libraryActionMessage[\s\S]*?library-toast--\$\{batchUpdateError \? 'error' : 'success'\}[\s\S]*?role=\{batchUpdateError \? 'alert' : 'status'\}/,
+    /libraryToastMessage[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastError \? 'error' : 'success'\}[\s\S]*?document\.body/,
   )
   assert.match(
     searchComponentsStyles,
@@ -377,9 +378,12 @@ try {
     /\.download-panel--compact[\s\S]*?min-width: 0;[\s\S]*?width: 100%;/,
   )
   assert.match(releaseSelectorSource, /useState\(settings\.installationPath \?\? ''\)/)
-  assert.match(releaseSelectorSource, /setInstallPath\(await setInstallationPath\(dir\)\)/)
+  assert.match(releaseSelectorSource, /setInstallPath\(dir\)/)
+  assert.match(releaseSelectorSource, /setInstallationPath\(installPath\.trim\(\)\)/)
   assert.match(releaseSelectorSource, /validateInstallationPath\(path\)[\s\S]*?installPathValidation !== 'valid'/)
   assert.match(releaseSelectorSource, /release-install-path[\s\S]*?aria-busy=\{installPathValidation === 'checking'\}/)
+  assert.match(releaseSelectorSource, /aria-invalid=\{installPathValidation === 'invalid' \? true : undefined\}/)
+  assert.match(releaseSelectorSource, /onInstallPathError\?\.\(message\)/)
   assert.doesNotMatch(downloadServiceSource, /installPath/)
 
   const hero = render(LibraryHero, {

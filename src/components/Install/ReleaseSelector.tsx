@@ -37,6 +37,7 @@ interface ReleaseSelectorProps {
   initialReleaseTag?: string | null
   onClose: () => void
   onInstalled?: () => void
+  onInstallPathError?: (message: string) => void
 }
 
 type AssetKind = ReleaseAssetKind
@@ -147,6 +148,7 @@ function ReleaseSelector({
   initialReleaseTag,
   onClose,
   onInstalled,
+  onInstallPathError,
 }: ReleaseSelectorProps) {
   const { language, t } = useI18n()
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
@@ -237,8 +239,10 @@ function ReleaseSelector({
 
     const path = installPath.trim()
     if (!path) {
+      const message = t('release.installPathRequired')
       setInstallPathValidation('invalid')
-      setDownloadError(t('release.installPathRequired'))
+      setDownloadError(message)
+      onInstallPathError?.(message)
       return
     }
 
@@ -248,19 +252,23 @@ function ReleaseSelector({
     void validateInstallationPath(path)
       .then((validation) => {
         if (cancelled) return
+        const message = validation.ok ? null : t(installPathErrorKey(validation.status))
         setInstallPathValidation(validation.ok ? 'valid' : 'invalid')
-        setDownloadError(validation.ok ? null : t(installPathErrorKey(validation.status)))
+        setDownloadError(message)
+        if (message) onInstallPathError?.(message)
       })
       .catch((err) => {
         if (cancelled) return
+        const message = err instanceof Error ? err.message : t('release.installPathUnavailable')
         setInstallPathValidation('invalid')
-        setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
+        setDownloadError(message)
+        onInstallPathError?.(message)
       })
 
     return () => {
       cancelled = true
     }
-  }, [installPath, step, t])
+  }, [installPath, onInstallPathError, step, t])
 
   useModalFocus(modalRef, { onEscape: installActive ? undefined : requestClose })
 
@@ -326,6 +334,17 @@ function ReleaseSelector({
 
     setDownloading(true)
     setDownloadError(null)
+    try {
+      setInstallPath(await setInstallationPath(installPath.trim()))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('release.installPathUnavailable')
+      setDownloadError(message)
+      onInstallPathError?.(message)
+      setDownloading(false)
+      setStep('confirm')
+      return
+    }
+
     setStep('progress')
     try {
       const id = await download(
@@ -379,12 +398,8 @@ function ReleaseSelector({
   const handleChooseInstallPath = async () => {
     const dir = await pickDirectory()
     if (dir) {
-      try {
-        setInstallPath(await setInstallationPath(dir))
-        setDownloadError(null)
-      } catch (err) {
-        setDownloadError(err instanceof Error ? err.message : t('release.installPathUnavailable'))
-      }
+      setInstallPath(dir)
+      setDownloadError(null)
     }
   }
 
@@ -681,9 +696,13 @@ function ReleaseSelector({
                     </section>
                     <div
                       className="release-install-path"
+                      role="group"
+                      aria-labelledby="release-install-path-label"
                       aria-busy={installPathValidation === 'checking'}
+                      aria-invalid={installPathValidation === 'invalid' ? true : undefined}
+                      aria-describedby={downloadError ? 'release-install-error' : undefined}
                     >
-                      <span>{t('release.installPath')}</span>
+                      <span id="release-install-path-label">{t('release.installPath')}</span>
                       <strong>{installPath || t('release.installPathNotSelected')}</strong>
                       <button type="button" className="release-secondary-btn" onClick={handleChooseInstallPath} disabled={downloading}>
                         {t('release.chooseInstallPath')}
