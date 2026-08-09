@@ -476,6 +476,17 @@ try {
   assert.match(batchUpdatesSource, /pickPortableReleaseAsset\(release\.assets\)/)
   assert.match(batchUpdatesSource, /await startBatchUpdateJob\(/)
   assert.equal((batchUpdatesSource.match(/job\.size,\s*true,/g) ?? []).length, 2)
+  const retrySource = batchUpdatesSource.match(
+    /const handleBatchRetry[\s\S]*?\n  const handleBatchOpenFolder/,
+  )?.[0]
+  assert.ok(retrySource)
+  assert.match(retrySource, /batchUpdateJobs\[download\.id\]/)
+  assert.match(
+    retrySource,
+    /const id = await startBatchDownload\([\s\S]*?await cancelBatchDownload\(download\.id\)/,
+  )
+  assert.match(retrySource, /delete next\[download\.id\][\s\S]*?next\[id\] = job/)
+  assert.doesNotMatch(retrySource, /handleUpdateAllPortable/)
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',
