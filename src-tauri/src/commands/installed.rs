@@ -142,6 +142,41 @@ fn recorded_version_install_dir(
     Ok(path)
 }
 
+pub(crate) fn active_installation_root(
+    config_dir: &std::path::Path,
+    owner: &str,
+    repo: &str,
+) -> Option<std::path::PathBuf> {
+    let app = list_installed(config_dir)
+        .ok()?
+        .into_iter()
+        .find(|app| app.owner.eq_ignore_ascii_case(owner) && app.repo.eq_ignore_ascii_case(repo))?;
+    let version = app
+        .versions
+        .iter()
+        .find(|version| version.tag == app.active_version)?;
+    let path = version.install_dir.as_deref()?.trim();
+    if path.is_empty() {
+        return None;
+    }
+
+    let version_dir = recorded_version_install_dir(
+        std::path::Path::new(path),
+        &app.owner,
+        &app.repo,
+        &version.tag,
+    )
+    .ok()?;
+    if !version_dir.is_dir() {
+        return None;
+    }
+
+    version_dir
+        .parent()?
+        .parent()
+        .map(std::path::Path::to_path_buf)
+}
+
 fn version_executable_path(
     version_dir: &std::path::Path,
     executable: &str,
@@ -602,8 +637,8 @@ fn log_launch_event(owner: &str, repo: &str, tag: &str, message: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::{cleanup_install_root, version_install_dir};
-    use crate::storage::installed::VersionInfo;
+    use super::{active_installation_root, cleanup_install_root, version_install_dir};
+    use crate::storage::installed::{add_version, VersionInfo};
 
     #[test]
     fn recorded_version_dir_survives_an_install_root_change() {
@@ -633,6 +668,41 @@ mod tests {
         version.install_dir = Some(previous.join("other-repo").join("v1").display().to_string());
         assert!(
             version_install_dir(&current.display().to_string(), "owner", "repo", &version).is_err()
+        );
+
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn automatic_update_reuses_the_active_version_root() {
+        let base = std::env::temp_dir().join(format!(
+            "pullora-update-install-root-{}",
+            uuid::Uuid::new_v4()
+        ));
+        let config_dir = base.join("config");
+        let install_root = base.join("apps");
+        let version_dir = install_root.join("owner-repo").join("v1");
+        std::fs::create_dir_all(&version_dir).unwrap();
+        std::fs::write(version_dir.join("app.exe"), b"app").unwrap();
+        add_version(
+            &config_dir,
+            "owner",
+            "repo",
+            VersionInfo {
+                tag: "v1".to_string(),
+                installed_at: chrono::Utc::now(),
+                executable: "app.exe".to_string(),
+                size_bytes: 3,
+                asset_name: Some("app-portable.exe".to_string()),
+                install_kind: Some("portable".to_string()),
+                install_dir: Some(version_dir.display().to_string()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            active_installation_root(&config_dir, "OWNER", "REPO").unwrap(),
+            std::fs::canonicalize(&install_root).unwrap()
         );
 
         std::fs::remove_dir_all(base).unwrap();

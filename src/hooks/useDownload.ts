@@ -51,8 +51,9 @@ export function useDownload() {
       repo: string,
       tag: string,
       size: number,
+      preferExistingInstall = false,
     ): Promise<string> => {
-      return startDownload(url, fileName, owner, repo, tag, size)
+      return startDownload(url, fileName, owner, repo, tag, size, preferExistingInstall)
     },
     [],
   )

@@ -15,13 +15,14 @@ pub async fn start_download(
     repo: String,
     tag: String,
     size: u64,
+    prefer_existing_install: Option<bool>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     crate::github::assets::validate_versioned_release_asset_url(
         &url, &owner, &repo, &tag, &file_name,
     )?;
 
-    let install_path = {
+    let configured_install_path = {
         let settings = state.settings.lock().await;
         settings
             .installation_path
@@ -30,6 +31,18 @@ pub async fn start_download(
             .ok_or_else(|| command_error("errors.installPathUnavailable"))?
             .clone()
     };
+    let install_path = prefer_existing_install
+        .unwrap_or(false)
+        .then(|| {
+            crate::commands::installed::active_installation_root(
+                &crate::storage::get_config_dir(),
+                &owner,
+                &repo,
+            )
+        })
+        .flatten()
+        .map(|path| path.display().to_string())
+        .unwrap_or(configured_install_path);
 
     if let Some(error) = install_path_guard_error(&install_path) {
         return Err(error);

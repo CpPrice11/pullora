@@ -50,7 +50,15 @@ export function useBatchUpdates({
   const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
 
   const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
-    const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag, job.size)
+    const id = await startBatchDownload(
+      job.url,
+      job.fileName,
+      job.owner,
+      job.repo,
+      job.tag,
+      job.size,
+      true,
+    )
     setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
     return id
   }, [startBatchDownload])
@@ -146,7 +154,15 @@ export function useBatchUpdates({
     setBatchUpdateError(null)
     setBatchUpdating(true)
     try {
-      const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag, job.size)
+      const id = await startBatchDownload(
+        job.url,
+        job.fileName,
+        job.owner,
+        job.repo,
+        job.tag,
+        job.size,
+        true,
+      )
       await cancelBatchDownload(download.id)
       setBatchUpdateJobs((current) => {
         const next = { ...current }
