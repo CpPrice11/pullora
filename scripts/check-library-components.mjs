@@ -264,6 +264,7 @@ try {
   const searchComponentsStyles = readFileSync('src/features/library/components/SearchComponents.css', 'utf8')
   const installStyles = readFileSync('src/components/Install/Install.css', 'utf8')
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
+  const libraryOperationsSource = readFileSync('src/features/library/components/LibraryOperationsPanel.tsx', 'utf8')
   const repoCardSource = readFileSync('src/features/library/components/RepoCard.tsx', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
   const downloadServiceSource = readFileSync('src/services/download.ts', 'utf8')
@@ -424,12 +425,17 @@ try {
     latestVersion: 'v2.0.0',
     installationPath: effectiveInstallPath,
     onInstall: noop,
+    onUpdate: noop,
     onLaunch: noop,
   })
   assert.match(operationsPanel, /library-ops-panel update/)
   assert.match(operationsPanel, /library-inline-panel--versions/)
   assert.match(operationsPanel, /library-inline-panel--details/)
   assert.match(operationsPanel, new RegExp(`${effectiveInstallPath.replaceAll('\\', '\\\\')}\\\\CpPrice11-demo-app`))
+  assert.match(libraryPageSource, /onUpdate=\{handleUpdatePortable\}/)
+  assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleUpdatePortable\(featuredRepo\) \}\}/)
+  assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
+  assert.match(libraryOperationsSource, /onClick=\{hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',

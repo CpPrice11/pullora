@@ -664,6 +664,7 @@ function LibraryPage({
     batchUpdateError,
     batchCleanupMessage,
     handleUpdateAllPortable,
+    handleUpdatePortable,
     handleBatchRetry,
     handleBatchOpenFolder,
     handleBatchCleanup,
@@ -1175,7 +1176,7 @@ function LibraryPage({
         onCheck={handleCheckUpdates}
         onUpdateAll={handleUpdateAllPortable}
         onClearSkipped={handleClearSkippedUpdates}
-        onUpdate={setSelectedRepo}
+        onUpdate={handleUpdatePortable}
         onShowDetails={(repo) => selectFeaturedRepo(repo, 'details')}
         onSkip={handleSkipUpdate}
       >
@@ -1366,6 +1367,7 @@ function LibraryPage({
         latestVersion={latestVersion}
         installationPath={settings.installationPath}
         onInstall={() => setSelectedRepo(featuredRepo)}
+        onUpdate={() => { void handleUpdatePortable(featuredRepo) }}
         onLaunch={() => handleLaunch(featuredRepo)}
       />
     )
