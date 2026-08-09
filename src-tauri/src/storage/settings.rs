@@ -51,20 +51,17 @@ fn default_asset_strategy() -> String {
 }
 
 pub fn is_portable() -> bool {
-    if let Ok(exe_path) = std::env::current_exe() {
-        if exe_path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| name.to_ascii_lowercase().contains("portable"))
-        {
-            return true;
-        }
+    std::env::current_exe().is_ok_and(|path| is_portable_path(&path))
+}
 
-        if let Some(exe_dir) = exe_path.parent() {
-            return exe_dir.join(".portable").exists();
-        }
-    }
-    false
+fn is_portable_path(exe_path: &Path) -> bool {
+    exe_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.to_ascii_lowercase().contains("portable"))
+        || exe_path
+            .parent()
+            .is_some_and(|dir| dir.join(".portable").exists())
 }
 
 fn portable_installation_path(exe_dir: &Path) -> PathBuf {
@@ -214,10 +211,25 @@ fn settings_json(settings: &AppSettings) -> Result<String, StorageError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        default_installation_path, installed_installation_path, is_portable, load_settings,
-        migrate_installation_path, portable_installation_path, save_settings, settings_json,
-        AppSettings, CATALOG_OWNER,
+        default_installation_path, installed_installation_path, is_portable, is_portable_path,
+        load_settings, migrate_installation_path, portable_installation_path, save_settings,
+        settings_json, AppSettings, CATALOG_OWNER,
     };
+
+    #[test]
+    fn portable_mode_uses_the_release_name_or_marker() {
+        let root = std::env::temp_dir().join(format!("pullora-mode-test-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+
+        assert!(is_portable_path(
+            &root.join("Pullora_5.17.0_portable_x64.exe")
+        ));
+        assert!(!is_portable_path(&root.join("Pullora.exe")));
+        std::fs::write(root.join(".portable"), b"").unwrap();
+        assert!(is_portable_path(&root.join("Pullora.exe")));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn new_settings_use_the_default_installation_path() {

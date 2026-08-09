@@ -54,6 +54,8 @@ def check_source_contract() -> None:
     service = (ROOT / "src" / "services" / "updates.ts").read_text(encoding="utf-8")
     backend = (ROOT / "src-tauri" / "src" / "commands" / "updates.rs").read_text(encoding="utf-8")
     downloads = (ROOT / "src-tauri" / "src" / "download" / "manager.rs").read_text(encoding="utf-8")
+    tauri_config = (ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8")
+    release_config = (ROOT / "src-tauri" / "tauri.release.conf.json").read_text(encoding="utf-8")
 
     for fragment in (
         "const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'",
@@ -64,9 +66,31 @@ def check_source_contract() -> None:
         "{t('about.openGitHubReleaseShort')}",
     ):
         assert fragment in about, fragment
-    assert "installLauncherRelease" not in about
-    assert "install_launcher_release" not in service
-    assert "install_launcher_release" not in backend
+    for fragment in (
+        "getLauncherInstallationMode",
+        "installLauncherUpdate",
+        "about.updateInstalledDetail",
+        "about.updatePortableDetail",
+    ):
+        assert fragment in about, fragment
+    for fragment in ("get_launcher_installation_mode", "install_launcher_update"):
+        assert fragment in service, fragment
+        assert fragment in backend, fragment
+    for fragment in (
+        "tauri_plugin_updater::UpdaterExt",
+        "apply_portable_update_if_requested",
+        "PROCESS_SYNCHRONIZE",
+        "SHA256SUMS.txt",
+        "validate_versioned_release_asset_url",
+    ):
+        assert fragment in backend, fragment
+    for fragment in (
+        "https://github.com/CpPrice11/pullora/releases/latest/download/latest.json",
+        '"installMode": "passive"',
+        '"pubkey"',
+    ):
+        assert fragment in tauri_config, fragment
+    assert '"createUpdaterArtifacts": true' in release_config
     for forbidden in ("powershell", "ExecutionPolicy", "Start-Process", ".ps1"):
         assert forbidden.lower() not in backend.lower(), forbidden
         assert forbidden.lower() not in downloads.lower(), forbidden

@@ -4,13 +4,15 @@ import appIcon from '../../src-tauri/icons/128x128.png'
 import { getReleases } from '../services/github'
 import {
   cleanupLauncherUpdateFiles,
+  getLauncherInstallationMode,
   getLauncherStorageInfo,
   getLauncherVersion,
+  installLauncherUpdate,
   openDir,
   openExternalUrl,
 } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
-import type { GitHubAsset, GitHubRelease, LauncherStorageInfo } from '../types'
+import type { GitHubAsset, GitHubRelease, LauncherInstallationMode, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
@@ -79,6 +81,7 @@ function compactReleaseNotes(body: string | null | undefined) {
 function AboutPage() {
   const { language, t } = useI18n()
   const [currentVersion, setCurrentVersion] = useState(FALLBACK_CURRENT_VERSION)
+  const [installationMode, setInstallationMode] = useState<LauncherInstallationMode | null>(null)
   const [releases, setReleases] = useState<GitHubRelease[]>([])
   const [releaseFilter, setReleaseFilter] = useState<AboutReleaseFilter>('all')
   const [notesRelease, setNotesRelease] = useState<GitHubRelease | null>(null)
@@ -91,6 +94,10 @@ function AboutPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
+  const [pendingUpdate, setPendingUpdate] = useState<GitHubRelease | null>(null)
+  const [updating, setUpdating] = useState(false)
+  const updateModalRef = useRef<HTMLDivElement | null>(null)
+  const updateButtonRef = useRef<HTMLButtonElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
   const notesReturnFocusRef = useRef<HTMLButtonElement | null>(null)
   const releaseMenuRef = useRef<HTMLDivElement | null>(null)
@@ -127,6 +134,9 @@ function AboutPage() {
     getLauncherVersion()
       .then(setCurrentVersion)
       .catch(() => setCurrentVersion(FALLBACK_CURRENT_VERSION))
+    getLauncherInstallationMode()
+      .then(setInstallationMode)
+      .catch(() => setInstallationMode(null))
     loadLauncherStorageInfo()
   }, [])
 
@@ -176,8 +186,23 @@ function AboutPage() {
     onEscape: notesRelease ? () => setNotesRelease(null) : undefined,
     returnFocusRef: notesReturnFocusRef,
   })
+  useModalFocus(updateModalRef, {
+    active: Boolean(pendingUpdate),
+    onEscape: pendingUpdate && !updating ? () => setPendingUpdate(null) : undefined,
+    returnFocusRef: updateButtonRef,
+  })
 
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
+  const latestPortableAsset = latestRelease ? pickPortableLauncherAsset(latestRelease.assets) : null
+  const latestChecksumAsset = latestRelease ? pickChecksumAsset(latestRelease.assets) : null
+  const hasNewerRelease = Boolean(
+    latestRelease && compareVersionTags(latestRelease.tag_name, currentVersion) > 0,
+  )
+  const canInstallLatest = Boolean(
+    installationMode &&
+    hasNewerRelease &&
+    (installationMode === 'installed' || (latestPortableAsset && latestChecksumAsset)),
+  )
   const rollbackCount = releases.filter((release) =>
     pickPortableLauncherAsset(release.assets) &&
     pickChecksumAsset(release.assets) &&
@@ -252,6 +277,33 @@ function AboutPage() {
     }
   }
 
+  const confirmLauncherUpdate = async () => {
+    if (!pendingUpdate || !installationMode) return
+
+    const portableAsset = pickPortableLauncherAsset(pendingUpdate.assets)
+    const checksumAsset = pickChecksumAsset(pendingUpdate.assets)
+    if (installationMode === 'portable' && (!portableAsset || !checksumAsset)) {
+      setPendingUpdate(null)
+      setActionError(t('about.updateFilesMissing'))
+      return
+    }
+
+    setUpdating(true)
+    setActionError(null)
+    try {
+      await installLauncherUpdate(
+        pendingUpdate.tag_name,
+        portableAsset?.browser_download_url ?? '',
+        portableAsset?.name ?? '',
+        checksumAsset?.browser_download_url ?? '',
+      )
+    } catch (err) {
+      setUpdating(false)
+      setPendingUpdate(null)
+      setActionError(err instanceof Error ? err.message : t('about.updateFailed'))
+    }
+  }
+
   return (
     <div className="page about-page">
       <h2 className="visually-hidden">{t('about.title')}</h2>
@@ -265,6 +317,9 @@ function AboutPage() {
           <p>{t('about.updateCenter')}</p>
           <div className="about-hero-meta">
             <span className="about-current-version-chip">{t('about.currentVersion')}: {currentVersion.replace(/^v/, '')}</span>
+            {installationMode && (
+              <span>{t(installationMode === 'portable' ? 'about.portableMode' : 'about.installedMode')}</span>
+            )}
             {latestRelease && (
               <span>
                 {t('about.latestVersion')}: {latestRelease.tag_name.replace(/^v/, '')}
@@ -273,6 +328,17 @@ function AboutPage() {
           </div>
         </div>
         <div className="about-hero-actions" aria-label={t('about.launcherActions')}>
+          {hasNewerRelease && (
+            <button
+              ref={updateButtonRef}
+              type="button"
+              className="primary-btn release-action-primary"
+              onClick={() => latestRelease && setPendingUpdate(latestRelease)}
+              disabled={!canInstallLatest || updating}
+            >
+              {updating ? t('about.updating') : t('about.update')}
+            </button>
+          )}
           <button type="button" className="secondary-btn" onClick={openLauncherFolder}>
             {t('about.openLauncherFolder')}
           </button>
@@ -544,6 +610,88 @@ function AboutPage() {
               </button>
               <button type="button" className="secondary-btn" onClick={() => setNotesRelease(null)}>
                 {t('settings.close')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.querySelector('.layout') ?? document.body,
+      )}
+
+      {pendingUpdate && createPortal(
+        <div
+          className="modal-backdrop about-dialog-overlay"
+          role="presentation"
+          onClick={() => !updating && setPendingUpdate(null)}
+        >
+          <div
+            ref={updateModalRef}
+            className="confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="launcher-update-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="confirm-modal-header">
+              <div>
+                <span className="confirm-modal-kicker">{t('about.update')}</span>
+                <h3 id="launcher-update-title">
+                  {t('about.updateConfirmTitle', { version: pendingUpdate.tag_name })}
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="close-btn confirm-close-btn"
+                disabled={updating}
+                onClick={() => setPendingUpdate(null)}
+                aria-label={t('about.cancel')}
+              >
+                {'\u00d7'}
+              </button>
+            </div>
+            <p className="confirm-copy">
+              {t(installationMode === 'portable'
+                ? 'about.updatePortableDetail'
+                : 'about.updateInstalledDetail')}
+            </p>
+            <div className="confirm-facts">
+              <div><span>{t('about.confirmCurrent')}</span><strong>{currentVersion}</strong></div>
+              <div><span>{t('about.confirmTarget')}</span><strong>{pendingUpdate.tag_name}</strong></div>
+              <div>
+                <span>{t('about.installMode')}</span>
+                <strong>{t(installationMode === 'portable' ? 'about.portableMode' : 'about.installedMode')}</strong>
+              </div>
+              {installationMode === 'portable' && (
+                <div>
+                  <span>{t('about.confirmAsset')}</span>
+                  <strong>{pickPortableLauncherAsset(pendingUpdate.assets)?.name}</strong>
+                </div>
+              )}
+            </div>
+            <ul className="confirm-list">
+              <li>{t(installationMode === 'portable'
+                ? 'about.confirmPortableUpdate'
+                : 'about.confirmSignedUpdate')}</li>
+              <li>{t('about.confirmClose')}</li>
+              {installationMode === 'portable' && <li>{t('about.confirmBackup')}</li>}
+            </ul>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                disabled={updating}
+                onClick={() => setPendingUpdate(null)}
+                data-autofocus="true"
+              >
+                {t('about.cancel')}
+              </button>
+              <button
+                type="button"
+                className="primary-btn confirm-primary-btn"
+                disabled={updating}
+                onClick={() => void confirmLauncherUpdate()}
+              >
+                {updating ? t('about.updating') : t('about.confirmUpdate')}
               </button>
             </div>
           </div>

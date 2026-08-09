@@ -5,7 +5,8 @@ param(
   [switch]$SkipSmokeTest,
   [switch]$RcReadiness,
   [switch]$CheckGitHubRelease,
-  [string]$Repository = "CpPrice11/pullora"
+  [string]$Repository = "CpPrice11/pullora",
+  [string]$UpdaterSignaturePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +45,25 @@ function Write-Sha256Manifest($Paths, $Destination) {
   [System.IO.File]::WriteAllText(
     $Destination,
     (($lines -join "`n") + "`n"),
+    [System.Text.UTF8Encoding]::new($false)
+  )
+}
+
+function Write-UpdaterManifest($Version, $Repository, $SetupName, $Signature, $Destination) {
+  $manifest = [ordered]@{
+    version = $Version
+    notes = ""
+    pub_date = (Get-Date).ToUniversalTime().ToString("o")
+    platforms = [ordered]@{
+      "windows-x86_64" = [ordered]@{
+        signature = $Signature
+        url = "https://github.com/$Repository/releases/download/v$Version/$SetupName"
+      }
+    }
+  }
+  [System.IO.File]::WriteAllText(
+    $Destination,
+    (($manifest | ConvertTo-Json -Depth 5) + "`n"),
     [System.Text.UTF8Encoding]::new($false)
   )
 }
@@ -128,6 +148,16 @@ try {
     if ($releaseWorkflow -notmatch "Assert no MSI or ZIP release assets are produced") {
       Fail "release.yml must assert that MSI/ZIP assets are not produced"
     }
+    if ($releaseWorkflow -notmatch "Release workflow must produce one updater signature") {
+      Fail "release.yml must assert that the updater signature is produced"
+    }
+    if ($releaseWorkflow -notmatch "TAURI_SIGNING_PRIVATE_KEY" -or $releaseWorkflow -notmatch "tauri\.release\.conf\.json") {
+      Fail "release.yml must build signed updater artifacts with the release config"
+    }
+    $releaseTauriConfig = Read-Text "src-tauri\tauri.release.conf.json"
+    if ($releaseTauriConfig -notmatch '"createUpdaterArtifacts"\s*:\s*true') {
+      Fail "tauri.release.conf.json must enable updater artifacts"
+    }
     if ($releaseWorkflow -match "(?m)^\s*runs-on:\s*windows-2025\s*$" -or $windowsWorkflow -match "(?m)^\s*runs-on:\s*windows-2025\s*$") {
       Fail "release workflows must use windows-2025-vs2026 instead of windows-2025"
     }
@@ -167,6 +197,10 @@ try {
     $setupPath = Join-Path $buildDir $setupName
     $checksumName = "SHA256SUMS.txt"
     $checksumPath = Join-Path $buildDir $checksumName
+    $signatureName = "$setupName.sig"
+    $signaturePath = Join-Path $buildDir $signatureName
+    $updaterManifestName = "latest.json"
+    $updaterManifestPath = Join-Path $buildDir $updaterManifestName
 
     if (-not (Test-Path -LiteralPath $portablePath)) {
       Fail "Portable EXE not found: $portablePath"
@@ -175,15 +209,39 @@ try {
       Fail "Setup EXE not found: $setupPath"
     }
 
+    if (-not (Test-Path -LiteralPath $signaturePath)) {
+      if (-not [string]::IsNullOrWhiteSpace($UpdaterSignaturePath)) {
+        if (-not (Test-Path -LiteralPath $UpdaterSignaturePath)) {
+          Fail "Updater signature not found: $UpdaterSignaturePath"
+        }
+        Copy-Item -LiteralPath $UpdaterSignaturePath -Destination $signaturePath
+      } else {
+        $generatedSignaturePath = Join-Path "src-tauri\target\release\bundle\nsis" $signatureName
+        if (Test-Path -LiteralPath $generatedSignaturePath) {
+          Copy-Item -LiteralPath $generatedSignaturePath -Destination $signaturePath
+        }
+      }
+    }
+    if (-not (Test-Path -LiteralPath $signaturePath)) {
+      Fail "Signed updater artifact not found: $signaturePath"
+    }
+
+    $signature = (Read-Text $signaturePath).Trim()
+    if ([string]::IsNullOrWhiteSpace($signature)) {
+      Fail "Updater signature is empty: $signaturePath"
+    }
+
     Write-Sha256Manifest @($portablePath, $setupPath) $checksumPath
     Write-Host "[ok] SHA-256 manifest: $checksumName"
+    Write-UpdaterManifest $Version $Repository $setupName $signature $updaterManifestPath
+    Write-Host "[ok] Updater manifest: $updaterManifestName"
 
     $files = @(Get-ChildItem -LiteralPath $buildDir -File)
     $assetNames = @($files | ForEach-Object { $_.Name })
-    $expectedNames = @($portableName, $setupName, $checksumName)
+    $expectedNames = @($portableName, $setupName, $checksumName, $signatureName, $updaterManifestName)
     $unexpected = @($assetNames | Where-Object { $_ -notin $expectedNames })
-    if ($files.Count -ne 3 -or $unexpected.Count -gt 0) {
-      Fail "Build folder must contain portable EXE, setup EXE, and SHA256SUMS.txt. Found: $($assetNames -join ', ')"
+    if ($files.Count -ne 5 -or $unexpected.Count -gt 0) {
+      Fail "Build folder must contain portable EXE, setup EXE, setup signature, SHA256SUMS.txt, and latest.json. Found: $($assetNames -join ', ')"
     }
 
     $blocked = @($files | Where-Object { $_.Extension -match '^\.(msi|zip)$' })
@@ -232,11 +290,13 @@ try {
     $expectedReleaseAssets = @(
       "Pullora_${Version}_portable_x64.exe",
       "Pullora_${Version}_x64-setup.exe",
-      "SHA256SUMS.txt"
+      "Pullora_${Version}_x64-setup.exe.sig",
+      "SHA256SUMS.txt",
+      "latest.json"
     )
     $unexpectedReleaseAssets = @($releaseAssets | Where-Object { $_ -notin $expectedReleaseAssets })
-    if ($releaseAssets.Count -ne 3 -or $unexpectedReleaseAssets.Count -gt 0) {
-      Fail "GitHub release must contain portable EXE, setup EXE, and SHA256SUMS.txt. Found: $($releaseAssets -join ', ')"
+    if ($releaseAssets.Count -ne 5 -or $unexpectedReleaseAssets.Count -gt 0) {
+      Fail "GitHub release must contain portable EXE, setup EXE, setup signature, SHA256SUMS.txt, and latest.json. Found: $($releaseAssets -join ', ')"
     }
     Write-Host "[ok] GitHub release assets: $($releaseAssets -join ', ')"
   }

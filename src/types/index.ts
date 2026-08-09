@@ -178,3 +178,5 @@ export interface DownloadProgress {
   error?: string
   sourceUrl?: string
 }
+
+export type LauncherInstallationMode = 'portable' | 'installed'
