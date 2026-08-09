@@ -189,6 +189,7 @@ def seed_cache(page: Page) -> None:
                 }
                 return { ok: true, status: 'ok' };
               }
+              if (command === 'set_installation_path') return args.path;
               if (command === 'check_is_favorite') return false;
               if (command === 'get_project_art_asset') return null;
               if (command === 'save_library_folders') return structuredClone(args.folders ?? []);

@@ -375,6 +375,7 @@ def install_pending_download_mock(page: Page) -> None:
               }
               if (command === 'is_first_launch') return false
               if (command === 'validate_installation_path') return { ok: true, status: 'ok' }
+              if (command === 'set_installation_path') return args.path
               if (command === 'get_project_art_asset') return null
               if (['get_downloads', 'get_installed_apps', 'get_favorites', 'get_library_folders', 'list_project_art_assets'].includes(command)) return []
               if (command === 'start_download') {
@@ -455,8 +456,8 @@ def check_install_path_prevalidation(page: Page, baseline) -> None:
     modal.locator(".release-nav-actions .release-action-primary").click()
     modal.locator(".release-nav-actions .release-action-primary").click()
 
-    install_path = modal.locator('.release-install-path[aria-busy="true"]')
-    install_path.wait_for()
+    install_path = modal.locator(".release-install-path")
+    modal.locator('.release-install-path[aria-busy="true"]').wait_for()
     install_button = modal.locator(".release-nav-actions .release-action-primary")
     assert install_button.is_disabled()
     assert install_button.get_attribute("aria-busy") == "true"
@@ -466,8 +467,16 @@ def check_install_path_prevalidation(page: Page, baseline) -> None:
     )
     modal.locator('.release-install-path[aria-busy="false"]').wait_for()
     assert install_button.is_disabled()
+    assert install_path.get_attribute("aria-invalid") == "true"
+    assert install_path.get_attribute("aria-describedby") == "release-install-error"
     assert install_button.get_attribute("aria-describedby") == "release-install-error"
     assert modal.locator("#release-install-error[role='alert']").inner_text().strip()
+    toast = page.locator("body > .library-toast--error[role='alert']")
+    toast.wait_for()
+    assert toast.inner_text().strip()
+    assert toast.evaluate("el => Number(getComputedStyle(el).zIndex)") > modal.evaluate(
+        "el => Number(getComputedStyle(el.parentElement).zIndex || getComputedStyle(el).zIndex)"
+    )
 
 
 def check_context(page: Page, theme: str, width: int, height: int, baseline) -> dict:

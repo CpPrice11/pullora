@@ -24,6 +24,7 @@
   --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 18px 42px rgba(0, 0, 0, 0.14);
   --z-menu: 90;
+  --z-notification: 1100;
 }
 
 .page-lazy-fallback {
