@@ -145,6 +145,9 @@ impl DownloadManager {
 
         {
             let mut list = active.lock().await;
+            if list.iter().any(|item| same_install_target(item, &request)) {
+                return Err(command_error("errors.installAlreadyRunning"));
+            }
             list.retain(|p| p.id != id);
             list.push(progress.clone());
         }
@@ -229,6 +232,10 @@ impl DownloadManager {
         list.clone()
     }
 
+    pub async fn has_running_downloads(&self) -> bool {
+        self.active.lock().await.iter().any(download_is_running)
+    }
+
     pub async fn cancel(&self, id: &str) {
         let mut list = self.active.lock().await;
         let running = list.iter().any(|progress| {
@@ -261,6 +268,20 @@ impl DownloadManager {
         pending.retain(|progress| !failed_ids.contains(&progress.id));
         let _ = save_pending_downloads(&self.recovery_path, &pending);
     }
+}
+
+fn download_is_running(progress: &DownloadProgress) -> bool {
+    !matches!(
+        progress.status,
+        DownloadStatus::Completed | DownloadStatus::Failed
+    )
+}
+
+fn same_install_target(progress: &DownloadProgress, request: &DownloadRequest) -> bool {
+    download_is_running(progress)
+        && progress.owner.as_deref() == Some(request.owner.as_str())
+        && progress.repo.as_deref() == Some(request.repo.as_str())
+        && progress.tag.as_deref() == Some(request.tag.as_str())
 }
 
 fn load_pending_downloads(path: &Path) -> Vec<DownloadProgress> {
@@ -1499,10 +1520,29 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 mod tests {
     use super::{
         install_version_dir, record_installed_version_at, retry_file_operation,
-        retryable_download_status, save_pending_downloads, DownloadManager, DownloadProgress,
-        DownloadStage, DownloadStatus, InstalledVersionRecord, FILE_OPERATION_ATTEMPTS,
-        MAX_PARALLEL_DOWNLOADS,
+        retryable_download_status, same_install_target, save_pending_downloads, DownloadManager,
+        DownloadProgress, DownloadRequest, DownloadStage, DownloadStatus, InstalledVersionRecord,
+        FILE_OPERATION_ATTEMPTS, MAX_PARALLEL_DOWNLOADS,
     };
+
+    fn progress(status: DownloadStatus, tag: &str) -> DownloadProgress {
+        DownloadProgress {
+            id: "job".to_string(),
+            file_name: "app-portable.exe".to_string(),
+            downloaded_size: 0,
+            total_size: 1,
+            progress: 0.0,
+            status,
+            stage: DownloadStage::Queued,
+            owner: Some("owner".to_string()),
+            repo: Some("repo".to_string()),
+            tag: Some(tag.to_string()),
+            install_path: Some("C:\\Pullora\\Apps".to_string()),
+            executable_path: None,
+            error: None,
+            source_url: None,
+        }
+    }
 
     #[tokio::test]
     async fn caps_parallel_download_slots() {
@@ -1514,6 +1554,42 @@ mod tests {
         assert!(slots.try_acquire().is_err());
         permits.pop();
         assert!(slots.try_acquire().is_ok());
+    }
+
+    #[tokio::test]
+    async fn protects_active_install_artifacts_from_other_operations() {
+        let config_dir =
+            std::env::temp_dir().join(format!("pullora-active-artifacts-{}", uuid::Uuid::new_v4()));
+        let manager = DownloadManager::new(&config_dir);
+        manager
+            .active
+            .lock()
+            .await
+            .push(progress(DownloadStatus::Downloading, "v1"));
+
+        let request = DownloadRequest {
+            id: "other-job".to_string(),
+            url: "https://github.com/owner/repo/releases/download/v1/app-portable.exe".to_string(),
+            file_name: "app-portable.exe".to_string(),
+            dest_dir: config_dir.join("Apps"),
+            owner: "owner".to_string(),
+            repo: "repo".to_string(),
+            tag: "v1".to_string(),
+            asset_size: 1,
+        };
+
+        assert!(manager.has_running_downloads().await);
+        assert!(same_install_target(
+            &manager.active.lock().await[0],
+            &request
+        ));
+
+        manager.active.lock().await[0].status = DownloadStatus::Failed;
+        assert!(!manager.has_running_downloads().await);
+        assert!(!same_install_target(
+            &manager.active.lock().await[0],
+            &request
+        ));
     }
 
     #[test]
