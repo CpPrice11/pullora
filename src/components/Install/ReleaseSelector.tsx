@@ -132,6 +132,7 @@ function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = 
 
 function installPathErrorKey(status: InstallPathValidation['status']) {
   if (status === 'missing') return 'release.installPathRequired'
+  if (status === 'unsafe') return 'release.installPathUnsafe'
   if (status === 'noWritePermission') return 'release.installPathRequiresWritable'
   if (status === 'busy') return 'release.installPathBusy'
   return 'release.installPathUnavailable'
