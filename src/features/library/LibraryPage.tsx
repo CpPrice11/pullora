@@ -267,6 +267,7 @@ function LibraryPage({
   const [uninstallError, setUninstallError] = useState<string | null>(null)
   const [libraryActionMessage, setLibraryActionMessage] = useState<string | null>(null)
   const [libraryActionError, setLibraryActionError] = useState<string | null>(null)
+  const [manualUpdateRepo, setManualUpdateRepo] = useState<GitHubSearchResult | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkMessage, setBulkMessage] = useState<string | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
@@ -664,7 +665,6 @@ function LibraryPage({
     batchUpdateError,
     batchCleanupMessage,
     handleUpdateAllPortable,
-    handleUpdatePortable,
     handleBatchRetry,
     handleBatchOpenFolder,
     handleBatchCleanup,
@@ -673,6 +673,18 @@ function LibraryPage({
     getLatestVersion,
     refreshLocalStatus,
   })
+
+  const handleAutomaticUpdates = async (
+    repositories: GitHubSearchResult[] = updateRepositories,
+  ) => {
+    setManualUpdateRepo(null)
+    const result = await handleUpdateAllPortable(repositories)
+    const skippedKeys = new Set(result.skippedKeys)
+    setManualUpdateRepo(repositories.find((repo) => skippedKeys.has(
+      normalizeRepoKey(repo.owner.login, repo.name),
+    )) ?? null)
+    return result
+  }
 
   const activeDismissedUpdateCount = useMemo(() => libraryRepositories.reduce((count, repo) => {
     const latestVersion = getLatestVersion(repo)
@@ -1011,7 +1023,7 @@ function LibraryPage({
     setBulkBusy(true)
     setBulkError(null)
     try {
-      const result = await handleUpdateAllPortable(bulkUpdateRepositories)
+      const result = await handleAutomaticUpdates(bulkUpdateRepositories)
       const eligibleKeys = new Set(bulkUpdateRepositories.map((repo) =>
         normalizeRepoKey(repo.owner.login, repo.name),
       ))
@@ -1174,9 +1186,9 @@ function LibraryPage({
         updateMessage={batchUpdateMessage}
         cleanupMessage={batchCleanupMessage}
         onCheck={handleCheckUpdates}
-        onUpdateAll={handleUpdateAllPortable}
+        onUpdateAll={() => { void handleAutomaticUpdates() }}
         onClearSkipped={handleClearSkippedUpdates}
-        onUpdate={handleUpdatePortable}
+        onUpdate={(repo) => { void handleAutomaticUpdates([repo]) }}
         onShowDetails={(repo) => selectFeaturedRepo(repo, 'details')}
         onSkip={handleSkipUpdate}
       >
@@ -1368,7 +1380,7 @@ function LibraryPage({
         installationPath={settings.installationPath}
         updating={batchUpdating}
         onInstall={() => setSelectedRepo(featuredRepo)}
-        onUpdate={() => { void handleUpdatePortable(featuredRepo) }}
+        onUpdate={() => { void handleAutomaticUpdates([featuredRepo]) }}
         onLaunch={() => handleLaunch(featuredRepo)}
       />
     )
@@ -1466,7 +1478,11 @@ function LibraryPage({
   }
 
   const libraryToastError = batchUpdateError ?? libraryActionError
-  const libraryToastMessage = libraryToastError ?? libraryActionMessage
+  const libraryToastWarning = !libraryToastError && manualUpdateRepo
+    ? t('updates.noPortableAssets')
+    : null
+  const libraryToastMessage = libraryToastError ?? libraryToastWarning ?? libraryActionMessage
+  const libraryToastTone = libraryToastError ? 'error' : libraryToastWarning ? 'warning' : 'success'
 
   return (
     <div
@@ -1685,12 +1701,24 @@ function LibraryPage({
 
       {libraryToastMessage && typeof document !== 'undefined' && createPortal(
         <div
-          className={`library-toast library-toast--${libraryToastError ? 'error' : 'success'}`}
+          className={`library-toast library-toast--${libraryToastTone}`}
           role={libraryToastError ? 'alert' : 'status'}
           aria-live={libraryToastError ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
-          {libraryToastMessage}
+          <span>{libraryToastMessage}</span>
+          {manualUpdateRepo && !libraryToastError && (
+            <button
+              type="button"
+              className="secondary-btn library-toast-action"
+              onClick={() => {
+                setSelectedRepo(manualUpdateRepo)
+                setManualUpdateRepo(null)
+              }}
+            >
+              {t('updates.chooseFile')}
+            </button>
+          )}
         </div>,
         document.body,
       )}
