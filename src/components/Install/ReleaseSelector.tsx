@@ -16,6 +16,7 @@ import { pickDirectory } from '../../services/dialog'
 import { setInstallationPath, validateInstallationPath } from '../../services/settings'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
+import { getLocalizedErrorMessage } from '../../services/tauri'
 import { useI18n } from '../../i18n'
 import { compareVersionTags, formatBytes, formatDate } from '../../utils/format'
 import {
@@ -37,7 +38,7 @@ interface ReleaseSelectorProps {
   initialReleaseTag?: string | null
   onClose: () => void
   onInstalled?: () => void
-  onInstallPathError?: (message: string) => void
+  onError?: (message: string) => void
 }
 
 type AssetKind = ReleaseAssetKind
@@ -148,7 +149,7 @@ function ReleaseSelector({
   initialReleaseTag,
   onClose,
   onInstalled,
-  onInstallPathError,
+  onError,
 }: ReleaseSelectorProps) {
   const { language, t } = useI18n()
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
@@ -166,6 +167,7 @@ function ReleaseSelector({
   const modalRef = useRef<HTMLDivElement | null>(null)
   const previousStepRef = useRef<WizardStep>(step)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
+  const reportedFailedDownloads = useRef<Set<string>>(new Set())
   const assetStrategy = settings.assetStrategy ?? 'portableFirst'
 
   const visibleReleases = useMemo(
@@ -229,6 +231,10 @@ function ReleaseSelector({
   }, [fetchReleases])
 
   useEffect(() => {
+    if (error) onError?.(error)
+  }, [error, onError])
+
+  useEffect(() => {
     if (!installPath.trim() && settings.installationPath) {
       setInstallPath(settings.installationPath)
     }
@@ -242,7 +248,7 @@ function ReleaseSelector({
       const message = t('release.installPathRequired')
       setInstallPathValidation('invalid')
       setDownloadError(message)
-      onInstallPathError?.(message)
+      onError?.(message)
       return
     }
 
@@ -255,20 +261,20 @@ function ReleaseSelector({
         const message = validation.ok ? null : t(installPathErrorKey(validation.status))
         setInstallPathValidation(validation.ok ? 'valid' : 'invalid')
         setDownloadError(message)
-        if (message) onInstallPathError?.(message)
+        if (message) onError?.(message)
       })
       .catch((err) => {
         if (cancelled) return
         const message = err instanceof Error ? err.message : t('release.installPathUnavailable')
         setInstallPathValidation('invalid')
         setDownloadError(message)
-        onInstallPathError?.(message)
+        onError?.(message)
       })
 
     return () => {
       cancelled = true
     }
-  }, [installPath, onInstallPathError, step, t])
+  }, [installPath, onError, step, t])
 
   useModalFocus(modalRef, { onEscape: installActive ? undefined : requestClose })
 
@@ -311,8 +317,14 @@ function ReleaseSelector({
 
     if (activeDownload.status === 'failed') {
       setStep('result')
+      if (!reportedFailedDownloads.current.has(activeDownload.id)) {
+        reportedFailedDownloads.current.add(activeDownload.id)
+        onError?.(activeDownload.error
+          ? getLocalizedErrorMessage(activeDownload.error)
+          : t('release.downloadFailed'))
+      }
     }
-  }, [activeDownload, onInstalled])
+  }, [activeDownload, onError, onInstalled, t])
 
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
@@ -339,7 +351,7 @@ function ReleaseSelector({
     } catch (err) {
       const message = err instanceof Error ? err.message : t('release.installPathUnavailable')
       setDownloadError(message)
-      onInstallPathError?.(message)
+      onError?.(message)
       setDownloading(false)
       setStep('confirm')
       return
@@ -357,7 +369,9 @@ function ReleaseSelector({
       )
       setActiveDownloadId(id)
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : t('release.downloadFailed'))
+      const message = err instanceof Error ? err.message : t('release.downloadFailed')
+      setDownloadError(message)
+      onError?.(message)
       setStep('result')
     } finally {
       setDownloading(false)
@@ -383,10 +397,12 @@ function ReleaseSelector({
       const count = await cleanupIncompleteInstalls()
       setCleanupResult({ tone: 'success', message: t('download.cleanupDone', { count }) })
     } catch (err) {
+      const message = err instanceof Error ? err.message : t('download.cleanupError')
       setCleanupResult({
         tone: 'warning',
-        message: err instanceof Error ? err.message : t('download.cleanupError'),
+        message,
       })
+      onError?.(message)
     }
   }
 

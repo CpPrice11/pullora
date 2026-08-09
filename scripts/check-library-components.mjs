@@ -383,7 +383,10 @@ try {
   assert.match(releaseSelectorSource, /validateInstallationPath\(path\)[\s\S]*?installPathValidation !== 'valid'/)
   assert.match(releaseSelectorSource, /release-install-path[\s\S]*?aria-busy=\{installPathValidation === 'checking'\}/)
   assert.match(releaseSelectorSource, /aria-invalid=\{installPathValidation === 'invalid' \? true : undefined\}/)
-  assert.match(releaseSelectorSource, /onInstallPathError\?\.\(message\)/)
+  assert.match(releaseSelectorSource, /if \(error\) onError\?\.\(error\)/)
+  assert.match(releaseSelectorSource, /reportedFailedDownloads[\s\S]*?getLocalizedErrorMessage\(activeDownload\.error\)/)
+  assert.match(releaseSelectorSource, /setDownloadError\(message\)[\s\S]*?onError\?\.\(message\)[\s\S]*?setStep\('result'\)/)
+  assert.match(libraryPageSource, /onError=\{handleInstallError\}/)
   assert.doesNotMatch(downloadServiceSource, /installPath/)
 
   const hero = render(LibraryHero, {

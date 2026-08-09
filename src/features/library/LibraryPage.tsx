@@ -609,7 +609,7 @@ function LibraryPage({
     return () => window.clearTimeout(timer)
   }, [libraryActionError, libraryActionMessage])
 
-  const handleInstallPathError = useCallback((message: string) => {
+  const handleInstallError = useCallback((message: string) => {
     setLibraryActionMessage(null)
     setLibraryActionError(message)
   }, [])
@@ -1620,7 +1620,7 @@ function LibraryPage({
             currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
             onClose={() => setSelectedRepo(null)}
             onInstalled={handleInstalledFromRelease}
-            onInstallPathError={handleInstallPathError}
+            onError={handleInstallError}
           />
         </Suspense>
       )}
