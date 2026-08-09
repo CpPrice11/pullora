@@ -76,6 +76,19 @@ export function isInstallableReleaseAsset(asset: GitHubAsset) {
   return classifyReleaseAssetCompatibility(asset).compatible
 }
 
+export function pickPortableReleaseAsset(assets: GitHubAsset[]) {
+  const rank = (asset: GitHubAsset) => {
+    const kind = classifyReleaseAsset(asset)
+    if (kind === 'portable') return asset.name.toLowerCase().includes('portable') ? 0 : 1
+    if (kind === 'archive') return 2
+    return 3
+  }
+
+  return [...assets]
+    .sort((left, right) => rank(left) - rank(right) || left.name.localeCompare(right.name))
+    .find((asset) => rank(asset) < 3) ?? null
+}
+
 export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {
   switch (kind) {
     case 'portable': return 'release.assetTypePortable'

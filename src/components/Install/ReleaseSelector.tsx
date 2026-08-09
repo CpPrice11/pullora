@@ -23,6 +23,7 @@ import {
   classifyReleaseAsset,
   classifyReleaseAssetArchitecture,
   classifyReleaseAssetCompatibility,
+  pickPortableReleaseAsset,
   releaseAssetKindLabelKey,
   type ReleaseAssetKind,
 } from '../../features/library/releaseAssetClassifier'
@@ -115,10 +116,8 @@ function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
 
 function pickRecommendedAsset(assets: GitHubAsset[], strategy: AssetStrategy): GitHubAsset | null {
   if (strategy === 'manual') return null
+  if (strategy === 'portableFirst') return pickPortableReleaseAsset(assets)
   const sortedAssets = sortAssets(assets, strategy)
-  if (strategy === 'installerFirst') {
-    return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
-  }
   return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
 }
 
