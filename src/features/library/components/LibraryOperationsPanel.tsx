@@ -11,6 +11,7 @@ interface LibraryOperationsPanelProps {
   latestVersion?: string | null
   installationPath?: string | null
   onInstall: () => void
+  onUpdate: () => void
   onLaunch: () => void
 }
 
@@ -20,6 +21,7 @@ export default function LibraryOperationsPanel({
   latestVersion,
   installationPath,
   onInstall,
+  onUpdate,
   onLaunch,
 }: LibraryOperationsPanelProps) {
   const { language, t } = useI18n()
@@ -44,7 +46,11 @@ export default function LibraryOperationsPanel({
         </div>
 
         <div className="library-ops-action-row" aria-label={t('library.action')}>
-          <button type="button" className="hero-primary-btn" onClick={installedApp && !hasUpdate ? onLaunch : onInstall}>
+          <button
+            type="button"
+            className="hero-primary-btn"
+            onClick={hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
+          >
             {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
           </button>
           <div className="library-play-status">

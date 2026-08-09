@@ -74,7 +74,7 @@ export function useBatchUpdates({
     return id
   }, [startBatchDownload])
 
-  const handleUpdateAllPortable = async (
+  const handleUpdateAllPortable = useCallback(async (
     selectedRepositories: GitHubSearchResult[] = repositories,
   ): Promise<BatchUpdateStartResult> => {
     setBatchUpdateError(null)
@@ -138,7 +138,12 @@ export function useBatchUpdates({
     }))
     if (failedResults.length > 0) setBatchUpdateError(failedResults[0].error)
     return { startedKeys, skippedKeys, failedKeys }
-  }
+  }, [getLatestVersion, repositories, startBatchUpdateJob, t])
+
+  const handleUpdatePortable = useCallback(
+    (repo: GitHubSearchResult) => handleUpdateAllPortable([repo]),
+    [handleUpdateAllPortable],
+  )
 
   const handleBatchRetry = async (download: DownloadProgress) => {
     const job = batchUpdateJobs[download.id] ?? (
@@ -222,6 +227,7 @@ export function useBatchUpdates({
     batchUpdateError,
     batchCleanupMessage,
     handleUpdateAllPortable,
+    handleUpdatePortable,
     handleBatchRetry,
     handleBatchOpenFolder,
     handleBatchCleanup,
