@@ -22,7 +22,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.16.1'
+const FALLBACK_CURRENT_VERSION = 'v5.17.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
