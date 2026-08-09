@@ -10,7 +10,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::{Mutex, Semaphore};
 
 use super::extractor;
-use crate::error::{install_io_error, is_busy_io_error, normalize_command_error};
+use crate::error::{command_error, install_io_error, is_busy_io_error, normalize_command_error};
 
 const INSTALLER_DETECTION_TIMEOUT: Duration = Duration::from_secs(180);
 const INSTALLER_DETECTION_INTERVAL: Duration = Duration::from_secs(2);
@@ -592,7 +592,7 @@ async fn download_task(
             return Err(error);
         }
 
-        cleanup_path(&backup_dir)?;
+        let _ = cleanup_path(&backup_dir);
         let _ = fs::remove_file(&tmp_path);
 
         emit_progress(&app, &active, &id, |p| {
@@ -711,7 +711,7 @@ async fn download_task(
         }
 
         let _ = cleanup_path(&partial_dir);
-        cleanup_path(&backup_dir)?;
+        let _ = cleanup_path(&backup_dir);
         let _ = fs::remove_file(&tmp_path);
 
         emit_progress(&app, &active, &id, |p| {
@@ -752,7 +752,7 @@ async fn download_task(
     }
 
     let _ = cleanup_path(&partial_dir);
-    cleanup_path(&backup_dir)?;
+    let _ = cleanup_path(&backup_dir);
     let _ = fs::remove_file(&tmp_path);
 
     emit_progress(&app, &active, &id, |p| {
@@ -860,6 +860,27 @@ fn record_installed_version(
     record: InstalledVersionRecord,
 ) -> Result<(), String> {
     let config_dir = crate::storage::get_config_dir();
+    record_installed_version_at(&config_dir, owner, repo, record)
+}
+
+fn record_installed_version_at(
+    config_dir: &Path,
+    owner: &str,
+    repo: &str,
+    record: InstalledVersionRecord,
+) -> Result<(), String> {
+    let executable = PathBuf::from(&record.executable);
+    let executable = if executable.is_absolute() {
+        executable
+    } else {
+        Path::new(&record.install_dir).join(executable)
+    };
+    let metadata =
+        fs::metadata(&executable).map_err(|_| command_error("errors.launchCheckFailed"))?;
+    if !metadata.is_file() || metadata.len() == 0 {
+        return Err(command_error("errors.launchCheckFailed"));
+    }
+
     let version_info = crate::storage::installed::VersionInfo {
         tag: record.tag,
         installed_at: chrono::Utc::now(),
@@ -869,7 +890,7 @@ fn record_installed_version(
         install_kind: Some(record.install_kind),
         install_dir: Some(record.install_dir),
     };
-    crate::storage::installed::add_version(&config_dir, owner, repo, version_info)
+    crate::storage::installed::add_version(config_dir, owner, repo, version_info)
         .map_err(|e| e.to_string())
 }
 
@@ -1477,9 +1498,10 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::{
-        install_version_dir, retry_file_operation, retryable_download_status,
-        save_pending_downloads, DownloadManager, DownloadProgress, DownloadStage, DownloadStatus,
-        FILE_OPERATION_ATTEMPTS, MAX_PARALLEL_DOWNLOADS,
+        install_version_dir, record_installed_version_at, retry_file_operation,
+        retryable_download_status, save_pending_downloads, DownloadManager, DownloadProgress,
+        DownloadStage, DownloadStatus, InstalledVersionRecord, FILE_OPERATION_ATTEMPTS,
+        MAX_PARALLEL_DOWNLOADS,
     };
 
     #[tokio::test]
@@ -1540,6 +1562,60 @@ mod tests {
         assert!(!backup.exists());
 
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn activates_version_only_after_launch_check() {
+        let config_dir = std::env::temp_dir().join(format!(
+            "pullora-activation-commit-{}",
+            uuid::Uuid::new_v4()
+        ));
+        let old_dir = config_dir.join("Apps").join("owner-repo").join("v1");
+        let new_dir = config_dir.join("Apps").join("owner-repo").join("v2");
+        std::fs::create_dir_all(&old_dir).unwrap();
+        std::fs::create_dir_all(&new_dir).unwrap();
+        std::fs::write(old_dir.join("app.exe"), b"old").unwrap();
+        std::fs::write(new_dir.join("app.exe"), b"").unwrap();
+
+        crate::storage::installed::add_version(
+            &config_dir,
+            "owner",
+            "repo",
+            crate::storage::installed::VersionInfo {
+                tag: "v1".to_string(),
+                installed_at: chrono::Utc::now(),
+                executable: "app.exe".to_string(),
+                size_bytes: 3,
+                asset_name: Some("app.exe".to_string()),
+                install_kind: Some("portable".to_string()),
+                install_dir: Some(old_dir.display().to_string()),
+            },
+        )
+        .unwrap();
+
+        let new_record = || InstalledVersionRecord {
+            tag: "v2".to_string(),
+            executable: "app.exe".to_string(),
+            size_bytes: 3,
+            asset_name: "app.exe".to_string(),
+            install_kind: "portable".to_string(),
+            install_dir: new_dir.display().to_string(),
+        };
+        assert_eq!(
+            record_installed_version_at(&config_dir, "owner", "repo", new_record()).unwrap_err(),
+            "PULLORA_ERROR:errors.launchCheckFailed"
+        );
+        let installed = crate::storage::installed::list_installed(&config_dir).unwrap();
+        assert_eq!(installed[0].active_version, "v1");
+        assert_eq!(installed[0].versions.len(), 1);
+
+        std::fs::write(new_dir.join("app.exe"), b"new").unwrap();
+        record_installed_version_at(&config_dir, "owner", "repo", new_record()).unwrap();
+        let installed = crate::storage::installed::list_installed(&config_dir).unwrap();
+        assert_eq!(installed[0].active_version, "v2");
+        assert_eq!(installed[0].versions.len(), 2);
+
+        std::fs::remove_dir_all(config_dir).unwrap();
     }
 
     #[test]
