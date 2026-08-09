@@ -10,6 +10,7 @@ interface LibraryOperationsPanelProps {
   installedApp?: InstalledApp
   latestVersion?: string | null
   installationPath?: string | null
+  updating?: boolean
   onInstall: () => void
   onUpdate: () => void
   onLaunch: () => void
@@ -20,6 +21,7 @@ export default function LibraryOperationsPanel({
   installedApp,
   latestVersion,
   installationPath,
+  updating = false,
   onInstall,
   onUpdate,
   onLaunch,
@@ -27,6 +29,7 @@ export default function LibraryOperationsPanel({
   const { language, t } = useI18n()
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
+  const actionBusy = hasUpdate && updating
   const updatedDate = formatDate(repo.updated_at, language)
   const installPath = installationPath && installedApp
     ? `${installationPath}\\${installedApp.owner}-${installedApp.repo}`
@@ -50,8 +53,16 @@ export default function LibraryOperationsPanel({
             type="button"
             className="hero-primary-btn"
             onClick={hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
+            disabled={actionBusy}
+            aria-busy={actionBusy}
           >
-            {hasUpdate ? t('repo.updateAction') : installedApp ? t('repo.launch') : t('repo.install')}
+            {actionBusy
+              ? t('updates.updatingAll')
+              : hasUpdate
+                ? t('repo.updateAction')
+                : installedApp
+                  ? t('repo.launch')
+                  : t('repo.install')}
           </button>
           <div className="library-play-status">
             <span>{t('library.ops.updated')}</span>

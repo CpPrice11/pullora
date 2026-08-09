@@ -196,7 +196,15 @@ export default function BatchUpdatePanel({
                 <span className="updates-center-row-status">{t('updates.available')}</span>
               </div>
               <div className="updates-center-row-actions">
-                <button type="button" className="secondary-btn" onClick={() => onUpdate(repo)}>{t('repo.updateAction')}</button>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => onUpdate(repo)}
+                  disabled={checking || updating}
+                  aria-busy={updating}
+                >
+                  {updating ? t('updates.updatingAll') : t('repo.updateAction')}
+                </button>
                 <button type="button" className="secondary-btn" onClick={() => onShowDetails(repo)}>{t('details.open')}</button>
                 <button type="button" className="secondary-btn" onClick={() => onSkip(repo)}>{t('updates.skip')}</button>
               </div>
