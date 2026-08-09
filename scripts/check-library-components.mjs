@@ -460,6 +460,7 @@ try {
   assert.match(batchUpdatesSource, /!item\.draft && !item\.prerelease && item\.tag_name === latestVersion/)
   assert.match(batchUpdatesSource, /pickPortableReleaseAsset\(release\.assets\)/)
   assert.match(batchUpdatesSource, /await startBatchUpdateJob\(/)
+  assert.equal((batchUpdatesSource.match(/job\.size,\s*true,/g) ?? []).length, 2)
 
   const sidebar = render(LibrarySidebar, {
     filter: 'all',
