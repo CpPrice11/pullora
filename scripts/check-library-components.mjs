@@ -385,8 +385,11 @@ try {
   )
   assert.match(
     libraryPageSource,
-    /libraryToastMessage[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastError \? 'error' : 'success'\}[\s\S]*?document\.body/,
+    /libraryToastMessage[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastTone\}[\s\S]*?updates\.chooseFile[\s\S]*?document\.body/,
   )
+  assert.match(libraryPageSource, /handleAutomaticUpdates[\s\S]*?result\.skippedKeys[\s\S]*?setManualUpdateRepo/)
+  assert.doesNotMatch(batchUpdatesSource, /failedResults\[0\]\?\.error \?\? t\('updates\.noPortableAssets'\)/)
+  assert.match(pageStylesSource, /\.library-toast--warning\s*\{[^}]*var\(--color-warning\)/s)
   assert.match(
     searchComponentsStyles,
     /\.updates-center[\s\S]*?box-sizing: border-box;[\s\S]*?width: 100%;/,
@@ -465,8 +468,8 @@ try {
   })
   assert.match(updatingOperationsPanel, /disabled="" aria-busy="true"/)
   assert.ok(updatingOperationsPanel.includes(ukDictionary['updates.updatingAll']))
-  assert.match(libraryPageSource, /onUpdate=\{handleUpdatePortable\}/)
-  assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleUpdatePortable\(featuredRepo\) \}\}/)
+  assert.match(libraryPageSource, /onUpdate=\{\(repo\) => \{ void handleAutomaticUpdates\(\[repo\]\) \}\}/)
+  assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleAutomaticUpdates\(\[featuredRepo\]\) \}\}/)
   assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
   assert.match(libraryOperationsSource, /onClick=\{hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
   assert.match(batchUpdatesSource, /!item\.draft && !item\.prerelease && item\.tag_name === latestVersion/)

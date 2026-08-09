@@ -2096,6 +2096,21 @@
   background: #ff6b8b;
 }
 
+.library-toast--warning {
+  background: rgba(42, 34, 16, 0.94);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 46%, transparent);
+}
+
+.library-toast--warning::before {
+  background: var(--color-warning);
+}
+
+.library-toast-action {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
 :root[data-theme='light'] .about-toast,
 :root[data-theme='light'] .library-toast {
   color: #111827;
@@ -2112,6 +2127,11 @@
 :root[data-theme='light'] .library-toast--error {
   background: rgba(255, 241, 244, 0.94);
   border-color: rgba(220, 38, 38, 0.28);
+}
+
+:root[data-theme='light'] .library-toast--warning {
+  background: rgba(255, 249, 230, 0.96);
+  border-color: color-mix(in srgb, var(--color-warning) 38%, transparent);
 }
 
 .cinematic-shell .about-panel {

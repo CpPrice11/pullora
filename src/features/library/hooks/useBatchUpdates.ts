@@ -119,7 +119,11 @@ export function useBatchUpdates({
     const failedKeys = failedResults.map((item) => item.key)
     if (startedKeys.length === 0) {
       setBatchUpdating(false)
-      setBatchUpdateError(failedResults[0]?.error ?? t('updates.noPortableAssets'))
+      if (failedResults.length > 0) {
+        setBatchUpdateError(failedResults[0].error)
+      } else {
+        setBatchUpdateMessage(t('updates.noPortableAssets'))
+      }
       return { startedKeys, skippedKeys, failedKeys }
     }
 
@@ -130,11 +134,6 @@ export function useBatchUpdates({
     if (failedResults.length > 0) setBatchUpdateError(failedResults[0].error)
     return { startedKeys, skippedKeys, failedKeys }
   }, [getLatestVersion, repositories, startBatchUpdateJob, t])
-
-  const handleUpdatePortable = useCallback(
-    (repo: GitHubSearchResult) => handleUpdateAllPortable([repo]),
-    [handleUpdateAllPortable],
-  )
 
   const handleBatchRetry = async (download: DownloadProgress) => {
     const job = batchUpdateJobs[download.id] ?? (
@@ -226,7 +225,6 @@ export function useBatchUpdates({
     batchUpdateError,
     batchCleanupMessage,
     handleUpdateAllPortable,
-    handleUpdatePortable,
     handleBatchRetry,
     handleBatchOpenFolder,
     handleBatchCleanup,
