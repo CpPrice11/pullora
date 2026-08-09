@@ -1,6 +1,6 @@
 use futures_util::StreamExt;
 use reqwest::Client;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -18,7 +18,7 @@ const INSTALLER_PROCESS_WAIT_TIMEOUT: Duration = Duration::from_secs(20);
 const DOWNLOAD_ATTEMPTS: u8 = 3;
 const MAX_PARALLEL_DOWNLOADS: usize = 3;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgress {
     pub id: String,
@@ -34,9 +34,10 @@ pub struct DownloadProgress {
     pub install_path: Option<String>,
     pub executable_path: Option<String>,
     pub error: Option<String>,
+    pub source_url: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum DownloadStatus {
     Pending,
@@ -46,7 +47,7 @@ pub enum DownloadStatus {
     Failed,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum DownloadStage {
     Queued,
@@ -67,6 +68,7 @@ pub struct DownloadRequest {
     pub owner: String,
     pub repo: String,
     pub tag: String,
+    pub asset_size: u64,
 }
 
 struct DownloadTask {
@@ -76,16 +78,36 @@ struct DownloadTask {
 
 pub struct DownloadManager {
     active: Arc<Mutex<Vec<DownloadProgress>>>,
+    pending: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
     download_slots: Arc<Semaphore>,
+    recovery_path: PathBuf,
 }
 
 impl DownloadManager {
-    pub fn new() -> Self {
+    pub fn new(config_dir: &Path) -> Self {
+        let recovery_path = config_dir.join("pending_downloads.json");
+        let pending = load_pending_downloads(&recovery_path);
+        let active = pending
+            .iter()
+            .cloned()
+            .map(|mut progress| {
+                progress.status = DownloadStatus::Failed;
+                progress.stage = DownloadStage::Failed;
+                progress.progress = 0.0;
+                progress.downloaded_size = 0;
+                progress.executable_path = None;
+                progress.error = Some("PULLORA_ERROR:errors.installInterrupted".to_string());
+                progress
+            })
+            .collect();
+
         Self {
-            active: Arc::new(Mutex::new(vec![])),
+            active: Arc::new(Mutex::new(active)),
+            pending: Arc::new(Mutex::new(pending)),
             cancelled: Arc::new(Mutex::new(HashSet::new())),
             download_slots: Arc::new(Semaphore::new(MAX_PARALLEL_DOWNLOADS)),
+            recovery_path,
         }
     }
 
@@ -96,15 +118,17 @@ impl DownloadManager {
     ) -> Result<String, String> {
         let install_kind = install_kind_for_asset(&request.file_name)?;
         let active = self.active.clone();
+        let pending = self.pending.clone();
         let cancelled = self.cancelled.clone();
         let download_slots = self.download_slots.clone();
+        let recovery_path = self.recovery_path.clone();
         let id = request.id.clone();
 
         let progress = DownloadProgress {
             id: id.clone(),
             file_name: request.file_name.clone(),
             downloaded_size: 0,
-            total_size: 0,
+            total_size: request.asset_size,
             progress: 0.0,
             status: DownloadStatus::Pending,
             stage: DownloadStage::Queued,
@@ -114,6 +138,7 @@ impl DownloadManager {
             install_path: Some(display_install_path(&install_kind, &request.dest_dir)),
             executable_path: None,
             error: None,
+            source_url: Some(request.url.clone()),
         };
 
         {
@@ -122,13 +147,25 @@ impl DownloadManager {
             list.push(progress.clone());
         }
         {
+            let mut list = pending.lock().await;
+            list.retain(|item| item.id != id);
+            list.push(progress.clone());
+            if let Err(error) = save_pending_downloads(&recovery_path, &list) {
+                let mut active_list = active.lock().await;
+                active_list.retain(|item| item.id != id);
+                return Err(error);
+            }
+        }
+        {
             let mut cancelled_ids = cancelled.lock().await;
             cancelled_ids.remove(&id);
         }
 
         let id_clone = id.clone();
         let active_clone = active.clone();
+        let pending_clone = pending.clone();
         let cancelled_clone = cancelled.clone();
+        let recovery_path_clone = recovery_path.clone();
         let task = DownloadTask {
             request,
             install_kind,
@@ -154,10 +191,15 @@ impl DownloadManager {
 
             match result {
                 Ok(()) => {
+                    remove_pending_download(&pending_clone, &recovery_path_clone, &id_clone).await;
+                    let mut cancelled_ids = cancelled_clone.lock().await;
+                    cancelled_ids.remove(&id_clone);
                     log_download_event(&owner, &repo, &tag, "download installed successfully");
                 }
                 Err(e) => {
                     if is_cancelled(&cancelled_clone, &id_clone).await {
+                        remove_pending_download(&pending_clone, &recovery_path_clone, &id_clone)
+                            .await;
                         let mut cancelled_ids = cancelled_clone.lock().await;
                         cancelled_ids.remove(&id_clone);
                         log_download_event(&owner, &repo, &tag, "download canceled");
@@ -186,13 +228,74 @@ impl DownloadManager {
     }
 
     pub async fn cancel(&self, id: &str) {
-        let mut cancelled_ids = self.cancelled.lock().await;
-        cancelled_ids.insert(id.to_string());
-        drop(cancelled_ids);
-
         let mut list = self.active.lock().await;
+        let running = list.iter().any(|progress| {
+            progress.id == id
+                && !matches!(
+                    progress.status,
+                    DownloadStatus::Completed | DownloadStatus::Failed
+                )
+        });
         list.retain(|p| p.id != id);
+        drop(list);
+        if running {
+            self.cancelled.lock().await.insert(id.to_string());
+        }
+        remove_pending_download(&self.pending, &self.recovery_path, id).await;
     }
+
+    pub async fn clear_failed(&self) {
+        let failed_ids = {
+            let mut list = self.active.lock().await;
+            let ids = list
+                .iter()
+                .filter(|progress| progress.status == DownloadStatus::Failed)
+                .map(|progress| progress.id.clone())
+                .collect::<HashSet<_>>();
+            list.retain(|progress| !ids.contains(&progress.id));
+            ids
+        };
+        let mut pending = self.pending.lock().await;
+        pending.retain(|progress| !failed_ids.contains(&progress.id));
+        let _ = save_pending_downloads(&self.recovery_path, &pending);
+    }
+}
+
+fn load_pending_downloads(path: &Path) -> Vec<DownloadProgress> {
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|content| serde_json::from_str(&content).ok())
+        .unwrap_or_default()
+}
+
+fn save_pending_downloads(path: &Path, downloads: &[DownloadProgress]) -> Result<(), String> {
+    if downloads.is_empty() {
+        if path.exists() {
+            fs::remove_file(path).map_err(|error| error.to_string())?;
+        }
+        return Ok(());
+    }
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let temporary_path = path.with_extension("json.tmp");
+    let content = serde_json::to_string_pretty(downloads).map_err(|error| error.to_string())?;
+    fs::write(&temporary_path, content).map_err(|error| error.to_string())?;
+    if path.exists() {
+        fs::remove_file(path).map_err(|error| error.to_string())?;
+    }
+    fs::rename(temporary_path, path).map_err(|error| error.to_string())
+}
+
+async fn remove_pending_download(
+    pending: &Arc<Mutex<Vec<DownloadProgress>>>,
+    recovery_path: &Path,
+    id: &str,
+) {
+    let mut list = pending.lock().await;
+    list.retain(|progress| progress.id != id);
+    let _ = save_pending_downloads(recovery_path, &list);
 }
 
 fn log_download_event(owner: &str, repo: &str, tag: &str, message: &str) {
@@ -271,6 +374,7 @@ async fn download_task(
                 owner,
                 repo,
                 tag,
+                asset_size,
             },
         install_kind,
     } = task;
@@ -288,8 +392,8 @@ async fn download_task(
             .get(reqwest::header::CONTENT_LENGTH)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(0),
-        Err(_) => 0,
+            .unwrap_or(asset_size),
+        Err(_) => asset_size,
     };
 
     stop_if_cancelled(&cancelled, &id).await?;
@@ -1339,7 +1443,10 @@ fn find_executable_in_dir(dir: &std::path::Path) -> Option<std::path::PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{retryable_download_status, DownloadStage, MAX_PARALLEL_DOWNLOADS};
+    use super::{
+        retryable_download_status, save_pending_downloads, DownloadManager, DownloadProgress,
+        DownloadStage, DownloadStatus, MAX_PARALLEL_DOWNLOADS,
+    };
 
     #[tokio::test]
     async fn caps_parallel_download_slots() {
@@ -1378,5 +1485,50 @@ mod tests {
             serde_json::to_string(&DownloadStage::LaunchChecking).unwrap(),
             "\"launchChecking\""
         );
+    }
+
+    #[tokio::test]
+    async fn restores_interrupted_download_for_retry_or_cleanup() {
+        let config_dir = std::env::temp_dir().join(format!(
+            "pullora-download-recovery-{}",
+            uuid::Uuid::new_v4()
+        ));
+        let recovery_path = config_dir.join("pending_downloads.json");
+        let pending = DownloadProgress {
+            id: "interrupted".to_string(),
+            file_name: "demo-portable.zip".to_string(),
+            downloaded_size: 128,
+            total_size: 1024,
+            progress: 12.5,
+            status: DownloadStatus::Downloading,
+            stage: DownloadStage::Downloading,
+            owner: Some("CpPrice11".to_string()),
+            repo: Some("demo".to_string()),
+            tag: Some("v1.0.0".to_string()),
+            install_path: Some(config_dir.join("Apps").display().to_string()),
+            executable_path: None,
+            error: None,
+            source_url: Some(
+                "https://github.com/CpPrice11/demo/releases/download/v1.0.0/demo-portable.zip"
+                    .to_string(),
+            ),
+        };
+        save_pending_downloads(&recovery_path, &[pending]).unwrap();
+
+        let manager = DownloadManager::new(&config_dir);
+        let downloads = manager.get_progress().await;
+        assert_eq!(downloads.len(), 1);
+        assert_eq!(downloads[0].status, DownloadStatus::Failed);
+        assert_eq!(downloads[0].stage, DownloadStage::Failed);
+        assert_eq!(
+            downloads[0].error.as_deref(),
+            Some("PULLORA_ERROR:errors.installInterrupted")
+        );
+        assert!(downloads[0].source_url.is_some());
+
+        manager.clear_failed().await;
+        assert!(manager.get_progress().await.is_empty());
+        assert!(!recovery_path.exists());
+        std::fs::remove_dir_all(config_dir).unwrap();
     }
 }

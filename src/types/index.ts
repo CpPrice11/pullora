@@ -176,4 +176,5 @@ export interface DownloadProgress {
   installPath?: string
   executablePath?: string
   error?: string
+  sourceUrl?: string
 }

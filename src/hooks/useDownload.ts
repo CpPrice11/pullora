@@ -13,15 +13,15 @@ export function useDownload() {
   const [downloads, setDownloads] = useState<DownloadProgress[]>([])
   const unlistenRef = useRef<(() => void) | null>(null)
 
+  const refresh = useCallback(async () => {
+    setDownloads(await getDownloads())
+  }, [])
+
   useEffect(() => {
     let active = true
 
     getDownloads()
-      .then((items) => {
-        if (active) {
-          setDownloads((previous) => mergeDownloads(items, previous))
-        }
-      })
+      .then((items) => active && setDownloads((previous) => mergeDownloads(items, previous)))
       .catch(() => {})
 
     listen<DownloadProgress>('download-progress', (event) => {
@@ -62,5 +62,5 @@ export function useDownload() {
     setDownloads((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  return { downloads, download, cancel }
+  return { downloads, download, cancel, refresh }
 }

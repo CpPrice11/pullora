@@ -51,7 +51,7 @@ pub fn run() {
             config_dir.join("github-api-cache.json"),
         )),
         settings: Arc::new(Mutex::new(settings)),
-        download_manager: Arc::new(DownloadManager::new()),
+        download_manager: Arc::new(DownloadManager::new(&config_dir)),
     };
 
     tauri::Builder::default()

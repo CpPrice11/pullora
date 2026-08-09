@@ -396,7 +396,9 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     let install_path = settings.installation_path.clone();
     drop(settings);
 
-    cleanup_incomplete_installs_at(install_path.as_deref(), &get_config_dir())
+    let removed = cleanup_incomplete_installs_at(install_path.as_deref(), &get_config_dir())?;
+    state.download_manager.clear_failed().await;
+    Ok(removed)
 }
 
 pub fn cleanup_incomplete_installs_at(
