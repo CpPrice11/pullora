@@ -60,6 +60,7 @@ export function useBatchUpdates({
     downloads: batchDownloads,
     download: startBatchDownload,
     cancel: cancelBatchDownload,
+    refresh: refreshBatchDownloads,
   } = useDownload()
   const [batchUpdating, setBatchUpdating] = useState(false)
   const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
@@ -140,13 +141,25 @@ export function useBatchUpdates({
   }
 
   const handleBatchRetry = async (download: DownloadProgress) => {
-    const job = batchUpdateJobs[download.id]
+    const job = batchUpdateJobs[download.id] ?? (
+      download.sourceUrl && download.owner && download.repo && download.tag
+        ? {
+            url: download.sourceUrl,
+            fileName: download.fileName,
+            owner: download.owner,
+            repo: download.repo,
+            tag: download.tag,
+            size: download.totalSize,
+          }
+        : null
+    )
     if (!job) return
 
     setBatchUpdateError(null)
     setBatchUpdating(true)
     try {
       const id = await startBatchDownload(job.url, job.fileName, job.owner, job.repo, job.tag, job.size)
+      await cancelBatchDownload(download.id)
       setBatchUpdateJobs((current) => {
         const next = { ...current }
         delete next[download.id]
@@ -171,6 +184,7 @@ export function useBatchUpdates({
     setBatchUpdateError(null)
     try {
       const count = await cleanupIncompleteInstalls()
+      await refreshBatchDownloads()
       setBatchCleanupMessage(t('download.cleanupDone', { count }))
     } catch (error) {
       setBatchCleanupMessage(null)

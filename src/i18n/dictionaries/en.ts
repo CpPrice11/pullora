@@ -860,6 +860,7 @@ Object.assign(dictionary,
   'errors.exportPathRequired': 'Choose an export path.',
   'errors.importPathRequired': 'Choose a file to import.',
   'errors.installFailed': 'Could not install the app. Try again or choose another file.',
+  'errors.installInterrupted': 'The previous install was interrupted. Retry it or clean up its temporary files.',
   'errors.secretStoreUnavailable': 'The system credential store is unavailable. Check the operating system credential settings.',
 },
   {

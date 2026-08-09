@@ -153,7 +153,7 @@ function ReleaseSelector({
 }: ReleaseSelectorProps) {
   const { language, t } = useI18n()
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
-  const { downloads, download, cancel } = useDownload()
+  const { downloads, download, cancel, refresh: refreshDownloads } = useDownload()
   const { settings } = useSettings()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
@@ -395,6 +395,7 @@ function ReleaseSelector({
   const handleCleanup = async () => {
     try {
       const count = await cleanupIncompleteInstalls()
+      await refreshDownloads()
       setCleanupResult({ tone: 'success', message: t('download.cleanupDone', { count }) })
     } catch (err) {
       const message = err instanceof Error ? err.message : t('download.cleanupError')

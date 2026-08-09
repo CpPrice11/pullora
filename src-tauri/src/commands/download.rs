@@ -54,6 +54,7 @@ pub async fn start_download(
                 owner,
                 repo,
                 tag,
+                asset_size: size,
             },
         )
         .await

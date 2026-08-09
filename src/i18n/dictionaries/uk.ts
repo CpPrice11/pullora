@@ -860,6 +860,7 @@ Object.assign(dictionary,
   'errors.exportPathRequired': 'Обери шлях для експорту.',
   'errors.importPathRequired': 'Обери файл для імпорту.',
   'errors.installFailed': 'Не вдалося встановити застосунок. Спробуй ще раз або обери інший файл.',
+  'errors.installInterrupted': 'Попереднє встановлення було перервано. Повтори його або очисти тимчасові файли.',
   'errors.secretStoreUnavailable': 'Системне сховище секретів недоступне. Перевір налаштування облікових даних системи.',
 },
   {
