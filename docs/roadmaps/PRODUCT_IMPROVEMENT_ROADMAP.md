@@ -747,14 +747,14 @@
 
 ### Перевірки Install і однокрокового оновлення
 
-- [ ] Оновити i18n українською й англійською для глобальних попереджень і fallback-дії «Обрати файл».
-- [ ] Перевірити install-flow без step preview/context, горизонтальні version badges, нове місце GitHub і однакову геометрію footer-кнопок.
-- [ ] Перевірити стандартний, власний, відсутній, read-only, системний і кореневий install path; blocking-стан не дозволяє почати встановлення.
+- [x] Оновити i18n українською й англійською для глобальних попереджень і fallback-дії «Обрати файл». `check:i18n` підтверджує парність 875/875 ключів без дублікатів; `updates.noPortableAssets`, `updates.chooseFile` та всі install-path стани мають обидва переклади.
+- [x] Перевірити install-flow без step preview/context, горизонтальні version badges, нове місце GitHub і однакову геометрію footer-кнопок. Headless-контракт `check-release-selector-layout.py` проходить у темній/світлій темах на `1000×700`, `1280×720` і `1920×1080`.
+- [x] Перевірити стандартний, власний, відсутній, read-only, системний і кореневий install path; blocking-стан не дозволяє почати встановлення. Rust-тести покривають default/custom/missing, стабільний permission-стан, захищені та кореневі шляхи; headless-тест підтверджує `aria-invalid`, глобальний alert і disabled «Встановити» під час перевірки та після відмови.
 - [x] Після зміни основної папки дозволяти запуск і видалення версій зі збереженого `installDir`, лише якщо шлях має структуру `owner-repo/version`, проходить канонізацію та не веде в корінь або системний каталог.
-- [ ] Перевірити one-click update: успіх, немає update, немає portable asset, помилка завантаження, помилка перевірки, retry та збереження попередньої активної версії.
-- [ ] Перевірити втрату мережі, скасування, закриття й повторний запуск Pullora, заблокований EXE/каталог, відновлення, cleanup і відсутність частково активованої версії.
-- [ ] Зняти baseline Install і one-click update у темній/світлій темах, normal/compact, standard/custom background на `1000×700`, `1280×720`, `1920×1080` і Windows scale 125%.
-- [ ] Підтвердити WCAG AA, tooltip/focus, keyboard-only, `aria-live`, portal notification і відсутність layout shift під час помилки.
+- [x] Перевірити one-click update: успіх, немає update, немає portable asset, помилка завантаження, помилка перевірки, retry та збереження попередньої активної версії. Автовибір тепер приймає лише точний очікуваний stable release й не підміняє його іншим релізом; компонентний контракт покриває no-update/draft/preview/missing asset/success, retry повторює лише невдалий job, а Rust-тест не дає змінити активну версію до успішного launch-check.
+- [x] Перевірити втрату мережі, скасування, закриття й повторний запуск Pullora, заблокований EXE/каталог, відновлення, cleanup і відсутність частково активованої версії. 51 Rust-тест пройшов, включно з temporary HTTP retry, interrupted download recovery, busy-file retry, rollback робочої версії, cleanup та захистом активних артефактів; headless-тест підтверджує заборону закриття активного встановлення.
+- [x] Зняти baseline Install і one-click update у темній/світлій темах, normal/compact, standard/custom background на `1000×700`, `1280×720`, `1920×1080` і Windows scale 125%. `capture-visual-baseline.py` перевіряє обидва device scale factor (`1` і `1.25`) та всі чотири комбінації щільності й фону без відкривання GUI.
+- [x] Підтвердити WCAG AA, tooltip/focus, keyboard-only, `aria-live`, portal notification і відсутність layout shift під час помилки. Контраст пройшов для 32 пар; headless-контракт перевіряє focus trap/return, Escape/overlay, `aria-live`, portal alert над dialog і стабільну геометрію тем.
 
 Готово, коли install-dialog не повторює кроки й пояснення, заборонений шлях блокує дію, а «Оновити» безпечно запускає автоматичне portable-оновлення без ручного вибору версії та файла.
 

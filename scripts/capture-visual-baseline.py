@@ -13,6 +13,7 @@ BASE_URL = os.environ.get("PULLORA_TEST_BASE_URL", "http://127.0.0.1:4173")
 OUTPUT_DIR = Path("docs/visual-baseline/design-contract")
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
+DEVICE_SCALE_FACTORS = (1, 1.25)
 EXPECTED_LIBRARY_PANES = {
     (1000, 700): [
         {"x": 37, "y": 95, "width": 380, "height": 568},
@@ -195,7 +196,11 @@ def seed_cache(page: Page) -> None:
               if (command === 'get_project_art_asset') return null;
               if (command === 'save_library_folders') return structuredClone(args.folders ?? []);
               if (command === 'get_library_folders') return structuredClone(window.__PULLORA_TEST_LIBRARY_FOLDERS__ ?? []);
-              if (['get_downloads', 'get_installed_apps', 'get_favorites', 'list_project_art_assets', 'get_event_log'].includes(command)) return [];
+              if (command === 'get_installed_apps') {
+                return structuredClone(window.__PULLORA_TEST_INSTALLED_APPS__ ?? []);
+              }
+              if (command === 'start_download') return 'visual-update-download';
+              if (['get_downloads', 'get_favorites', 'list_project_art_assets', 'get_event_log'].includes(command)) return [];
               if (command === 'plugin:event|listen') return args.handler;
               if (command === 'plugin:event|unlisten') return null;
               return null;
@@ -231,8 +236,64 @@ def apply_custom_background(page: Page) -> None:
     )
 
 
-def capture(page: Page, theme: str, width: int, height: int) -> dict:
-    suffix = f"{theme}-{width}x{height}"
+def clear_custom_background(page: Page) -> None:
+    page.locator(".layout").evaluate("el => el.classList.remove('has-custom-background')")
+    page.locator(".cinematic-background").evaluate(
+        "el => { el.classList.remove('is-visible'); el.style.removeProperty('background-image') }"
+    )
+
+
+def seed_installed_update(page: Page) -> None:
+    page.add_init_script(
+        script="""
+        window.localStorage.clear();
+        window.__PULLORA_TEST_INSTALLED_APPS__ = [{
+          name: 'steam-achievement-manager',
+          owner: 'CpPrice11',
+          repo: 'steam-achievement-manager',
+          activeVersion: 'v0.2.0',
+          lastLaunchedAt: null,
+          versions: [{
+            tag: 'v0.2.0',
+            installedAt: '2026-07-15T10:00:00Z',
+            executable: 'demo.exe',
+            sizeBytes: 88080384,
+            installDir: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps\\\\CpPrice11-steam-achievement-manager\\\\v0.2.0',
+          }],
+        }];
+        """
+    )
+
+
+def capture_one_click_update(page: Page, suffix: str) -> None:
+    open_library(page)
+    page.get_by_role("button", name="Оновлення", exact=True).click()
+    center = page.locator(".updates-center")
+    center.wait_for()
+    center.get_by_role("button", name="Перевірити", exact=True).click()
+    row = center.locator(".updates-center-row")
+    row.wait_for()
+    assert "v0.2.0" in row.inner_text() and "v0.2.3" in row.inner_text()
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-{suffix}.png")
+
+    apply_custom_background(page)
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-custom-{suffix}.png")
+    clear_custom_background(page)
+
+    page.get_by_role("switch", name="Компактний").click()
+    page.locator(".library-page.library-density-compact").wait_for()
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-compact-{suffix}.png")
+    apply_custom_background(page)
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-compact-custom-{suffix}.png")
+
+    row.locator(".updates-center-row-actions .secondary-btn").first.click()
+    center.locator('[aria-busy="true"]').first.wait_for()
+    assert page.locator(".release-modal").count() == 0
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-busy-{suffix}.png")
+
+
+def capture(page: Page, theme: str, width: int, height: int, scale: float) -> dict:
+    suffix = f"{theme}-{width}x{height}-{scale:g}x"
     normal_card_height = page.locator(".repo-card:visible").first.evaluate(
         "el => el.getBoundingClientRect().height"
     )
@@ -286,6 +347,14 @@ def capture(page: Page, theme: str, width: int, height: int) -> dict:
     page.screenshot(path=OUTPUT_DIR / f"install-{suffix}.png")
     page.locator(".release-modal .close-btn").click()
 
+    apply_custom_background(page)
+    page.screenshot(path=OUTPUT_DIR / f"library-custom-{suffix}.png")
+    page.locator(".hero-primary-btn:visible").first.click()
+    page.locator(".release-modal").wait_for()
+    page.screenshot(path=OUTPUT_DIR / f"install-custom-{suffix}.png")
+    page.locator(".release-modal .close-btn").click()
+    clear_custom_background(page)
+
     page.get_by_role("switch", name="Компактний").click()
     page.locator(".library-page.library-density-compact").wait_for()
     compact_card_height = page.locator(".repo-card:visible").first.evaluate(
@@ -297,6 +366,10 @@ def capture(page: Page, theme: str, width: int, height: int) -> dict:
     }
     page.mouse.move(0, 0)
     page.screenshot(path=OUTPUT_DIR / f"library-compact-{suffix}.png")
+    page.locator(".hero-primary-btn:visible").first.click()
+    page.locator(".release-modal").wait_for()
+    page.screenshot(path=OUTPUT_DIR / f"install-compact-{suffix}.png")
+    page.locator(".release-modal .close-btn").click()
 
     apply_custom_background(page)
     page.screenshot(path=OUTPUT_DIR / f"library-compact-custom-{suffix}.png")
@@ -343,7 +416,7 @@ def capture(page: Page, theme: str, width: int, height: int) -> dict:
     page.locator(".hero-primary-btn:visible").first.click()
     page.locator(".release-modal").wait_for()
     apply_custom_background(page)
-    page.screenshot(path=OUTPUT_DIR / f"install-custom-{suffix}.png")
+    page.screenshot(path=OUTPUT_DIR / f"install-compact-custom-{suffix}.png")
 
     return {
         "normalCardHeight": normal_card_height,
@@ -361,41 +434,51 @@ def main() -> None:
         browser = playwright.chromium.launch(headless=True)
         for theme in THEMES:
             for width, height in VIEWPORTS:
-                context = browser.new_context(
-                    viewport={"width": width, "height": height},
-                    color_scheme=theme,
-                    locale="uk-UA",
-                )
-                page = context.new_page()
-                seed_cache(page)
-                open_library(page)
-                pane_boxes = page.locator(".library-sam-list-pane, .library-sam-details-pane").evaluate_all(
-                    "els => els.map(el => { const box = el.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height } })"
-                )
-                assert pane_boxes == EXPECTED_LIBRARY_PANES[(width, height)], {
-                    "theme": theme,
-                    "viewport": [width, height],
-                    "expected": EXPECTED_LIBRARY_PANES[(width, height)],
-                    "actual": pane_boxes,
-                }
-                boxes = page.locator(".library-sam-list-pane, .library-hero").evaluate_all(
-                    "els => els.map(el => ({className: el.className, ...el.getBoundingClientRect().toJSON()}))"
-                )
-                primary_style = page.locator(".hero-primary-btn:visible").first.evaluate(
-                    "el => { const style = getComputedStyle(el); return { background: style.backgroundImage, color: style.color, borderColor: style.borderColor } }"
-                )
-                if theme == "light":
-                    assert primary_style["color"] == "rgb(255, 255, 255)", primary_style
-                    assert "rgb(0, 103, 192)" in primary_style["background"], primary_style
-                geometry.append({
-                    "theme": theme,
-                    "viewport": [width, height],
-                    "boxes": boxes,
-                    "primaryStyle": primary_style,
-                })
-                variants = capture(page, theme, width, height)
-                geometry[-1]["variants"] = variants
-                context.close()
+                for scale in DEVICE_SCALE_FACTORS:
+                    context = browser.new_context(
+                        viewport={"width": width, "height": height},
+                        color_scheme=theme,
+                        locale="uk-UA",
+                        device_scale_factor=scale,
+                    )
+                    page = context.new_page()
+                    seed_cache(page)
+                    open_library(page)
+                    pane_boxes = page.locator(".library-sam-list-pane, .library-sam-details-pane").evaluate_all(
+                        "els => els.map(el => { const box = el.getBoundingClientRect(); return { x: box.x, y: box.y, width: box.width, height: box.height } })"
+                    )
+                    assert pane_boxes == EXPECTED_LIBRARY_PANES[(width, height)], {
+                        "theme": theme,
+                        "viewport": [width, height],
+                        "expected": EXPECTED_LIBRARY_PANES[(width, height)],
+                        "actual": pane_boxes,
+                    }
+                    boxes = page.locator(".library-sam-list-pane, .library-hero").evaluate_all(
+                        "els => els.map(el => ({className: el.className, ...el.getBoundingClientRect().toJSON()}))"
+                    )
+                    primary_style = page.locator(".hero-primary-btn:visible").first.evaluate(
+                        "el => { const style = getComputedStyle(el); return { background: style.backgroundImage, color: style.color, borderColor: style.borderColor } }"
+                    )
+                    if theme == "light":
+                        assert primary_style["color"] == "rgb(255, 255, 255)", primary_style
+                        assert "rgb(0, 103, 192)" in primary_style["background"], primary_style
+                    geometry.append({
+                        "theme": theme,
+                        "viewport": [width, height],
+                        "scale": scale,
+                        "boxes": boxes,
+                        "primaryStyle": primary_style,
+                    })
+                    variants = capture(page, theme, width, height, scale)
+                    geometry[-1]["variants"] = variants
+                    update_page = context.new_page()
+                    seed_cache(update_page)
+                    seed_installed_update(update_page)
+                    capture_one_click_update(
+                        update_page,
+                        f"{theme}-{width}x{height}-{scale:g}x",
+                    )
+                    context.close()
         browser.close()
     print(json.dumps(geometry, ensure_ascii=False))
 

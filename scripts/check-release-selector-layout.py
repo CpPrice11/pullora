@@ -191,7 +191,7 @@ def check_step_navigation(
         assert fact.locator(":scope > strong").inner_text().strip()
     assert modal.locator(".release-confirm-grid").get_by_text("v1.0.0", exact=True).count() >= 1
     install_path = modal.locator(".release-install-path")
-    assert install_path.locator(":scope > span").inner_text().strip()
+    assert install_path.locator("#release-install-path-label").inner_text().strip()
     assert install_path.locator(":scope > strong").inner_text().strip() == DEFAULT_INSTALL_PATH
     assert install_path.locator(":scope > button").count() == 1
     assert modal.locator(".release-confirm-warning").count() == 0
@@ -268,13 +268,17 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert actions.get_by_role("button").count() == 1
     assert actions.get_by_role("button").first.is_enabled()
 
-    close_button = modal.locator(".close-btn")
-    next_button = actions.get_by_role("button").first
-    close_button.focus()
+    focusable = modal.locator(
+        'a[href], button:not([disabled]), textarea:not([disabled]), '
+        'input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+    first_focusable = focusable.first
+    last_focusable = focusable.last
+    first_focusable.focus()
     page.keyboard.press("Shift+Tab")
-    assert next_button.evaluate("el => el === document.activeElement")
+    assert last_focusable.evaluate("el => el === document.activeElement")
     page.keyboard.press("Tab")
-    assert close_button.evaluate("el => el === document.activeElement")
+    assert first_focusable.evaluate("el => el === document.activeElement")
 
     body.evaluate(
         """el => {
