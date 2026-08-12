@@ -88,6 +88,7 @@ def check_source_contract() -> None:
     assert 'aria-pressed={releaseFilter === filter}' in source
     assert 'aria-label={t(\'about.launcherActions\')}' in source
     assert 'disabled={!storageInfo || storageInfo.cleanupBytes === 0}' in source
+    assert "portableAsset.name" not in source
     for status in ("current", "newer", "older", "missing"):
         assert f"about-release-link--${{statusClass}}" in source
         assert f"about-release-status ${{statusClass}}" in source
@@ -158,6 +159,8 @@ def inspect_controls(page: Page, width: int, height: int) -> dict:
     assert toolbar_buttons.nth(0).is_enabled()
     assert toolbar_buttons.nth(1).is_disabled()
     assert rows.count() == 4
+    for index in range(rows.count()):
+        assert ".exe" not in rows.nth(index).locator(".about-release-date").inner_text().lower()
     assert filter_buttons.nth(0).get_attribute("aria-pressed") == "true"
     assert filter_buttons.nth(1).get_attribute("aria-pressed") == "false"
     assert filter_buttons.nth(2).get_attribute("aria-pressed") == "false"

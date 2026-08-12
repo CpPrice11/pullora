@@ -34,6 +34,7 @@ try {
   const { default: BatchUpdatePanel, BatchUpdateConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/BatchUpdatePanel.tsx')
   const { default: DownloadProgressPanel } = await server.ssrLoadModule('/src/components/Install/DownloadProgress.tsx')
   const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
+  const { default: ArtCropDialog } = await server.ssrLoadModule('/src/components/Modal/ArtCropDialog.tsx')
   const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
   const { normalizeSettings } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
   const { default: ukDictionary } = await server.ssrLoadModule('/src/i18n/dictionaries/uk.ts')
@@ -57,7 +58,7 @@ try {
   } = await server.ssrLoadModule('/src/features/library/libraryViewControls.ts')
   const { nextMenuItemIndex } = await server.ssrLoadModule('/src/utils/menuKeyboard.ts')
   const { appearanceCssVariables } = await server.ssrLoadModule('/src/utils/theme.ts')
-  const { projectArtBackgroundUrl, projectArtCoverUrl } = await server.ssrLoadModule('/src/services/projectArt.ts')
+  const { projectArtBackgroundUrl, projectArtCoverUrl, projectArtCoverCropStyle, projectArtCropStyle } = await server.ssrLoadModule('/src/services/projectArt.ts')
   const { pickPortableReleaseAsset } = await server.ssrLoadModule('/src/features/library/releaseAssetClassifier.ts')
   const { selectAutomaticUpdate } = await server.ssrLoadModule('/src/features/library/hooks/useBatchUpdates.ts')
   const { redactSensitiveText } = await server.ssrLoadModule('/src/utils/redactSensitiveText.ts')
@@ -226,6 +227,49 @@ try {
   assert.equal(projectArtCoverUrl(coverOnlyArt), coverOnlyArt.coverDataUrl)
   assert.equal(projectArtBackgroundUrl(coverOnlyArt, { fallbackToCover: false }), null)
   assert.equal(projectArtBackgroundUrl(independentArt, { fallbackToCover: false }), independentArt.backgroundDataUrl)
+  assert.deepEqual(projectArtCropStyle(), {
+    '--art-focus-x': '50%',
+    '--art-focus-y': '50%',
+    '--art-zoom': '1',
+  })
+  assert.deepEqual(projectArtCropStyle({ backgroundCrop: { focusX: -1, focusY: 0.75, zoom: 9 } }), {
+    '--art-focus-x': '0%',
+    '--art-focus-y': '75%',
+    '--art-zoom': '4',
+  })
+  assert.deepEqual(projectArtCoverCropStyle({ coverCrop: { focusX: 0.2, focusY: 0.3, zoom: 1.5 } }), {
+    '--art-focus-x': '20%',
+    '--art-focus-y': '30%',
+    '--art-zoom': '1.5',
+  })
+
+  const cropDialogMarkup = render(ArtCropDialog, {
+    kind: 'cover',
+    sourcePath: 'C:\\Pictures\\cover.png',
+    onCancel: noop,
+    onError: noop,
+    onSave: async () => {},
+  })
+  assert.match(cropDialogMarkup, /role="dialog"/)
+  assert.match(cropDialogMarkup, /aria-modal="true"/)
+  assert.match(cropDialogMarkup, /\u041a\u0430\u0434\u0440\u0443\u0432\u0430\u043d\u043d\u044f \u043e\u0431\u043a\u043b\u0430\u0434\u0438\u043d\u043a\u0438/)
+  assert.match(cropDialogMarkup, /type="range"/)
+  assert.match(cropDialogMarkup, /art-crop-preview--cover/)
+  assert.match(cropDialogMarkup, /data-autofocus="true"/)
+  assert.match(cropDialogMarkup, /disabled=""/)
+
+  const workspaceCropDialogMarkup = render(ArtCropDialog, {
+    kind: 'background',
+    previewShape: 'workspace',
+    sourcePath: 'C:\\Pictures\\background.png',
+    onCancel: noop,
+    onError: noop,
+    onSave: async () => {},
+  })
+  assert.match(workspaceCropDialogMarkup, /aria-label="\u0424\u043e\u0440\u043c\u0430\u0442 \u043f\u0435\u0440\u0435\u0433\u043b\u044f\u0434\u0443"/)
+  assert.match(workspaceCropDialogMarkup, /data-preview-mode="1280x720"/)
+  assert.match(workspaceCropDialogMarkup, /1000 \u00d7 700/)
+  assert.match(workspaceCropDialogMarkup, /1920 \u00d7 1080/)
 
   const releaseAsset = (id, name) => ({
     id,
@@ -307,6 +351,7 @@ try {
 
   const settingsSectionsSource = readFileSync('src/features/settings/components/SettingsSections.tsx', 'utf8')
   const settingsPageSource = readFileSync('src/pages/SettingsPage.tsx', 'utf8')
+  const appSource = readFileSync('src/App.tsx', 'utf8')
   const pageStylesSource = readFileSync('src/pages/PageStyles.css', 'utf8')
   const appStylesSource = readFileSync('src/App.css', 'utf8')
   const cinematicStylesSource = readFileSync('src/styles/Cinematic.css', 'utf8')
@@ -315,7 +360,16 @@ try {
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
   const batchUpdatesSource = readFileSync('src/features/library/hooks/useBatchUpdates.ts', 'utf8')
   const libraryOperationsSource = readFileSync('src/features/library/components/LibraryOperationsPanel.tsx', 'utf8')
+  const libraryHeroSource = readFileSync('src/features/library/components/LibraryHero.tsx', 'utf8')
   const repoCardSource = readFileSync('src/features/library/components/RepoCard.tsx', 'utf8')
+  const artCropDialogSource = readFileSync('src/components/Modal/ArtCropDialog.tsx', 'utf8')
+  const modalFocusSource = readFileSync('src/hooks/useModalFocus.ts', 'utf8')
+  const projectArtServiceSource = readFileSync('src/services/projectArt.ts', 'utf8')
+  const artCropPointerMoveSource = artCropDialogSource.slice(
+    artCropDialogSource.indexOf('const handlePointerMove'),
+    artCropDialogSource.indexOf('const finishDrag'),
+  )
+  const modalStylesSource = readFileSync('src/components/Modal/Modal.css', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
   const downloadServiceSource = readFileSync('src/services/download.ts', 'utf8')
   assert.match(settingsSectionsSource, /value=\{settings\.installationPath\}[\s\S]*?readOnly/)
@@ -355,8 +409,12 @@ try {
   assert.match(settingsSectionsSource, /settings-source-summary-owner[\s\S]*?<strong>CpPrice11<\/strong>/)
   assert.match(settingsSectionsSource, /settings-source-summary-copy[\s\S]*?sourceSummaryText[\s\S]*?githubTokenHelp/)
   assert.match(settingsSectionsSource, /settings-source-summary settings-grid-wide[\s\S]*?id="theme"[\s\S]*?id="language"[\s\S]*?launcher-background-control[\s\S]*?underlay-controls[\s\S]*?id="installPath"/)
-  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.changeThemeBackground'[\s\S]*?settings\.editAction/)
+  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.editThemeBackground'[\s\S]*?onEditLauncherBackground[\s\S]*?settings\.editAction/)
+  assert.match(settingsSectionsSource, /art\.replaceThemeBackground[\s\S]*?settings\.replaceAction/)
+  assert.match(settingsSectionsSource, /art\.changeThemeBackground[\s\S]*?settings\.editAction/)
   assert.match(settingsSectionsSource, /aria-label=\{t\('art\.resetThemeBackground'[\s\S]*?settings\.resetAction/)
+  assert.match(appSource, /handleEditLauncherBackground[\s\S]*?initialCrop:\s*art\.backgroundCrop/)
+  assert.match(appSource, /setProjectArtCrop\(currentArt\.owner, currentArt\.repo, 'background', crop\)/)
   assert.doesNotMatch(settingsSectionsSource, /underlayAppearanceHelp/)
   assert.doesNotMatch(settingsSectionsSource, /settings-reset-control|onRequestReset/)
   assert.match(settingsPageSource, /className="settings-nav-reset"[\s\S]*?setConfirmation\('reset'\)/)
@@ -377,6 +435,47 @@ try {
   assert.match(repoCardSource, /actionsRef\.current\.getBoundingClientRect\(\)/)
   assert.match(repoCardSource, /window\.addEventListener\('scroll', closeAndRestoreFocus, true\)/)
   assert.match(repoCardSource, /REPO_MENU_OPEN_EVENT/)
+  assert.match(repoCardSource, /art\.editCover[\s\S]*?art\.replaceCover/)
+  assert.match(repoCardSource, /art\.editBackground[\s\S]*?art\.replaceBackground/)
+  assert.match(libraryHeroSource, /art\.editBackground[\s\S]*?art\.replaceBackground/)
+  assert.match(repoCardSource, /projectArtCoverCropStyle\(art\)/)
+  assert.match(artCropDialogSource, /setPointerCapture\(event\.pointerId\)/)
+  assert.match(artCropDialogSource, /releasePointerCapture\(event\.pointerId\)/)
+  assert.match(artCropDialogSource, /requestAnimationFrame\(renderCrop\)/)
+  assert.match(artCropDialogSource, /cancelAnimationFrame\(cropFrameRef\.current\)/)
+  assert.match(artCropDialogSource, /onSave\(cropRef\.current\)/)
+  assert.match(artCropDialogSource, /event\.key === 'PageUp'[\s\S]*?event\.key === 'Home'/)
+  assert.match(artCropDialogSource, /type="range"[\s\S]*?min="1"[\s\S]*?max="4"/)
+  assert.match(artCropDialogSource, /className="visually-hidden" role="status" aria-live="polite" aria-atomic="true"/)
+  assert.match(artCropDialogSource, /loadErrorReportedRef[\s\S]*?onErrorRef\.current\(t\('art\.cropLoadError'\)\)[\s\S]*?onCancelRef\.current\(\)/)
+  assert.match(artCropDialogSource, /\.catch\(\(\) => \{[\s\S]*?reportLoadError\(\)/)
+  assert.match(artCropDialogSource, /onError=\{reportLoadError\}/)
+  assert.doesNotMatch(artCropDialogSource, /setError\(t\('art\.cropLoadError'\)\)/)
+  assert.match(artCropDialogSource, /let active = true[\s\S]*?return \(\) => \{[\s\S]*?active = false[\s\S]*?dragRef\.current = null/)
+  assert.doesNotMatch(projectArtServiceSource, /URL\.(?:createObjectURL|revokeObjectURL)/)
+  assert.match(modalFocusSource, /document\.addEventListener\('keydown', handleKeyDown\)[\s\S]*?window\.clearTimeout\(focusTimer\)[\s\S]*?document\.removeEventListener\('keydown', handleKeyDown\)/)
+  assert.match(libraryPageSource, /onError=\{handleInstallError\}[\s\S]*?library-toast--\$\{libraryToastTone\}/)
+  assert.doesNotMatch(libraryHeroSource, /artError|library-hero-error/)
+  assert.match(appSource, /onError=\{setLauncherArtError\}[\s\S]*?createPortal\([\s\S]*?library-toast--error/)
+  assert.match(artCropDialogSource, /finishDrag[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
+  assert.doesNotMatch(artCropPointerMoveSource, /setAnnouncedCrop/)
+  assert.match(artCropDialogSource, /onPointerUp=\{\(\) => \{[\s\S]*?renderCrop\(\)[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
+  assert.match(artCropDialogSource, /onKeyUp=\{\(\) => \{[\s\S]*?renderCrop\(\)[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
+  assert.match(artCropDialogSource, /previewShape\?: 'cover' \| 'hero' \| 'workspace'/)
+  assert.match(artCropDialogSource, /previewShape === 'hero'[\s\S]*?library\.viewNormal[\s\S]*?library\.viewCompact/)
+  assert.match(artCropDialogSource, /art-crop-workspace-overlay[\s\S]*?art-crop-hero-overlay/)
+  assert.match(artCropDialogSource, /<img[\s\S]*?style=\{artCropStyle\(crop\)\}[\s\S]*?art-crop-workspace-overlay[\s\S]*?art-crop-hero-overlay/)
+  assert.doesNotMatch(artCropDialogSource, /className="art-crop-(?:workspace|hero)-overlay"[^>]*style=/)
+  assert.match(modalStylesSource, /\.art-crop-preview--workspace::after\s*\{[^}]*var\(--launcher-background-scrim\)/s)
+  assert.match(modalStylesSource, /\.art-crop-workspace-sidebar,[\s\S]*?background:\s*var\(--surface-1\)[\s\S]*?backdrop-filter:\s*blur\(var\(--surface-blur\)\)/)
+  assert.match(modalStylesSource, /\.art-crop-hero-overlay\s*\{[^}]*background:\s*linear-gradient\(90deg, var\(--surface-material-strong\)[^}]*var\(--surface-material\)/s)
+  assert.match(pageStylesSource, /\.cinematic-shell \.library-page \.library-hero-gradient\s*\{[^}]*var\(--surface-material-strong\)[^}]*var\(--surface-material\)/s)
+  assert.match(appSource, /kind="background"[\s\S]*?previewShape="workspace"/)
+  assert.match(appSource, /previewStyle=\{appearanceCssVariables\(settings\.appearance, pendingLauncherBackground\.theme\)\}/)
+  assert.match(appSource, /Promise\.all\(\[\s*getLauncherBackgroundArt\('light'\),\s*getLauncherBackgroundArt\('dark'\),\s*\]\)/)
+  assert.match(appSource, /const visibleBackgroundArt = launcherBackgrounds\[resolvedTheme\]/)
+  assert.match(appSource, /backgroundCropStyle=\{projectArtCropStyle\(visibleBackgroundArt\)\}/)
+  assert.match(libraryPageSource, /previewShape=\{pendingArtCrop\.kind === 'cover' \? 'cover' : 'hero'\}/)
   assert.doesNotMatch(repoCardSource, /window\.innerWidth - 288/)
   assert.match(pageStylesSource, /\.repo-actions-menu-separator\s*\{[^}]*background:\s*var\(--surface-border\)/s)
   assert.match(pageStylesSource, /\.repo-actions-submenu-trigger span\s*\{[^}]*overflow-wrap:\s*anywhere/s)
@@ -458,6 +557,7 @@ try {
     onShowDetails: noop,
     onOpenFolder: noop,
     onChangeCover: noop,
+    onEditCover: noop,
     onChangeBackground: noop,
     onResetCover: noop,
     onResetBackground: noop,

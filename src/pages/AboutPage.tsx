@@ -22,7 +22,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.17.0'
+const FALLBACK_CURRENT_VERSION = 'v5.18.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
@@ -469,7 +469,6 @@ function AboutPage() {
                         {release.published_at
                           ? formatDate(release.published_at, language)
                           : t('about.noDate')}
-                        {portableAsset ? ` · ${portableAsset.name}` : ''}
                       </span>
                       {!portableAsset && (
                         <span className="about-release-warning">

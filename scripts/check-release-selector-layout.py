@@ -122,6 +122,8 @@ def check_step_navigation(
     file_screenshot: Path,
     confirm_screenshot: Path,
 ) -> None:
+    frame_box = rounded_box(modal)
+    footer_box = rounded_box(modal.locator(".release-nav-actions"))
     assert_current_step(page, modal, "version", expect_focus=False)
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
@@ -161,6 +163,24 @@ def check_step_navigation(
     assert asset_card.locator(".release-asset-architecture").inner_text().strip()
     assert asset_card.locator(".asset-compatibility").count() == 1
     assert asset_card.locator(".asset-recommended").count() == 1
+    asset_badges = asset_card.locator(".release-asset-badges")
+    asset_badge_layout = asset_badges.evaluate(
+        """el => ({
+            direction: getComputedStyle(el).flexDirection,
+            wrap: getComputedStyle(el).flexWrap,
+            tops: [...el.children].map((child) => Math.round(child.getBoundingClientRect().top)),
+        })"""
+    )
+    assert asset_badge_layout["direction"] == "row", asset_badge_layout
+    assert asset_badge_layout["wrap"] == "nowrap", asset_badge_layout
+    assert len(set(asset_badge_layout["tops"])) == 1, asset_badge_layout
+    summary_badges = modal.locator(".asset-summary > div")
+    summary_badge_tops = summary_badges.evaluate(
+        "el => [...el.children].map((child) => Math.round(child.getBoundingClientRect().top))"
+    )
+    assert len(set(summary_badge_tops)) == 1, summary_badge_tops
+    assert rounded_box(modal) == frame_box
+    assert rounded_box(modal.locator(".release-nav-actions")) == footer_box
     assert modal.locator(".release-installer-note").count() == 0
     installer_card = modal.locator(".release-asset-card--installer").first
     assert installer_card.count() == 1
@@ -183,6 +203,8 @@ def check_step_navigation(
     modal.locator(".release-nav-actions .release-action-primary:enabled").wait_for()
     assert_action_hierarchy(modal.locator(".release-nav-actions"))
     assert_actions_fit_viewport(page, modal)
+    assert rounded_box(modal) == frame_box
+    assert rounded_box(modal.locator(".release-nav-actions")) == footer_box
     facts = modal.locator(".release-confirm-grid > div")
     assert facts.count() == 6
     for index in range(facts.count()):
@@ -229,12 +251,12 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert modal_box["x"] + modal_box["width"] <= width + 0.5
     assert modal_box["y"] + modal_box["height"] <= height + 0.5
     assert modal_box["width"] <= min(width * 0.94, 1040) + 1
-    assert modal_box["height"] <= height * 0.9 + 1
+    assert abs(modal_box["height"] - min(760, height * 0.9)) <= 1
     assert header_box["height"] <= 132
-    assert body_box["height"] <= 300
 
     assert header_box["y"] >= modal_box["y"]
     assert body_box["y"] >= header_box["y"] + header_box["height"] - 0.5
+    assert actions_box["y"] >= body_box["y"] + body_box["height"] - 0.5
     assert actions_box["x"] >= body_box["x"] - 0.5
     assert actions_box["x"] + actions_box["width"] <= body_box["x"] + body_box["width"] + 0.5
 
@@ -260,8 +282,8 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert overflow["bodyHorizontal"] <= 1, overflow
     assert overflow["bodyOverflowY"] == "auto", overflow
     assert overflow["bodyOverscroll"] == "contain", overflow
-    assert overflow["actionsPosition"] == "sticky", overflow
-    assert overflow["actionsBottom"] == "0px", overflow
+    assert overflow["actionsPosition"] == "static", overflow
+    assert overflow["actionsBottom"] == "auto", overflow
 
     assert modal.locator(".release-wizard-steps, .release-step-pill, .release-wizard-context").count() == 0
 
@@ -304,7 +326,7 @@ def inspect_dialog(page: Page, width: int, height: int) -> dict:
     assert fixed_before == fixed_after, {"before": fixed_before, "after": fixed_after}
     scrolled_actions = rounded_box(actions)
     scrolled_body = rounded_box(body)
-    assert scrolled_actions["y"] + scrolled_actions["height"] <= scrolled_body["y"] + scrolled_body["height"] + 1
+    assert scrolled_actions["y"] >= scrolled_body["y"] + scrolled_body["height"] - 1
     body.evaluate(
         """el => {
             el.querySelector('[data-scroll-contract="true"]')?.remove()

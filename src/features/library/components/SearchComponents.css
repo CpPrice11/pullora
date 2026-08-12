@@ -64,7 +64,15 @@
   flex-shrink: 0;
   height: 42px;
   object-fit: cover;
+  overflow: hidden;
   width: 42px;
+}
+
+.owner-avatar > img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .repo-card.selected .owner-avatar,
@@ -561,6 +569,15 @@
   min-width: 0;
 }
 
+.release-asset-badges {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  width: 100%;
+}
+
 .release-version-main strong,
 .release-asset-main strong {
   overflow-wrap: anywhere;
@@ -638,8 +655,9 @@
 .asset-summary > div {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
 }
 
 .asset-kind,
@@ -647,10 +665,12 @@
 .asset-compatibility,
 .asset-recommended {
   border-radius: 999px;
+  flex: 0 0 auto;
   font-size: 12px;
   font-weight: 750;
   line-height: 1;
   padding: 5px 9px;
+  white-space: nowrap;
 }
 
 .asset-kind {
@@ -885,10 +905,10 @@
 
 .cinematic-shell .release-modal--wizard .release-body {
   display: block;
-  max-height: min(650px, calc(100vh - 205px));
+  max-height: none;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 10px 26px 0;
+  padding: 10px 26px 18px;
 }
 
 .release-wizard-panel {
@@ -1023,16 +1043,14 @@
 .release-nav-actions {
   --release-action-height: 42px;
   align-items: center;
-  background:
-    linear-gradient(180deg, rgba(22, 24, 30, 0.4), rgba(22, 24, 30, 0.98) 22%);
-  bottom: 0;
+  background: rgba(22, 24, 30, 0.98);
+  border-top: 1px solid var(--surface-border);
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
   gap: 10px;
   justify-content: flex-end;
-  margin: 4px -26px 0;
-  padding: 16px 26px 18px;
-  position: sticky;
+  min-height: 74px;
+  padding: 14px 26px;
   z-index: 4;
 }
 

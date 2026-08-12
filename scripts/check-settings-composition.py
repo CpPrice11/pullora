@@ -90,12 +90,14 @@ def install_settings_mock(page):
               owner: '__pullora__',
               repo: 'global-light',
               backgroundPath: 'C:\\art\\light-bg.png',
+              backgroundCrop: { focusX: 0.2, focusY: 0.3, zoom: 1.5 },
               updatedAt: '2026-07-18T00:00:00Z',
             }],
             ['global-dark', {
               owner: '__pullora__',
               repo: 'global-dark',
               backgroundPath: 'C:\\art\\dark-bg.png',
+              backgroundCrop: { focusX: 0.8, focusY: 0.7, zoom: 2 },
               updatedAt: '2026-07-18T00:00:00Z',
             }],
           ]);
@@ -113,6 +115,11 @@ def install_settings_mock(page):
             get launcherBackgrounds() {
               return Object.fromEntries(
                 [...launcherArt.entries()].map(([key, art]) => [key, art.backgroundPath ?? null]),
+              );
+            },
+            get launcherBackgroundCrops() {
+              return Object.fromEntries(
+                [...launcherArt.entries()].map(([key, art]) => [key, art.backgroundCrop]),
               );
             },
             setEventLog(entries) { eventLog = structuredClone(entries); },
@@ -186,7 +193,12 @@ def install_settings_mock(page):
                   repo: args.repo,
                   updatedAt: '2026-07-18T00:00:00Z',
                 };
-                const cleared = { ...current, backgroundPath: null, backgroundDataUrl: null };
+                const cleared = {
+                  ...current,
+                  backgroundPath: null,
+                  backgroundDataUrl: null,
+                  backgroundCrop: { focusX: 0.5, focusY: 0.5, zoom: 1 },
+                };
                 launcherArt.set(args.repo, cleared);
                 return structuredClone(cleared);
               }
@@ -391,6 +403,22 @@ def root_appearance_state(page):
     )
 
 
+def background_art_state(page):
+    return page.locator(".cinematic-background").evaluate(
+        """
+        element => {
+          const style = getComputedStyle(element);
+          return {
+            image: style.backgroundImage,
+            focusX: style.getPropertyValue('--art-focus-x').trim(),
+            focusY: style.getPropertyValue('--art-focus-y').trim(),
+            zoom: style.getPropertyValue('--art-zoom').trim(),
+          };
+        }
+        """
+    )
+
+
 def check_appearance_contract(page, target_theme):
     page.get_by_role("button", name="Загальне", exact=True).click()
     page.locator("#settings-general").wait_for()
@@ -406,7 +434,14 @@ def check_appearance_contract(page, target_theme):
         "document.documentElement.dataset.theme === 'light' && "
         "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
     )
-    assert "light-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
+    light_art = background_art_state(page)
+    assert "light-bg.png" in light_art["image"]
+    assert light_art == {
+        "image": light_art["image"],
+        "focusX": "20%",
+        "focusY": "30%",
+        "zoom": "1.5",
+    }, light_art
     light_state = root_appearance_state(page)
     assert light_state["densityScale"] == "0.86", light_state
 
@@ -415,7 +450,31 @@ def check_appearance_contract(page, target_theme):
         "document.documentElement.dataset.theme === 'dark' && "
         "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('dark-bg.png')"
     )
-    assert "dark-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
+    dark_art = background_art_state(page)
+    assert "dark-bg.png" in dark_art["image"]
+    assert dark_art == {
+        "image": dark_art["image"],
+        "focusX": "80%",
+        "focusY": "70%",
+        "zoom": "2",
+    }, dark_art
+
+    theme_select.select_option("light")
+    page.wait_for_function(
+        "document.documentElement.dataset.theme === 'light' && "
+        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+    )
+    restored_light_art = background_art_state(page)
+    assert restored_light_art == light_art, {
+        "before": light_art,
+        "after": restored_light_art,
+    }
+    assert page.evaluate(
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgroundCrops)"
+        ".some(crop => crop.focusX === 0.2 && crop.focusY === 0.3 && crop.zoom === 1.5) && "
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgroundCrops)"
+        ".some(crop => crop.focusX === 0.8 && crop.focusY === 0.7 && crop.zoom === 2)"
+    )
     theme_select.select_option(target_theme)
     page.wait_for_function(
         "theme => document.documentElement.dataset.theme === theme",
@@ -648,6 +707,10 @@ def check_general_reset_contract(page):
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(value => value === null)"
     )
+    assert page.evaluate(
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgroundCrops)"
+        ".every(crop => crop.focusX === 0.5 && crop.focusY === 0.5 && crop.zoom === 1)"
+    )
     reset_calls = page.evaluate(
         "offset => window.__PULLORA_SETTINGS_TEST__.calls.slice(offset)",
         call_offset,
@@ -661,6 +724,17 @@ def check_general_reset_contract(page):
         "clear_project_art_asset_command",
         "clear_project_art_asset_command",
     ]), reset_commands
+    clear_calls = [
+        call for call in reset_calls
+        if call["command"] == "clear_project_art_asset_command"
+    ]
+    assert {
+        (call["args"]["owner"], call["args"]["repo"], call["args"]["kind"])
+        for call in clear_calls
+    } == {
+        ("__pullora__", "global-light", "background"),
+        ("__pullora__", "global-dark", "background"),
+    }, clear_calls
     assert all(
         call["args"] == folder_state
         for call in reset_calls
@@ -738,10 +812,13 @@ def check_settings_accessibility_contract(page):
 def check_background_label_contract(page):
     page.get_by_role("button", name="Загальне", exact=True).click()
     page.locator("#settings-general").wait_for()
+    page.wait_for_function(
+        "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(Boolean)"
+    )
     assert page.get_by_text("Фон", exact=True).count() == 1
     assert page.get_by_text("Підкладки", exact=True).count() == 1
     for theme in ("Світла", "Темна"):
-        edit = page.get_by_role("button", name=f"Редагувати фон — {theme}", exact=True)
+        edit = page.get_by_role("button", name=f"Редагувати кадрування фону — {theme}", exact=True)
         reset = page.get_by_role("button", name=f"Скинути фон — {theme}", exact=True)
         assert edit.inner_text() == "Редагувати"
         assert reset.inner_text() == "Скинути"

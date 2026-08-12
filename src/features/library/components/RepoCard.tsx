@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { GitHubSearchResult, InstalledApp, ProjectArt } from '../../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
-import { projectArtCoverUrl } from '../../../services/projectArt'
+import { projectArtCoverCropStyle, projectArtCoverUrl } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
 import { formatDate, formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
@@ -30,7 +30,9 @@ interface RepoCardProps {
   onRemoveFromFolder?: (folderId: string) => void
   onMoveToUncategorized?: () => void
   onPickArt?: () => void
+  onEditArt?: () => void
   onPickBackground?: () => void
+  onEditBackground?: () => void
   onClearArt?: () => void
   onClearBackground?: () => void
   onUninstall?: () => void
@@ -58,7 +60,9 @@ function RepoCard({
   onRemoveFromFolder,
   onMoveToUncategorized,
   onPickArt,
+  onEditArt,
   onPickBackground,
+  onEditBackground,
   onClearArt,
   onClearBackground,
   onUninstall,
@@ -308,6 +312,18 @@ function RepoCard({
     onCreateFolder?.()
   }
 
+  const handleEditBackground = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    closeActions()
+    onEditBackground?.()
+  }
+
+  const handleEditArt = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    closeActions()
+    onEditArt?.()
+  }
+
   const openActions = (anchor: { x: number; y: number }) => {
     window.dispatchEvent(new CustomEvent(REPO_MENU_OPEN_EVENT, { detail: menuId }))
     setFolderMenuOpen(false)
@@ -341,7 +357,7 @@ function RepoCard({
   const primaryLabel = hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleInstall
   const hasPersonalizationActions = Boolean(
-    onPickArt || onPickBackground || (art?.coverPath && onClearArt) || (art?.backgroundPath && onClearBackground),
+    onPickArt || onEditArt || onPickBackground || onEditBackground || (art?.coverPath && onClearArt) || (art?.backgroundPath && onClearBackground),
   )
 
   const coverUrl = projectArtCoverUrl(art)
@@ -384,11 +400,14 @@ function RepoCard({
         <span className="repo-bulk-selection-mark" aria-hidden="true">✓</span>
       )}
       <div className="repo-card-media">
-        <img
-          src={coverUrl ?? repo.owner.avatar_url}
-          alt=""
-          className="owner-avatar"
-        />
+        <div className="owner-avatar">
+          <img
+            src={coverUrl ?? repo.owner.avatar_url}
+            alt=""
+            className={coverUrl ? 'project-art-cover' : undefined}
+            style={coverUrl ? projectArtCoverCropStyle(art) : undefined}
+          />
+        </div>
       </div>
 
       <div className="repo-info">
@@ -542,13 +561,31 @@ function RepoCard({
             {hasPersonalizationActions && (
               <div className="repo-actions-menu-separator" role="separator" />
             )}
+            {art?.coverPath && onEditArt && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleEditArt}
+              >
+                {t('art.editCover')}
+              </button>
+            )}
             {onPickArt && (
               <button
                 type="button"
                 role="menuitem"
                 onClick={handlePickArt}
               >
-                {t('art.changeCover')}
+                {t(art?.coverPath ? 'art.replaceCover' : 'art.changeCover')}
+              </button>
+            )}
+            {art?.backgroundPath && onEditBackground && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleEditBackground}
+              >
+                {t('art.editBackground')}
               </button>
             )}
             {onPickBackground && (
@@ -557,7 +594,7 @@ function RepoCard({
                 role="menuitem"
                 onClick={handlePickBackground}
               >
-                {t('art.changeBackground')}
+                {t(art?.backgroundPath ? 'art.replaceBackground' : 'art.changeBackground')}
               </button>
             )}
             {art?.coverPath && onClearArt && (

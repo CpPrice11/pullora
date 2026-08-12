@@ -99,14 +99,16 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
     assert hidden_heading.inner_text().strip()
     assert hero_mark.count() == hero_main.count() == hero_actions.count() == 1
     assert product_name.count() == product_description.count() == version_meta.count() == 1
-    assert current_version.count() == 1 and version_values.count() == 2
+    assert current_version.count() == 1 and version_values.count() == 3
     assert action_buttons.count() == 2
     assert heading.count() == filters.count() == toolbar.count() == release.count() == 1
 
     assert product_name.inner_text().strip() == "Pullora"
     assert product_description.inner_text().strip()
     assert all(version_values.nth(index).inner_text().strip() for index in range(version_values.count()))
-    assert all(":" in version_values.nth(index).inner_text() for index in range(version_values.count()))
+    assert ":" in version_values.nth(0).inner_text()
+    assert ":" not in version_values.nth(1).inner_text()
+    assert ":" in version_values.nth(2).inner_text()
     assert action_buttons.nth(0).is_enabled() and action_buttons.nth(1).is_enabled()
     action_labels = [action_buttons.nth(index).inner_text().strip() for index in range(2)]
     assert all(action_labels) and action_labels[0] != action_labels[1], action_labels
@@ -156,7 +158,7 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
         "overflow": overflow,
         "productHeader": {
             "name": product_name.inner_text().strip(),
-            "versions": [version_values.nth(index).inner_text().strip() for index in range(2)],
+            "versions": [version_values.nth(index).inner_text().strip() for index in range(3)],
             "actions": action_labels,
         },
     }

@@ -29,6 +29,7 @@ import './PageStyles.css'
 
 interface SettingsPageProps {
   hasLauncherBackground: Record<ResolvedTheme, boolean>
+  onEditLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onChangeLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onClearLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
 }
@@ -43,6 +44,7 @@ function emptyRateLimitStatus(): GitHubRateLimitStatus {
 
 function SettingsPage({
   hasLauncherBackground,
+  onEditLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
 }: SettingsPageProps) {
@@ -453,6 +455,7 @@ function SettingsPage({
               formatQueuePause={formatQueuePause}
               onThemeChange={(theme) => void handleThemeChange(theme)}
               onLanguageChange={(nextLanguage) => void handleLanguageChange(nextLanguage)}
+              onEditLauncherBackground={onEditLauncherBackground}
               onChangeLauncherBackground={onChangeLauncherBackground}
               onClearLauncherBackground={onClearLauncherBackground}
               onPreviewSurfaceSetting={previewSurfaceSetting}

@@ -28,13 +28,14 @@
 }
 
 .cinematic-background {
-  background-position: center;
+  background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
   background-size: cover;
   filter: blur(10px) saturate(1.18);
   inset: -18px;
   opacity: 0;
   position: absolute;
-  transform: scale(1.02);
+  transform: scale(calc(var(--art-zoom, 1) + 0.02));
+  transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
   transition: opacity var(--motion-slow), transform var(--motion-slow);
   z-index: 0;
 }
@@ -55,7 +56,7 @@
 .cinematic-shell.has-custom-background .cinematic-background.is-visible {
   filter: blur(7px) brightness(0.78) saturate(1.02);
   opacity: 0.72;
-  transform: scale(1.035);
+  transform: scale(calc(var(--art-zoom, 1) + 0.035));
 }
 
 :root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-background.is-visible {

@@ -1,5 +1,6 @@
 import { convertFileSrc } from '@tauri-apps/api/core'
-import type { ProjectArt } from '../types'
+import type { CSSProperties } from 'react'
+import type { ArtCrop, ProjectArt } from '../types'
 import { callTauri } from './tauri'
 
 export type ProjectArtKind = 'cover' | 'background' | 'all'
@@ -8,12 +9,24 @@ const LEGACY_LAUNCHER_ART_OWNER = '__air_launcher__'
 const LAUNCHER_ART_REPO = 'global'
 export type LauncherBackgroundTheme = 'light' | 'dark'
 
+const DEFAULT_ART_CROP: ArtCrop = { focusX: 0.5, focusY: 0.5, zoom: 1 }
+
+type ArtCropStyle = CSSProperties & {
+  '--art-focus-x': string
+  '--art-focus-y': string
+  '--art-zoom': string
+}
+
 function launcherThemeRepo(theme: LauncherBackgroundTheme) {
   return `${LAUNCHER_ART_REPO}-${theme}`
 }
 
 export async function listProjectArt(): Promise<ProjectArt[]> {
   return callTauri<ProjectArt[]>('list_project_art_assets')
+}
+
+export async function getProjectArtPreview(sourcePath: string): Promise<string> {
+  return callTauri<string>('get_project_art_preview', { sourcePath })
 }
 
 async function getProjectArt(owner: string, repo: string): Promise<ProjectArt | null> {
@@ -25,13 +38,24 @@ export async function setProjectArt(
   repo: string,
   kind: Exclude<ProjectArtKind, 'all'>,
   sourcePath: string,
+  crop?: ArtCrop,
 ): Promise<ProjectArt> {
   return callTauri<ProjectArt>('set_project_art_asset_command', {
     owner,
     repo,
     kind,
     sourcePath,
+    crop,
   })
+}
+
+export async function setProjectArtCrop(
+  owner: string,
+  repo: string,
+  kind: Exclude<ProjectArtKind, 'all'>,
+  crop: ArtCrop,
+): Promise<ProjectArt> {
+  return callTauri<ProjectArt>('set_project_art_crop_command', { owner, repo, kind, crop })
 }
 
 export async function clearProjectArt(
@@ -68,6 +92,25 @@ export function projectArtBackgroundUrl(
   return options.fallbackToCover === false ? null : projectArtCoverUrl(art)
 }
 
+export function artCropStyle(crop: ArtCrop = DEFAULT_ART_CROP): ArtCropStyle {
+  const clamp = (value: number, min: number, max: number, fallback: number) =>
+    Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback
+
+  return {
+    '--art-focus-x': `${clamp(crop.focusX, 0, 1, DEFAULT_ART_CROP.focusX) * 100}%`,
+    '--art-focus-y': `${clamp(crop.focusY, 0, 1, DEFAULT_ART_CROP.focusY) * 100}%`,
+    '--art-zoom': String(clamp(crop.zoom, 1, 4, DEFAULT_ART_CROP.zoom)),
+  }
+}
+
+export function projectArtCropStyle(art?: ProjectArt | null): ArtCropStyle {
+  return artCropStyle(art?.backgroundCrop)
+}
+
+export function projectArtCoverCropStyle(art?: ProjectArt | null): ArtCropStyle {
+  return artCropStyle(art?.coverCrop)
+}
+
 export async function getLauncherBackgroundArt(theme: LauncherBackgroundTheme): Promise<ProjectArt | null> {
   return await getProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme)) ??
     await getProjectArt(LAUNCHER_ART_OWNER, LAUNCHER_ART_REPO) ??
@@ -77,8 +120,9 @@ export async function getLauncherBackgroundArt(theme: LauncherBackgroundTheme): 
 export async function setLauncherBackgroundArt(
   theme: LauncherBackgroundTheme,
   sourcePath: string,
+  crop?: ArtCrop,
 ): Promise<ProjectArt> {
-  return setProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme), 'background', sourcePath)
+  return setProjectArt(LAUNCHER_ART_OWNER, launcherThemeRepo(theme), 'background', sourcePath, crop)
 }
 
 export async function clearLauncherBackgroundArt(theme: LauncherBackgroundTheme): Promise<ProjectArt> {

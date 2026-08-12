@@ -18,9 +18,9 @@ cargo check
 cd ..
 npm run check:release -- -Version <version> -SkipArtifacts -SkipSmokeTest -RcReadiness
 $env:CI = "true"
-$env:TAURI_SIGNING_PRIVATE_KEY_PATH = "$env:USERPROFILE\.tauri\pullora-updater.key"
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -LiteralPath "$env:USERPROFILE\.tauri\pullora-updater.key" -Raw
 npm run tauri-build -- --config src-tauri/tauri.release.conf.json
-Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY_PATH
+Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY
 Remove-Item Env:CI
 ```
 

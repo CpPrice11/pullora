@@ -19,7 +19,7 @@ def check_source_contract() -> None:
     about = (ROOT / "src" / "pages" / "AboutPage.tsx").read_text(encoding="utf-8")
     styles = (ROOT / "src" / "pages" / "PageStyles.css").read_text(encoding="utf-8")
 
-    assert about.count('className="modal-overlay about-dialog-overlay"') == 2
+    assert about.count('about-dialog-overlay') == 2
     for fragment in (
         ":root[data-theme] .cinematic-shell .about-page",
         "background: transparent;",
@@ -113,8 +113,7 @@ def inspect(page: Page) -> dict:
     page.keyboard.press("Escape")
     notes.wait_for(state="hidden")
 
-    activate = older.locator(".about-release-actions > .secondary-btn")
-    activate.click()
+    page.locator(".about-hero-actions .release-action-primary").click()
     confirm = page.locator(".confirm-modal")
     confirm.wait_for()
     confirm_state = background_state(page, ".confirm-modal")
