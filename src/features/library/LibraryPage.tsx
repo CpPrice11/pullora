@@ -12,7 +12,6 @@ import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar
 import LibraryHero from './components/LibraryHero'
 import LibraryOperationsPanel from './components/LibraryOperationsPanel'
 import BatchUpdatePanel, { type BatchUpdateItem } from './components/BatchUpdatePanel'
-import DownloadProgressPanel from '../../components/Install/DownloadProgress'
 import StatePanel from '../../components/State/StatePanel'
 import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
@@ -22,11 +21,14 @@ import {
   clearProjectArt,
   listProjectArt,
   projectArtCoverUrl,
+  projectArtCoverCropStyle,
   projectArtBackgroundUrl,
+  projectArtCropStyle,
   projectArtKey,
   setProjectArt,
+  setProjectArtCrop,
 } from '../../services/projectArt'
-import type { FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
+import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
 import { formatNumber } from '../../utils/format'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
@@ -230,6 +232,8 @@ interface LibraryPageProps {
 }
 
 const ReleaseSelector = lazy(() => import('../../components/Install/ReleaseSelector'))
+const DownloadProgressPanel = lazy(() => import('../../components/Install/DownloadProgress'))
+const ArtCropDialog = lazy(() => import('../../components/Modal/ArtCropDialog'))
 const LibraryBulkActions = lazy(() => import('./components/LibraryBulkActions').then((module) => ({
   default: module.LibraryBulkActions,
 })))
@@ -255,7 +259,13 @@ function LibraryPage({
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<FavoriteApp[]>([])
   const [favoriteBusy, setFavoriteBusy] = useState(false)
-  const [artError, setArtError] = useState<string | null>(null)
+  const [pendingArtCrop, setPendingArtCrop] = useState<{
+    repo: GitHubSearchResult
+    sourcePath: string
+    kind: 'cover' | 'background'
+    mode: 'replace' | 'edit'
+    initialCrop?: ArtCrop
+  } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
@@ -892,9 +902,13 @@ function LibraryPage({
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
   const featuredCover = projectArtCoverUrl(featuredArt)
+  const featuredCoverStyle = featuredCover ? projectArtCoverCropStyle(featuredArt) : undefined
   const featuredBackground = projectArtBackgroundUrl(featuredArt, { fallbackToCover: false })
   const featuredBackgroundStyle = featuredBackground
-    ? ({ '--library-hero-background': toCssUrl(featuredBackground) } as CSSProperties)
+    ? ({
+        '--library-hero-background': toCssUrl(featuredBackground),
+        ...projectArtCropStyle(featuredArt),
+      } as CSSProperties)
     : undefined
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
@@ -910,30 +924,57 @@ function LibraryPage({
   const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
-    setArtError(null)
+    setLibraryActionError(null)
     const imagePath = await pickImageFile()
     if (!imagePath) return
 
+    setPendingArtCrop({
+      repo: targetRepo,
+      sourcePath: imagePath,
+      kind,
+      mode: 'replace',
+    })
+  }
+
+  const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
+    if (!targetRepo) return
+    const art = projectArt[projectArtKey(targetRepo.owner.login, targetRepo.name)]
+    const sourcePath = kind === 'cover' ? art?.coverPath : art?.backgroundPath
+    if (!sourcePath) return
+
+    setLibraryActionError(null)
+    setPendingArtCrop({
+      repo: targetRepo,
+      sourcePath,
+      kind,
+      mode: 'edit',
+      initialCrop: kind === 'cover' ? art.coverCrop : art.backgroundCrop,
+    })
+  }
+
+  const handleSaveArtCrop = async (crop: ArtCrop) => {
+    if (!pendingArtCrop) return
+    const { repo, sourcePath, kind, mode } = pendingArtCrop
+
     try {
-      const updatedArt = await setProjectArt(
-        targetRepo.owner.login,
-        targetRepo.name,
-        kind,
-        imagePath,
-      )
+      const updatedArt = mode === 'replace'
+        ? await setProjectArt(repo.owner.login, repo.name, kind, sourcePath, crop)
+        : await setProjectArtCrop(repo.owner.login, repo.name, kind, crop)
       setProjectArtState((current) => ({
         ...current,
-        [projectArtKey(targetRepo.owner.login, targetRepo.name)]: updatedArt,
+        [projectArtKey(repo.owner.login, repo.name)]: updatedArt,
       }))
-    } catch {
-      setArtError(t('art.saveError'))
+      setPendingArtCrop(null)
+    } catch (error) {
+      setLibraryActionError(t('art.saveError'))
+      throw error
     }
   }
 
   const handleClearArt = async (targetRepo = featuredRepo, kind: 'cover' | 'background' = 'cover') => {
     if (!targetRepo) return
 
-    setArtError(null)
+    setLibraryActionError(null)
     try {
       const updatedArt = await clearProjectArt(
         targetRepo.owner.login,
@@ -945,7 +986,7 @@ function LibraryPage({
         [projectArtKey(targetRepo.owner.login, targetRepo.name)]: updatedArt,
       }))
     } catch {
-      setArtError(t('art.clearError'))
+      setLibraryActionError(t('art.clearError'))
     }
   }
 
@@ -1006,7 +1047,7 @@ function LibraryPage({
         handleFavoriteChange(featuredRepo, true)
       }
     } catch {
-      setArtError(t('art.saveError'))
+      setLibraryActionError(t('art.saveError'))
     } finally {
       setFavoriteBusy(false)
     }
@@ -1192,19 +1233,21 @@ function LibraryPage({
         onShowDetails={(repo) => selectFeaturedRepo(repo, 'details')}
         onSkip={handleSkipUpdate}
       >
-        <DownloadProgressPanel
-          compact
-          downloads={batchDownloads}
-          onCancel={cancelBatchDownload}
-          onLaunch={(download) => {
-            if (!download.owner || !download.repo) return
-            launchApp(download.owner, download.repo).catch(() => {})
-          }}
-          onOpenFolder={handleBatchOpenFolder}
-          onRetry={handleBatchRetry}
-          onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
-          onCleanup={handleBatchCleanup}
-        />
+        <Suspense fallback={null}>
+          <DownloadProgressPanel
+            compact
+            downloads={batchDownloads}
+            onCancel={cancelBatchDownload}
+            onLaunch={(download) => {
+              if (!download.owner || !download.repo) return
+              launchApp(download.owner, download.repo).catch(() => {})
+            }}
+            onOpenFolder={handleBatchOpenFolder}
+            onRetry={handleBatchRetry}
+            onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
+            onCleanup={handleBatchCleanup}
+          />
+        </Suspense>
       </BatchUpdatePanel>
     )
   }
@@ -1346,10 +1389,10 @@ function LibraryPage({
         installedApp={installedApp}
         latestVersion={latestVersion}
         cover={featuredCover}
+        coverStyle={featuredCoverStyle}
         backgroundStyle={featuredBackgroundStyle}
         isFavorite={favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))}
         favoriteBusy={favoriteBusy}
-        artError={artError}
         canResetCover={Boolean(featuredArt?.coverPath)}
         canResetBackground={Boolean(featuredArt?.backgroundPath)}
         onInstall={() => setSelectedRepo(featuredRepo)}
@@ -1358,7 +1401,9 @@ function LibraryPage({
         onShowDetails={() => setHeroPanel('details')}
         onOpenFolder={() => handleOpenFolder(featuredRepo)}
         onChangeCover={() => handlePickArt('cover')}
+        onEditCover={() => handleEditArt('cover')}
         onChangeBackground={() => handlePickArt('background')}
+        onEditBackground={() => handleEditArt('background')}
         onResetCover={() => handleClearArt()}
         onResetBackground={() => handleClearArt(featuredRepo, 'background')}
         onUninstall={() => handleRequestUninstall(featuredRepo)}
@@ -1457,7 +1502,9 @@ function LibraryPage({
         }}
         onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
         onPickArt={() => handlePickArt('cover', repo)}
+        onEditArt={() => handleEditArt('cover', repo)}
         onPickBackground={() => handlePickArt('background', repo)}
+        onEditBackground={() => handleEditArt('background', repo)}
         onClearArt={() => handleClearArt(repo, 'cover')}
         onClearBackground={() => handleClearArt(repo, 'background')}
         onUninstall={() => handleRequestUninstall(repo)}
@@ -1695,6 +1742,20 @@ function LibraryPage({
             error={bulkError}
             onCancel={() => !bulkBusy && setBulkConfirm(null)}
             onConfirm={bulkConfirm === 'cleanup' ? handleBulkCleanup : handleBulkUninstall}
+          />
+        </Suspense>
+      )}
+
+      {pendingArtCrop && (
+        <Suspense fallback={null}>
+          <ArtCropDialog
+            kind={pendingArtCrop.kind}
+            previewShape={pendingArtCrop.kind === 'cover' ? 'cover' : 'hero'}
+            sourcePath={pendingArtCrop.sourcePath}
+            initialCrop={pendingArtCrop.initialCrop}
+            onCancel={() => setPendingArtCrop(null)}
+            onError={handleInstallError}
+            onSave={handleSaveArtCrop}
           />
         </Suspense>
       )}

@@ -10,10 +10,10 @@ interface LibraryHeroProps {
   installedApp?: InstalledApp
   latestVersion?: string | null
   cover?: string | null
+  coverStyle?: CSSProperties
   backgroundStyle?: CSSProperties
   isFavorite: boolean
   favoriteBusy: boolean
-  artError?: string | null
   canResetCover: boolean
   canResetBackground: boolean
   onInstall: () => void
@@ -22,7 +22,9 @@ interface LibraryHeroProps {
   onShowDetails: () => void
   onOpenFolder: () => void
   onChangeCover: () => void
+  onEditCover: () => void
   onChangeBackground: () => void
+  onEditBackground: () => void
   onResetCover: () => void
   onResetBackground: () => void
   onUninstall: () => void
@@ -52,10 +54,10 @@ export default function LibraryHero({
   installedApp,
   latestVersion,
   cover,
+  coverStyle,
   backgroundStyle,
   isFavorite,
   favoriteBusy,
-  artError,
   canResetCover,
   canResetBackground,
   onInstall,
@@ -64,7 +66,9 @@ export default function LibraryHero({
   onShowDetails,
   onOpenFolder,
   onChangeCover,
+  onEditCover,
   onChangeBackground,
+  onEditBackground,
   onResetCover,
   onResetBackground,
   onUninstall,
@@ -94,6 +98,7 @@ export default function LibraryHero({
 
   const runAction = (action: () => void) => {
     setActionsOpen(false)
+    actionsTriggerRef.current?.focus()
     action()
   }
 
@@ -108,7 +113,12 @@ export default function LibraryHero({
 
       <div className="library-hero-content">
         <div className="library-hero-cover">
-          <img src={cover || repo.owner.avatar_url} alt="" />
+          <img
+            src={cover || repo.owner.avatar_url}
+            alt=""
+            className={cover ? 'project-art-cover' : undefined}
+            style={cover ? coverStyle : undefined}
+          />
         </div>
 
         <div className="library-hero-main">
@@ -116,7 +126,6 @@ export default function LibraryHero({
             <span className={`repo-status ${status}`}>{statusLabel}</span>
             {repo.language && <span className="repo-lang">{repo.language}</span>}
             <button
-              ref={actionsTriggerRef}
               type="button"
               className={`hero-favorite-btn ${isFavorite ? 'active' : ''}`}
               onClick={onToggleFavorite}
@@ -135,7 +144,6 @@ export default function LibraryHero({
             {installedApp && <span>{t('repo.active', { version: installedApp.activeVersion })}</span>}
             {hasUpdate && latestVersion && <span>{t('repo.new', { version: latestVersion })}</span>}
           </div>
-          {artError && <p className="library-hero-error">{artError}</p>}
         </div>
 
         <div className="library-hero-actions library-github-actions">
@@ -144,6 +152,7 @@ export default function LibraryHero({
           </button>
           <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
             <button
+              ref={actionsTriggerRef}
               type="button"
               className="project-actions-trigger"
               aria-haspopup="menu"
@@ -165,8 +174,22 @@ export default function LibraryHero({
               >
                 {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onShowDetails)}>{t('details.open')}</button>}
                 {isInstalled && <button type="button" role="menuitem" onClick={() => runAction(onOpenFolder)}>{t('installed.folder')}</button>}
-                <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
-                <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
+                {canResetCover ? (
+                  <>
+                    <button type="button" role="menuitem" onClick={() => runAction(onEditCover)}>{t('art.editCover')}</button>
+                    <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.replaceCover')}</button>
+                  </>
+                ) : (
+                  <button type="button" role="menuitem" onClick={() => runAction(onChangeCover)}>{t('art.changeCover')}</button>
+                )}
+                {canResetBackground ? (
+                  <>
+                    <button type="button" role="menuitem" onClick={() => runAction(onEditBackground)}>{t('art.editBackground')}</button>
+                    <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.replaceBackground')}</button>
+                  </>
+                ) : (
+                  <button type="button" role="menuitem" onClick={() => runAction(onChangeBackground)}>{t('art.changeBackground')}</button>
+                )}
                 {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
                 {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
                 {isInstalled && (

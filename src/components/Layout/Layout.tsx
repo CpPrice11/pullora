@@ -12,6 +12,7 @@ interface LayoutProps {
   mainRef?: React.Ref<HTMLElement>
   onTabChange: (tab: Tab) => void
   backgroundImage?: string | null
+  backgroundCropStyle?: React.CSSProperties
   settingsOpen?: boolean
 }
 
@@ -25,6 +26,7 @@ function Layout({
   mainRef,
   onTabChange,
   backgroundImage,
+  backgroundCropStyle,
   settingsOpen = false,
 }: LayoutProps) {
   const { t } = useI18n()
@@ -36,7 +38,9 @@ function Layout({
       <a className="skip-link" href="#main-content">{t('nav.skipToContent')}</a>
       <div
         className={`cinematic-background ${backgroundImage ? 'is-visible' : ''}`}
-        style={backgroundImage ? { backgroundImage: toCssUrl(backgroundImage) } : undefined}
+        style={backgroundImage
+          ? { ...backgroundCropStyle, backgroundImage: toCssUrl(backgroundImage) }
+          : undefined}
         aria-hidden="true"
       />
       <div className="cinematic-backdrop" aria-hidden="true" />

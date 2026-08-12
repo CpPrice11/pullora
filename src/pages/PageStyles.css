@@ -1303,8 +1303,7 @@
 }
 
 .library-hero-repo,
-.library-hero-description,
-.library-hero-error {
+.library-hero-description {
   margin: 0;
 }
 
@@ -1345,11 +1344,6 @@
 .library-hero-meta span {
   border-left: 2px solid rgba(91, 215, 255, 0.5);
   padding-left: 10px;
-}
-
-.library-hero-error {
-  color: var(--color-error);
-  margin-top: 12px;
 }
 
 .library-hero-actions {
@@ -3258,7 +3252,7 @@
 }
 
 :root[data-theme='light'] .settings-page .settings-form {
-  background: transparent;
+  background: var(--surface-1);
 }
 
 :root[data-theme='light'] .settings-page .settings-section,
@@ -3930,11 +3924,6 @@
 
 .release-modal--wizard .release-asset-main {
   flex: 1 1 260px;
-}
-
-.release-modal--wizard .release-asset-badges {
-  align-items: flex-start;
-  flex: 0 1 180px;
 }
 
 /* v5.2.21: Library inline panels must also render in the current cinematic shell. */
@@ -4776,19 +4765,23 @@
   gap: var(--library-hero-gap);
   grid-template-columns: var(--library-hero-columns);
   height: var(--library-hero-height);
+  isolation: isolate;
   max-height: var(--library-hero-max-height);
   min-height: var(--library-hero-min-height);
+  overflow: hidden;
   padding: var(--library-hero-padding);
 }
 
 .cinematic-shell .library-page .library-hero-background {
   background-color: transparent;
   background-image: var(--library-hero-background, none);
-  background-position: center center;
+  background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
   background-repeat: no-repeat;
   background-size: cover;
   border-radius: inherit;
   opacity: 1;
+  transform: scale(var(--art-zoom, 1));
+  transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
 }
 
 .cinematic-shell .library-page .library-hero-gradient {
@@ -4832,6 +4825,13 @@
   object-fit: cover;
   object-position: center center;
   width: 100%;
+}
+
+.cinematic-shell .library-page .library-hero-cover img.project-art-cover,
+.cinematic-shell .library-page .repo-card img.project-art-cover {
+  object-position: var(--art-focus-x) var(--art-focus-y);
+  transform: scale(var(--art-zoom));
+  transform-origin: var(--art-focus-x) var(--art-focus-y);
 }
 
 .cinematic-shell .library-page .library-hero-main {

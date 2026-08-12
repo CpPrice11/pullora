@@ -22,6 +22,7 @@ def check_source_contract() -> None:
 
     assert "const SettingsPage = lazy(() => import('./pages/SettingsPage'))" in app
     assert "const AboutPage = lazy(() => import('./pages/AboutPage'))" in app
+    assert "const InstallationPathModal = lazy(() => import('./components/Modal/InstallationPathModal'))" in app
     assert "<Suspense fallback={<LazyPageFallback />}>" in app
     assert "const mainContentRef = useRef<HTMLElement>(null)" in app
     assert "const scrollPositions = useRef<Record<NavigationTab, number>>" in app
@@ -44,6 +45,7 @@ def check_source_contract() -> None:
         names = {asset.name for asset in assets.glob("*.js")}
         assert any(name.startswith("SettingsPage-") for name in names), names
         assert any(name.startswith("AboutPage-") for name in names), names
+        assert any(name.startswith("InstallationPathModal-") for name in names), names
         assert any(name.startswith("ReleaseSelector-") for name in names), names
         assert any(name.startswith("FolderManager-") for name in names), names
         assert any(name.startswith("UninstallConfirmModal-") for name in names), names

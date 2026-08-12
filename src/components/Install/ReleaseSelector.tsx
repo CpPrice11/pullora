@@ -558,16 +558,6 @@ function ReleaseSelector({
                     </div>
                   )}
 
-                  <div className="release-nav-actions">
-                    <button
-                      type="button"
-                      className="download-btn release-action-primary"
-                      onClick={() => setStep('file')}
-                      disabled={!selectedRelease}
-                    >
-                      {t('release.next')}
-                    </button>
-                  </div>
                 </>
               )}
 
@@ -654,19 +644,6 @@ function ReleaseSelector({
                     </div>
                   )}
 
-                  <div className="release-nav-actions">
-                    <button type="button" className="release-secondary-btn" onClick={() => setStep('version')}>
-                      {t('release.back')}
-                    </button>
-                    <button
-                      type="button"
-                      className="download-btn release-action-primary"
-                      onClick={() => setStep('confirm')}
-                      disabled={!selectedAssetAutoInstallable}
-                    >
-                      {t('release.next')}
-                    </button>
-                  </div>
                 </>
               )}
 
@@ -737,25 +714,6 @@ function ReleaseSelector({
 
                   {downloadError && <div id="release-install-error" className="error-message" role="alert">{downloadError}</div>}
 
-                  <div className="release-nav-actions">
-                    <button type="button" className="release-secondary-btn" onClick={() => setStep('file')} disabled={downloading}>
-                      {t('release.back')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDownload}
-                      disabled={!selectedAssetAutoInstallable || downloading || installPathValidation !== 'valid'}
-                      aria-describedby={downloadError ? 'release-install-error' : undefined}
-                      aria-busy={installPathValidation === 'checking'}
-                      className="download-btn release-action-primary"
-                    >
-                      {downloading
-                        ? t('release.starting')
-                        : selectedAssetKind === 'installer'
-                          ? t('release.runInstaller')
-                          : t('release.confirmInstall')}
-                    </button>
-                  </div>
                 </>
               )}
 
@@ -800,6 +758,57 @@ function ReleaseSelector({
             </div>
           )}
         </div>
+
+        {!loading && !error && visibleReleases.length > 0 && ['version', 'file', 'confirm'].includes(step) && (
+          <div className="release-nav-actions">
+            {step !== 'version' && (
+              <button
+                type="button"
+                className="release-secondary-btn"
+                onClick={() => setStep(step === 'confirm' ? 'file' : 'version')}
+                disabled={downloading}
+              >
+                {t('release.back')}
+              </button>
+            )}
+            {step === 'version' && (
+              <button
+                type="button"
+                className="download-btn release-action-primary"
+                onClick={() => setStep('file')}
+                disabled={!selectedRelease}
+              >
+                {t('release.next')}
+              </button>
+            )}
+            {step === 'file' && (
+              <button
+                type="button"
+                className="download-btn release-action-primary"
+                onClick={() => setStep('confirm')}
+                disabled={!selectedAssetAutoInstallable}
+              >
+                {t('release.next')}
+              </button>
+            )}
+            {step === 'confirm' && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={!selectedAssetAutoInstallable || downloading || installPathValidation !== 'valid'}
+                aria-describedby={downloadError ? 'release-install-error' : undefined}
+                aria-busy={installPathValidation === 'checking'}
+                className="download-btn release-action-primary"
+              >
+                {downloading
+                  ? t('release.starting')
+                  : selectedAssetKind === 'installer'
+                    ? t('release.runInstaller')
+                    : t('release.confirmInstall')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

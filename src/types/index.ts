@@ -132,6 +132,12 @@ export interface LibraryFolder {
   pinned?: boolean
 }
 
+export interface ArtCrop {
+  focusX: number
+  focusY: number
+  zoom: number
+}
+
 export interface ProjectArt {
   owner: string
   repo: string
@@ -139,6 +145,8 @@ export interface ProjectArt {
   backgroundPath?: string | null
   coverDataUrl?: string | null
   backgroundDataUrl?: string | null
+  coverCrop: ArtCrop
+  backgroundCrop: ArtCrop
   updatedAt: string
 }
 

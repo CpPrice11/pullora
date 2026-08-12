@@ -24,6 +24,7 @@ interface GeneralSettingsSectionProps {
   hasLauncherBackground: Record<ResolvedTheme, boolean>
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
+  onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
@@ -43,6 +44,7 @@ function GeneralSettingsSection({
   hasLauncherBackground,
   onThemeChange,
   onLanguageChange,
+  onEditLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
   onPreviewSurfaceSetting,
@@ -105,13 +107,23 @@ function GeneralSettingsSection({
               <div className="launcher-background-theme" key={theme}>
                 <strong>{t(`settings.${theme}`)}</strong>
                 <div className="settings-inline-actions">
+                  {hasLauncherBackground[theme] && (
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      aria-label={t('art.editThemeBackground', { theme: t(`settings.${theme}`) })}
+                      onClick={() => onEditLauncherBackground(theme)}
+                    >
+                      {t('settings.editAction')}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="secondary-btn"
-                    aria-label={t('art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
+                    aria-label={t(hasLauncherBackground[theme] ? 'art.replaceThemeBackground' : 'art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
                     onClick={() => onChangeLauncherBackground(theme)}
                   >
-                    {t('settings.editAction')}
+                    {t(hasLauncherBackground[theme] ? 'settings.replaceAction' : 'settings.editAction')}
                   </button>
                   {hasLauncherBackground[theme] && (
                     <button
@@ -412,6 +424,7 @@ interface SettingsSectionsProps {
   formatQueuePause: () => string
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
+  onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void

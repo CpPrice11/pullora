@@ -16,6 +16,8 @@
 - контекстне меню картки, overflow-меню релізу About, bulk overflow і destructive overlay у відкритому стані;
 - перевірка меж viewport, початкового фокуса, `Shift+F10`, `Escape` і повернення фокуса;
 - перевірка однакової геометрії sidebar і hero card між темами;
+- 96 crop-preview baseline для обкладинки, hero normal/compact і загального фону: крайні фокуси `0/0` та `1/1`, масштаб `1×`/`4×`, обидві теми, `1000×700`, `1280×720`, Full HD і Windows scale 100%/125%; їх генерує `scripts/check-art-crop-dialog.mjs --capture-baseline`;
+- crop regression-контракт не допускає зміни геометрії Library до, під час і після редагування, видимого горизонтального overflow або виходу hero-зображення за обрізану картку; окрема reduced-motion матриця перевіряє normal/compact у двох темах на `1000×700` і Full HD 125%;
 - перевірка синьої primary-кнопки з білим текстом у світлій темі.
 - перевірка computed styles світлої теми для primary, disabled, muted-тексту та напівпрозорих поверхонь.
 - нативні select-контроли Library і Settings у стані виклику/focus для обох тем і трьох розмірів.
