@@ -198,11 +198,11 @@ async function openCropDialog(page) {
   await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
   const dialog = page.locator('.art-crop-modal')
   const preview = dialog.locator('.art-crop-preview')
-  const image = preview.locator('img')
+  const image = dialog.locator('.art-crop-canvas > img')
   await dialog.waitFor()
   await image.waitFor()
   await page.waitForFunction((element) => element.complete, await image.elementHandle())
-  await page.waitForFunction((element) => !element.disabled, await dialog.locator('input[type="range"]').elementHandle())
+  await preview.waitFor()
   return { card, dialog, preview }
 }
 
@@ -216,16 +216,16 @@ async function openArtCropDialog(page, menuItemName) {
   await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
   const dialog = page.locator('.art-crop-modal')
   const preview = dialog.locator('.art-crop-preview')
-  const image = preview.locator('img')
+  const image = dialog.locator('.art-crop-canvas > img')
   await dialog.waitFor()
   await image.waitFor()
   await page.waitForFunction((element) => element.complete, await image.elementHandle())
-  await page.waitForFunction((element) => !element.disabled, await dialog.locator('input[type="range"]').elementHandle())
+  await preview.waitFor()
   return { dialog, preview }
 }
 
 async function cropStyle(preview) {
-  return preview.locator('img').evaluate((element) => ({
+  return preview.evaluate((element) => ({
     x: element.style.getPropertyValue('--art-focus-x'),
     y: element.style.getPropertyValue('--art-focus-y'),
     zoom: element.style.getPropertyValue('--art-zoom'),
@@ -374,8 +374,8 @@ async function checkPreviewParity(browser) {
     let dialog = page.locator('.art-crop-modal')
     let preview = dialog.locator('.art-crop-preview')
     assert.equal(await preview.getAttribute('data-preview-mode'), scenario.libraryDensity)
-    assert.deepEqual(await cropContract(preview.locator('img')), expectedHeroCrop)
-    assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(heroBackground, true))
+    await dialog.locator('.art-crop-canvas > img').waitFor()
+    assert.deepEqual(await cropContract(preview), expectedHeroCrop)
     const [previewBox, heroBox] = await Promise.all([preview.boundingBox(), page.locator('.library-hero').boundingBox()])
     assert(previewBox && heroBox)
     assert(Math.abs(previewBox.width / previewBox.height - heroBox.width / heroBox.height) < 0.01)
@@ -389,12 +389,9 @@ async function checkPreviewParity(browser) {
     await themeRow.getByRole('button', { name: `Редагувати кадрування фону — ${themeName}` }).click()
     dialog = page.locator('.art-crop-modal')
     preview = dialog.locator('.art-crop-preview')
-    await preview.locator('img').waitFor()
-    assert.deepEqual(await cropContract(preview.locator('img')), expectedGlobalCrop)
-    assert.deepEqual(await surfaceContract(preview), expectedSurface)
-    assert.deepEqual(await surfaceContract(preview.locator('.art-crop-workspace-sidebar')), expectedSurface)
-    assert.deepEqual(await materialContract(preview.locator('.art-crop-workspace-sidebar')), expectedMaterial)
-    assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(globalBackground))
+    await dialog.locator('.art-crop-canvas > img').waitFor()
+    assert.deepEqual(await cropContract(preview), expectedGlobalCrop)
+    assert.deepEqual(await surfaceContract(dialog.locator('.art-crop-stage')), expectedSurface)
     await dialog.getByRole('button', { name: 'Скасувати' }).click()
     await dialog.waitFor({ state: 'hidden' })
 
@@ -460,24 +457,27 @@ async function checkLayoutIntegrity(browser) {
     await preview.press('Home')
     await preview.press('Shift+ArrowRight')
     await preview.press('Shift+ArrowDown')
-    await dialog.locator('input[type="range"]').fill('2.5')
+    const resetBox = await preview.boundingBox()
+    assert(resetBox)
+    await preview.press('PageUp')
+    await preview.press('PageUp')
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     const previewAfter = await preview.boundingBox()
     assert(previewAfter)
-    assert.equal(previewAfter.width, previewBox.width)
-    assert.equal(previewAfter.height, previewBox.height)
-    const stageBox = await dialog.locator('.art-crop-stage').boundingBox()
-    assert(stageBox)
-    assert(previewAfter.x >= stageBox.x - 2)
-    assert(previewAfter.y >= stageBox.y - 2)
-    assert(previewAfter.x + previewAfter.width <= stageBox.x + stageBox.width + 2)
-    assert(previewAfter.y + previewAfter.height <= stageBox.y + stageBox.height + 2)
+    assert(previewAfter.width < resetBox.width)
+    assert(Math.abs(previewAfter.width / previewAfter.height - resetBox.width / resetBox.height) < 0.01)
+    const canvasBox = await dialog.locator('.art-crop-canvas').boundingBox()
+    assert(canvasBox)
+    assert(previewAfter.x >= canvasBox.x - 2)
+    assert(previewAfter.y >= canvasBox.y - 2)
+    assert(previewAfter.x + previewAfter.width <= canvasBox.x + canvasBox.width + 2)
+    assert(previewAfter.y + previewAfter.height <= canvasBox.y + canvasBox.height + 2)
     assert.deepEqual(await dialog.boundingBox(), dialogBox)
     assert.deepEqual(await layoutContract(page), before)
     await assertNoHorizontalOverflow(page, ['.art-crop-modal', '.art-crop-body', '.art-crop-preview'])
-    await assertReducedMotion(page.locator('.modal-overlay, .art-crop-modal, .art-crop-preview, .art-crop-preview img'))
+    await assertReducedMotion(page.locator('.modal-overlay, .art-crop-modal, .art-crop-preview, .art-crop-canvas > img'))
 
-    const expectedCrop = await cropContract(preview.locator('img'))
+    const expectedCrop = await cropContract(preview)
     await dialog.getByRole('button', { name: 'Зберегти' }).click()
     await dialog.waitFor({ state: 'hidden' })
     await page.waitForFunction(
@@ -533,7 +533,7 @@ async function captureCropBaselines(browser) {
           const suffix = `${theme}-${width}x${height}-${deviceScaleFactor === 1 ? '100' : '125'}pct-${extreme}`
 
           let { dialog, preview } = await openArtCropDialog(page, 'Редагувати обкладинку')
-          assert.deepEqual(await cropContract(preview.locator('img')), {
+          assert.deepEqual(await cropContract(preview), {
             x: `${artCrop.focusX * 100}%`,
             y: `${artCrop.focusY * 100}%`,
             zoom: String(artCrop.zoom),
@@ -553,7 +553,7 @@ async function captureCropBaselines(browser) {
           await themeRow.getByRole('button', { name: `Редагувати кадрування фону — ${themeName}` }).click()
           dialog = page.locator('.art-crop-modal')
           preview = dialog.locator('.art-crop-preview')
-          await preview.locator('img').waitFor()
+          await dialog.locator('.art-crop-canvas > img').waitFor()
           await preview.screenshot({ path: resolve(BASELINE_DIR, `art-crop-workspace-${suffix}.png`), animations: 'disabled' })
           captured += 1
           await context.close()
@@ -577,64 +577,66 @@ async function checkCancelAndControls(browser) {
   await page.waitForFunction((element) => element === document.activeElement, await cancel.elementHandle())
   assert.deepEqual(await cropStyle(preview), { x: '20%', y: '30%', zoom: '1.5' })
 
-  const box = await preview.boundingBox()
-  assert(box)
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const initialBox = await preview.boundingBox()
+  const canvasBox = await dialog.locator('.art-crop-canvas').boundingBox()
+  assert(initialBox && canvasBox)
+  await page.mouse.move(initialBox.x + initialBox.width / 2, initialBox.y + initialBox.height / 2)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.6)
+  await page.mouse.move(initialBox.x + initialBox.width / 2 + 24, initialBox.y + initialBox.height / 2 + 18)
   await page.mouse.up()
   const dragged = await cropStyle(preview)
-  assert(Number.parseFloat(dragged.x) < 20)
-  assert(Number.parseFloat(dragged.y) < 30)
+  assert(Number.parseFloat(dragged.x) > 20)
+  assert(Number.parseFloat(dragged.y) > 30)
 
-  const slider = dialog.locator('input[type="range"]')
-  await slider.fill('2.25')
-  await slider.press('ArrowUp')
-  assert.equal((await cropStyle(preview)).zoom, '2.3')
-  await slider.fill('1')
-  assert.equal(await slider.inputValue(), '1')
-  await page.evaluate(() => new Promise(requestAnimationFrame))
-  assert.equal((await cropStyle(preview)).zoom, '1')
-  assert.equal(
-    await slider.evaluate((element) => element.style.getPropertyValue('--art-zoom-progress')),
-    '0%',
-  )
-  await slider.fill('2.3')
-  await preview.dispatchEvent('wheel', { deltaY: -200 })
-  assert(Number.parseFloat((await cropStyle(preview)).zoom) > 2.3)
   await preview.focus()
   await preview.press('Shift+ArrowRight')
   assert(Number.parseFloat((await cropStyle(preview)).x) > Number.parseFloat(dragged.x))
 
+  let box = await preview.boundingBox()
+  assert(box)
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width * 1.5, box.y + box.height / 2)
+  await page.mouse.move(canvasBox.x - canvasBox.width, box.y + box.height / 2)
   await page.mouse.up()
   assert.equal(Number.parseFloat((await cropStyle(preview)).x), 0)
 
+  box = await preview.boundingBox()
+  assert(box)
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
-  await page.mouse.move(box.x - box.width / 2, box.y + box.height / 2)
+  await page.mouse.move(canvasBox.x + canvasBox.width * 2, box.y + box.height / 2)
   await page.mouse.up()
   assert(Math.abs(Number.parseFloat((await cropStyle(preview)).x) - 100) < 0.1)
 
   await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
   assert.deepEqual(await cropStyle(preview), { x: '50%', y: '50%', zoom: '1' })
 
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  box = await preview.boundingBox()
+  assert(box)
+  const initialRatio = box.width / box.height
+  const handle = dialog.locator('.art-crop-handle--bottom-right')
+  const handleBox = await handle.boundingBox()
+  assert(handleBox)
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 1)
+  await page.mouse.move(handleBox.x - box.width * 0.2, handleBox.y - box.height * 0.2)
   await page.mouse.up()
-  assert(Number.parseFloat((await cropStyle(preview)).y) < 0.5)
+  const resizedBox = await preview.boundingBox()
+  const resizedCanvasBox = await dialog.locator('.art-crop-canvas').boundingBox()
+  assert(resizedBox && resizedCanvasBox)
+  assert(resizedBox.width < box.width)
+  assert(Math.abs(resizedBox.width / resizedBox.height - initialRatio) < 0.01)
+  assert(Math.abs(resizedBox.x - box.x) < 2)
+  assert(Math.abs(resizedBox.y - box.y) < 2)
+  assert(Number.parseFloat((await cropStyle(preview)).zoom) > 1)
+  assert(resizedBox.x >= resizedCanvasBox.x - 2)
+  assert(resizedBox.y >= resizedCanvasBox.y - 2)
+  assert(resizedBox.x + resizedBox.width <= resizedCanvasBox.x + resizedCanvasBox.width + 2)
+  assert(resizedBox.y + resizedBox.height <= resizedCanvasBox.y + resizedCanvasBox.height + 2)
 
-  await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
-  const currentBox = await preview.boundingBox()
-  assert(currentBox)
-  await page.mouse.move(currentBox.x + currentBox.width / 2, currentBox.y + currentBox.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(currentBox.x + currentBox.width / 2, currentBox.y + 1)
-  await page.mouse.up()
-  assert(Number.parseFloat((await cropStyle(preview)).y) > 99.5)
+  const beforeWheel = await cropStyle(preview)
+  await preview.dispatchEvent('wheel', { deltaY: -200 })
+  assert.deepEqual(await cropStyle(preview), beforeWheel)
 
   await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
   await cancel.click()
@@ -649,21 +651,20 @@ async function checkInteractionPerformance(browser) {
   const page = await context.newPage()
   await seedPage(page)
   const { dialog, preview } = await openCropDialog(page)
-  const slider = dialog.locator('input[type="range"]')
+  const image = dialog.locator('.art-crop-canvas > img')
 
-  await preview.evaluate((element) => {
-    const image = element.querySelector('img')
+  await image.evaluate((element) => {
     window.__PULLORA_TEST_ART_PERFORMANCE__ = {
-      image,
-      source: image.src,
+      image: element,
+      source: element.src,
       loads: 0,
       mutations: 0,
     }
-    image.addEventListener('load', () => { window.__PULLORA_TEST_ART_PERFORMANCE__.loads += 1 })
-    new MutationObserver((records) => {
-      window.__PULLORA_TEST_ART_PERFORMANCE__.mutations += records.length
-    }).observe(image, { attributes: true, attributeFilter: ['src', 'style'] })
+    element.addEventListener('load', () => { window.__PULLORA_TEST_ART_PERFORMANCE__.loads += 1 })
   })
+  await preview.evaluate((element) => new MutationObserver((records) => {
+    window.__PULLORA_TEST_ART_PERFORMANCE__.mutations += records.length
+  }).observe(element, { attributes: true, attributeFilter: ['style'] }))
 
   const box = await preview.boundingBox()
   assert(box)
@@ -724,30 +725,43 @@ async function checkInteractionPerformance(browser) {
   })
   await page.mouse.up()
   const dragMutations = await page.evaluate(() => window.__PULLORA_TEST_ART_PERFORMANCE__.mutations)
-  assert(dragMutations <= 6, `Burst drag caused ${dragMutations} image mutations`)
+  assert(dragMutations <= 6, `Burst drag caused ${dragMutations} frame mutations`)
 
-  await slider.evaluate(async (element) => {
+  const handle = dialog.locator('.art-crop-handle--bottom-right')
+  const handleBox = await handle.boundingBox()
+  assert(handleBox)
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2)
+  await page.mouse.down()
+  await handle.evaluate(async (element) => {
     window.__PULLORA_TEST_ART_PERFORMANCE__.mutations = 0
-    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
-    for (let step = 0; step < 100; step += 1) {
-      valueSetter.call(element, String(1 + step * 0.03))
-      element.dispatchEvent(new Event('input', { bubbles: true }))
+    const bounds = element.getBoundingClientRect()
+    for (let step = 1; step <= 100; step += 1) {
+      element.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true,
+        buttons: 1,
+        clientX: bounds.left - step / 2,
+        clientY: bounds.top - step / 8,
+        isPrimary: true,
+        pointerId: 1,
+        pointerType: 'mouse',
+      }))
     }
     await new Promise(requestAnimationFrame)
     await new Promise(requestAnimationFrame)
   })
+  await page.mouse.up()
   const performanceContract = await page.evaluate(() => ({
     previewCalls: window.__PULLORA_TEST_ART_PREVIEW_CALLS__,
-    sameImage: window.__PULLORA_TEST_ART_PERFORMANCE__.image === document.querySelector('.art-crop-preview img'),
-    sameSource: window.__PULLORA_TEST_ART_PERFORMANCE__.source === document.querySelector('.art-crop-preview img').src,
+    sameImage: window.__PULLORA_TEST_ART_PERFORMANCE__.image === document.querySelector('.art-crop-canvas > img'),
+    sameSource: window.__PULLORA_TEST_ART_PERFORMANCE__.source === document.querySelector('.art-crop-canvas > img').src,
     loads: window.__PULLORA_TEST_ART_PERFORMANCE__.loads,
-    zoomMutations: window.__PULLORA_TEST_ART_PERFORMANCE__.mutations,
+    resizeMutations: window.__PULLORA_TEST_ART_PERFORMANCE__.mutations,
   }))
   assert.equal(performanceContract.previewCalls, 1)
   assert.equal(performanceContract.sameImage, true)
   assert.equal(performanceContract.sameSource, true)
   assert.equal(performanceContract.loads, 0)
-  assert(performanceContract.zoomMutations <= 6, `Burst zoom caused ${performanceContract.zoomMutations} image mutations`)
+  assert(performanceContract.resizeMutations <= 6, `Burst resize caused ${performanceContract.resizeMutations} frame mutations`)
   await context.close()
 }
 
@@ -790,7 +804,7 @@ async function checkPreviewBlockingAndError(browser) {
   const dialog = page.locator('.art-crop-modal')
   await dialog.waitFor()
   assert(await dialog.getByRole('button', { name: 'Зберегти' }).isDisabled())
-  assert.equal(await dialog.locator('.art-crop-preview').getAttribute('tabindex'), '-1')
+  assert.equal(await dialog.locator('.art-crop-preview').count(), 0)
   await page.evaluate(() => window.__PULLORA_TEST_REJECT_ART_PREVIEW__(new Error('expected')))
   await dialog.waitFor({ state: 'hidden' })
   const toast = page.locator('body > .library-toast--error[role="alert"]')
