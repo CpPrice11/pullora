@@ -239,10 +239,7 @@ function App() {
         {settingsOpen && (
           <Suspense fallback={<LazyPageFallback />}>
             <SettingsPage
-              hasLauncherBackground={{
-                light: Boolean(launcherBackgrounds.light),
-                dark: Boolean(launcherBackgrounds.dark),
-              }}
+              launcherBackgrounds={launcherBackgrounds}
               onEditLauncherBackground={handleEditLauncherBackground}
               onChangeLauncherBackground={handleChangeLauncherBackground}
               onClearLauncherBackground={handleClearLauncherBackground}

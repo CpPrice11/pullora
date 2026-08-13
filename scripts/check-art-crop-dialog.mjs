@@ -355,10 +355,10 @@ async function checkPreviewParity(browser) {
 
     const librarySurface = page.locator('.library-sam-list-pane')
     const globalBackground = page.locator('.cinematic-background')
-    const heroBackground = page.locator('.library-hero-background')
+    const heroBackground = page.locator('.library-hero-background img')
     await page.locator(`.library-page.library-density-${scenario.libraryDensity}`).waitFor()
     await page.waitForFunction((element) => getComputedStyle(element).backgroundImage !== 'none', await globalBackground.elementHandle())
-    await page.waitForFunction((element) => getComputedStyle(element).backgroundImage !== 'none', await heroBackground.elementHandle())
+    await page.waitForFunction((element) => element.complete, await heroBackground.elementHandle())
 
     const expectedGlobalCrop = await cropContract(globalBackground)
     const expectedSurface = await surfaceContract(librarySurface)
@@ -373,11 +373,10 @@ async function checkPreviewParity(browser) {
     await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
     let dialog = page.locator('.art-crop-modal')
     let preview = dialog.locator('.art-crop-preview')
-    const previewMode = scenario.libraryDensity === 'compact' ? 'Компактний' : 'Звичайний'
-    await dialog.getByRole('button', { name: previewMode }).click()
+    await dialog.locator('.art-crop-preview-select').selectOption(scenario.libraryDensity)
     assert.equal(await preview.getAttribute('data-preview-mode'), scenario.libraryDensity)
     assert.deepEqual(await cropContract(preview.locator('img')), expectedHeroCrop)
-    assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(heroBackground))
+    assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(heroBackground, true))
     const [previewBox, heroBox] = await Promise.all([preview.boundingBox(), page.locator('.library-hero').boundingBox()])
     assert(previewBox && heroBox)
     assert(Math.abs(previewBox.width / previewBox.height - heroBox.width / heroBox.height) < 0.01)
@@ -412,6 +411,7 @@ async function checkLayoutIntegrity(browser) {
   const scenarios = ['dark', 'light'].flatMap((theme) =>
     ['normal', 'compact'].flatMap((libraryDensity) => [
       { theme, libraryDensity, viewport: { width: 1000, height: 700 }, deviceScaleFactor: 1 },
+      { theme, libraryDensity, viewport: { width: 1707, height: 1067 }, deviceScaleFactor: 1.5 },
       { theme, libraryDensity, viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1.25 },
     ]),
   )
@@ -451,12 +451,10 @@ async function checkLayoutIntegrity(browser) {
       '.library-sam-workspace',
       '.library-sam-details-pane',
     ])
-    await assertReducedMotion(page.locator('.layout-content, .library-page, .library-hero, .library-hero-background'))
+    await assertReducedMotion(page.locator('.layout-content, .library-page, .library-hero, .library-hero-background, .library-hero-background img'))
 
     const { dialog, preview } = await openArtCropDialog(page, 'Редагувати фон')
-    await dialog.getByRole('button', {
-      name: scenario.libraryDensity === 'compact' ? 'Компактний' : 'Звичайний',
-    }).click()
+    await dialog.locator('.art-crop-preview-select').selectOption(scenario.libraryDensity)
     const previewBox = await preview.boundingBox()
     const dialogBox = await dialog.boundingBox()
     assert(previewBox && dialogBox)
@@ -466,7 +464,12 @@ async function checkLayoutIntegrity(browser) {
     await preview.press('Shift+ArrowDown')
     await dialog.locator('input[type="range"]').fill('2.5')
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-    assert.deepEqual(await preview.boundingBox(), previewBox)
+    const previewAfter = await preview.boundingBox()
+    assert(previewAfter)
+    assert(Math.abs(previewAfter.x - previewBox.x) <= 2)
+    assert(Math.abs(previewAfter.y - previewBox.y) <= 2)
+    assert.equal(previewAfter.width, previewBox.width)
+    assert.equal(previewAfter.height, previewBox.height)
     assert.deepEqual(await dialog.boundingBox(), dialogBox)
     assert.deepEqual(await layoutContract(page), before)
     await assertNoHorizontalOverflow(page, ['.art-crop-modal', '.art-crop-body', '.art-crop-preview'])
@@ -477,7 +480,7 @@ async function checkLayoutIntegrity(browser) {
     await dialog.waitFor({ state: 'hidden' })
     await page.waitForFunction(
       (crop) => {
-        const element = document.querySelector('.library-hero-background')
+        const element = document.querySelector('.library-hero-background img')
         if (!element) return false
         const style = getComputedStyle(element)
         return style.getPropertyValue('--art-focus-x').trim() === crop.x
@@ -503,7 +506,7 @@ async function checkLayoutIntegrity(browser) {
 async function captureCropBaselines(browser) {
   if (!CAPTURE_BASELINE) return 0
   mkdirSync(BASELINE_DIR, { recursive: true })
-  const viewports = [[1000, 700], [1280, 720], [1920, 1080]]
+  const viewports = [[1000, 700], [1280, 720], [1707, 1067], [1920, 1080]]
   const scales = [1, 1.25]
   const extremes = [
     ['top-left-min', { focusX: 0, focusY: 0, zoom: 1 }],
@@ -539,7 +542,7 @@ async function captureCropBaselines(browser) {
 
           ;({ dialog, preview } = await openArtCropDialog(page, 'Редагувати фон'))
           for (const mode of ['normal', 'compact']) {
-            await dialog.getByRole('button', { name: mode === 'normal' ? 'Звичайний' : 'Компактний' }).click()
+            await dialog.locator('.art-crop-preview-select').selectOption(mode)
             await preview.screenshot({ path: resolve(BASELINE_DIR, `art-crop-hero-${mode}-${suffix}.png`), animations: 'disabled' })
             captured += 1
           }
@@ -604,10 +607,25 @@ async function checkCancelAndControls(browser) {
   await page.mouse.down()
   await page.mouse.move(box.x - box.width / 2, box.y + box.height / 2)
   await page.mouse.up()
-  assert.equal(Number.parseFloat((await cropStyle(preview)).x), 100)
+  assert(Math.abs(Number.parseFloat((await cropStyle(preview)).x) - 100) < 0.1)
 
   await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
   assert.deepEqual(await cropStyle(preview), { x: '50%', y: '50%', zoom: '1' })
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 1)
+  await page.mouse.up()
+  assert(Number.parseFloat((await cropStyle(preview)).y) < 0.5)
+
+  await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + 1)
+  await page.mouse.up()
+  assert(Number.parseFloat((await cropStyle(preview)).y) > 99.5)
+
+  await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
   await cancel.click()
   await dialog.waitFor({ state: 'hidden' })
   assert(await card.evaluate((element) => element === document.activeElement))

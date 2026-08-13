@@ -19,6 +19,7 @@ VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 def check_source_contract() -> None:
     about = (ROOT / "src" / "pages" / "AboutPage.tsx").read_text(encoding="utf-8")
     focus_hook = (ROOT / "src" / "hooks" / "useModalFocus.ts").read_text(encoding="utf-8")
+    styles = (ROOT / "src" / "pages" / "PageStyles.css").read_text(encoding="utf-8")
 
     for fragment in (
         "const notesReturnFocusRef = useRef<HTMLButtonElement | null>(null)",
@@ -28,6 +29,8 @@ def check_source_contract() -> None:
         "document.querySelector('.layout') ?? document.body",
     ):
         assert fragment in about, fragment
+    assert ".project-actions-menu.about-release-menu-portal" in styles
+    assert "position: fixed" in styles
     for fragment in (
         "returnFocusRef?: RefObject<HTMLElement>",
         "const focusTarget = returnFocusRef?.current ?? previousFocus",
@@ -68,6 +71,7 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     assert items.count() == 2
     assert_focused(items.nth(0))
     assert menu_portal.evaluate("el => el.parentElement === document.body")
+    assert menu_portal.evaluate("el => getComputedStyle(el).position === 'fixed'")
 
     page.keyboard.press("End")
     assert_focused(items.nth(1))

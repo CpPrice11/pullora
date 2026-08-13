@@ -93,11 +93,18 @@ def inspect_layers(page: Page) -> dict:
     root_before = hero.evaluate("el => getComputedStyle(el).backgroundImage")
     gradient_before = gradient.evaluate("el => getComputedStyle(el).backgroundImage")
     cover_before = hero.locator(".library-hero-cover img").get_attribute("src")
-    background.evaluate(
-        "el => el.style.setProperty('--library-hero-background', 'linear-gradient(rgb(12, 34, 56), rgb(12, 34, 56))')"
-    )
-    local_background = background.evaluate("el => getComputedStyle(el).backgroundImage")
-    assert "rgb(12, 34, 56)" in local_background, local_background
+    background_image = background.locator("img")
+    if background_image.count() == 0:
+        background.evaluate(
+            """el => {
+              const img = document.createElement('img');
+              img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"%3E%3Crect width="1600" height="900" fill="%23123456"/%3E%3C/svg%3E';
+              el.appendChild(img);
+            }"""
+        )
+    background_before = background_image.get_attribute("src")
+    background_image.evaluate("el => el.style.setProperty('--art-focus-x', '12%')")
+    assert background_image.evaluate("el => getComputedStyle(el).objectPosition") == "12% 50%"
     assert page.locator(".library-page").evaluate(
         "el => getComputedStyle(el).getPropertyValue('--library-hero-background')"
     ) == ""
@@ -107,7 +114,8 @@ def inspect_layers(page: Page) -> dict:
     assert page.locator(".cinematic-background").evaluate(
         "el => ({ backgroundImage: getComputedStyle(el).backgroundImage, opacity: getComputedStyle(el).opacity })"
     ) == global_before
-    background.evaluate("el => el.style.removeProperty('--library-hero-background')")
+    assert background_image.get_attribute("src") == background_before
+    background_image.evaluate("el => el.style.removeProperty('--art-focus-x')")
 
     operations_box = rounded_box(page.locator(".library-ops-panel"))
     overview_box = rounded_box(page.locator(".library-inline-overview-grid"))

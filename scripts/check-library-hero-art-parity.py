@@ -14,7 +14,12 @@ ROOT = Path(__file__).resolve().parent.parent
 BASELINE = {} if "--static" in sys.argv else runpy.run_path(
     str(ROOT / "scripts" / "capture-visual-baseline.py")
 )
-VIEWPORTS = ((1000, 700, 1), (1280, 720, 1.25), (1920, 1080, 1.5))
+VIEWPORTS = (
+    (1000, 700, 1),
+    (1280, 720, 1.25),
+    (1707, 1067, 1.5),  # 2560 × 1600 at 150% Windows scaling
+    (1920, 1080, 1.5),
+)
 DENSITIES = (
     ("normal", "compact", "0.86"),
     ("normal", "comfortable", "1"),
@@ -63,7 +68,7 @@ def check_source_contract() -> None:
     hero_rule = css_rule(styles[:final_background_start], hero_selector)
     background_rule = css_rule(
         styles,
-        background_selector,
+        ".cinematic-shell .library-page .library-hero-background img {",
     )
     cover_rule = css_rule(
         styles,
@@ -71,11 +76,11 @@ def check_source_contract() -> None:
     )
 
     for fragment in (
-        "background-image: var(--library-hero-background, none)",
-        "background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%)",
-        "background-repeat: no-repeat",
-        "background-size: cover",
+        "height: 100%",
+        "object-fit: cover",
+        "object-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%)",
         "transform: scale(var(--art-zoom, 1))",
+        "width: 100%",
     ):
         assert fragment in background_rule, {"missing": fragment, "rule": background_rule}
     for fragment in ("display: block", "object-fit: cover", "object-position: center center"):
@@ -94,7 +99,8 @@ def check_source_contract() -> None:
     assert "scale(calc(var(--art-zoom" not in layout_styles
     assert "launcherBackground" not in library_page
     assert "fallbackToCover: false" in library_page
-    assert '<div className="library-hero-background" style={backgroundStyle}' in library_hero
+    assert '<div className="library-hero-background" aria-hidden="true">' in library_hero
+    assert '<img src={background} alt="" style={backgroundStyle}' in library_hero
     assert "<section\n      style={backgroundStyle}" not in library_hero
 
     assert ":root[data-theme='light'] .library-hero-background {" not in styles
@@ -107,12 +113,12 @@ def apply_project_art(page: Page) -> None:
         """(hero, art) => {
           hero.classList.remove('library-hero--fallback');
           hero.classList.add('library-hero--art');
-          hero.querySelector('.library-hero-background')
-            .style.setProperty('--library-hero-background', `url("${art.background}")`);
           const background = hero.querySelector('.library-hero-background');
-          background.style.setProperty('--art-focus-x', art.focusX);
-          background.style.setProperty('--art-focus-y', art.focusY);
-          background.style.setProperty('--art-zoom', '1');
+          const backgroundImage = background.querySelector('img') || background.appendChild(document.createElement('img'));
+          backgroundImage.src = art.background;
+          backgroundImage.style.setProperty('--art-focus-x', art.focusX);
+          backgroundImage.style.setProperty('--art-focus-y', art.focusY);
+          backgroundImage.style.setProperty('--art-zoom', '1');
           const cover = hero.querySelector('.library-hero-cover img');
           cover.style.setProperty('--art-focus-x', '50%');
           cover.style.setProperty('--art-focus-y', '50%');
@@ -173,17 +179,17 @@ def inspect_hero(
 ) -> dict:
     hero = page.locator(".library-hero")
     background = hero.locator(":scope > .library-hero-background")
+    background_image = background.locator("img")
     cover = hero.locator(".library-hero-cover")
     image = cover.locator("img")
     styles = page.evaluate(
         """() => {
-          const background = getComputedStyle(document.querySelector('.library-hero-background'));
+          const background = getComputedStyle(document.querySelector('.library-hero-background img'));
           const image = getComputedStyle(document.querySelector('.library-hero-cover img'));
           return {
-            backgroundImage: background.backgroundImage,
-            backgroundPosition: background.backgroundPosition,
-            backgroundRepeat: background.backgroundRepeat,
-            backgroundSize: background.backgroundSize,
+            backgroundSrc: document.querySelector('.library-hero-background img').src,
+            backgroundFit: background.objectFit,
+            backgroundPosition: background.objectPosition,
             imageDisplay: image.display,
             imageFit: image.objectFit,
             imagePosition: image.objectPosition,
@@ -191,11 +197,10 @@ def inspect_hero(
         }"""
     )
 
-    assert styles["backgroundImage"].startswith('url("data:image/svg+xml;base64,'), styles
+    assert styles["backgroundSrc"].startswith("data:image/svg+xml;base64,"), styles
     expected_focus = f"{FOCUS[0]} {FOCUS[1]}"
     assert styles["backgroundPosition"] == expected_focus, styles
-    assert styles["backgroundRepeat"] == "no-repeat", styles
-    assert styles["backgroundSize"] == "cover", styles
+    assert styles["backgroundFit"] == "cover", styles
     assert styles["imageDisplay"] == "block", styles
     assert styles["imageFit"] == "cover", styles
     assert styles["imagePosition"] == "50% 50%", styles

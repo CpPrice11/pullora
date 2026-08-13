@@ -2289,7 +2289,6 @@
 .about-release-menu-portal {
   box-sizing: border-box;
   max-width: calc(100vw - 16px);
-  position: fixed;
   width: 220px;
   z-index: 90;
 }
@@ -2567,8 +2566,29 @@
   border: 1px solid var(--color-border-subtle);
   display: grid;
   gap: calc(12px * var(--density-scale));
-  grid-template-columns: minmax(120px, 1fr) auto;
+  grid-template-columns: 72px minmax(64px, 1fr) auto;
   padding: calc(10px * var(--density-scale)) 12px;
+}
+
+.launcher-background-preview {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent),
+    var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: 7px;
+  height: 44px;
+  overflow: hidden;
+  position: relative;
+  width: 72px;
+}
+
+.launcher-background-preview-image {
+  background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+  background-size: cover;
+  inset: 0;
+  position: absolute;
+  transform: scale(var(--art-zoom, 1));
+  transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
 }
 
 .launcher-background-theme strong {
@@ -2593,7 +2613,7 @@
   border-radius: var(--surface-radius-panel);
   display: grid;
   gap: calc(16px * var(--density-scale));
-  grid-template-columns: minmax(160px, 0.45fr) minmax(0, 1.55fr);
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   padding: calc(10px * var(--density-scale));
 }
 
@@ -3077,6 +3097,10 @@
   position: relative;
 }
 
+.project-actions-menu.about-release-menu-portal {
+  position: fixed;
+}
+
 .project-actions-trigger {
   align-items: center;
   background: var(--color-control);
@@ -3209,17 +3233,6 @@
   bottom: auto;
   top: calc(100% + 8px);
   z-index: 90;
-}
-
-.about-release-link .about-release-portable-badge {
-  border: 1px solid color-mix(in srgb, var(--about-status-current) 55%, transparent);
-  border-radius: 999px;
-  color: var(--about-status-current);
-  font-size: 11px;
-  font-weight: 840;
-  line-height: 1;
-  padding: 4px 8px;
-  text-transform: uppercase;
 }
 
 .cinematic-shell .about-release-link {
@@ -4774,14 +4787,19 @@
 
 .cinematic-shell .library-page .library-hero-background {
   background-color: transparent;
-  background-image: var(--library-hero-background, none);
-  background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
-  background-repeat: no-repeat;
-  background-size: cover;
   border-radius: inherit;
   opacity: 1;
+  overflow: hidden;
+}
+
+.cinematic-shell .library-page .library-hero-background img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
   transform: scale(var(--art-zoom, 1));
   transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+  width: 100%;
 }
 
 .cinematic-shell .library-page .library-hero-gradient {
@@ -5278,15 +5296,18 @@
 
 /* User-controlled transparency and blur for the primary interface surfaces. */
 .underlay-controls {
-  border: 1px solid var(--color-border-subtle);
+  border: 0;
   margin: 0;
-  padding: 12px;
+  min-width: 0;
+  padding: 0;
 }
 
-.underlay-controls legend {
+.underlay-controls-title {
   color: var(--color-text);
+  display: block;
+  font-size: 12px;
   font-weight: 750;
-  padding-inline: 4px;
+  margin-bottom: 8px;
 }
 
 .underlay-control {
@@ -5320,4 +5341,337 @@
     grid-column: 1 / -1;
   }
 
+}
+
+/* Settings polish: fewer nested frames and predictable secondary actions. */
+.settings-page .settings-content {
+  position: relative;
+}
+
+.settings-save-indicator {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+  height: 20px;
+  justify-content: flex-end;
+  margin: -4px 2px 6px;
+  transition: opacity 160ms ease;
+}
+
+.settings-save-indicator.is-idle {
+  opacity: 0;
+}
+
+.settings-save-indicator > span {
+  background: var(--color-primary);
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+
+.settings-save-indicator.is-saving > span {
+  animation: settings-save-pulse 900ms ease-in-out infinite alternate;
+}
+
+.settings-save-indicator.is-saved {
+  color: var(--color-success);
+}
+
+.settings-save-indicator.is-saved > span {
+  background: var(--color-success);
+}
+
+@keyframes settings-save-pulse {
+  to { opacity: 0.35; }
+}
+
+.settings-nav-reset-divider {
+  border-top: 1px solid var(--surface-border);
+  display: block;
+  margin: auto 4px 8px;
+}
+
+.settings-page .settings-nav .settings-nav-reset {
+  margin-top: 0;
+}
+
+.settings-content--general .settings-section {
+  min-height: calc(100% - 22px);
+}
+
+.settings-content--general .settings-grid {
+  align-content: start;
+  flex: 1 1 auto;
+  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+}
+
+.settings-source-summary {
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  border: 0;
+  gap: 18px;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  padding: 10px 12px;
+}
+
+.settings-source-summary-copy {
+  align-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 880px;
+}
+
+.settings-source-summary p {
+  color: color-mix(in srgb, var(--color-text) 76%, var(--color-text-secondary));
+  line-height: 1.45;
+}
+
+.launcher-background-themes {
+  gap: 6px;
+}
+
+.launcher-background-theme {
+  background: color-mix(in srgb, var(--surface-3) 54%, transparent);
+  border: 0;
+  border-radius: var(--border-radius);
+  grid-template-columns: 72px minmax(64px, 1fr) auto;
+  padding: 8px 10px;
+}
+
+.settings-inline-actions {
+  flex-wrap: nowrap;
+}
+
+.launcher-background-theme .settings-inline-actions {
+  justify-content: flex-start;
+  min-width: 142px;
+}
+
+.settings-background-menu {
+  display: inline-flex;
+}
+
+.settings-page .settings-icon-btn {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 36px;
+  padding: 0;
+  width: 36px;
+}
+
+.settings-icon-btn .ui-icon {
+  height: 17px;
+  width: 17px;
+}
+
+.settings-background-menu-portal {
+  position: fixed;
+  z-index: 950;
+}
+
+.settings-background-menu-portal .project-actions-popover {
+  display: grid;
+  min-width: 190px;
+  position: static;
+}
+
+.settings-page .path-input-row {
+  background: transparent;
+  border: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  padding: 0;
+}
+
+.settings-page .path-input-row input {
+  min-width: 0;
+}
+
+.settings-page .settings-path-primary {
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--color-control));
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--surface-border));
+}
+
+.settings-page .settings-path-utility {
+  padding-inline: 12px;
+}
+
+.settings-theme-preview {
+  align-items: center;
+  align-self: end;
+  background: color-mix(in srgb, var(--surface-2) 34%, transparent);
+  border-radius: var(--surface-radius-panel);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(260px, 1.8fr) minmax(180px, 1fr);
+  min-height: clamp(120px, 17vh, 170px);
+  overflow: hidden;
+  padding: 12px;
+}
+
+.settings-theme-preview-canvas {
+  background: var(--surface-canvas);
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28% minmax(0, 1fr);
+  height: 100%;
+  min-height: 96px;
+  overflow: hidden;
+  padding: 10px;
+  position: relative;
+}
+
+.settings-theme-preview-image {
+  background-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+  background-size: cover;
+  inset: 0;
+  position: absolute;
+  transform: scale(var(--art-zoom, 1));
+  transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+}
+
+.settings-theme-preview-canvas::after {
+  background: var(--launcher-background-scrim);
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+.settings-theme-preview-nav,
+.settings-theme-preview-main {
+  backdrop-filter: blur(var(--surface-blur));
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.settings-theme-preview-nav {
+  align-content: start;
+  background: var(--surface-2);
+}
+
+.settings-theme-preview-main {
+  background: var(--surface-1);
+  grid-template-rows: 1fr auto;
+}
+
+.settings-theme-preview-nav i,
+.settings-theme-preview-main i {
+  background: color-mix(in srgb, var(--color-text-secondary) 24%, transparent);
+  border-radius: 999px;
+  display: block;
+  height: 7px;
+}
+
+.settings-theme-preview-nav i:first-child {
+  background: color-mix(in srgb, var(--color-primary) 58%, transparent);
+}
+
+.settings-theme-preview-main > span {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.settings-theme-preview-main .settings-theme-preview-hero {
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--surface-3));
+  border-radius: 7px;
+  height: auto;
+}
+
+.settings-theme-preview-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.settings-theme-preview-copy strong {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.settings-theme-preview-copy span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1200px) {
+  .settings-content--general .settings-grid {
+    grid-template-rows: none;
+  }
+
+  .settings-source-summary-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-theme-preview {
+    grid-template-columns: minmax(220px, 1fr) auto;
+    min-height: 104px;
+  }
+}
+
+@media (max-height: 760px) {
+  .settings-theme-preview {
+    min-height: 86px;
+    padding: 8px;
+  }
+
+  .settings-theme-preview-canvas {
+    min-height: 70px;
+  }
+
+  .settings-theme-preview-copy span {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-save-indicator {
+    margin-top: 0;
+  }
+
+  .settings-nav-reset-divider {
+    border-left: 1px solid var(--surface-border);
+    border-top: 0;
+    margin: 4px 4px;
+  }
+
+  .settings-source-summary,
+  .settings-source-summary-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-page .path-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .launcher-background-theme {
+    grid-template-columns: 58px minmax(70px, 1fr) auto;
+  }
+
+  .launcher-background-preview {
+    width: 58px;
+  }
+
+  .launcher-background-theme .settings-inline-actions {
+    min-width: 0;
+  }
+
+  .settings-theme-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-save-indicator.is-saving > span {
+    animation: none;
+  }
 }

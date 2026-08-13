@@ -22,7 +22,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.18.1'
+const FALLBACK_CURRENT_VERSION = 'v5.18.2'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
@@ -456,11 +456,6 @@ function AboutPage() {
                     <div className="about-release-main">
                       <div className="about-release-title">
                         <span>{release.tag_name}</span>
-                        {portableAsset && (
-                          <span className="about-release-portable-badge">
-                            {t('about.portableShort')}
-                          </span>
-                        )}
                         <span className={`about-release-status ${statusClass}`}>
                           {getReleaseStatus(release.tag_name, Boolean(portableAsset), Boolean(checksumAsset))}
                         </span>

@@ -305,7 +305,7 @@ def field_group_state(page, panel_id):
               const box = group.getBoundingClientRect();
               return box.left >= panelBounds.left - 1 && box.right <= panelBounds.right + 1;
             }),
-            hasHeading: Boolean(panel.querySelector('h3')),
+            hasAccessibleName: Boolean(panel.getAttribute('aria-label')),
           };
         }
         """
@@ -970,8 +970,8 @@ def check_surface_and_density_contract(page, theme):
         arg=update_count,
     )
     transparency_state = root_appearance_state(page)
-    assert transparency.input_value() == "80"
-    assert transparency_state["surfaceOpacity"] == "20%", transparency_state
+    assert transparency.input_value() == "100"
+    assert transparency_state["surfaceOpacity"] == "0%", transparency_state
 
     blur = page.locator("#surfaceBlur")
     for value in (0, 12, 32):
@@ -997,7 +997,7 @@ def check_surface_and_density_contract(page, theme):
     assert "32px" in surface_state(page)["workspace"]["backdropFilter"]
 
     stored = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
-    assert stored["appearance"]["surfaceTransparency"] == 80, stored
+    assert stored["appearance"]["surfaceTransparency"] == 100, stored
     dragged_transparency = drag_range_control(page, "#surfaceTransparency", 0.25)
     expected_opacity = f"{100 - dragged_transparency}%"
     page.wait_for_function(
@@ -1190,7 +1190,7 @@ def main() -> None:
                     assert grouping["groupsHaveControls"], grouping
                     assert grouping["helpTextsGrouped"], grouping
                     assert grouping["groupsInside"], grouping
-                    assert grouping["hasHeading"], grouping
+                    assert grouping["hasAccessibleName"], grouping
                     checked += 1
 
                 check_settings_accessibility_contract(page)
