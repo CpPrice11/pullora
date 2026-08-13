@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AppSettings, InstallPathValidation } from '../types'
+import type { AppSettings, InstallPathValidation, ProjectArt } from '../types'
 import {
   getSettings,
   setInstallationPath as saveInstallationPath,
@@ -28,7 +28,7 @@ import { formatBytes } from '../utils/format'
 import './PageStyles.css'
 
 interface SettingsPageProps {
-  hasLauncherBackground: Record<ResolvedTheme, boolean>
+  launcherBackgrounds: Record<ResolvedTheme, ProjectArt | null>
   onEditLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onChangeLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
   onClearLauncherBackground: (theme: ResolvedTheme) => Promise<void> | void
@@ -43,7 +43,7 @@ function emptyRateLimitStatus(): GitHubRateLimitStatus {
 }
 
 function SettingsPage({
-  hasLauncherBackground,
+  launcherBackgrounds,
   onEditLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
@@ -53,6 +53,7 @@ function SettingsPage({
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pathValidation, setPathValidation] = useState<'idle' | InstallPathValidation['status']>('idle')
   const [confirmation, setConfirmation] = useState<'reset' | 'cleanup' | null>(null)
@@ -106,6 +107,12 @@ function SettingsPage({
   }, [actionMessage])
 
   useEffect(() => {
+    if (!saved) return
+    const timer = window.setTimeout(() => setSaved(false), 2400)
+    return () => window.clearTimeout(timer)
+  }, [saved])
+
+  useEffect(() => {
     if (activeSection !== 'maintenance') return
     getLauncherStorageInfo()
       .then(setStorageInfo)
@@ -139,10 +146,12 @@ function SettingsPage({
 
     setSettings(normalizedSettings)
     setSaving(true)
+    setSaved(false)
     setError(null)
 
     try {
       await updateSettings(normalizedSettings)
+      setSaved(true)
       return normalizedSettings
     } catch (err) {
       if (previousSettings) {
@@ -164,10 +173,12 @@ function SettingsPage({
     setSettings(nextSettings)
     applyThemePreference(theme, true)
     setSaving(true)
+    setSaved(false)
     setError(null)
 
     try {
       await updateSettings(nextSettings)
+      setSaved(true)
     } catch (err) {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
@@ -180,11 +191,14 @@ function SettingsPage({
   const handleBrowse = async () => {
     const dir = await pickDirectory()
     if (dir && settings) {
+      setPathValidation('idle')
       setSaving(true)
+      setSaved(false)
       setError(null)
       try {
         const installationPath = await saveInstallationPath(dir)
         setSettings((current) => current ? { ...current, installationPath } : current)
+        setSaved(true)
       } catch (err) {
         setError(err instanceof Error ? err.message : t('settings.saveError'))
       } finally {
@@ -212,6 +226,7 @@ function SettingsPage({
       const pathResult = backgroundResults[0]
       const resetSucceeded = backgroundResults.every((result) => result.status === 'fulfilled')
       if (pathResult.status === 'fulfilled') {
+        setPathValidation('idle')
         setSettings({ ...savedSettings, installationPath: pathResult.value })
       }
       if (pathResult.status === 'rejected') {
@@ -417,10 +432,12 @@ function SettingsPage({
                 {section.label}
               </button>
             ))}
+            <span className="settings-nav-reset-divider" aria-hidden="true" />
             <button
               type="button"
               className="settings-nav-reset"
               disabled={saving}
+              title={t('settings.resetConfirmTitle')}
               onClick={() => setConfirmation('reset')}
             >
               {t('settings.resetAction')}
@@ -431,6 +448,15 @@ function SettingsPage({
             className={`settings-content settings-content--${activeSection}`}
             key={activeSection}
           >
+            <div
+              className={`settings-save-indicator ${saving ? 'is-saving' : saved ? 'is-saved' : 'is-idle'}`}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span aria-hidden="true" />
+              {saving ? t('settings.saving') : saved ? t('settings.saved') : ''}
+            </div>
             {error && (
               <StatePanel
                 kind="error"
@@ -442,7 +468,7 @@ function SettingsPage({
               activeSection={activeSection}
               settings={settings}
               language={language}
-              hasLauncherBackground={hasLauncherBackground}
+              launcherBackgrounds={launcherBackgrounds}
               pathValidation={pathValidation}
               storageInfo={storageInfo}
               githubRateLimit={githubRateLimit}

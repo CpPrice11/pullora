@@ -89,6 +89,8 @@ def check_source_contract() -> None:
     assert 'aria-label={t(\'about.launcherActions\')}' in source
     assert 'disabled={!storageInfo || storageInfo.cleanupBytes === 0}' in source
     assert "portableAsset.name" not in source
+    assert "about-release-portable-badge" not in source
+    assert "about.portableShort" not in source
     for status in ("current", "newer", "older", "missing"):
         assert f"about-release-link--${{statusClass}}" in source
         assert f"about-release-status ${{statusClass}}" in source

@@ -720,15 +720,21 @@
 }
 
 .cinematic-shell .settings-page .settings-nav .settings-nav-reset {
-  border-color: color-mix(in srgb, var(--color-error) 35%, var(--surface-border));
-  color: var(--color-error);
-  margin-top: auto;
+  border-color: var(--surface-border);
+  color: var(--color-text-secondary);
+  margin-top: 0;
+}
+
+.cinematic-shell .settings-page .settings-nav .settings-nav-reset-divider {
+  border-top: 1px solid var(--surface-border);
+  display: block;
+  margin: auto 4px 8px;
 }
 
 .cinematic-shell .settings-page .settings-nav .settings-nav-reset:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-error) 10%, var(--surface-3));
-  border-color: color-mix(in srgb, var(--color-error) 55%, var(--surface-border));
-  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--surface-border));
+  color: var(--color-text);
 }
 
 .cinematic-shell .settings-page .settings-content {
@@ -955,11 +961,45 @@
 
 .cinematic-shell .settings-content--general .settings-grid {
   align-items: start;
-  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+  flex: 1 1 auto;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+}
+
+.cinematic-shell .settings-content--general .settings-section {
+  min-height: calc(100% - 22px);
 }
 
 .cinematic-shell .settings-content--general .launcher-background-control {
-  padding-top: calc(18px * var(--density-scale));
+  padding-top: 0;
+}
+
+.cinematic-shell .settings-content--general .launcher-background-theme .secondary-btn {
+  min-height: calc(34px * var(--density-scale));
+  padding-inline: calc(11px * var(--density-scale));
+}
+
+.cinematic-shell .settings-content--general .settings-background-action--edit {
+  background: color-mix(in srgb, var(--color-primary) 13%, var(--surface-3));
+  border-color: color-mix(in srgb, var(--color-primary) 34%, var(--surface-border));
+}
+
+.cinematic-shell .settings-content--general .settings-source-summary,
+.cinematic-shell .settings-content--general .launcher-background-theme,
+.cinematic-shell .settings-content--general .path-input-row {
+  background: transparent;
+  border: 0;
+}
+
+.cinematic-shell .settings-content--general .path-input-row {
+  padding: 0;
+}
+
+@media (max-width: 1200px) {
+  .cinematic-shell .settings-content--general .settings-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
 }
 
 .cinematic-shell .settings-content--appearance .settings-section-heading-row {
@@ -1418,6 +1458,12 @@
     margin-top: 0;
   }
 
+  .cinematic-shell .settings-page .settings-nav .settings-nav-reset-divider {
+    border-left: 1px solid var(--surface-border);
+    border-top: 0;
+    margin: 4px;
+  }
+
   .cinematic-shell .settings-page {
     min-height: 0;
     overflow: visible;
@@ -1480,9 +1526,7 @@
 :root[data-theme] .cinematic-shell .library-page .library-sam-pane-head,
 :root[data-theme] .cinematic-shell .library-page .library-sam-details-toolbar,
 :root[data-theme] .cinematic-shell .settings-page .settings-section,
-:root[data-theme] .cinematic-shell .settings-page .danger-zone,
-:root[data-theme] .cinematic-shell .settings-source-summary,
-:root[data-theme] .cinematic-shell .launcher-background-theme {
+:root[data-theme] .cinematic-shell .settings-page .danger-zone {
   backdrop-filter: none;
   background: var(--surface-3);
   border-color: var(--surface-border);

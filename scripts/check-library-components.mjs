@@ -267,7 +267,10 @@ try {
     onSave: async () => {},
   })
   assert.match(workspaceCropDialogMarkup, /aria-label="\u0424\u043e\u0440\u043c\u0430\u0442 \u043f\u0435\u0440\u0435\u0433\u043b\u044f\u0434\u0443"/)
-  assert.match(workspaceCropDialogMarkup, /data-preview-mode="1280x720"/)
+  assert.match(workspaceCropDialogMarkup, /class="art-crop-preview-select"/)
+  assert.match(workspaceCropDialogMarkup, /data-preview-mode="current"/)
+  assert.match(workspaceCropDialogMarkup, /\u041c\u0456\u0439 \u0435\u043a\u0440\u0430\u043d: 1920 \u00d7 1080/)
+  assert.match(workspaceCropDialogMarkup, /aspect-ratio:1920 \/ 1080/)
   assert.match(workspaceCropDialogMarkup, /1000 \u00d7 700/)
   assert.match(workspaceCropDialogMarkup, /1920 \u00d7 1080/)
 
@@ -372,7 +375,11 @@ try {
   const modalStylesSource = readFileSync('src/components/Modal/Modal.css', 'utf8')
   const releaseSelectorSource = readFileSync('src/components/Install/ReleaseSelector.tsx', 'utf8')
   const downloadServiceSource = readFileSync('src/services/download.ts', 'utf8')
-  assert.match(settingsSectionsSource, /value=\{settings\.installationPath\}[\s\S]*?readOnly/)
+  assert.match(settingsSectionsSource, /value=\{displayPath\(settings\.installationPath\)\}[\s\S]*?readOnly/)
+  assert.match(settingsSectionsSource, /const displayPath = \(path: string\) => path\.replace/)
+  assert.match(settingsSectionsSource, /className="launcher-background-preview"/)
+  assert.match(settingsSectionsSource, /id="surfaceTransparency"[\s\S]*?max="100"/)
+  assert.doesNotMatch(settingsSectionsSource, /<h3[^>]*>\{t\('settings\.(?:general|eventLog|maintenance)'\)\}<\/h3>/)
   const migratedSettings = normalizeSettings({ includePrereleases: true, assetStrategy: 'manual', githubOwner: 'OtherOwner' })
   assert.equal(migratedSettings.githubOwner, 'CpPrice11')
   assert.deepEqual(
@@ -409,15 +416,17 @@ try {
   assert.match(settingsSectionsSource, /settings-source-summary-owner[\s\S]*?<strong>CpPrice11<\/strong>/)
   assert.match(settingsSectionsSource, /settings-source-summary-copy[\s\S]*?sourceSummaryText[\s\S]*?githubTokenHelp/)
   assert.match(settingsSectionsSource, /settings-source-summary settings-grid-wide[\s\S]*?id="theme"[\s\S]*?id="language"[\s\S]*?launcher-background-control[\s\S]*?underlay-controls[\s\S]*?id="installPath"/)
-  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.editThemeBackground'[\s\S]*?onEditLauncherBackground[\s\S]*?settings\.editAction/)
-  assert.match(settingsSectionsSource, /art\.replaceThemeBackground[\s\S]*?settings\.replaceAction/)
-  assert.match(settingsSectionsSource, /art\.changeThemeBackground[\s\S]*?settings\.editAction/)
-  assert.match(settingsSectionsSource, /aria-label=\{t\('art\.resetThemeBackground'[\s\S]*?settings\.resetAction/)
+  assert.match(settingsSectionsSource, /aria-label=\{t\(hasBackground \? 'art\.editThemeBackground' : 'art\.changeThemeBackground'[\s\S]*?onEditLauncherBackground[\s\S]*?settings\.editAction/)
+  assert.match(settingsSectionsSource, /function BackgroundActionsMenu[\s\S]*?settings\.replaceAction[\s\S]*?settings\.resetAction/)
+  assert.match(settingsSectionsSource, /<BackgroundActionsMenu[\s\S]*?onReplace=\{\(\) => onChangeLauncherBackground\(theme\)\}[\s\S]*?onReset=\{\(\) => onClearLauncherBackground\(theme\)\}/)
   assert.match(appSource, /handleEditLauncherBackground[\s\S]*?initialCrop:\s*art\.backgroundCrop/)
   assert.match(appSource, /setProjectArtCrop\(currentArt\.owner, currentArt\.repo, 'background', crop\)/)
   assert.doesNotMatch(settingsSectionsSource, /underlayAppearanceHelp/)
   assert.doesNotMatch(settingsSectionsSource, /settings-reset-control|onRequestReset/)
   assert.match(settingsPageSource, /className="settings-nav-reset"[\s\S]*?setConfirmation\('reset'\)/)
+  assert.match(settingsPageSource, /settings-nav-reset-divider/)
+  assert.match(settingsPageSource, /settings-save-indicator[\s\S]*?settings\.saved/)
+  assert.match(settingsSectionsSource, /settings-theme-preview[\s\S]*?settings\.livePreviewSummary/)
   assert.doesNotMatch(settingsPageSource, /exportInstalledRegistry|importInstalledRegistry|pickJsonFile|pickJsonSavePath|window\.confirm/)
   assert.doesNotMatch(settingsSectionsSource, /exportInstalledRegistry|importInstalledRegistry|registryBusy|settings-diagnostics-card/)
   assert.match(settingsSectionsSource, /settings-storage-title[\s\S]*?settings-diagnostics-title/)
@@ -464,7 +473,17 @@ try {
   assert.match(artCropDialogSource, /onPointerUp=\{\(\) => \{[\s\S]*?renderCrop\(\)[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
   assert.match(artCropDialogSource, /onKeyUp=\{\(\) => \{[\s\S]*?renderCrop\(\)[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
   assert.match(artCropDialogSource, /previewShape\?: 'cover' \| 'hero' \| 'workspace'/)
-  assert.match(artCropDialogSource, /previewShape === 'hero'[\s\S]*?library\.viewNormal[\s\S]*?library\.viewCompact/)
+  assert.match(artCropDialogSource, /window\.screen\.width[\s\S]*?window\.screen\.height/)
+  assert.match(artCropDialogSource, /art\.cropCurrentScreen/)
+  assert.match(artCropDialogSource, /value: '2560x1600'/)
+  assert.match(artCropDialogSource, /displayDimension\(window\.screen\.width \* scale\)/)
+  assert.match(artCropDialogSource, /const dragFocus = \(focus: number, delta: number, before: number, after: number\)/)
+  assert.match(artCropDialogSource, /drag\.top \+ drag\.height - drag\.y/)
+  assert.match(artCropDialogSource, /className="art-crop-preview-select"/)
+  assert.doesNotMatch(artCropDialogSource, /className="segmented-control art-crop-preview-switch"/)
+  assert.match(artCropDialogSource, /previewMode === 'current'[\s\S]*?screenResolution\.width[\s\S]*?screenResolution\.height/)
+  assert.match(artCropDialogSource, /previewShape === 'hero'[\s\S]*?art\.cropCurrentScreen[\s\S]*?library\.viewNormal[\s\S]*?library\.viewCompact/)
+  assert.match(artCropDialogSource, /previewShape === 'hero' && previewMode === 'current'[\s\S]*?previewAspectRatios\?\.\[initialPreviewMode\]/)
   assert.match(artCropDialogSource, /art-crop-workspace-overlay[\s\S]*?art-crop-hero-overlay/)
   assert.match(artCropDialogSource, /<img[\s\S]*?style=\{artCropStyle\(crop\)\}[\s\S]*?art-crop-workspace-overlay[\s\S]*?art-crop-hero-overlay/)
   assert.doesNotMatch(artCropDialogSource, /className="art-crop-(?:workspace|hero)-overlay"[^>]*style=/)
@@ -481,7 +500,7 @@ try {
   assert.doesNotMatch(repoCardSource, /window\.innerWidth - 288/)
   assert.match(pageStylesSource, /\.repo-actions-menu-separator\s*\{[^}]*background:\s*var\(--surface-border\)/s)
   assert.match(pageStylesSource, /\.repo-actions-submenu-trigger span\s*\{[^}]*overflow-wrap:\s*anywhere/s)
-  assert.match(cinematicStylesSource, /\.settings-nav-reset\s*\{[^}]*margin-top:\s*auto/)
+  assert.match(cinematicStylesSource, /\.settings-nav-reset-divider\s*\{[^}]*margin:\s*auto/)
   assert.doesNotMatch(pageStylesSource, /\.launcher-background-control\s*\{[^}]*grid-column/)
   assert.doesNotMatch(pageStylesSource, /\.underlay-controls\s*\{[^}]*grid-column/)
   assert.match(pageStylesSource, /\.path-input-row input\s*\{[^}]*text-overflow:\s*ellipsis/)
@@ -548,7 +567,8 @@ try {
     repo,
     installedApp,
     latestVersion: 'v2.0.0',
-    backgroundStyle: { '--library-hero-background': 'url("hero-background")' },
+    background: 'hero-background',
+    backgroundStyle: { '--art-focus-x': '24%', '--art-focus-y': '72%', '--art-zoom': '1.8' },
     isFavorite: false,
     favoriteBusy: false,
     canResetCover: false,
@@ -567,7 +587,8 @@ try {
   })
   assert.match(hero, /library-hero/)
   assert.match(hero, /repo-status update/)
-  assert.match(hero, /class="library-hero-background" style="--library-hero-background:url\(&quot;hero-background&quot;\)"/)
+  assert.match(hero, /class="library-hero-background"[^>]*><img src="hero-background"/)
+  assert.match(hero, /style="--art-focus-x:24%;--art-focus-y:72%;--art-zoom:1\.8"/)
   assert.match(hero, /class="library-hero-gradient"/)
   assert.match(hero, /class="library-hero-accent"/)
   assert.match(hero, /class="library-hero-content"/)

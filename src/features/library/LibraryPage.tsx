@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
@@ -123,10 +123,6 @@ const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
 const dismissedUpdatesStorageKey = 'pullora-dismissed-update-versions-v1'
 
 const normalizeRepoKey = projectArtKey
-
-function toCssUrl(value: string) {
-  return `url("${value.replace(/\\/g, '/').replace(/"/g, '\\"')}")`
-}
 
 function createFavoritesFolder(repoKeys: string[] = []): LibraryFolder {
   return {
@@ -906,10 +902,7 @@ function LibraryPage({
   const featuredCoverStyle = featuredCover ? projectArtCoverCropStyle(featuredArt) : undefined
   const featuredBackground = projectArtBackgroundUrl(featuredArt, { fallbackToCover: false })
   const featuredBackgroundStyle = featuredBackground
-    ? ({
-        '--library-hero-background': toCssUrl(featuredBackground),
-        ...projectArtCropStyle(featuredArt),
-      } as CSSProperties)
+    ? projectArtCropStyle(featuredArt)
     : undefined
 
   const handleLaunch = async (repo: GitHubSearchResult) => {
@@ -1413,6 +1406,7 @@ function LibraryPage({
         latestVersion={latestVersion}
         cover={featuredCover}
         coverStyle={featuredCoverStyle}
+        background={featuredBackground}
         backgroundStyle={featuredBackgroundStyle}
         isFavorite={favoriteKeys.has(projectArtKey(featuredRepo.owner.login, featuredRepo.name))}
         favoriteBusy={favoriteBusy}

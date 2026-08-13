@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import NativeSelect from '../../../components/Select/NativeSelect'
 import StatePanel from '../../../components/State/StatePanel'
-import { StatusIcon } from '../../../components/ui/Icons'
+import { MoreHorizontalIcon, StatusIcon } from '../../../components/ui/Icons'
 import { useI18n, type AppLanguage } from '../../../i18n'
 import type {
   AppSettings,
@@ -9,9 +10,12 @@ import type {
   GitHubRateLimitStatus,
   InstallPathValidation,
   LauncherStorageInfo,
+  ProjectArt,
 } from '../../../types'
 import { formatBytes } from '../../../utils/format'
 import type { ResolvedTheme, ThemePreference } from '../../../utils/theme'
+import { projectArtBackgroundUrl, projectArtCropStyle } from '../../../services/projectArt'
+import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
 import { parseEventLogEntry } from '../eventLog'
 
 export type SettingsSectionId = 'general' | 'events' | 'maintenance'
@@ -21,7 +25,7 @@ type SurfaceSetting = 'surfaceTransparency' | 'surfaceBlur'
 
 interface GeneralSettingsSectionProps {
   settings: AppSettings
-  hasLauncherBackground: Record<ResolvedTheme, boolean>
+  launcherBackgrounds: Record<ResolvedTheme, ProjectArt | null>
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
   onEditLauncherBackground: (theme: ResolvedTheme) => void
@@ -39,9 +43,120 @@ const rangeProgressStyle = (value: number, min: number, max: number) => ({
   '--range-progress': `${((value - min) / (max - min)) * 100}%`,
 }) as CSSProperties
 
+const displayPath = (path: string) => path.replace(/^\\\\\?\\/, '')
+const toCssUrl = (value: string) => `url(${JSON.stringify(value)})`
+
+interface BackgroundActionsMenuProps {
+  themeLabel: string
+  onReplace: () => void
+  onReset: () => void
+}
+
+function BackgroundActionsMenu({ themeLabel, onReplace, onReset }: BackgroundActionsMenuProps) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<{ x: number; y: number; openUp: boolean } | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuId = useId()
+
+  useEffect(() => {
+    if (!open) return
+
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!menuRef.current?.contains(target) && !triggerRef.current?.contains(target)) setOpen(false)
+    }
+    const closeOnViewportChange = () => setOpen(false)
+
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('scroll', closeOnViewportChange, true)
+    window.addEventListener('resize', closeOnViewportChange)
+    window.requestAnimationFrame(() => focusFirstMenuItem(menuRef.current))
+
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('scroll', closeOnViewportChange, true)
+      window.removeEventListener('resize', closeOnViewportChange)
+    }
+  }, [open])
+
+  const closeMenu = (restoreFocus = true) => {
+    setOpen(false)
+    if (restoreFocus) window.requestAnimationFrame(() => triggerRef.current?.focus())
+  }
+
+  const runAction = (action: () => void) => {
+    closeMenu()
+    action()
+  }
+
+  const toggleMenu = () => {
+    if (open) {
+      closeMenu(false)
+      return
+    }
+
+    const bounds = triggerRef.current?.getBoundingClientRect()
+    if (!bounds) return
+    const menuHeight = 92
+    setPosition({
+      x: Math.max(8, Math.min(bounds.right - 190, window.innerWidth - 198)),
+      y: bounds.bottom + 6,
+      openUp: bounds.bottom + menuHeight > window.innerHeight - 8,
+    })
+    setOpen(true)
+  }
+
+  return (
+    <span className="settings-background-menu">
+      <button
+        ref={triggerRef}
+        type="button"
+        className="secondary-btn settings-icon-btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={t('settings.backgroundMoreActions', { theme: themeLabel })}
+        onClick={toggleMenu}
+      >
+        <MoreHorizontalIcon />
+      </button>
+      {open && position && typeof document !== 'undefined' && createPortal(
+        <div
+          className="settings-background-menu-portal"
+          style={{
+            left: position.x,
+            top: position.openUp ? position.y - 12 : position.y,
+            transform: position.openUp ? 'translateY(-100%)' : undefined,
+          }}
+        >
+          <div
+            ref={menuRef}
+            id={menuId}
+            className="project-actions-popover"
+            role="menu"
+            tabIndex={-1}
+            aria-label={t('settings.backgroundMoreActions', { theme: themeLabel })}
+            onKeyDown={(event) => handleMenuKeyboard(event, () => closeMenu())}
+          >
+            <button type="button" role="menuitem" onClick={() => runAction(onReplace)}>
+              {t('settings.replaceAction')}
+            </button>
+            <button type="button" role="menuitem" onClick={() => runAction(onReset)}>
+              {t('settings.resetAction')}
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </span>
+  )
+}
+
 function GeneralSettingsSection({
   settings,
-  hasLauncherBackground,
+  launcherBackgrounds,
   onThemeChange,
   onLanguageChange,
   onEditLauncherBackground,
@@ -57,10 +172,19 @@ function GeneralSettingsSection({
   const { t } = useI18n()
   const surfaceTransparency = settings.appearance?.surfaceTransparency ?? 42
   const surfaceBlur = settings.appearance?.surfaceBlur ?? 12
+  const previewTheme: ResolvedTheme = settings.theme === 'light' || settings.theme === 'dark'
+    ? settings.theme
+    : typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light'
+      ? 'light'
+      : 'dark'
+  const previewArt = launcherBackgrounds[previewTheme]
+  const previewBackgroundUrl = projectArtBackgroundUrl(previewArt, { fallbackToCover: false })
+  const previewThemeLabel = settings.theme === 'auto'
+    ? t('settings.autoResolvedTheme', { theme: t(`settings.${previewTheme}`) })
+    : t(`settings.${previewTheme}`)
 
   return (
-    <section id="settings-general" className="settings-section">
-      <h3>{t('settings.general')}</h3>
+    <section id="settings-general" className="settings-section" aria-label={t('settings.general')}>
       <div className="settings-grid">
         <div className="settings-source-summary settings-grid-wide">
           <div className="settings-source-summary-owner">
@@ -103,56 +227,66 @@ function GeneralSettingsSection({
         <div className="form-group launcher-background-control">
           <label>{t('settings.launcherBackground')}</label>
           <div className="launcher-background-themes">
-            {(['light', 'dark'] as const).map((theme) => (
-              <div className="launcher-background-theme" key={theme}>
-                <strong>{t(`settings.${theme}`)}</strong>
-                <div className="settings-inline-actions">
-                  {hasLauncherBackground[theme] && (
+            {(['light', 'dark'] as const).map((theme) => {
+              const art = launcherBackgrounds[theme]
+              const backgroundUrl = projectArtBackgroundUrl(art, { fallbackToCover: false })
+              const hasBackground = Boolean(backgroundUrl)
+
+              return (
+                <div className="launcher-background-theme" key={theme}>
+                  <span className="launcher-background-preview" aria-hidden="true">
+                    {backgroundUrl && (
+                      <span
+                        className="launcher-background-preview-image"
+                        style={{
+                          ...projectArtCropStyle(art),
+                          backgroundImage: toCssUrl(backgroundUrl),
+                        }}
+                      />
+                    )}
+                  </span>
+                  <strong>{t(`settings.${theme}`)}</strong>
+                  <div className="settings-inline-actions">
                     <button
                       type="button"
-                      className="secondary-btn"
-                      aria-label={t('art.editThemeBackground', { theme: t(`settings.${theme}`) })}
-                      onClick={() => onEditLauncherBackground(theme)}
+                      className="secondary-btn settings-background-action--edit"
+                      aria-label={t(hasBackground ? 'art.editThemeBackground' : 'art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
+                      onClick={() => hasBackground
+                        ? onEditLauncherBackground(theme)
+                        : onChangeLauncherBackground(theme)}
                     >
                       {t('settings.editAction')}
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    aria-label={t(hasLauncherBackground[theme] ? 'art.replaceThemeBackground' : 'art.changeThemeBackground', { theme: t(`settings.${theme}`) })}
-                    onClick={() => onChangeLauncherBackground(theme)}
-                  >
-                    {t(hasLauncherBackground[theme] ? 'settings.replaceAction' : 'settings.editAction')}
-                  </button>
-                  {hasLauncherBackground[theme] && (
-                    <button
-                      type="button"
-                      className="secondary-btn"
-                      aria-label={t('art.resetThemeBackground', { theme: t(`settings.${theme}`) })}
-                      onClick={() => onClearLauncherBackground(theme)}
-                    >
-                      {t('settings.resetAction')}
-                    </button>
-                  )}
+                    {hasBackground && <BackgroundActionsMenu
+                      themeLabel={t(`settings.${theme}`)}
+                      onReplace={() => onChangeLauncherBackground(theme)}
+                      onReset={() => onClearLauncherBackground(theme)}
+                    />}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
-        <fieldset className="form-group underlay-controls">
-          <legend>{t('settings.underlayAppearance')}</legend>
+        <div
+          className="form-group underlay-controls"
+          role="group"
+          aria-labelledby="underlay-controls-title"
+        >
+          <span id="underlay-controls-title" className="underlay-controls-title">
+            {t('settings.underlayAppearance')}
+          </span>
           <div className="underlay-control">
             <label htmlFor="surfaceTransparency">{t('settings.surfaceTransparency')}</label>
             <input
               id="surfaceTransparency"
               type="range"
               min="0"
-              max="80"
+              max="100"
               step="1"
               value={surfaceTransparency}
-              style={rangeProgressStyle(surfaceTransparency, 0, 80)}
+              style={rangeProgressStyle(surfaceTransparency, 0, 100)}
               aria-valuetext={`${surfaceTransparency}%`}
               onChange={(event) => onPreviewSurfaceSetting('surfaceTransparency', Number(event.target.value))}
               onKeyUp={(event) => onCommitSurfaceSetting('surfaceTransparency', Number(event.currentTarget.value))}
@@ -181,7 +315,7 @@ function GeneralSettingsSection({
               {surfaceBlur} px
             </output>
           </div>
-        </fieldset>
+        </div>
 
         <div className="form-group settings-grid-wide">
           <label htmlFor="installPath">{t('settings.installPath')}</label>
@@ -189,23 +323,23 @@ function GeneralSettingsSection({
             <input
               id="installPath"
               type="text"
-              value={settings.installationPath}
+              value={displayPath(settings.installationPath)}
               readOnly
               aria-describedby={pathValidation !== 'idle' ? 'installPath-status' : undefined}
               aria-invalid={pathValidation !== 'idle' && pathValidation !== 'ok' ? true : undefined}
-              title={settings.installationPath}
+              title={displayPath(settings.installationPath)}
               placeholder={t('settings.installPathPlaceholder')}
             />
-            <button type="button" className="secondary-btn" onClick={onBrowse}>
+            <button type="button" className="secondary-btn settings-path-primary" onClick={onBrowse}>
               {t('settings.choose')}
             </button>
-            <button type="button" className="secondary-btn" onClick={onValidatePath}>
+            <button type="button" className="secondary-btn settings-path-utility" onClick={onValidatePath}>
               {t('settings.checkFolder')}
             </button>
             {settings.installationPath && (
               <button
                 type="button"
-                className="secondary-btn"
+                className="secondary-btn settings-path-utility"
                 onClick={() => onOpenDirectory(settings.installationPath)}
                 title={t('settings.open')}
               >
@@ -230,6 +364,39 @@ function GeneralSettingsSection({
           )}
         </div>
 
+        <div className="settings-theme-preview settings-grid-wide">
+          <div className="settings-theme-preview-canvas" aria-hidden="true">
+            {previewBackgroundUrl && (
+              <span
+                className="settings-theme-preview-image"
+                style={{
+                  ...projectArtCropStyle(previewArt),
+                  backgroundImage: toCssUrl(previewBackgroundUrl),
+                }}
+              />
+            )}
+            <span className="settings-theme-preview-nav">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="settings-theme-preview-main">
+              <i className="settings-theme-preview-hero" />
+              <span>
+                <i />
+                <i />
+              </span>
+            </span>
+          </div>
+          <div className="settings-theme-preview-copy">
+            <strong>{t('settings.livePreview')}</strong>
+            <span>{t('settings.livePreviewSummary', {
+              theme: previewThemeLabel,
+              transparency: surfaceTransparency,
+              blur: surfaceBlur,
+            })}</span>
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -254,14 +421,11 @@ function EventLogSettingsSection({ entries, loading, error, onRefresh }: EventLo
     <section
       id="settings-events"
       className="settings-section settings-event-log"
-      aria-labelledby="settings-event-log-title"
+      aria-label={t('settings.eventLog')}
       aria-busy={loading}
     >
       <div className="settings-event-log-toolbar">
-        <div>
-          <h3 id="settings-event-log-title">{t('settings.eventLog')}</h3>
-          <p className="help-text">{t('settings.eventLogHelp')}</p>
-        </div>
+        <p className="help-text">{t('settings.eventLogHelp')}</p>
         <button type="button" className="secondary-btn" onClick={onRefresh} disabled={loading}>
           {loading ? t('settings.eventLogLoading') : t('settings.eventLogRefresh')}
         </button>
@@ -364,8 +528,7 @@ function MaintenanceSettingsSection({
   const { t } = useI18n()
 
   return (
-    <section id="settings-maintenance" className="danger-zone">
-      <h3>{t('settings.maintenance')}</h3>
+    <section id="settings-maintenance" className="danger-zone" aria-label={t('settings.maintenance')}>
       <p className="help-text">{t('settings.maintenanceHelp')}</p>
       <section className="settings-maintenance-group" aria-labelledby="settings-storage-title">
         <h4 id="settings-storage-title">{t('settings.storage')}</h4>
@@ -411,7 +574,7 @@ interface SettingsSectionsProps {
   activeSection: SettingsSectionId
   settings: AppSettings
   language: AppLanguage
-  hasLauncherBackground: Record<ResolvedTheme, boolean>
+  launcherBackgrounds: Record<ResolvedTheme, ProjectArt | null>
   pathValidation: PathValidation
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus

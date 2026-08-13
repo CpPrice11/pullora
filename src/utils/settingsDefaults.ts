@@ -17,7 +17,7 @@ export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null
     density: value?.density === 'compact' || value?.density === 'comfortable' || value?.density === 'spacious'
       ? value.density
       : DEFAULT_APPEARANCE.density,
-    surfaceTransparency: normalizeNumber(value?.surfaceTransparency, DEFAULT_APPEARANCE.surfaceTransparency, 0, 80),
+    surfaceTransparency: normalizeNumber(value?.surfaceTransparency, DEFAULT_APPEARANCE.surfaceTransparency, 0, 100),
     surfaceBlur: normalizeNumber(value?.surfaceBlur, DEFAULT_APPEARANCE.surfaceBlur, 0, 32),
   }
 }

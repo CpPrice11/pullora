@@ -7,12 +7,20 @@ import type { ArtCrop } from '../../types'
 import { CloseIcon } from '../ui/Icons'
 import './Modal.css'
 
-type ArtCropPreviewMode = '1000x700' | '1280x720' | '1920x1080' | 'normal' | 'compact'
+type ArtCropPreviewMode = 'current' | '1000x700' | '1280x720' | '1920x1080' | '2560x1600' | 'normal' | 'compact'
 
-const initialWorkspacePreview = (): ArtCropPreviewMode => {
-  if (typeof window === 'undefined') return '1280x720'
-  if (Math.abs(window.innerWidth / window.innerHeight - 10 / 7) < 0.08) return '1000x700'
-  return window.innerWidth >= 1600 ? '1920x1080' : '1280x720'
+const displayDimension = (value: number) => {
+  const roundedToTen = Math.round(value / 10) * 10
+  return Math.abs(value - roundedToTen) <= 1 ? roundedToTen : Math.round(value)
+}
+
+const currentScreenResolution = () => {
+  if (typeof window === 'undefined') return { width: 1920, height: 1080 }
+  const scale = window.devicePixelRatio || 1
+  return {
+    width: displayDimension(window.screen.width * scale),
+    height: displayDimension(window.screen.height * scale),
+  }
 }
 
 interface ArtCropDialogProps {
@@ -62,6 +70,8 @@ export default function ArtCropDialog({
     pointerId: number
     x: number
     y: number
+    left: number
+    top: number
     width: number
     height: number
     crop: ArtCrop
@@ -69,6 +79,7 @@ export default function ArtCropDialog({
   const titleId = useId()
   const descriptionId = useId()
   const zoomId = useId()
+  const previewFormatId = useId()
   const cropRef = useRef(normalizeCrop(initialCrop))
   const cropFrameRef = useRef<number | null>(null)
   const loadErrorReportedRef = useRef(false)
@@ -82,8 +93,9 @@ export default function ArtCropDialog({
   const [announcedCrop, setAnnouncedCrop] = useState<ArtCrop | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [screenResolution] = useState(currentScreenResolution)
   const [previewMode, setPreviewMode] = useState<ArtCropPreviewMode>(
-    previewShape === 'workspace' ? initialWorkspacePreview() : initialPreviewMode,
+    previewShape === 'workspace' || previewShape === 'hero' ? 'current' : initialPreviewMode,
   )
 
   useModalFocus(dialogRef, { onEscape: saving ? undefined : onCancel })
@@ -155,9 +167,11 @@ export default function ArtCropDialog({
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
+      left: bounds.left,
+      top: bounds.top,
       width: bounds.width,
       height: bounds.height,
-      crop,
+      crop: cropRef.current,
     }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
@@ -208,25 +222,35 @@ export default function ArtCropDialog({
   }
 
   const targetLabel = t(kind === 'cover' ? 'art.cover' : 'art.background')
+  const currentResolutionValue = `${screenResolution.width}x${screenResolution.height}`
   const previewOptions: Array<{ value: ArtCropPreviewMode; label: string }> = previewShape === 'workspace'
-    ? [
+    ? ([
+        { value: 'current', label: t('art.cropCurrentScreen', screenResolution) },
         { value: '1000x700', label: '1000 × 700' },
         { value: '1280x720', label: '1280 × 720' },
         { value: '1920x1080', label: '1920 × 1080' },
-      ]
+        { value: '2560x1600', label: '2560 × 1600' },
+      ] satisfies Array<{ value: ArtCropPreviewMode; label: string }>)
+        .filter((option) => option.value === 'current' || option.value !== currentResolutionValue)
     : previewShape === 'hero'
       ? [
+          { value: 'current', label: t('art.cropCurrentScreen', screenResolution) },
           { value: 'normal', label: t('library.viewNormal') },
           { value: 'compact', label: t('library.viewCompact') },
         ]
       : []
   const position = cropPosition(crop, language)
   const announcedPosition = announcedCrop ? cropPosition(announcedCrop, language) : null
-  const previewAspectRatio = previewMode === 'normal' || previewMode === 'compact'
-    ? previewAspectRatios?.[previewMode]
-    : undefined
+  const previewAspectRatio = previewShape === 'hero' && previewMode === 'current'
+    ? previewAspectRatios?.[initialPreviewMode]
+    : previewMode === 'normal' || previewMode === 'compact'
+      ? previewAspectRatios?.[previewMode]
+      : undefined
   const previewFrameStyle = {
     ...previewStyle,
+    ...(previewShape === 'workspace' && previewMode === 'current'
+      ? { aspectRatio: `${screenResolution.width} / ${screenResolution.height}` }
+      : {}),
     ...(previewShape === 'hero'
       && previewAspectRatio
       && Number.isFinite(previewAspectRatio)
@@ -264,24 +288,21 @@ export default function ArtCropDialog({
 
         <div className="art-crop-body">
           {previewOptions.length > 0 && (
-            <div
-              className="segmented-control art-crop-preview-switch"
-              role="group"
-              aria-label={t('art.cropPreviewFormat')}
-            >
-              {previewOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={previewMode === option.value ? 'active' : ''}
-                  aria-pressed={previewMode === option.value}
-                  disabled={saving}
-                  onClick={() => setPreviewMode(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <label className="art-crop-preview-field" htmlFor={previewFormatId}>
+              <span>{t('art.cropPreviewFormat')}</span>
+              <select
+                id={previewFormatId}
+                className="art-crop-preview-select"
+                aria-label={t('art.cropPreviewFormat')}
+                value={previewMode}
+                disabled={saving}
+                onChange={(event) => setPreviewMode(event.target.value as ArtCropPreviewMode)}
+              >
+                {previewOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
           )}
 
           <div

@@ -11,6 +11,7 @@ interface LibraryHeroProps {
   latestVersion?: string | null
   cover?: string | null
   coverStyle?: CSSProperties
+  background?: string | null
   backgroundStyle?: CSSProperties
   isFavorite: boolean
   favoriteBusy: boolean
@@ -55,6 +56,7 @@ export default function LibraryHero({
   latestVersion,
   cover,
   coverStyle,
+  background,
   backgroundStyle,
   isFavorite,
   favoriteBusy,
@@ -107,7 +109,9 @@ export default function LibraryHero({
       className={`library-hero library-github-header ${cover ? 'library-hero--art' : 'library-hero--fallback'}`}
       aria-label={repo.name}
     >
-      <div className="library-hero-background" style={backgroundStyle} aria-hidden="true" />
+      <div className="library-hero-background" aria-hidden="true">
+        {background && <img src={background} alt="" style={backgroundStyle} draggable="false" />}
+      </div>
       <div className="library-hero-gradient" aria-hidden="true" />
       <div className="library-hero-accent" aria-hidden="true" />
 
