@@ -1175,7 +1175,7 @@
 .cinematic-shell .library-play-status span,
 .cinematic-shell .library-ops-grid span,
 .cinematic-shell .library-ops-rail span {
-  color: #7f8994;
+  color: var(--color-text-secondary);
   font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.04em;
@@ -1183,7 +1183,7 @@
 }
 
 .cinematic-shell .library-play-status strong {
-  color: #e5e9ed;
+  color: var(--color-text);
   font-size: 13px;
   min-width: 0;
   overflow: hidden;

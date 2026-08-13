@@ -9,9 +9,17 @@ import './Modal.css'
 
 type ArtCropPreviewMode = '1000x700' | '1280x720' | '1920x1080' | 'normal' | 'compact'
 
+const initialWorkspacePreview = (): ArtCropPreviewMode => {
+  if (typeof window === 'undefined') return '1280x720'
+  if (Math.abs(window.innerWidth / window.innerHeight - 10 / 7) < 0.08) return '1000x700'
+  return window.innerWidth >= 1600 ? '1920x1080' : '1280x720'
+}
+
 interface ArtCropDialogProps {
   kind: Exclude<ProjectArtKind, 'all'>
   previewShape?: 'cover' | 'hero' | 'workspace'
+  initialPreviewMode?: 'normal' | 'compact'
+  previewAspectRatios?: Partial<Record<'normal' | 'compact', number>>
   previewStyle?: Record<string, string>
   sourcePath: string
   initialCrop?: ArtCrop
@@ -39,6 +47,8 @@ const cropPosition = (crop: ArtCrop, language: string) => ({
 export default function ArtCropDialog({
   kind,
   previewShape = kind === 'cover' ? 'cover' : 'hero',
+  initialPreviewMode = 'normal',
+  previewAspectRatios,
   previewStyle,
   sourcePath,
   initialCrop = centeredCrop,
@@ -73,7 +83,7 @@ export default function ArtCropDialog({
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [previewMode, setPreviewMode] = useState<ArtCropPreviewMode>(
-    previewShape === 'workspace' ? '1280x720' : 'normal',
+    previewShape === 'workspace' ? initialWorkspacePreview() : initialPreviewMode,
   )
 
   useModalFocus(dialogRef, { onEscape: saving ? undefined : onCancel })
@@ -156,8 +166,8 @@ export default function ArtCropDialog({
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
     updateCrop({
-      focusX: drag.crop.focusX - (event.clientX - drag.x) / drag.width / drag.crop.zoom,
-      focusY: drag.crop.focusY - (event.clientY - drag.y) / drag.height / drag.crop.zoom,
+      focusX: drag.crop.focusX - (event.clientX - drag.x) / drag.width,
+      focusY: drag.crop.focusY - (event.clientY - drag.y) / drag.height,
     }, true)
   }
 
@@ -212,6 +222,17 @@ export default function ArtCropDialog({
       : []
   const position = cropPosition(crop, language)
   const announcedPosition = announcedCrop ? cropPosition(announcedCrop, language) : null
+  const previewAspectRatio = previewMode === 'normal' || previewMode === 'compact'
+    ? previewAspectRatios?.[previewMode]
+    : undefined
+  const previewFrameStyle = {
+    ...previewStyle,
+    ...(previewShape === 'hero'
+      && previewAspectRatio
+      && Number.isFinite(previewAspectRatio)
+      ? { aspectRatio: String(previewAspectRatio) }
+      : {}),
+  } as CSSProperties
 
   const dialog = (
     <div className="modal-overlay art-crop-overlay">
@@ -266,7 +287,7 @@ export default function ArtCropDialog({
           <div
             className={`art-crop-preview art-crop-preview--${previewShape}`}
             data-preview-mode={previewMode}
-            style={previewStyle as CSSProperties}
+            style={previewFrameStyle}
             role="img"
             aria-label={t('art.cropPreviewPosition', position)}
             tabIndex={previewReady ? 0 : -1}

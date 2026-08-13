@@ -295,8 +295,9 @@
 .art-crop-modal {
   display: flex;
   flex-direction: column;
-  width: min(760px, 100%);
-  max-height: min(680px, calc(100vh - 48px));
+  height: min(760px, calc(100vh - 48px));
+  width: min(1040px, 100%);
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   background: var(--surface-1);
   border-color: var(--surface-border-strong);
@@ -332,6 +333,8 @@
 .art-crop-body {
   display: grid;
   gap: 12px;
+  align-content: start;
+  flex: 1 1 auto;
   min-height: 0;
   padding: 20px;
   overflow: auto;
@@ -366,7 +369,7 @@
   aspect-ratio: 1;
   justify-self: center;
   min-height: 0;
-  width: min(360px, 100%);
+  width: min(480px, 100%);
 }
 
 .art-crop-preview--hero {
@@ -386,13 +389,13 @@
 
 .art-crop-preview--workspace[data-preview-mode='1000x700'] {
   aspect-ratio: 10 / 7;
-  width: min(514px, 100%);
+  width: min(720px, 100%);
 }
 
 .art-crop-preview--workspace[data-preview-mode='1280x720'],
 .art-crop-preview--workspace[data-preview-mode='1920x1080'] {
   aspect-ratio: 16 / 9;
-  width: min(640px, 100%);
+  width: min(880px, 100%);
 }
 
 .art-crop-preview--workspace::after {
@@ -554,7 +557,8 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 20px 20px;
+  flex: 0 0 auto;
+  padding: 14px 20px;
   border-top: 1px solid var(--surface-border);
 }
 

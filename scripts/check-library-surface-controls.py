@@ -39,6 +39,16 @@ def check_source_contract() -> None:
             ".cinematic-shell .library-page .library-play-status,",
             ("var(--surface-3)", "var(--surface-border)"),
         ),
+        (
+            cinematic,
+            ".cinematic-shell .library-play-status span,",
+            ("var(--color-text-secondary)",),
+        ),
+        (
+            cinematic,
+            ".cinematic-shell .library-play-status strong {",
+            ("var(--color-text)",),
+        ),
     )
     for source, selector, expected in contracts:
         rule = css_rule(source, selector)
@@ -104,6 +114,55 @@ def surface_state(page: Page) -> dict:
     )
 
 
+def play_status_contrast(page: Page) -> dict:
+    return page.locator(".library-play-status").first.evaluate(
+        """
+        element => {
+          const parse = value => {
+            const numbers = [...value.matchAll(/[\d.]+/g)].map(match => Number(match[0]));
+            if (value.startsWith('color(srgb')) return [...numbers.slice(0, 3), numbers[3] ?? 1];
+            if (value.startsWith('rgb')) return [...numbers.slice(0, 3).map(value => value / 255), numbers[3] ?? 1];
+            throw new Error(`Unsupported color: ${value}`);
+          };
+          const composite = (foreground, background) => [
+            foreground[0] * foreground[3] + background[0] * (1 - foreground[3]),
+            foreground[1] * foreground[3] + background[1] * (1 - foreground[3]),
+            foreground[2] * foreground[3] + background[2] * (1 - foreground[3]),
+            1,
+          ];
+          const luminance = color => color.slice(0, 3)
+            .map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+            .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+          const contrast = (first, second) => {
+            const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+            return (lighter + 0.05) / (darker + 0.05);
+          };
+          const resolve = property => {
+            const probe = document.createElement('span');
+            probe.style.color = `var(${property})`;
+            document.querySelector('.cinematic-shell').appendChild(probe);
+            const value = getComputedStyle(probe).color;
+            probe.remove();
+            return value;
+          };
+          const style = getComputedStyle(element);
+          const canvas = parse(resolve('--surface-canvas'));
+          const background = composite(parse(style.backgroundColor), canvas);
+          const labelColor = getComputedStyle(element.querySelector('span')).color;
+          const valueColor = getComputedStyle(element.querySelector('strong')).color;
+          return {
+            labelColor,
+            valueColor,
+            secondaryToken: resolve('--color-text-secondary'),
+            textToken: resolve('--color-text'),
+            labelContrast: contrast(parse(labelColor), background),
+            valueContrast: contrast(parse(valueColor), background),
+          };
+        }
+        """
+    )
+
+
 def alpha(color: str) -> float:
     if "/" in color:
         value = color.rsplit("/", 1)[-1].rstrip(" )").strip()
@@ -153,6 +212,11 @@ def main() -> None:
                 assert "12px" in state["details"]["filter"]
                 for inner in ("toolstrip", "playStatus", "hero", "operations", "inlinePanel"):
                     assert state[inner]["filter"] == "none", {inner: state[inner]}
+                status_contrast = play_status_contrast(page)
+                assert status_contrast["labelColor"] == status_contrast["secondaryToken"], status_contrast
+                assert status_contrast["valueColor"] == status_contrast["textToken"], status_contrast
+                assert status_contrast["labelContrast"] >= 4.5, status_contrast
+                assert status_contrast["valueContrast"] >= 4.5, status_contrast
                 opacity_states[transparency] = state
                 checks += 1
 
