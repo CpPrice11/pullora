@@ -6,22 +6,25 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
-  type WheelEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
-import { artCropStyle, getProjectArtPreview, type ProjectArtKind } from '../../services/projectArt'
+import { getProjectArtPreview, type ProjectArtKind } from '../../services/projectArt'
 import type { ArtCrop } from '../../types'
 import { CloseIcon } from '../ui/Icons'
 import './Modal.css'
+
+type Size = { width: number; height: number }
+type Rect = Size & { left: number; top: number }
+type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 const displayDimension = (value: number) => {
   const roundedToTen = Math.round(value / 10) * 10
   return Math.abs(value - roundedToTen) <= 1 ? roundedToTen : Math.round(value)
 }
 
-const currentScreenResolution = () => {
+const currentScreenResolution = (): Size => {
   if (typeof window === 'undefined') return { width: 1920, height: 1080 }
   const scale = window.devicePixelRatio || 1
   return {
@@ -30,7 +33,7 @@ const currentScreenResolution = () => {
   }
 }
 
-const currentMonitorResolution = async () => {
+const currentMonitorResolution = async (): Promise<Size> => {
   try {
     const { currentMonitor } = await import('@tauri-apps/api/window')
     const monitor = await currentMonitor()
@@ -67,25 +70,55 @@ const normalizeCrop = (crop: ArtCrop = centeredCrop): ArtCrop => ({
   zoom: clamp(Number.isFinite(crop.zoom) ? crop.zoom : 1, 1, 4),
 })
 
-const dragFocus = (focus: number, delta: number, before: number, after: number) => {
-  if (delta < 0) return focus - delta * (1 - focus) / Math.max(before, 1)
-  return focus - delta * focus / Math.max(after, 1)
+const containedRect = (stage: Size, image: Size): Rect => {
+  if (!stage.width || !stage.height || !image.width || !image.height) {
+    return { left: 0, top: 0, width: 0, height: 0 }
+  }
+  const horizontalPadding = 36
+  const topPadding = 44
+  const bottomPadding = 18
+  const availableWidth = Math.max(stage.width - horizontalPadding, 1)
+  const availableHeight = Math.max(stage.height - topPadding - bottomPadding, 1)
+  const scale = Math.min(availableWidth / image.width, availableHeight / image.height)
+  const width = image.width * scale
+  const height = image.height * scale
+  return {
+    left: (stage.width - width) / 2,
+    top: topPadding + (availableHeight - height) / 2,
+    width,
+    height,
+  }
 }
 
-const pointerDistance = (first: { x: number; y: number }, second: { x: number; y: number }) =>
-  Math.hypot(second.x - first.x, second.y - first.y)
+const frameRect = (crop: ArtCrop, image: Size, aspect: number): Rect => {
+  if (!image.width || !image.height) return { left: 0, top: 0, width: 0, height: 0 }
+  const baseWidth = Math.min(image.width, image.height * aspect)
+  const baseHeight = baseWidth / aspect
+  const width = baseWidth / crop.zoom
+  const height = baseHeight / crop.zoom
+  return {
+    left: crop.focusX * (image.width - width),
+    top: crop.focusY * (image.height - height),
+    width,
+    height,
+  }
+}
 
-const pointerCenter = (first: { x: number; y: number }, second: { x: number; y: number }) => ({
-  x: (first.x + second.x) / 2,
-  y: (first.y + second.y) / 2,
-})
+const cropFromFrame = (frame: Rect, image: Size, aspect: number): ArtCrop => {
+  const baseWidth = Math.min(image.width, image.height * aspect)
+  const horizontalRange = image.width - frame.width
+  const verticalRange = image.height - frame.height
+  return normalizeCrop({
+    focusX: horizontalRange > 0 ? frame.left / horizontalRange : 0.5,
+    focusY: verticalRange > 0 ? frame.top / verticalRange : 0.5,
+    zoom: baseWidth / frame.width,
+  })
+}
 
-const cropPosition = (crop: ArtCrop, language: string) => ({
+const cropPosition = (crop: ArtCrop) => ({
   x: Math.round(crop.focusX * 100),
   y: Math.round(crop.focusY * 100),
-  zoom: new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', {
-    maximumFractionDigits: 2,
-  }).format(crop.zoom),
+  zoom: Math.round(100 / crop.zoom),
 })
 
 export default function ArtCropDialog({
@@ -100,32 +133,19 @@ export default function ArtCropDialog({
   onError,
   onSave,
 }: ArtCropDialogProps) {
-  const { language, t } = useI18n()
+  const { t } = useI18n()
   const dialogRef = useRef<HTMLDivElement | null>(null)
-  const dragRef = useRef<{
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const interactionRef = useRef<{
+    type: 'move' | 'resize'
     pointerId: number
     x: number
     y: number
-    left: number
-    top: number
-    width: number
-    height: number
-    crop: ArtCrop
-  } | null>(null)
-  const pointersRef = useRef(new Map<number, { x: number; y: number }>())
-  const pinchRef = useRef<{
-    distance: number
-    centerX: number
-    centerY: number
-    left: number
-    top: number
-    width: number
-    height: number
-    crop: ArtCrop
+    frame: Rect
+    corner?: Corner
   } | null>(null)
   const titleId = useId()
   const descriptionId = useId()
-  const zoomId = useId()
   const cropRef = useRef(normalizeCrop(initialCrop))
   const cropFrameRef = useRef<number | null>(null)
   const loadErrorReportedRef = useRef(false)
@@ -135,8 +155,9 @@ export default function ArtCropDialog({
   onErrorRef.current = onError
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewReady, setPreviewReady] = useState(false)
+  const [imageSize, setImageSize] = useState<Size>({ width: 0, height: 0 })
+  const [stageSize, setStageSize] = useState<Size>({ width: 0, height: 0 })
   const [crop, setCrop] = useState(cropRef.current)
-  const [zoomValue, setZoomValue] = useState(cropRef.current.zoom)
   const [announcedCrop, setAnnouncedCrop] = useState<ArtCrop | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -157,17 +178,11 @@ export default function ArtCropDialog({
     cropRef.current = nextCrop
     setPreviewUrl(null)
     setPreviewReady(false)
+    setImageSize({ width: 0, height: 0 })
     setCrop(nextCrop)
-    setZoomValue(nextCrop.zoom)
     setAnnouncedCrop(null)
     setError(null)
-    dragRef.current = null
-    pointersRef.current.clear()
-    pinchRef.current = null
-    if (cropFrameRef.current !== null) {
-      cancelAnimationFrame(cropFrameRef.current)
-      cropFrameRef.current = null
-    }
+    interactionRef.current = null
     loadErrorReportedRef.current = false
 
     getProjectArtPreview(sourcePath)
@@ -180,13 +195,21 @@ export default function ArtCropDialog({
 
     return () => {
       active = false
-      dragRef.current = null
-      pointersRef.current.clear()
-      pinchRef.current = null
+      interactionRef.current = null
       if (cropFrameRef.current !== null) cancelAnimationFrame(cropFrameRef.current)
       cropFrameRef.current = null
     }
   }, [initialCrop, sourcePath, t])
+
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+    const updateSize = () => setStageSize({ width: stage.clientWidth, height: stage.clientHeight })
+    updateSize()
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (previewShape !== 'workspace') return
@@ -221,15 +244,22 @@ export default function ArtCropDialog({
     }
   }, [previewShape])
 
+  const targetAspect = previewShape === 'workspace'
+    ? screenResolution.width / screenResolution.height
+    : previewShape === 'hero'
+      ? previewAspectRatios?.[initialPreviewMode] ?? 4
+      : 1
+  const canvas = containedRect(stageSize, imageSize)
+  const frame = frameRect(crop, canvas, targetAspect)
+
   const renderCrop = () => {
     if (cropFrameRef.current !== null) cancelAnimationFrame(cropFrameRef.current)
     cropFrameRef.current = null
     setCrop(cropRef.current)
-    setZoomValue(cropRef.current.zoom)
   }
 
-  const updateCrop = (next: Partial<ArtCrop>, deferRender = false) => {
-    cropRef.current = normalizeCrop({ ...cropRef.current, ...next })
+  const updateCrop = (next: ArtCrop, deferRender = false) => {
+    cropRef.current = normalizeCrop(next)
     if (!deferRender) return renderCrop()
     if (cropFrameRef.current === null) cropFrameRef.current = requestAnimationFrame(renderCrop)
   }
@@ -241,120 +271,76 @@ export default function ArtCropDialog({
     setAnnouncedCrop(normalized)
   }
 
-  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!previewReady || event.button !== 0) return
-    const bounds = event.currentTarget.getBoundingClientRect()
-    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    event.currentTarget.setPointerCapture(event.pointerId)
-
-    if (pointersRef.current.size >= 2) {
-      const [first, second] = Array.from(pointersRef.current.values())
-      const center = pointerCenter(first, second)
-      pinchRef.current = {
-        distance: Math.max(pointerDistance(first, second), 1),
-        centerX: center.x,
-        centerY: center.y,
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-        crop: cropRef.current,
-      }
-      dragRef.current = null
-      return
-    }
-
-    dragRef.current = {
+  const beginInteraction = (
+    event: PointerEvent<HTMLElement>,
+    type: 'move' | 'resize',
+    corner?: Corner,
+  ) => {
+    if (!previewReady || saving || event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    stageRef.current?.setPointerCapture(event.pointerId)
+    interactionRef.current = {
+      type,
       pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
-      left: bounds.left,
-      top: bounds.top,
-      width: bounds.width,
-      height: bounds.height,
-      crop: cropRef.current,
+      frame,
+      corner,
     }
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!pointersRef.current.has(event.pointerId)) return
-    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    const interaction = interactionRef.current
+    if (!interaction || interaction.pointerId !== event.pointerId) return
+    const dx = event.clientX - interaction.x
+    const dy = event.clientY - interaction.y
 
-    const pinch = pinchRef.current
-    if (pinch && pointersRef.current.size >= 2) {
-      const [first, second] = Array.from(pointersRef.current.values())
-      const center = pointerCenter(first, second)
-      updateCrop({
-        focusX: dragFocus(
-          pinch.crop.focusX,
-          center.x - pinch.centerX,
-          pinch.centerX - pinch.left,
-          pinch.left + pinch.width - pinch.centerX,
-        ),
-        focusY: dragFocus(
-          pinch.crop.focusY,
-          center.y - pinch.centerY,
-          pinch.centerY - pinch.top,
-          pinch.top + pinch.height - pinch.centerY,
-        ),
-        zoom: pinch.crop.zoom * pointerDistance(first, second) / pinch.distance,
-      }, true)
+    if (interaction.type === 'move') {
+      const moved = {
+        ...interaction.frame,
+        left: clamp(interaction.frame.left + dx, 0, canvas.width - interaction.frame.width),
+        top: clamp(interaction.frame.top + dy, 0, canvas.height - interaction.frame.height),
+      }
+      updateCrop(cropFromFrame(moved, canvas, targetAspect), true)
       return
     }
 
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== event.pointerId) return
-    updateCrop({
-      focusX: dragFocus(
-        drag.crop.focusX,
-        event.clientX - drag.x,
-        drag.x - drag.left,
-        drag.left + drag.width - drag.x,
-      ),
-      focusY: dragFocus(
-        drag.crop.focusY,
-        event.clientY - drag.y,
-        drag.y - drag.top,
-        drag.top + drag.height - drag.y,
-      ),
-    }, true)
+    const corner = interaction.corner ?? 'bottom-right'
+    const growsRight = corner.endsWith('right')
+    const growsDown = corner.startsWith('bottom')
+    const oppositeX = growsRight ? interaction.frame.left : interaction.frame.left + interaction.frame.width
+    const oppositeY = growsDown ? interaction.frame.top : interaction.frame.top + interaction.frame.height
+    const directionX = growsRight ? 1 : -1
+    const directionY = growsDown ? 1 : -1
+    const projectedWidth = interaction.frame.width + (
+      directionX * dx + directionY * dy / targetAspect
+    ) / (1 + 1 / targetAspect ** 2)
+    const baseWidth = Math.min(canvas.width, canvas.height * targetAspect)
+    const maxWidthX = growsRight ? canvas.width - oppositeX : oppositeX
+    const maxWidthY = (growsDown ? canvas.height - oppositeY : oppositeY) * targetAspect
+    const width = clamp(projectedWidth, baseWidth / 4, Math.min(baseWidth, maxWidthX, maxWidthY))
+    const height = width / targetAspect
+    const resized = {
+      left: growsRight ? oppositeX : oppositeX - width,
+      top: growsDown ? oppositeY : oppositeY - height,
+      width,
+      height,
+    }
+    updateCrop(cropFromFrame(resized, canvas, targetAspect), true)
   }
 
-  const finishDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (!pointersRef.current.has(event.pointerId)) return
-    pointersRef.current.delete(event.pointerId)
+  const finishInteraction = (event: PointerEvent<HTMLDivElement>) => {
+    if (interactionRef.current?.pointerId !== event.pointerId) return
+    interactionRef.current = null
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
-    }
-    pinchRef.current = null
-    dragRef.current = null
-
-    const remainingPointer = pointersRef.current.entries().next().value as [number, { x: number; y: number }] | undefined
-    if (remainingPointer) {
-      const [pointerId, point] = remainingPointer
-      const bounds = event.currentTarget.getBoundingClientRect()
-      dragRef.current = {
-        pointerId,
-        x: point.x,
-        y: point.y,
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-        crop: cropRef.current,
-      }
     }
     renderCrop()
     setAnnouncedCrop(cropRef.current)
   }
 
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (!previewReady || saving) return
-    event.preventDefault()
-    commitCrop({ ...cropRef.current, zoom: cropRef.current.zoom - event.deltaY * 0.002 })
-  }
-
-  const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleFrameKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const positionStep = event.shiftKey ? 0.05 : 0.01
     const next = { ...cropRef.current }
     if (event.key === 'ArrowLeft') next.focusX -= positionStep
@@ -381,21 +367,26 @@ export default function ArtCropDialog({
   }
 
   const targetLabel = t(kind === 'cover' ? 'art.cover' : 'art.background')
-  const position = cropPosition(crop, language)
-  const announcedPosition = announcedCrop ? cropPosition(announcedCrop, language) : null
-  const previewAspectRatio = previewShape === 'workspace'
-    ? screenResolution.width / screenResolution.height
-    : previewShape === 'hero'
-      ? previewAspectRatios?.[initialPreviewMode] ?? 4
-      : 1
-  const previewFrameStyle = {
-    ...previewStyle,
-    aspectRatio: Number.isFinite(previewAspectRatio) ? String(previewAspectRatio) : '1',
-    '--art-crop-aspect': Number.isFinite(previewAspectRatio) ? String(previewAspectRatio) : '1',
-  } as CSSProperties
+  const position = cropPosition(crop)
+  const announcedPosition = announcedCrop ? cropPosition(announcedCrop) : null
   const cropTarget = previewShape === 'workspace'
     ? t('art.cropCurrentScreen', screenResolution)
     : t(previewShape === 'cover' ? 'art.cropTargetCover' : 'art.cropTargetHero')
+  const frameStyle = {
+    left: frame.left,
+    top: frame.top,
+    width: frame.width,
+    height: frame.height,
+    '--art-focus-x': `${crop.focusX * 100}%`,
+    '--art-focus-y': `${crop.focusY * 100}%`,
+    '--art-zoom': String(crop.zoom),
+  } as CSSProperties
+  const canvasStyle = {
+    left: canvas.left,
+    top: canvas.top,
+    width: canvas.width,
+    height: canvas.height,
+  } as CSSProperties
 
   const dialog = (
     <div className="modal-overlay art-crop-overlay">
@@ -426,65 +417,59 @@ export default function ArtCropDialog({
         </header>
 
         <div className="art-crop-body">
-          <div className={`art-crop-stage art-crop-stage--${previewShape}`}>
-            <div
-              className="art-crop-stage-image"
-              style={previewUrl
-                ? { backgroundImage: `url(${JSON.stringify(previewUrl)})` }
-                : undefined}
-              aria-hidden="true"
-            />
+          <div
+            ref={stageRef}
+            className={`art-crop-stage art-crop-stage--${previewShape}`}
+            style={previewStyle as CSSProperties}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishInteraction}
+            onPointerCancel={finishInteraction}
+          >
             <span className="art-crop-target">{cropTarget}</span>
-            <div
-              className={`art-crop-preview art-crop-preview--${previewShape}`}
-              data-preview-mode={initialPreviewMode}
-              style={previewFrameStyle}
-              role="img"
-              aria-label={t('art.cropPreviewPosition', position)}
-              tabIndex={previewReady ? 0 : -1}
-              onKeyDown={handlePreviewKeyDown}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
-              onWheel={handleWheel}
-            >
+            <div className="art-crop-canvas" style={canvasStyle}>
               {previewUrl && (
                 <img
                   className={previewReady ? '' : 'is-loading'}
                   src={previewUrl}
                   alt=""
-                  style={artCropStyle(crop)}
                   draggable="false"
-                  onLoad={() => setPreviewReady(true)}
+                  onLoad={(event) => {
+                    setImageSize({
+                      width: event.currentTarget.naturalWidth,
+                      height: event.currentTarget.naturalHeight,
+                    })
+                    setPreviewReady(true)
+                  }}
                   onError={reportLoadError}
                 />
               )}
               {!previewReady && !error && (
                 <span role="status" aria-live="polite">{t('art.cropLoading')}</span>
               )}
-              {previewShape === 'workspace' && (
-                <div className="art-crop-workspace-overlay" aria-hidden="true">
-                  <span className="art-crop-workspace-sidebar" />
-                  <span className="art-crop-workspace-main">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
+              {previewReady && (
+                <div
+                  className={`art-crop-preview art-crop-preview--${previewShape}`}
+                  data-preview-mode={initialPreviewMode}
+                  style={frameStyle}
+                  role="group"
+                  aria-label={t('art.cropPreviewPosition', position)}
+                  tabIndex={0}
+                  onKeyDown={handleFrameKeyDown}
+                  onPointerDown={(event) => beginInteraction(event, 'move')}
+                >
+                  <span className="art-crop-grid" aria-hidden="true" />
+                  {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as Corner[]).map((corner) => (
+                    <button
+                      key={corner}
+                      type="button"
+                      className={`art-crop-handle art-crop-handle--${corner}`}
+                      aria-label={t('art.cropResizeHandle')}
+                      onKeyDown={handleFrameKeyDown}
+                      onPointerDown={(event) => beginInteraction(event, 'resize', corner)}
+                    />
+                  ))}
                 </div>
               )}
-              {previewShape === 'hero' && (
-                <div className="art-crop-hero-overlay" aria-hidden="true">
-                  <span className="art-crop-hero-cover" />
-                  <span className="art-crop-hero-copy">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                </div>
-              )}
-              {previewShape === 'cover' && <span className="art-crop-cover-guide" aria-hidden="true" />}
-              <span className="art-crop-grid" aria-hidden="true" />
             </div>
           </div>
 
@@ -494,32 +479,6 @@ export default function ArtCropDialog({
           </span>
 
           <div className="art-crop-controls">
-            <label htmlFor={zoomId}>{t('art.cropZoom')}</label>
-            <input
-              id={zoomId}
-              type="range"
-              min="1"
-              max="4"
-              step="0.05"
-              value={zoomValue}
-              style={{ '--art-zoom-progress': `${((zoomValue - 1) / 3) * 100}%` } as CSSProperties}
-              aria-valuetext={t('art.cropZoomValue', { value: position.zoom })}
-              disabled={!previewReady || saving}
-              onChange={(event) => {
-                const zoom = Number(event.currentTarget.value)
-                setZoomValue(zoom)
-                updateCrop({ zoom }, true)
-              }}
-              onPointerUp={() => {
-                renderCrop()
-                setAnnouncedCrop(cropRef.current)
-              }}
-              onKeyUp={() => {
-                renderCrop()
-                setAnnouncedCrop(cropRef.current)
-              }}
-            />
-            <output htmlFor={zoomId}>{t('art.cropZoomValue', { value: position.zoom })}</output>
             <button
               type="button"
               className="secondary-btn art-crop-reset"

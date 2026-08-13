@@ -342,37 +342,43 @@
 }
 
 .art-crop-stage {
-  align-items: center;
   background:
     radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 58%),
     color-mix(in srgb, #02070c 92%, var(--surface-3));
   border: 1px solid var(--surface-border);
   border-radius: 14px;
-  display: flex;
   flex: 1 1 auto;
-  justify-content: center;
   min-height: clamp(300px, calc(100vh - 330px), 430px);
   overflow: hidden;
-  padding: 42px 44px 28px;
   position: relative;
+  touch-action: none;
+  user-select: none;
 }
 
-.art-crop-stage::after {
-  background: rgba(2, 7, 12, 0.68);
-  content: '';
-  inset: 0;
-  pointer-events: none;
+.art-crop-canvas {
+  background: #02070c;
+  overflow: hidden;
   position: absolute;
-  z-index: 1;
 }
 
-.art-crop-stage-image {
-  background-repeat: no-repeat;
-  background-size: contain;
-  inset: 0;
-  opacity: 0.46;
+.art-crop-canvas > img {
+  display: block;
+  height: 100%;
+  object-fit: fill;
   pointer-events: none;
+  width: 100%;
+}
+
+.art-crop-canvas > img.is-loading {
+  opacity: 0;
+}
+
+.art-crop-canvas > [role='status'] {
+  color: var(--color-text-secondary);
+  left: 50%;
   position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .art-crop-target {
@@ -391,26 +397,17 @@
   text-overflow: ellipsis;
   top: 12px;
   white-space: nowrap;
-  z-index: 4;
+  z-index: 5;
 }
 
 .art-crop-preview {
-  position: relative;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 7;
-  overflow: hidden;
-  background: var(--surface-3);
   border: 2px solid color-mix(in srgb, var(--color-primary) 86%, white 14%);
-  border-radius: 12px;
   box-shadow:
-    0 20px 54px rgba(0, 0, 0, 0.42),
+    0 0 0 9999px rgba(2, 7, 12, 0.62),
+    0 8px 28px rgba(0, 0, 0, 0.36),
     0 0 0 1px rgba(255, 255, 255, 0.18);
-  color: var(--color-text-secondary);
   cursor: grab;
-  touch-action: none;
-  user-select: none;
-  width: min(880px, 100%);
+  position: absolute;
   z-index: 2;
 }
 
@@ -424,120 +421,15 @@
 }
 
 .art-crop-preview--cover {
-  aspect-ratio: 1;
   border-radius: 18%;
-  width: min(390px, 100%, calc(100vh - 390px));
 }
 
 .art-crop-preview--hero {
-  aspect-ratio: 4 / 1;
   border-radius: 22px;
-  max-width: 100%;
-  width: min(880px, calc((100vh - 390px) * var(--art-crop-aspect, 4)));
 }
 
 .art-crop-preview--workspace {
-  height: min(360px, calc(100vh - 390px));
-  max-width: 100%;
-  width: auto;
-}
-
-.art-crop-preview--workspace::after {
-  background:
-    radial-gradient(circle at 68% 18%, color-mix(in srgb, var(--color-primary) 11%, transparent), transparent 32%),
-    var(--launcher-background-scrim);
-  content: '';
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}
-
-.art-crop-workspace-overlay {
-  display: grid;
-  gap: 3%;
-  grid-template-columns: 18% minmax(0, 1fr);
-  inset: 8%;
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-}
-
-.art-crop-workspace-sidebar,
-.art-crop-workspace-main {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
-  background: var(--surface-1);
-  border: 1px solid var(--surface-border);
-  border-radius: 10px;
-  box-shadow: var(--surface-shadow);
-}
-
-.art-crop-workspace-main {
-  display: grid;
-  gap: 5%;
-  grid-template-rows: 36% 18% minmax(0, 1fr);
-  padding: 5%;
-}
-
-.art-crop-workspace-main i {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  border-radius: 8px;
-}
-
-.art-crop-hero-overlay {
-  align-items: center;
-  background: linear-gradient(90deg, var(--surface-material-strong) 0%, var(--surface-material) 58%, transparent 100%);
-  display: grid;
-  gap: 5%;
-  grid-template-columns: 14% minmax(0, 1fr);
-  inset: 0;
-  padding: 6%;
-  pointer-events: none;
-  position: absolute;
-}
-
-.art-crop-hero-cover {
-  aspect-ratio: 1;
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  border-radius: 18%;
-}
-
-.art-crop-hero-copy {
-  display: grid;
-  gap: 12%;
-  max-width: 68%;
-}
-
-.art-crop-hero-copy i {
-  background: color-mix(in srgb, var(--color-text) 82%, transparent);
-  border-radius: 999px;
-  height: 6px;
-}
-
-.art-crop-hero-copy i:nth-child(2) {
-  background: color-mix(in srgb, var(--color-text-secondary) 62%, transparent);
-  width: 72%;
-}
-
-.art-crop-hero-copy i:nth-child(3) {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  height: 18px;
-  width: 38%;
-}
-
-.art-crop-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: var(--art-focus-x) var(--art-focus-y);
-  pointer-events: none;
-  transform: scale(var(--art-zoom));
-  transform-origin: var(--art-focus-x) var(--art-focus-y);
+  border-radius: 14px;
 }
 
 .art-crop-grid {
@@ -565,28 +457,61 @@
   pointer-events: none;
   position: absolute;
   transition: opacity var(--motion-fast);
-  z-index: 3;
+  z-index: 1;
 }
 
 .art-crop-preview:not(:focus, :active, :hover) .art-crop-grid {
   opacity: 0.18;
 }
 
-.art-crop-cover-guide {
-  border: 1px dashed rgba(255, 255, 255, 0.68);
-  border-radius: 50%;
-  inset: 5%;
-  pointer-events: none;
+.art-crop-handle {
+  appearance: none;
+  background: transparent;
+  border: 0 solid white;
+  border-radius: 0;
+  box-shadow: none;
+  height: 28px;
+  padding: 0;
   position: absolute;
-  z-index: 2;
+  width: 28px;
+  z-index: 3;
 }
 
-.art-crop-preview img.is-loading {
-  opacity: 0;
+.art-crop-handle--top-left {
+  border-left-width: 3px;
+  border-top-width: 3px;
+  cursor: nwse-resize;
+  left: 0;
+  top: 0;
 }
 
-.art-crop-preview [role='status'] {
-  position: absolute;
+.art-crop-handle--top-right {
+  border-right-width: 3px;
+  border-top-width: 3px;
+  cursor: nesw-resize;
+  right: 0;
+  top: 0;
+}
+
+.art-crop-handle--bottom-left {
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  bottom: 0;
+  cursor: nesw-resize;
+  left: 0;
+}
+
+.art-crop-handle--bottom-right {
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  bottom: 0;
+  cursor: nwse-resize;
+  right: 0;
+}
+
+.art-crop-handle:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 .art-crop-hint {
@@ -598,63 +523,8 @@
 }
 
 .art-crop-controls {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  border-radius: 12px;
-}
-
-.art-crop-controls label {
-  color: var(--color-text);
-  font-weight: 700;
-}
-
-.art-crop-controls input[type='range'] {
-  appearance: none;
-  background: transparent;
-  height: 20px;
-  margin: 0;
-  min-width: 0;
-  width: 100%;
-}
-
-.art-crop-controls input[type='range']::-webkit-slider-runnable-track {
-  background: linear-gradient(
-    to right,
-    var(--color-primary) 0 var(--art-zoom-progress),
-    var(--color-control) var(--art-zoom-progress) 100%
-  );
-  border: 1px solid var(--surface-border-strong);
-  border-radius: 999px;
-  height: 6px;
-}
-
-.art-crop-controls input[type='range']::-webkit-slider-thumb {
-  appearance: none;
-  background: var(--color-primary);
-  border: 2px solid var(--surface-1);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px var(--color-primary);
-  height: 18px;
-  margin-top: -7px;
-  width: 18px;
-}
-
-.art-crop-controls input[type='range']:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 72%, transparent);
-  outline-offset: 3px;
-}
-
-.art-crop-controls output {
-  min-width: 4ch;
-  color: var(--color-primary);
-  font-variant-numeric: tabular-nums;
-  font-weight: 750;
-  text-align: end;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .art-crop-reset {
@@ -681,20 +551,5 @@
 
   .art-crop-stage {
     min-height: 300px;
-    padding: 42px 16px 20px;
-  }
-
-  .art-crop-preview--cover,
-  .art-crop-preview--hero,
-  .art-crop-preview--workspace {
-    min-height: 0;
-  }
-
-  .art-crop-controls {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .art-crop-reset {
-    grid-column: 1 / -1;
   }
 }
