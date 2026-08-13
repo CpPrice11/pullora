@@ -11,6 +11,7 @@ import { ChevronRightIcon } from '../../../components/ui/Icons'
 import './SearchComponents.css'
 
 const REPO_MENU_OPEN_EVENT = 'pullora:repo-menu-open'
+type RepoSubmenu = 'add-folder' | 'remove-folder' | 'cover' | 'background'
 
 interface RepoCardProps {
   repo: GitHubSearchResult
@@ -75,23 +76,17 @@ function RepoCard({
   const [isFav, setIsFav] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
-  const [folderMenuOpen, setFolderMenuOpen] = useState(false)
-  const [removeFolderMenuOpen, setRemoveFolderMenuOpen] = useState(false)
+  const [submenuOpen, setSubmenuOpen] = useState<RepoSubmenu | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
-  const [folderMenuPosition, setFolderMenuPosition] = useState<{ x: number; y: number } | null>(null)
-  const [removeFolderMenuPosition, setRemoveFolderMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const [submenuPosition, setSubmenuPosition] = useState<{ x: number; y: number } | null>(null)
   const cardRef = useRef<HTMLElement | null>(null)
   const actionsRef = useRef<HTMLDivElement | null>(null)
-  const folderTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const folderMenuRef = useRef<HTMLDivElement | null>(null)
-  const removeFolderTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const removeFolderMenuRef = useRef<HTMLDivElement | null>(null)
+  const submenuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const submenuRef = useRef<HTMLDivElement | null>(null)
   const menuId = useId()
-  const folderTriggerId = `${menuId}-folder-trigger`
-  const folderMenuId = `${menuId}-folder-menu`
-  const removeFolderTriggerId = `${menuId}-remove-folder-trigger`
-  const removeFolderMenuId = `${menuId}-remove-folder-menu`
+  const submenuTriggerId = (kind: RepoSubmenu) => `${menuId}-${kind}-trigger`
+  const submenuPanelId = (kind: RepoSubmenu) => `${menuId}-${kind}-menu`
   const closeActions = (restoreFocus = true) => {
     setActionsOpen(false)
     if (restoreFocus) cardRef.current?.focus()
@@ -113,8 +108,7 @@ function RepoCard({
 
   useEffect(() => {
     if (!actionsOpen) {
-      setFolderMenuOpen(false)
-      setRemoveFolderMenuOpen(false)
+      setSubmenuOpen(null)
       return
     }
 
@@ -122,8 +116,7 @@ function RepoCard({
       const target = event.target as Node
       if (
         !actionsRef.current?.contains(target)
-        && !folderMenuRef.current?.contains(target)
-        && !removeFolderMenuRef.current?.contains(target)
+        && !submenuRef.current?.contains(target)
       ) {
         closeActions()
       }
@@ -179,9 +172,8 @@ function RepoCard({
   }, [actionsOpen, menuAnchor])
 
   useEffect(() => {
-    const trigger = folderMenuOpen ? folderTriggerRef.current : removeFolderTriggerRef.current
-    const menu = folderMenuOpen ? folderMenuRef.current : removeFolderMenuRef.current
-    const setPosition = folderMenuOpen ? setFolderMenuPosition : setRemoveFolderMenuPosition
+    const trigger = submenuTriggerRef.current
+    const menu = submenuRef.current
     if (!trigger || !menu) return
 
     const edge = 8
@@ -194,11 +186,11 @@ function RepoCard({
       ? rootBounds.left - menuBounds.width - gap
       : rootBounds.right + gap
 
-    setPosition({
+    setSubmenuPosition({
       x: Math.max(edge, Math.min(x, window.innerWidth - menuBounds.width - edge)),
       y: Math.max(edge, Math.min(triggerBounds.top, window.innerHeight - menuBounds.height - edge)),
     })
-  }, [folderMenuOpen, removeFolderMenuOpen])
+  }, [submenuOpen])
 
   const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     handleMenuKeyboard(
@@ -326,8 +318,8 @@ function RepoCard({
 
   const openActions = (anchor: { x: number; y: number }) => {
     window.dispatchEvent(new CustomEvent(REPO_MENU_OPEN_EVENT, { detail: menuId }))
-    setFolderMenuOpen(false)
-    setRemoveFolderMenuOpen(false)
+    setSubmenuOpen(null)
+    setSubmenuPosition(null)
     setMenuPosition(null)
     setMenuAnchor(anchor)
     setActionsOpen(true)
@@ -358,6 +350,37 @@ function RepoCard({
   const primaryAction = isInstalled && !hasUpdate ? handleLaunch : handleInstall
   const hasPersonalizationActions = Boolean(
     onPickArt || onEditArt || onPickBackground || onEditBackground || (art?.coverPath && onClearArt) || (art?.backgroundPath && onClearBackground),
+  )
+
+  const openSubmenu = (kind: RepoSubmenu) => {
+    setSubmenuPosition(null)
+    setSubmenuOpen(kind)
+  }
+
+  const renderSubmenuTrigger = (kind: RepoSubmenu, label: string) => (
+    <div
+      className={`repo-actions-submenu ${submenuOpen === kind ? 'open' : ''}`}
+      onMouseEnter={() => openSubmenu(kind)}
+    >
+      <button
+        ref={submenuOpen === kind ? submenuTriggerRef : undefined}
+        id={submenuTriggerId(kind)}
+        type="button"
+        role="menuitem"
+        className="repo-actions-submenu-trigger"
+        aria-haspopup="menu"
+        aria-expanded={submenuOpen === kind}
+        aria-controls={submenuPanelId(kind)}
+        onClick={(event) => {
+          event.stopPropagation()
+          if (submenuOpen === kind) setSubmenuOpen(null)
+          else openSubmenu(kind)
+        }}
+      >
+        <span>{label}</span>
+        <ChevronRightIcon className="menu-chevron-icon" />
+      </button>
+    </div>
   )
 
   const coverUrl = projectArtCoverUrl(art)
@@ -493,120 +516,18 @@ function RepoCard({
               {isFav ? t('repo.removeFavorite') : t('repo.addFavorite')}
             </button>
             {(onCreateFolder || onMoveToFolder || onMoveToUncategorized) && (
-              <div
-                className={`repo-actions-submenu ${folderMenuOpen ? 'open' : ''}`}
-                onMouseEnter={() => {
-                  setFolderMenuPosition(null)
-                  setFolderMenuOpen(true)
-                  setRemoveFolderMenuOpen(false)
-                }}
-              >
-                <button
-                  ref={folderTriggerRef}
-                  id={folderTriggerId}
-                  type="button"
-                  role="menuitem"
-                  className="repo-actions-submenu-trigger"
-                  aria-haspopup="menu"
-                  aria-expanded={folderMenuOpen}
-                  aria-controls={folderMenuId}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setFolderMenuPosition(null)
-                    setFolderMenuOpen((current) => {
-                      const next = !current
-                      if (next) setRemoveFolderMenuOpen(false)
-                      return next
-                    })
-                  }}
-                >
-                  <span>{t('library.folder.addTo')}</span>
-                  <ChevronRightIcon className="menu-chevron-icon" />
-                </button>
-              </div>
+              renderSubmenuTrigger('add-folder', t('library.folder.addTo'))
             )}
             {onRemoveFromFolder && removableFolders.length > 0 && (
-              <div
-                className={`repo-actions-submenu ${removeFolderMenuOpen ? 'open' : ''}`}
-                onMouseEnter={() => {
-                  setRemoveFolderMenuPosition(null)
-                  setRemoveFolderMenuOpen(true)
-                  setFolderMenuOpen(false)
-                }}
-              >
-                <button
-                  ref={removeFolderTriggerRef}
-                  id={removeFolderTriggerId}
-                  type="button"
-                  role="menuitem"
-                  className="repo-actions-submenu-trigger"
-                  aria-haspopup="menu"
-                  aria-expanded={removeFolderMenuOpen}
-                  aria-controls={removeFolderMenuId}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setRemoveFolderMenuPosition(null)
-                    setRemoveFolderMenuOpen((current) => {
-                      const next = !current
-                      if (next) setFolderMenuOpen(false)
-                      return next
-                    })
-                  }}
-                >
-                  <span>{t('library.folder.removeFrom')}</span>
-                  <ChevronRightIcon className="menu-chevron-icon" />
-                </button>
-              </div>
+              renderSubmenuTrigger('remove-folder', t('library.folder.removeFrom'))
             )}
             {hasPersonalizationActions && (
               <div className="repo-actions-menu-separator" role="separator" />
             )}
-            {art?.coverPath && onEditArt && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleEditArt}
-              >
-                {t('art.editCover')}
-              </button>
-            )}
-            {onPickArt && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handlePickArt}
-              >
-                {t(art?.coverPath ? 'art.replaceCover' : 'art.changeCover')}
-              </button>
-            )}
-            {art?.backgroundPath && onEditBackground && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleEditBackground}
-              >
-                {t('art.editBackground')}
-              </button>
-            )}
-            {onPickBackground && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handlePickBackground}
-              >
-                {t(art?.backgroundPath ? 'art.replaceBackground' : 'art.changeBackground')}
-              </button>
-            )}
-            {art?.coverPath && onClearArt && (
-              <button type="button" role="menuitem" onClick={handleClearArt}>
-                {t('art.resetCover')}
-              </button>
-            )}
-            {art?.backgroundPath && onClearBackground && (
-              <button type="button" role="menuitem" onClick={handleClearBackground}>
-                {t('art.resetBackground')}
-              </button>
-            )}
+            {(onPickArt || onEditArt || (art?.coverPath && onClearArt))
+              && renderSubmenuTrigger('cover', t('art.cover'))}
+            {(onPickBackground || onEditBackground || (art?.backgroundPath && onClearBackground))
+              && renderSubmenuTrigger('background', t('art.background'))}
             {isInstalled && onUninstall && (
               <>
                 <div className="repo-actions-menu-separator" role="separator" />
@@ -622,35 +543,35 @@ function RepoCard({
             )}
             </div>
           </div>
-          {folderMenuOpen && (
+          {submenuOpen && (
             <div
-              ref={folderMenuRef}
-              id={folderMenuId}
+              ref={submenuRef}
+              id={submenuPanelId(submenuOpen)}
               className="repo-actions-submenu-panel"
               role="menu"
-              aria-labelledby={folderTriggerId}
+              aria-labelledby={submenuTriggerId(submenuOpen)}
               style={{
-                left: folderMenuPosition?.x ?? 0,
-                top: folderMenuPosition?.y ?? 0,
-                visibility: folderMenuPosition ? 'visible' : 'hidden',
+                left: submenuPosition?.x ?? 0,
+                top: submenuPosition?.y ?? 0,
+                visibility: submenuPosition ? 'visible' : 'hidden',
               }}
               onClick={(event) => event.stopPropagation()}
               onKeyDown={handleMenuKeyDown}
             >
-              {onCreateFolder && (
+              {submenuOpen === 'add-folder' && onCreateFolder && (
                 <button type="button" role="menuitem" onClick={handleCreateFolder}>
                   {t('library.folder.createNew')}
                 </button>
               )}
-              {onMoveToUncategorized && (
+              {submenuOpen === 'add-folder' && onMoveToUncategorized && (
                 <button type="button" role="menuitem" onClick={handleMoveToUncategorized}>
                   {t('library.folder.uncategorized')}
                 </button>
               )}
-              {folders.length > 0 && (
+              {submenuOpen === 'add-folder' && folders.length > 0 && (
                 <span className="repo-actions-menu-label">{t('library.folder.title')}</span>
               )}
-              {folders.map((folder) => (
+              {submenuOpen === 'add-folder' && folders.map((folder) => (
                 <button
                   key={folder.id}
                   type="button"
@@ -660,24 +581,7 @@ function RepoCard({
                   {folder.name}
                 </button>
               ))}
-            </div>
-          )}
-          {removeFolderMenuOpen && (
-            <div
-              ref={removeFolderMenuRef}
-              id={removeFolderMenuId}
-              className="repo-actions-submenu-panel"
-              role="menu"
-              aria-labelledby={removeFolderTriggerId}
-              style={{
-                left: removeFolderMenuPosition?.x ?? 0,
-                top: removeFolderMenuPosition?.y ?? 0,
-                visibility: removeFolderMenuPosition ? 'visible' : 'hidden',
-              }}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={handleMenuKeyDown}
-            >
-              {removableFolders.map((folder) => (
+              {submenuOpen === 'remove-folder' && removableFolders.map((folder) => (
                 <button
                   key={folder.id}
                   type="button"
@@ -687,6 +591,28 @@ function RepoCard({
                   {folder.name}
                 </button>
               ))}
+              {submenuOpen === 'cover' && art?.coverPath && onEditArt && (
+                <button type="button" role="menuitem" onClick={handleEditArt}>{t('art.edit')}</button>
+              )}
+              {submenuOpen === 'cover' && onPickArt && (
+                <button type="button" role="menuitem" onClick={handlePickArt}>
+                  {t(art?.coverPath ? 'art.replace' : 'art.changeCover')}
+                </button>
+              )}
+              {submenuOpen === 'cover' && art?.coverPath && onClearArt && (
+                <button type="button" role="menuitem" onClick={handleClearArt}>{t('art.reset')}</button>
+              )}
+              {submenuOpen === 'background' && art?.backgroundPath && onEditBackground && (
+                <button type="button" role="menuitem" onClick={handleEditBackground}>{t('art.edit')}</button>
+              )}
+              {submenuOpen === 'background' && onPickBackground && (
+                <button type="button" role="menuitem" onClick={handlePickBackground}>
+                  {t(art?.backgroundPath ? 'art.replace' : 'art.changeBackground')}
+                </button>
+              )}
+              {submenuOpen === 'background' && art?.backgroundPath && onClearBackground && (
+                <button type="button" role="menuitem" onClick={handleClearBackground}>{t('art.reset')}</button>
+              )}
             </div>
           )}
         </>,

@@ -435,8 +435,10 @@ try {
   assert.match(repoCardSource, /actionsRef\.current\.getBoundingClientRect\(\)/)
   assert.match(repoCardSource, /window\.addEventListener\('scroll', closeAndRestoreFocus, true\)/)
   assert.match(repoCardSource, /REPO_MENU_OPEN_EVENT/)
-  assert.match(repoCardSource, /art\.editCover[\s\S]*?art\.replaceCover/)
-  assert.match(repoCardSource, /art\.editBackground[\s\S]*?art\.replaceBackground/)
+  assert.match(repoCardSource, /renderSubmenuTrigger\('cover', t\('art\.cover'\)\)/)
+  assert.match(repoCardSource, /renderSubmenuTrigger\('background', t\('art\.background'\)\)/)
+  assert.match(repoCardSource, /submenuOpen === 'cover'[\s\S]*?art\.edit[\s\S]*?art\.replace[\s\S]*?art\.reset/)
+  assert.match(repoCardSource, /submenuOpen === 'background'[\s\S]*?art\.edit[\s\S]*?art\.replace[\s\S]*?art\.reset/)
   assert.match(libraryHeroSource, /art\.editBackground[\s\S]*?art\.replaceBackground/)
   assert.match(repoCardSource, /projectArtCoverCropStyle\(art\)/)
   assert.match(artCropDialogSource, /setPointerCapture\(event\.pointerId\)/)
@@ -585,6 +587,21 @@ try {
   assert.match(operationsPanel, /library-inline-panel--versions/)
   assert.match(operationsPanel, /library-inline-panel--details/)
   assert.match(operationsPanel, new RegExp(`${effectiveInstallPath.replaceAll('\\', '\\\\')}\\\\CpPrice11-demo-app`))
+  assert.match(render(LibraryOperationsPanel, {
+    repo,
+    latestVersion: 'v2.0.0',
+    onInstall: noop,
+    onUpdate: noop,
+    onLaunch: noop,
+  }), /library-ops-panel available/)
+  assert.match(render(LibraryOperationsPanel, {
+    repo,
+    installedApp,
+    latestVersion: installedApp.activeVersion,
+    onInstall: noop,
+    onUpdate: noop,
+    onLaunch: noop,
+  }), /library-ops-panel installed/)
   const updatingOperationsPanel = render(LibraryOperationsPanel, {
     repo,
     installedApp,

@@ -5262,14 +5262,18 @@
 /* Portalled context menu is isolated from the clipped repository row. */
 .repo-context-menu {
   max-width: calc(100vw - 16px);
-  min-width: 240px;
+  min-width: 220px;
   width: max-content;
 }
 
 .repo-context-menu .project-actions-popover {
   max-height: calc(100vh - 16px);
-  min-width: 240px;
+  min-width: 220px;
   overscroll-behavior: contain;
+}
+
+.repo-context-menu .project-actions-popover button {
+  min-height: 38px;
 }
 
 /* User-controlled transparency and blur for the primary interface surfaces. */

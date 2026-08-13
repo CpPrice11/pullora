@@ -194,7 +194,8 @@ async function seedPage(page, {
 async function openCropDialog(page) {
   const card = page.locator('.repo-card').filter({ hasText: 'steam-achievement-manager' }).first()
   await card.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'Редагувати обкладинку' }).click()
+  await page.getByRole('menuitem', { name: 'Обкладинка', exact: true }).hover()
+  await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
   const dialog = page.locator('.art-crop-modal')
   const preview = dialog.locator('.art-crop-preview')
   const image = preview.locator('img')
@@ -208,7 +209,11 @@ async function openCropDialog(page) {
 async function openArtCropDialog(page, menuItemName) {
   const card = page.locator('.repo-card').filter({ hasText: 'steam-achievement-manager' }).first()
   await card.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: menuItemName }).click()
+  await page.getByRole('menuitem', {
+    name: menuItemName.includes('обкладинку') ? 'Обкладинка' : 'Фон',
+    exact: true,
+  }).hover()
+  await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
   const dialog = page.locator('.art-crop-modal')
   const preview = dialog.locator('.art-crop-preview')
   const image = preview.locator('img')
@@ -364,7 +369,8 @@ async function checkPreviewParity(browser) {
     const expectedHeroCrop = await cropContract(heroBackground)
     const card = page.locator('.repo-card').filter({ hasText: 'steam-achievement-manager' }).first()
     await card.click({ button: 'right' })
-    await page.getByRole('menuitem', { name: 'Редагувати фон' }).click()
+    await page.getByRole('menuitem', { name: 'Фон', exact: true }).hover()
+    await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
     let dialog = page.locator('.art-crop-modal')
     let preview = dialog.locator('.art-crop-preview')
     const previewMode = scenario.libraryDensity === 'compact' ? 'Компактний' : 'Звичайний'
@@ -372,6 +378,9 @@ async function checkPreviewParity(browser) {
     assert.equal(await preview.getAttribute('data-preview-mode'), scenario.libraryDensity)
     assert.deepEqual(await cropContract(preview.locator('img')), expectedHeroCrop)
     assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(heroBackground))
+    const [previewBox, heroBox] = await Promise.all([preview.boundingBox(), page.locator('.library-hero').boundingBox()])
+    assert(previewBox && heroBox)
+    assert(Math.abs(previewBox.width / previewBox.height - heroBox.width / heroBox.height) < 0.01)
     await dialog.getByRole('button', { name: 'Скасувати' }).click()
     await dialog.waitFor({ state: 'hidden' })
 
@@ -387,6 +396,7 @@ async function checkPreviewParity(browser) {
     assert.deepEqual(await surfaceContract(preview), expectedSurface)
     assert.deepEqual(await surfaceContract(preview.locator('.art-crop-workspace-sidebar')), expectedSurface)
     assert.deepEqual(await materialContract(preview.locator('.art-crop-workspace-sidebar')), expectedMaterial)
+    assert.deepEqual(await renderedCrop(preview.locator('img'), true), await renderedCrop(globalBackground))
     await dialog.getByRole('button', { name: 'Скасувати' }).click()
     await dialog.waitFor({ state: 'hidden' })
 
@@ -584,6 +594,18 @@ async function checkCancelAndControls(browser) {
   await preview.press('Shift+ArrowRight')
   assert(Number.parseFloat((await cropStyle(preview)).x) > Number.parseFloat(dragged.x))
 
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width * 1.5, box.y + box.height / 2)
+  await page.mouse.up()
+  assert.equal(Number.parseFloat((await cropStyle(preview)).x), 0)
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x - box.width / 2, box.y + box.height / 2)
+  await page.mouse.up()
+  assert.equal(Number.parseFloat((await cropStyle(preview)).x), 100)
+
   await dialog.getByRole('button', { name: 'Скинути кадрування' }).click()
   assert.deepEqual(await cropStyle(preview), { x: '50%', y: '50%', zoom: '1' })
   await cancel.click()
@@ -734,7 +756,8 @@ async function checkPreviewBlockingAndError(browser) {
   await seedPage(page, { previewPending: true })
   const card = page.locator('.repo-card').filter({ hasText: 'steam-achievement-manager' }).first()
   await card.click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'Редагувати обкладинку' }).click()
+  await page.getByRole('menuitem', { name: 'Обкладинка', exact: true }).hover()
+  await page.getByRole('menuitem', { name: 'Редагувати', exact: true }).click()
   const dialog = page.locator('.art-crop-modal')
   await dialog.waitFor()
   assert(await dialog.getByRole('button', { name: 'Зберегти' }).isDisabled())

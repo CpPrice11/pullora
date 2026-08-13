@@ -54,6 +54,7 @@ def check_source_contract() -> None:
     styles = (ROOT / "src" / "pages" / "PageStyles.css").read_text(encoding="utf-8")
     app = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
     layout = (ROOT / "src" / "components" / "Layout" / "Layout.tsx").read_text(encoding="utf-8")
+    layout_styles = (ROOT / "src" / "components" / "Layout" / "Layout.css").read_text(encoding="utf-8")
     library_page = (ROOT / "src" / "features" / "library" / "LibraryPage.tsx").read_text(encoding="utf-8")
     library_hero = (ROOT / "src" / "features" / "library" / "components" / "LibraryHero.tsx").read_text(encoding="utf-8")
     hero_selector = ".cinematic-shell .library-page .library-hero {"
@@ -87,6 +88,10 @@ def check_source_contract() -> None:
     assert "backgroundImage={visibleBackground}" in app
     assert "className={`cinematic-background" in layout
     assert "backgroundImage: toCssUrl(backgroundImage)" in layout
+    launcher_background_rule = css_rule(layout_styles, ".cinematic-background {")
+    assert "inset: 0" in launcher_background_rule
+    assert "transform: scale(var(--art-zoom, 1))" in launcher_background_rule
+    assert "scale(calc(var(--art-zoom" not in layout_styles
     assert "launcherBackground" not in library_page
     assert "fallbackToCover: false" in library_page
     assert '<div className="library-hero-background" style={backgroundStyle}' in library_hero

@@ -265,6 +265,7 @@ function LibraryPage({
     kind: 'cover' | 'background'
     mode: 'replace' | 'edit'
     initialCrop?: ArtCrop
+    previewAspectRatios?: Partial<Record<LibraryDensity, number>>
   } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
@@ -924,6 +925,8 @@ function LibraryPage({
   const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
     if (!targetRepo) return
 
+    const previewAspectRatios = kind === 'background' ? getHeroAspectRatios() : undefined
+
     setLibraryActionError(null)
     const imagePath = await pickImageFile()
     if (!imagePath) return
@@ -933,7 +936,25 @@ function LibraryPage({
       sourcePath: imagePath,
       kind,
       mode: 'replace',
+      previewAspectRatios,
     })
+  }
+
+  const getHeroAspectRatios = () => {
+    const page = document.querySelector('.library-page')
+    const hero = page?.querySelector('.library-hero')
+    if (!page || !hero) return undefined
+
+    const originalClassName = page.className
+    const ratios: Partial<Record<LibraryDensity, number>> = {}
+    for (const density of ['normal', 'compact'] as const) {
+      page.classList.remove('library-density-normal', 'library-density-compact')
+      page.classList.add(`library-density-${density}`)
+      const bounds = hero.getBoundingClientRect()
+      if (bounds.width && bounds.height) ratios[density] = bounds.width / bounds.height
+    }
+    page.className = originalClassName
+    return ratios
   }
 
   const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
@@ -941,6 +962,7 @@ function LibraryPage({
     const art = projectArt[projectArtKey(targetRepo.owner.login, targetRepo.name)]
     const sourcePath = kind === 'cover' ? art?.coverPath : art?.backgroundPath
     if (!sourcePath) return
+    const previewAspectRatios = kind === 'background' ? getHeroAspectRatios() : undefined
 
     setLibraryActionError(null)
     setPendingArtCrop({
@@ -949,6 +971,7 @@ function LibraryPage({
       kind,
       mode: 'edit',
       initialCrop: kind === 'cover' ? art.coverCrop : art.backgroundCrop,
+      previewAspectRatios,
     })
   }
 
@@ -1751,6 +1774,8 @@ function LibraryPage({
           <ArtCropDialog
             kind={pendingArtCrop.kind}
             previewShape={pendingArtCrop.kind === 'cover' ? 'cover' : 'hero'}
+            initialPreviewMode={libraryDensity}
+            previewAspectRatios={pendingArtCrop.previewAspectRatios}
             sourcePath={pendingArtCrop.sourcePath}
             initialCrop={pendingArtCrop.initialCrop}
             onCancel={() => setPendingArtCrop(null)}

@@ -160,7 +160,9 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
     assert submenu_trigger.evaluate('el => el === document.activeElement')
 
     edge_points = ((12, 12), (width - 2, 12), (12, height - 2), (width - 2, height - 2))
-    for trigger_index in range(2):
+    submenu_trigger_count = menu.locator('.repo-actions-submenu-trigger').count()
+    assert submenu_trigger_count == 4, submenu_trigger_count
+    for trigger_index in range(submenu_trigger_count):
         for x, y in edge_points:
             card.evaluate(
                 "(element, point) => element.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: point.x, clientY: point.y }))",
@@ -175,7 +177,8 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
             assert current_submenu_box['x'] >= 8 and current_submenu_box['y'] >= 8, current_submenu_box
             assert current_submenu_box['x'] + current_submenu_box['width'] <= width - 8 + 1, current_submenu_box
             assert current_submenu_box['y'] + current_submenu_box['height'] <= height - 8 + 1, current_submenu_box
-            assert submenu.get_by_role('menuitem').count() >= 30
+            submenu_items = submenu.get_by_role('menuitem').count()
+            assert submenu_items >= 30 if trigger_index < 2 else submenu_items >= 1
             scroll_metrics = submenu.evaluate('el => ({ clientHeight: el.clientHeight, scrollHeight: el.scrollHeight })')
             assert scroll_metrics['clientHeight'] <= height - 16
             if scroll_metrics['scrollHeight'] > height - 16:
