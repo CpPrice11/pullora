@@ -934,20 +934,13 @@ function LibraryPage({
   }
 
   const getHeroAspectRatios = () => {
-    const page = document.querySelector('.library-page')
-    const hero = page?.querySelector('.library-hero')
-    if (!page || !hero) return undefined
+    const hero = document.querySelector('.library-page .library-hero')
+    if (!hero) return undefined
 
-    const originalClassName = page.className
-    const ratios: Partial<Record<LibraryDensity, number>> = {}
-    for (const density of ['normal', 'compact'] as const) {
-      page.classList.remove('library-density-normal', 'library-density-compact')
-      page.classList.add(`library-density-${density}`)
-      const bounds = hero.getBoundingClientRect()
-      if (bounds.width && bounds.height) ratios[density] = bounds.width / bounds.height
-    }
-    page.className = originalClassName
-    return ratios
+    const bounds = hero.getBoundingClientRect()
+    if (!bounds.width || !bounds.height) return undefined
+
+    return { [libraryDensity]: bounds.width / bounds.height }
   }
 
   const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo) => {

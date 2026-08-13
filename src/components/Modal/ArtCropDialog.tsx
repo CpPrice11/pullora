@@ -1,4 +1,13 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type WheelEvent,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
@@ -6,8 +15,6 @@ import { artCropStyle, getProjectArtPreview, type ProjectArtKind } from '../../s
 import type { ArtCrop } from '../../types'
 import { CloseIcon } from '../ui/Icons'
 import './Modal.css'
-
-type ArtCropPreviewMode = 'current' | '1000x700' | '1280x720' | '1920x1080' | '2560x1600' | 'normal' | 'compact'
 
 const displayDimension = (value: number) => {
   const roundedToTen = Math.round(value / 10) * 10
@@ -21,6 +28,22 @@ const currentScreenResolution = () => {
     width: displayDimension(window.screen.width * scale),
     height: displayDimension(window.screen.height * scale),
   }
+}
+
+const currentMonitorResolution = async () => {
+  try {
+    const { currentMonitor } = await import('@tauri-apps/api/window')
+    const monitor = await currentMonitor()
+    if (monitor) {
+      return {
+        width: displayDimension(monitor.size.width),
+        height: displayDimension(monitor.size.height),
+      }
+    }
+  } catch {
+    // Browser previews and older runtimes fall back to the active web screen.
+  }
+  return currentScreenResolution()
 }
 
 interface ArtCropDialogProps {
@@ -42,6 +65,19 @@ const normalizeCrop = (crop: ArtCrop = centeredCrop): ArtCrop => ({
   focusX: clamp(Number.isFinite(crop.focusX) ? crop.focusX : 0.5, 0, 1),
   focusY: clamp(Number.isFinite(crop.focusY) ? crop.focusY : 0.5, 0, 1),
   zoom: clamp(Number.isFinite(crop.zoom) ? crop.zoom : 1, 1, 4),
+})
+
+const dragFocus = (focus: number, delta: number, before: number, after: number) => {
+  if (delta < 0) return focus - delta * (1 - focus) / Math.max(before, 1)
+  return focus - delta * focus / Math.max(after, 1)
+}
+
+const pointerDistance = (first: { x: number; y: number }, second: { x: number; y: number }) =>
+  Math.hypot(second.x - first.x, second.y - first.y)
+
+const pointerCenter = (first: { x: number; y: number }, second: { x: number; y: number }) => ({
+  x: (first.x + second.x) / 2,
+  y: (first.y + second.y) / 2,
 })
 
 const cropPosition = (crop: ArtCrop, language: string) => ({
@@ -76,10 +112,20 @@ export default function ArtCropDialog({
     height: number
     crop: ArtCrop
   } | null>(null)
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>())
+  const pinchRef = useRef<{
+    distance: number
+    centerX: number
+    centerY: number
+    left: number
+    top: number
+    width: number
+    height: number
+    crop: ArtCrop
+  } | null>(null)
   const titleId = useId()
   const descriptionId = useId()
   const zoomId = useId()
-  const previewFormatId = useId()
   const cropRef = useRef(normalizeCrop(initialCrop))
   const cropFrameRef = useRef<number | null>(null)
   const loadErrorReportedRef = useRef(false)
@@ -90,13 +136,11 @@ export default function ArtCropDialog({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewReady, setPreviewReady] = useState(false)
   const [crop, setCrop] = useState(cropRef.current)
+  const [zoomValue, setZoomValue] = useState(cropRef.current.zoom)
   const [announcedCrop, setAnnouncedCrop] = useState<ArtCrop | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [screenResolution] = useState(currentScreenResolution)
-  const [previewMode, setPreviewMode] = useState<ArtCropPreviewMode>(
-    previewShape === 'workspace' || previewShape === 'hero' ? 'current' : initialPreviewMode,
-  )
+  const [screenResolution, setScreenResolution] = useState(currentScreenResolution)
 
   useModalFocus(dialogRef, { onEscape: saving ? undefined : onCancel })
 
@@ -114,9 +158,12 @@ export default function ArtCropDialog({
     setPreviewUrl(null)
     setPreviewReady(false)
     setCrop(nextCrop)
+    setZoomValue(nextCrop.zoom)
     setAnnouncedCrop(null)
     setError(null)
     dragRef.current = null
+    pointersRef.current.clear()
+    pinchRef.current = null
     if (cropFrameRef.current !== null) {
       cancelAnimationFrame(cropFrameRef.current)
       cropFrameRef.current = null
@@ -134,23 +181,57 @@ export default function ArtCropDialog({
     return () => {
       active = false
       dragRef.current = null
+      pointersRef.current.clear()
+      pinchRef.current = null
       if (cropFrameRef.current !== null) cancelAnimationFrame(cropFrameRef.current)
       cropFrameRef.current = null
     }
   }, [initialCrop, sourcePath, t])
 
+  useEffect(() => {
+    if (previewShape !== 'workspace') return
+    let active = true
+    let unlisten: (() => void) | undefined
+    let monitorTimer: number | undefined
+
+    const syncMonitor = async () => {
+      const resolution = await currentMonitorResolution()
+      if (active) setScreenResolution(resolution)
+    }
+    const scheduleMonitorSync = () => {
+      window.clearTimeout(monitorTimer)
+      monitorTimer = window.setTimeout(() => void syncMonitor(), 120)
+    }
+
+    void syncMonitor()
+    void import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => getCurrentWindow().onMoved(scheduleMonitorSync))
+      .then((stopListening) => {
+        if (active) unlisten = stopListening
+        else stopListening()
+      })
+      .catch(() => undefined)
+    window.addEventListener('resize', scheduleMonitorSync)
+
+    return () => {
+      active = false
+      window.clearTimeout(monitorTimer)
+      unlisten?.()
+      window.removeEventListener('resize', scheduleMonitorSync)
+    }
+  }, [previewShape])
+
   const renderCrop = () => {
     if (cropFrameRef.current !== null) cancelAnimationFrame(cropFrameRef.current)
     cropFrameRef.current = null
     setCrop(cropRef.current)
+    setZoomValue(cropRef.current.zoom)
   }
 
   const updateCrop = (next: Partial<ArtCrop>, deferRender = false) => {
     cropRef.current = normalizeCrop({ ...cropRef.current, ...next })
     if (!deferRender) return renderCrop()
-    if (cropFrameRef.current === null) {
-      cropFrameRef.current = requestAnimationFrame(renderCrop)
-    }
+    if (cropFrameRef.current === null) cropFrameRef.current = requestAnimationFrame(renderCrop)
   }
 
   const commitCrop = (next: ArtCrop) => {
@@ -163,6 +244,26 @@ export default function ArtCropDialog({
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!previewReady || event.button !== 0) return
     const bounds = event.currentTarget.getBoundingClientRect()
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    event.currentTarget.setPointerCapture(event.pointerId)
+
+    if (pointersRef.current.size >= 2) {
+      const [first, second] = Array.from(pointersRef.current.values())
+      const center = pointerCenter(first, second)
+      pinchRef.current = {
+        distance: Math.max(pointerDistance(first, second), 1),
+        centerX: center.x,
+        centerY: center.y,
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+        crop: cropRef.current,
+      }
+      dragRef.current = null
+      return
+    }
+
     dragRef.current = {
       pointerId: event.pointerId,
       x: event.clientX,
@@ -173,26 +274,84 @@ export default function ArtCropDialog({
       height: bounds.height,
       crop: cropRef.current,
     }
-    event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!pointersRef.current.has(event.pointerId)) return
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+
+    const pinch = pinchRef.current
+    if (pinch && pointersRef.current.size >= 2) {
+      const [first, second] = Array.from(pointersRef.current.values())
+      const center = pointerCenter(first, second)
+      updateCrop({
+        focusX: dragFocus(
+          pinch.crop.focusX,
+          center.x - pinch.centerX,
+          pinch.centerX - pinch.left,
+          pinch.left + pinch.width - pinch.centerX,
+        ),
+        focusY: dragFocus(
+          pinch.crop.focusY,
+          center.y - pinch.centerY,
+          pinch.centerY - pinch.top,
+          pinch.top + pinch.height - pinch.centerY,
+        ),
+        zoom: pinch.crop.zoom * pointerDistance(first, second) / pinch.distance,
+      }, true)
+      return
+    }
+
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
     updateCrop({
-      focusX: drag.crop.focusX - (event.clientX - drag.x) / drag.width,
-      focusY: drag.crop.focusY - (event.clientY - drag.y) / drag.height,
+      focusX: dragFocus(
+        drag.crop.focusX,
+        event.clientX - drag.x,
+        drag.x - drag.left,
+        drag.left + drag.width - drag.x,
+      ),
+      focusY: dragFocus(
+        drag.crop.focusY,
+        event.clientY - drag.y,
+        drag.y - drag.top,
+        drag.top + drag.height - drag.y,
+      ),
     }, true)
   }
 
   const finishDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId !== event.pointerId) return
-    dragRef.current = null
+    if (!pointersRef.current.has(event.pointerId)) return
+    pointersRef.current.delete(event.pointerId)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
+    pinchRef.current = null
+    dragRef.current = null
+
+    const remainingPointer = pointersRef.current.entries().next().value as [number, { x: number; y: number }] | undefined
+    if (remainingPointer) {
+      const [pointerId, point] = remainingPointer
+      const bounds = event.currentTarget.getBoundingClientRect()
+      dragRef.current = {
+        pointerId,
+        x: point.x,
+        y: point.y,
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+        crop: cropRef.current,
+      }
+    }
     renderCrop()
     setAnnouncedCrop(cropRef.current)
+  }
+
+  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!previewReady || saving) return
+    event.preventDefault()
+    commitCrop({ ...cropRef.current, zoom: cropRef.current.zoom - event.deltaY * 0.002 })
   }
 
   const handlePreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -222,41 +381,21 @@ export default function ArtCropDialog({
   }
 
   const targetLabel = t(kind === 'cover' ? 'art.cover' : 'art.background')
-  const currentResolutionValue = `${screenResolution.width}x${screenResolution.height}`
-  const previewOptions: Array<{ value: ArtCropPreviewMode; label: string }> = previewShape === 'workspace'
-    ? ([
-        { value: 'current', label: t('art.cropCurrentScreen', screenResolution) },
-        { value: '1000x700', label: '1000 × 700' },
-        { value: '1280x720', label: '1280 × 720' },
-        { value: '1920x1080', label: '1920 × 1080' },
-        { value: '2560x1600', label: '2560 × 1600' },
-      ] satisfies Array<{ value: ArtCropPreviewMode; label: string }>)
-        .filter((option) => option.value === 'current' || option.value !== currentResolutionValue)
-    : previewShape === 'hero'
-      ? [
-          { value: 'current', label: t('art.cropCurrentScreen', screenResolution) },
-          { value: 'normal', label: t('library.viewNormal') },
-          { value: 'compact', label: t('library.viewCompact') },
-        ]
-      : []
   const position = cropPosition(crop, language)
   const announcedPosition = announcedCrop ? cropPosition(announcedCrop, language) : null
-  const previewAspectRatio = previewShape === 'hero' && previewMode === 'current'
-    ? previewAspectRatios?.[initialPreviewMode]
-    : previewMode === 'normal' || previewMode === 'compact'
-      ? previewAspectRatios?.[previewMode]
-      : undefined
+  const previewAspectRatio = previewShape === 'workspace'
+    ? screenResolution.width / screenResolution.height
+    : previewShape === 'hero'
+      ? previewAspectRatios?.[initialPreviewMode] ?? 4
+      : 1
   const previewFrameStyle = {
     ...previewStyle,
-    ...(previewShape === 'workspace' && previewMode === 'current'
-      ? { aspectRatio: `${screenResolution.width} / ${screenResolution.height}` }
-      : {}),
-    ...(previewShape === 'hero'
-      && previewAspectRatio
-      && Number.isFinite(previewAspectRatio)
-      ? { aspectRatio: String(previewAspectRatio) }
-      : {}),
+    aspectRatio: Number.isFinite(previewAspectRatio) ? String(previewAspectRatio) : '1',
+    '--art-crop-aspect': Number.isFinite(previewAspectRatio) ? String(previewAspectRatio) : '1',
   } as CSSProperties
+  const cropTarget = previewShape === 'workspace'
+    ? t('art.cropCurrentScreen', screenResolution)
+    : t(previewShape === 'cover' ? 'art.cropTargetCover' : 'art.cropTargetHero')
 
   const dialog = (
     <div className="modal-overlay art-crop-overlay">
@@ -287,71 +426,66 @@ export default function ArtCropDialog({
         </header>
 
         <div className="art-crop-body">
-          {previewOptions.length > 0 && (
-            <label className="art-crop-preview-field" htmlFor={previewFormatId}>
-              <span>{t('art.cropPreviewFormat')}</span>
-              <select
-                id={previewFormatId}
-                className="art-crop-preview-select"
-                aria-label={t('art.cropPreviewFormat')}
-                value={previewMode}
-                disabled={saving}
-                onChange={(event) => setPreviewMode(event.target.value as ArtCropPreviewMode)}
-              >
-                {previewOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <div
-            className={`art-crop-preview art-crop-preview--${previewShape}`}
-            data-preview-mode={previewMode}
-            style={previewFrameStyle}
-            role="img"
-            aria-label={t('art.cropPreviewPosition', position)}
-            tabIndex={previewReady ? 0 : -1}
-            onKeyDown={handlePreviewKeyDown}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={finishDrag}
-            onPointerCancel={finishDrag}
-          >
-            {previewUrl && (
-              <img
-                className={previewReady ? '' : 'is-loading'}
-                src={previewUrl}
-                alt=""
-                style={artCropStyle(crop)}
-                draggable="false"
-                onLoad={() => setPreviewReady(true)}
-                onError={reportLoadError}
-              />
-            )}
-            {!previewReady && !error && (
-              <span role="status" aria-live="polite">{t('art.cropLoading')}</span>
-            )}
-            {previewShape === 'workspace' && (
-              <div className="art-crop-workspace-overlay" aria-hidden="true">
-                <span className="art-crop-workspace-sidebar" />
-                <span className="art-crop-workspace-main">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
-            )}
-            {previewShape === 'hero' && (
-              <div className="art-crop-hero-overlay" aria-hidden="true">
-                <span className="art-crop-hero-cover" />
-                <span className="art-crop-hero-copy">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
-            )}
+          <div className={`art-crop-stage art-crop-stage--${previewShape}`}>
+            <div
+              className="art-crop-stage-image"
+              style={previewUrl
+                ? { backgroundImage: `url(${JSON.stringify(previewUrl)})` }
+                : undefined}
+              aria-hidden="true"
+            />
+            <span className="art-crop-target">{cropTarget}</span>
+            <div
+              className={`art-crop-preview art-crop-preview--${previewShape}`}
+              data-preview-mode={initialPreviewMode}
+              style={previewFrameStyle}
+              role="img"
+              aria-label={t('art.cropPreviewPosition', position)}
+              tabIndex={previewReady ? 0 : -1}
+              onKeyDown={handlePreviewKeyDown}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={finishDrag}
+              onPointerCancel={finishDrag}
+              onWheel={handleWheel}
+            >
+              {previewUrl && (
+                <img
+                  className={previewReady ? '' : 'is-loading'}
+                  src={previewUrl}
+                  alt=""
+                  style={artCropStyle(crop)}
+                  draggable="false"
+                  onLoad={() => setPreviewReady(true)}
+                  onError={reportLoadError}
+                />
+              )}
+              {!previewReady && !error && (
+                <span role="status" aria-live="polite">{t('art.cropLoading')}</span>
+              )}
+              {previewShape === 'workspace' && (
+                <div className="art-crop-workspace-overlay" aria-hidden="true">
+                  <span className="art-crop-workspace-sidebar" />
+                  <span className="art-crop-workspace-main">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+              )}
+              {previewShape === 'hero' && (
+                <div className="art-crop-hero-overlay" aria-hidden="true">
+                  <span className="art-crop-hero-cover" />
+                  <span className="art-crop-hero-copy">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+              )}
+              {previewShape === 'cover' && <span className="art-crop-cover-guide" aria-hidden="true" />}
+              <span className="art-crop-grid" aria-hidden="true" />
+            </div>
           </div>
 
           <p className="art-crop-hint">{t('art.cropHint')}</p>
@@ -367,10 +501,15 @@ export default function ArtCropDialog({
               min="1"
               max="4"
               step="0.05"
-              value={crop.zoom}
+              value={zoomValue}
+              style={{ '--art-zoom-progress': `${((zoomValue - 1) / 3) * 100}%` } as CSSProperties}
               aria-valuetext={t('art.cropZoomValue', { value: position.zoom })}
               disabled={!previewReady || saving}
-              onChange={(event) => updateCrop({ zoom: Number(event.currentTarget.value) }, true)}
+              onChange={(event) => {
+                const zoom = Number(event.currentTarget.value)
+                setZoomValue(zoom)
+                updateCrop({ zoom }, true)
+              }}
               onPointerUp={() => {
                 renderCrop()
                 setAnnouncedCrop(cropRef.current)
