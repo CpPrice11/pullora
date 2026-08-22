@@ -162,6 +162,7 @@ export default function BatchUpdatePanel({
             type="button"
             className="hero-primary-btn"
             aria-haspopup="dialog"
+            aria-busy={updating}
             onClick={() => setConfirmingUpdateAll(true)}
             disabled={items.length === 0 || checking || updating}
           >

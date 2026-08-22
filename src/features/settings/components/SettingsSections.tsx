@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import NativeSelect from '../../../components/Select/NativeSelect'
 import StatePanel from '../../../components/State/StatePanel'
 import { MoreHorizontalIcon, StatusIcon } from '../../../components/ui/Icons'
+import { useCurrentMonitorResolution } from '../../../hooks/useCurrentMonitorResolution'
 import { useI18n, type AppLanguage } from '../../../i18n'
 import type {
   AppSettings,
@@ -182,6 +183,7 @@ function GeneralSettingsSection({
   const previewThemeLabel = settings.theme === 'auto'
     ? t('settings.autoResolvedTheme', { theme: t(`settings.${previewTheme}`) })
     : t(`settings.${previewTheme}`)
+  const monitorResolution = useCurrentMonitorResolution()
 
   return (
     <section id="settings-general" className="settings-section" aria-label={t('settings.general')}>
@@ -365,7 +367,11 @@ function GeneralSettingsSection({
         </div>
 
         <div className="settings-theme-preview settings-grid-wide">
-          <div className="settings-theme-preview-canvas" aria-hidden="true">
+          <div
+            className={`settings-theme-preview-canvas ${previewBackgroundUrl ? 'has-custom-background' : ''}`}
+            style={{ aspectRatio: `${monitorResolution.width} / ${monitorResolution.height}` }}
+            aria-hidden="true"
+          >
             {previewBackgroundUrl && (
               <span
                 className="settings-theme-preview-image"

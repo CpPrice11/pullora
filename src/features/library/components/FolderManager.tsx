@@ -83,7 +83,7 @@ export default function FolderManager({
           <button type="button" className="secondary-btn" onClick={onCancel}>
             {t('library.folder.cancel')}
           </button>
-          <button type="button" onClick={confirm} disabled={!canConfirm}>
+          <button type="button" className="primary-btn" onClick={confirm} disabled={!canConfirm}>
             {t('library.folder.confirm')}
           </button>
         </div>

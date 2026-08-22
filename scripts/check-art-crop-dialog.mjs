@@ -340,6 +340,116 @@ async function assertGlobalBackground(page, expectedCrop, expectedSurface, expec
   assert.deepEqual(await materialContract(surface), expectedMaterial)
 }
 
+async function assertPrimaryActionContract(page) {
+  const selectors = [
+    'primary-btn',
+    'hero-primary-btn',
+    'install-btn',
+    'confirm-primary-btn',
+    'release-action-primary',
+    'download-action-btn primary',
+  ]
+  await page.evaluate((classes) => {
+    const probe = document.createElement('div')
+    probe.id = 'primary-action-contract-probe'
+    probe.className = 'modal-content'
+    Object.assign(probe.style, {
+      display: 'flex',
+      gap: '8px',
+      left: '12px',
+      position: 'fixed',
+      top: '12px',
+      zIndex: '99999',
+    })
+    for (const className of classes) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = className
+      button.textContent = className
+      probe.append(button)
+    }
+    document.querySelector('.cinematic-shell').append(probe)
+  }, selectors)
+
+  const buttons = page.locator('#primary-action-contract-probe > button')
+  const baseline = await buttons.evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element)
+    return {
+      background: style.backgroundImage,
+      color: style.color,
+      textToken: style.getPropertyValue('--action-primary-text').trim(),
+    }
+  }))
+  for (const style of baseline) {
+    assert.equal(style.color, 'rgb(255, 255, 255)')
+    assert.equal(style.textToken, '#ffffff')
+    assert.match(style.background, /linear-gradient/)
+  }
+  assert.equal(new Set(baseline.map((style) => style.background)).size, 1)
+
+  for (let index = 0; index < selectors.length; index += 1) {
+    const button = buttons.nth(index)
+    await button.hover()
+    await page.waitForTimeout(220)
+    const hover = await button.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { background: style.backgroundImage, color: style.color }
+    })
+    assert.equal(hover.color, 'rgb(255, 255, 255)')
+    assert.notEqual(hover.background, baseline[index].background)
+
+    await button.focus()
+    const focus = await button.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth }
+    })
+    assert.deepEqual(focus, { outlineStyle: 'solid', outlineWidth: '3px' })
+
+    await button.hover()
+    await page.mouse.down()
+    await page.waitForTimeout(60)
+    const active = await button.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { filter: style.filter, transform: style.transform }
+    })
+    await page.mouse.up()
+    assert.notEqual(active.filter, 'none')
+    assert.notEqual(active.transform, 'none')
+
+    await button.evaluate((element) => element.setAttribute('aria-busy', 'true'))
+    assert.equal(await button.evaluate((element) => getComputedStyle(element).cursor), 'progress')
+
+    await button.evaluate((element) => {
+      element.removeAttribute('aria-busy')
+      element.disabled = true
+    })
+    await page.waitForTimeout(220)
+    const disabled = await button.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        background: style.backgroundImage || style.backgroundColor,
+        boxShadow: style.boxShadow,
+        cursor: style.cursor,
+        opacity: Number(style.opacity),
+        transform: style.transform,
+      }
+    })
+    await button.hover()
+    await page.waitForTimeout(220)
+    const disabledHoverBackground = await button.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return style.backgroundImage || style.backgroundColor
+    })
+    assert.equal(disabledHoverBackground, disabled.background)
+    assert.equal(disabled.boxShadow, 'none')
+    assert.equal(disabled.cursor, 'not-allowed')
+    assert(disabled.opacity < 1)
+    assert.equal(disabled.transform, 'none')
+    await button.evaluate((element) => { element.disabled = false })
+  }
+  await page.locator('#primary-action-contract-probe').evaluate((element) => element.remove())
+}
+
 async function checkPreviewParity(browser) {
   const scenarios = ['dark', 'light'].flatMap((theme) =>
     ['normal', 'compact'].flatMap((libraryDensity) => [
@@ -365,6 +475,27 @@ async function checkPreviewParity(browser) {
     const expectedMaterial = await materialContract(librarySurface)
     assert.equal(expectedSurface.opacity, `${100 - scenario.appearance.surfaceTransparency}%`)
     assert.equal(expectedSurface.blur, `${scenario.appearance.surfaceBlur}px`)
+    if (scenario.libraryDensity === 'normal' && scenario.appearance.surfaceTransparency === 42) {
+      await assertPrimaryActionContract(page)
+    }
+
+    const primaryAction = page.locator('.library-ops-action-row .hero-primary-btn')
+    const readPrimaryAction = () => primaryAction.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        background: style.backgroundImage,
+        color: style.color,
+        textToken: style.getPropertyValue('--action-primary-text').trim(),
+      }
+    })
+    const primaryStyle = await readPrimaryAction()
+    assert.equal(primaryStyle.color, 'rgb(255, 255, 255)')
+    assert.equal(primaryStyle.textToken, '#ffffff')
+    assert.match(primaryStyle.background, /linear-gradient/)
+    await primaryAction.hover()
+    const primaryHoverStyle = await readPrimaryAction()
+    assert.equal(primaryHoverStyle.color, 'rgb(255, 255, 255)')
+    assert.notEqual(primaryHoverStyle.background, primaryStyle.background)
 
     const expectedHeroCrop = await cropContract(heroBackground)
     const card = page.locator('.repo-card').filter({ hasText: 'steam-achievement-manager' }).first()
@@ -384,6 +515,28 @@ async function checkPreviewParity(browser) {
 
     await page.getByRole('button', { name: 'Налаштування' }).click()
     await assertGlobalBackground(page, expectedGlobalCrop, expectedSurface, expectedMaterial, '.settings-workspace')
+    const settingsPreview = page.locator('.settings-theme-preview-canvas')
+    const settingsPreviewImage = settingsPreview.locator('.settings-theme-preview-image')
+    await settingsPreviewImage.waitFor()
+    assert.deepEqual(await cropContract(settingsPreviewImage), expectedGlobalCrop)
+    const [settingsPreviewBox, globalBackgroundBox] = await Promise.all([
+      settingsPreview.boundingBox(),
+      globalBackground.boundingBox(),
+    ])
+    assert(settingsPreviewBox && globalBackgroundBox)
+    assert(Math.abs(
+      settingsPreviewBox.width / settingsPreviewBox.height - globalBackgroundBox.width / globalBackgroundBox.height,
+    ) < 0.01)
+    assert.deepEqual(
+      await settingsPreviewImage.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { filter: style.filter, opacity: style.opacity }
+      }),
+      await globalBackground.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { filter: style.filter, opacity: style.opacity }
+      }),
+    )
     const themeName = scenario.theme === 'light' ? 'Світла' : 'Темна'
     const themeRow = page.locator('.launcher-background-theme').filter({ hasText: themeName })
     await themeRow.getByRole('button', { name: `Редагувати кадрування фону — ${themeName}` }).click()
@@ -453,6 +606,14 @@ async function checkLayoutIntegrity(browser) {
     const previewBox = await preview.boundingBox()
     const dialogBox = await dialog.boundingBox()
     assert(previewBox && dialogBox)
+    assert(dialogBox.width <= scenario.viewport.width - 48 + 2)
+    assert(dialogBox.height <= scenario.viewport.height - 48 + 2)
+    if (scenario.viewport.width >= 1280) {
+      assert(dialogBox.width >= 1190, `Crop dialog width ${dialogBox.width}px is too small at ${scenario.viewport.width}px`)
+    }
+    if (scenario.viewport.height >= 900) {
+      assert(dialogBox.height >= 840, `Crop dialog height ${dialogBox.height}px is too small at ${scenario.viewport.height}px`)
+    }
     await preview.focus()
     await preview.press('Home')
     await preview.press('Shift+ArrowRight')

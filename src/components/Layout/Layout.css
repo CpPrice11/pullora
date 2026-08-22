@@ -17,6 +17,8 @@
   --shadow-control: 0 12px 28px rgba(0, 0, 0, 0.18);
   --shadow-control-hover: 0 16px 34px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 22px 46px rgba(0, 0, 0, 0.32);
+  --launcher-background-filter: blur(7px) brightness(0.78) saturate(1.02);
+  --launcher-background-opacity: 0.72;
 }
 
 :root[data-theme='light'] .cinematic-shell {
@@ -25,6 +27,8 @@
   --shadow-control: 0 12px 28px rgba(15, 23, 42, 0.12);
   --shadow-control-hover: 0 16px 34px rgba(15, 23, 42, 0.18);
   --shadow-md: 0 22px 46px rgba(15, 23, 42, 0.2);
+  --launcher-background-filter: blur(7px) brightness(1.04) saturate(0.88);
+  --launcher-background-opacity: 0.54;
 }
 
 .cinematic-background {
@@ -54,13 +58,13 @@
 }
 
 .cinematic-shell.has-custom-background .cinematic-background.is-visible {
-  filter: blur(7px) brightness(0.78) saturate(1.02);
-  opacity: 0.72;
+  filter: var(--launcher-background-filter);
+  opacity: var(--launcher-background-opacity);
 }
 
 :root[data-theme='light'] .cinematic-shell.has-custom-background .cinematic-background.is-visible {
-  filter: blur(7px) brightness(1.04) saturate(0.88);
-  opacity: 0.54;
+  filter: var(--launcher-background-filter);
+  opacity: var(--launcher-background-opacity);
 }
 
 .layout-container {
