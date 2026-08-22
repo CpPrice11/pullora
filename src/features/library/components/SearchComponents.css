@@ -761,11 +761,6 @@
   opacity: 0.55;
 }
 
-:root[data-theme='light'] .release-action-primary {
-  background: linear-gradient(180deg, #111827, #303844);
-  color: #ffffff;
-}
-
 .release-github-link {
   align-items: center;
   background: rgba(255, 255, 255, 0.08);

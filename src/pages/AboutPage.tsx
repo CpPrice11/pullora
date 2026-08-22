@@ -22,7 +22,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.18.4'
+const FALLBACK_CURRENT_VERSION = 'v5.19.0'
 const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
 
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
@@ -335,6 +335,7 @@ function AboutPage() {
               className="primary-btn release-action-primary"
               onClick={() => latestRelease && setPendingUpdate(latestRelease)}
               disabled={!canInstallLatest || updating}
+              aria-busy={updating}
             >
               {updating ? t('about.updating') : t('about.update')}
             </button>
@@ -683,6 +684,7 @@ function AboutPage() {
                 type="button"
                 className="primary-btn confirm-primary-btn"
                 disabled={updating}
+                aria-busy={updating}
                 onClick={() => void confirmLauncherUpdate()}
               >
                 {updating ? t('about.updating') : t('about.confirmUpdate')}

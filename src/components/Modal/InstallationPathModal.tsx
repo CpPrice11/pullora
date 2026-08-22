@@ -70,7 +70,7 @@ function InstallationPathModal({ onPathSelected, onSkip }: InstallationPathModal
                 disabled={loading}
                 data-autofocus="true"
               />
-              <button type="button" onClick={handleBrowse} disabled={loading}>
+              <button type="button" className="secondary-btn" onClick={handleBrowse} disabled={loading}>
                 {t('settings.choose')}
               </button>
             </div>
@@ -84,7 +84,12 @@ function InstallationPathModal({ onPathSelected, onSkip }: InstallationPathModal
                 {t('firstRun.skip')}
               </button>
             )}
-            <button type="submit" disabled={loading || !selectedPath.trim()}>
+            <button
+              type="submit"
+              className="primary-btn"
+              disabled={loading || !selectedPath.trim()}
+              aria-busy={loading}
+            >
               {loading ? t('firstRun.configuring') : t('firstRun.continue')}
             </button>
           </div>

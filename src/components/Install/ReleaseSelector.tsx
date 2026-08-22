@@ -797,7 +797,7 @@ function ReleaseSelector({
                 onClick={handleDownload}
                 disabled={!selectedAssetAutoInstallable || downloading || installPathValidation !== 'valid'}
                 aria-describedby={downloadError ? 'release-install-error' : undefined}
-                aria-busy={installPathValidation === 'checking'}
+                aria-busy={installPathValidation === 'checking' || downloading}
                 className="download-btn release-action-primary"
               >
                 {downloading

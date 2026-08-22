@@ -10,6 +10,7 @@ import {
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
+import { useCurrentMonitorResolution } from '../../hooks/useCurrentMonitorResolution'
 import { getProjectArtPreview, type ProjectArtKind } from '../../services/projectArt'
 import type { ArtCrop } from '../../types'
 import { CloseIcon } from '../ui/Icons'
@@ -18,36 +19,6 @@ import './Modal.css'
 type Size = { width: number; height: number }
 type Rect = Size & { left: number; top: number }
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-
-const displayDimension = (value: number) => {
-  const roundedToTen = Math.round(value / 10) * 10
-  return Math.abs(value - roundedToTen) <= 1 ? roundedToTen : Math.round(value)
-}
-
-const currentScreenResolution = (): Size => {
-  if (typeof window === 'undefined') return { width: 1920, height: 1080 }
-  const scale = window.devicePixelRatio || 1
-  return {
-    width: displayDimension(window.screen.width * scale),
-    height: displayDimension(window.screen.height * scale),
-  }
-}
-
-const currentMonitorResolution = async (): Promise<Size> => {
-  try {
-    const { currentMonitor } = await import('@tauri-apps/api/window')
-    const monitor = await currentMonitor()
-    if (monitor) {
-      return {
-        width: displayDimension(monitor.size.width),
-        height: displayDimension(monitor.size.height),
-      }
-    }
-  } catch {
-    // Browser previews and older runtimes fall back to the active web screen.
-  }
-  return currentScreenResolution()
-}
 
 interface ArtCropDialogProps {
   kind: Exclude<ProjectArtKind, 'all'>
@@ -161,7 +132,7 @@ export default function ArtCropDialog({
   const [announcedCrop, setAnnouncedCrop] = useState<ArtCrop | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [screenResolution, setScreenResolution] = useState(currentScreenResolution)
+  const screenResolution = useCurrentMonitorResolution(previewShape === 'workspace')
 
   useModalFocus(dialogRef, { onEscape: saving ? undefined : onCancel })
 
@@ -210,39 +181,6 @@ export default function ArtCropDialog({
     observer.observe(stage)
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    if (previewShape !== 'workspace') return
-    let active = true
-    let unlisten: (() => void) | undefined
-    let monitorTimer: number | undefined
-
-    const syncMonitor = async () => {
-      const resolution = await currentMonitorResolution()
-      if (active) setScreenResolution(resolution)
-    }
-    const scheduleMonitorSync = () => {
-      window.clearTimeout(monitorTimer)
-      monitorTimer = window.setTimeout(() => void syncMonitor(), 120)
-    }
-
-    void syncMonitor()
-    void import('@tauri-apps/api/window')
-      .then(({ getCurrentWindow }) => getCurrentWindow().onMoved(scheduleMonitorSync))
-      .then((stopListening) => {
-        if (active) unlisten = stopListening
-        else stopListening()
-      })
-      .catch(() => undefined)
-    window.addEventListener('resize', scheduleMonitorSync)
-
-    return () => {
-      active = false
-      window.clearTimeout(monitorTimer)
-      unlisten?.()
-      window.removeEventListener('resize', scheduleMonitorSync)
-    }
-  }, [previewShape])
 
   const targetAspect = previewShape === 'workspace'
     ? screenResolution.width / screenResolution.height
@@ -506,6 +444,7 @@ export default function ArtCropDialog({
             type="button"
             className="primary-btn"
             disabled={!previewReady || Boolean(error) || saving}
+            aria-busy={saving}
             onClick={() => void handleSave()}
           >
             {saving ? t('art.cropSaving') : t('art.cropSave')}
