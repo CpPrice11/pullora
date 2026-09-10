@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
-    name: Verify Windows release build
+    name: Build and publish Windows release
     runs-on: windows-2025-vs2026
     timeout-minutes: 45
 
@@ -44,7 +44,11 @@ jobs:
 
       - name: Check Rust
         working-directory: src-tauri
-        run: cargo check
+        run: cargo check --locked
+
+      - name: Test Rust
+        working-directory: src-tauri
+        run: cargo test --locked
 
       - name: Build Tauri bundle
         env:
@@ -65,3 +69,78 @@ jobs:
             throw "Release workflow must produce one updater signature. Found: $($signatures.Name -join ', ')"
           }
           Write-Host "[ok] Updater signature: $($signatures[0].Name)"
+
+      - name: Assemble release assets
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $releaseDir = Join-Path $PWD "release-assets\$version"
+          New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
+          Copy-Item src-tauri\target\release\app.exe (Join-Path $releaseDir "Pullora_${version}_portable_x64.exe")
+          Copy-Item "src-tauri\target\release\bundle\nsis\Pullora_${version}_x64-setup.exe" $releaseDir
+          Copy-Item "src-tauri\target\release\bundle\nsis\Pullora_${version}_x64-setup.exe.sig" $releaseDir
+          npm run check:release -- -Version $version -BuildRoot (Join-Path $PWD "release-assets") -SkipSmokeTest
+
+      - name: Scan release executables with Microsoft Defender
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $releaseDir = Join-Path $PWD "release-assets\$version"
+          $status = Get-MpComputerStatus -ErrorAction SilentlyContinue
+          if (-not $status -or -not $status.AntivirusEnabled) {
+            Write-Warning "Microsoft Defender is unavailable on this runner; SHA-256 and updater-signature gates still apply."
+            exit 0
+          }
+          $scanStartedAt = Get-Date
+          foreach ($file in Get-ChildItem -LiteralPath $releaseDir -Filter *.exe) {
+            Start-MpScan -ScanType CustomScan -ScanPath $file.FullName
+            if (-not (Test-Path -LiteralPath $file.FullName)) {
+              throw "Microsoft Defender removed or quarantined $($file.Name)"
+            }
+          }
+          $detections = @(Get-MpThreatDetection -ErrorAction SilentlyContinue | Where-Object {
+            $_.InitialDetectionTime -ge $scanStartedAt.AddMinutes(-1) -and
+            ($_.Resources -join "`n") -like "*$releaseDir*"
+          })
+          if ($detections.Count -gt 0) {
+            throw "Microsoft Defender detected a threat in the release executables"
+          }
+          Write-Host "[ok] Microsoft Defender found no threats in release executables"
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version"
+          if ($env:GITHUB_REF_NAME -ne $tag) {
+            throw "Tag '$env:GITHUB_REF_NAME' does not match package version '$tag'"
+          }
+          $releaseDir = Join-Path $PWD "release-assets\$version"
+          $notes = Join-Path $PWD "docs\releases\$tag.md"
+          $assets = @(Get-ChildItem -LiteralPath $releaseDir -File | ForEach-Object FullName)
+          $PSNativeCommandUseErrorActionPreference = $false
+          & gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            & gh release upload $tag @assets --clobber --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) {
+              throw "GitHub Release artifact upload failed"
+            }
+            & gh release edit $tag --title "Pullora $tag" --notes-file $notes --repo $env:GITHUB_REPOSITORY
+          } else {
+            & gh release create $tag @assets --verify-tag --title "Pullora $tag" --notes-file $notes --repo $env:GITHUB_REPOSITORY
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub Release publication failed"
+          }
+
+      - name: Verify published release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          npm run check:release -- -Version $version -SkipArtifacts -SkipSmokeTest -CheckGitHubRelease

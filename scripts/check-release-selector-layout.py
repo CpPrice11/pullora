@@ -391,9 +391,6 @@ def install_pending_download_mock(page: Page) -> None:
                 return {
                   version: 2,
                   installationPath: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps',
-                  includePrereleases: false,
-                  assetStrategy: 'portableFirst',
-                  githubOwner: 'CpPrice11',
                   githubToken: null,
                   theme: 'auto',
                   language: 'uk',

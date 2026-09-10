@@ -44,7 +44,6 @@
   --about-status-current: #5bd7ff;
   --about-status-success: #74f07c;
   --about-status-success-text: #95fb9b;
-  --about-status-error: #ff6b8b;
   --border-radius: 9px;
   --border-radius-lg: 14px;
   --font-family: 'Segoe UI Variable', 'Segoe UI', Arial, sans-serif;
@@ -87,7 +86,6 @@
   --about-status-current: #0067c0;
   --about-status-success: #15803d;
   --about-status-success-text: #15803d;
-  --about-status-error: #b42318;
   --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
   background: var(--surface-canvas);
@@ -269,6 +267,10 @@
   padding: 30px 36px 36px;
 }
 
+.cinematic-shell .layout-content--about {
+  padding-inline: clamp(28px, 2.8125vw, 36px);
+}
+
 .cinematic-shell .layout-content > div:not([hidden]) {
   display: flex;
   flex: 1;
@@ -437,48 +439,6 @@
 
 .cinematic-shell .library-page .sort-control select {
   min-height: 36px;
-}
-
-.cinematic-shell .library-trust-panel {
-  align-items: start;
-  background: rgba(255, 255, 255, 0.035);
-  border-radius: 0;
-  box-shadow: none;
-  gap: 8px;
-  grid-template-columns: 10px minmax(0, 1fr);
-  margin: 0;
-  padding: 9px 10px;
-}
-
-.cinematic-shell .library-trust-mark {
-  margin-top: 5px;
-}
-
-.cinematic-shell .library-trust-copy {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cinematic-shell .library-trust-copy strong {
-  font-size: 13px;
-}
-
-.cinematic-shell .library-trust-copy span {
-  font-size: 11px;
-}
-
-.cinematic-shell .library-trust-inline-actions {
-  display: grid;
-  gap: 6px;
-  grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 1fr) auto;
-  width: 100%;
-}
-
-.cinematic-shell .library-trust-inline-actions .secondary-btn,
-.cinematic-shell .library-trust-toggle {
-  min-height: 28px;
 }
 
 .cinematic-shell .library-sam-list-pane .search-results > .state-panel {
@@ -984,6 +944,7 @@
 
 .cinematic-shell .settings-content--general .launcher-background-theme .secondary-btn {
   min-height: calc(34px * var(--density-scale));
+  padding-block: 0;
   padding-inline: calc(11px * var(--density-scale));
 }
 
@@ -1517,6 +1478,17 @@
   background:
     radial-gradient(circle at 78% 0%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 30%),
     var(--surface-1);
+}
+
+/* About keeps the shared material, with depth coming from an inner highlight only. */
+:root[data-theme] .cinematic-shell .about-hero {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+:root[data-theme] .cinematic-shell .about-hero-mark {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-text) 14%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 :root[data-theme] .cinematic-shell .library-page .library-toolstrip,

@@ -72,9 +72,6 @@ def install_settings_mock(page):
           let settings = {
             version: 2,
             installationPath: 'C:\\PulloraApps',
-            includePrereleases: false,
-            assetStrategy: 'portableFirst',
-            githubOwner: 'CpPrice11',
             githubToken: null,
             theme: 'auto',
             language: 'uk',
@@ -650,7 +647,6 @@ def check_general_reset_contract(page):
     )
     before = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
     assert before["installationPath"] == "C:\\PulloraApps", before
-    assert before["assetStrategy"] == "portableFirst", before
     assert before["appearance"]["surfaceTransparency"] != 42, before
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).some(Boolean)"
@@ -695,15 +691,12 @@ def check_general_reset_contract(page):
     )
 
     after = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
-    assert after["githubOwner"] == "CpPrice11", after
     assert after["theme"] == "auto", after
     assert after["language"] == "uk", after
     assert after["appearance"]["surfaceTransparency"] == 42, after
     assert after["appearance"]["surfaceBlur"] == 12, after
     assert after["appearance"]["density"] == "comfortable", after
     assert after["installationPath"].endswith("\\AppData\\Local\\Pullora\\Apps"), after
-    assert after["includePrereleases"] == before["includePrereleases"], after
-    assert after["assetStrategy"] == before["assetStrategy"], after
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(value => value === null)"
     )
@@ -819,9 +812,23 @@ def check_background_label_contract(page):
     assert page.get_by_text("Підкладки", exact=True).count() == 1
     for theme in ("Світла", "Темна"):
         edit = page.get_by_role("button", name=f"Редагувати кадрування фону — {theme}", exact=True)
-        reset = page.get_by_role("button", name=f"Скинути фон — {theme}", exact=True)
         assert edit.inner_text() == "Редагувати"
-        assert reset.inner_text() == "Скинути"
+        menu_label = f"Інші дії з фоном — {theme}"
+        trigger = page.get_by_role("button", name=menu_label, exact=True)
+        assert trigger.get_attribute("aria-haspopup") == "menu"
+        assert trigger.get_attribute("aria-expanded") == "false"
+        trigger.click()
+        menu = page.get_by_role("menu", name=menu_label, exact=True)
+        menu.wait_for()
+        assert menu.get_by_role("menuitem", name="Замінити", exact=True).count() == 1
+        assert menu.get_by_role("menuitem", name="Скинути", exact=True).count() == 1
+        page.wait_for_function(
+            "el => el === document.activeElement",
+            arg=menu.get_by_role("menuitem").first.element_handle(),
+        )
+        page.keyboard.press("Escape")
+        menu.wait_for(state="hidden")
+        page.wait_for_function("el => el === document.activeElement", arg=trigger.element_handle())
 
 
 def check_event_log_contract(page, width):
@@ -1010,18 +1017,25 @@ def check_surface_and_density_contract(page, theme):
     assert stored["appearance"]["density"] == "compact", stored
     assert root_appearance_state(page)["densityScale"] == "0.86"
 
-    reset_light = page.get_by_role("button", name="Скинути фон — Світла", exact=True)
-    reset_dark = page.get_by_role("button", name="Скинути фон — Темна", exact=True)
-    assert reset_light.count() == 1
-    assert reset_dark.count() == 1
-    reset_light.click()
-    reset_light.wait_for(state="detached")
-    assert reset_dark.count() == 1
+    light_menu_label = "Інші дії з фоном — Світла"
+    dark_menu_label = "Інші дії з фоном — Темна"
+    light_menu_trigger = page.get_by_role("button", name=light_menu_label, exact=True)
+    dark_menu_trigger = page.get_by_role("button", name=dark_menu_label, exact=True)
+    assert light_menu_trigger.count() == 1
+    assert dark_menu_trigger.count() == 1
+    light_menu_trigger.click()
+    light_menu = page.get_by_role("menu", name=light_menu_label, exact=True)
+    light_menu.wait_for()
+    light_menu.get_by_role("menuitem", name="Скинути", exact=True).click()
+    light_menu_trigger.wait_for(state="detached")
+    assert dark_menu_trigger.count() == 1
     if theme == "light":
         assert "light-bg.png" not in background.evaluate("el => getComputedStyle(el).backgroundImage")
         page.locator("#theme").select_option("dark")
-        page.wait_for_function("document.documentElement.dataset.theme === 'dark'")
-    assert "dark-bg.png" in background.evaluate("el => getComputedStyle(el).backgroundImage")
+    page.wait_for_function(
+        "document.documentElement.dataset.theme === 'dark' && "
+        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('dark-bg.png')"
+    )
 
 
 def check_settings_baseline_matrix(page, theme, width, height, scale):

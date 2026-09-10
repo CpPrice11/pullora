@@ -1,4 +1,5 @@
 import './StatePanel.css'
+import { StatusIcon } from '../ui/Icons'
 
 type StatePanelKind = 'empty' | 'error' | 'loading'
 
@@ -52,7 +53,7 @@ function StatePanel({
       aria-atomic="true"
     >
       <div className="state-panel-mark" aria-hidden="true">
-        <span>{kind === 'error' ? '!' : ''}</span>
+        <StatusIcon kind={kind === 'error' ? 'error' : 'info'} />
       </div>
       <div className="state-panel-content">
         {title && <h3>{title}</h3>}

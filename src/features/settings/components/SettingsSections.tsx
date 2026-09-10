@@ -7,7 +7,6 @@ import { useCurrentMonitorResolution } from '../../../hooks/useCurrentMonitorRes
 import { useI18n, type AppLanguage } from '../../../i18n'
 import type {
   AppSettings,
-  GitHubQueueStatus,
   GitHubRateLimitStatus,
   InstallPathValidation,
   LauncherStorageInfo,
@@ -492,14 +491,12 @@ function EventLogSettingsSection({ entries, loading, error, onRefresh }: EventLo
 }
 
 interface MaintenanceSettingsSectionProps {
-  settings: AppSettings
   language: AppLanguage
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus
-  githubQueue: GitHubQueueStatus
+  activeGithubRequests: number
   formatRateLimit: (bucket: GitHubRateLimitStatus['core']) => string
   formatRateLimitReset: (bucket: GitHubRateLimitStatus['core']) => string
-  formatQueuePause: () => string
   onRefreshStorageInfo: () => void
   onOpenDirectory: (path: string) => void
   onCleanupLauncherFiles: () => void
@@ -507,24 +504,13 @@ interface MaintenanceSettingsSectionProps {
   onCopyDiagnostics: () => void
 }
 
-function assetStrategyLabelKey(strategy: AppSettings['assetStrategy']) {
-  switch (strategy) {
-    case 'installerFirst': return 'settings.installerFirst'
-    case 'manual': return 'settings.manual'
-    case 'portableFirst':
-    default: return 'settings.portableFirst'
-  }
-}
-
 function MaintenanceSettingsSection({
-  settings,
   language,
   storageInfo,
   githubRateLimit,
-  githubQueue,
+  activeGithubRequests,
   formatRateLimit,
   formatRateLimitReset,
-  formatQueuePause,
   onRefreshStorageInfo,
   onOpenDirectory,
   onCleanupLauncherFiles,
@@ -556,16 +542,11 @@ function MaintenanceSettingsSection({
         <h4 id="settings-diagnostics-title">{t('settings.diagnostics')}</h4>
         <span className="settings-reset-kicker">{t('settings.githubDiagnostics')}</span>
         <dl>
-          <div><dt>{t('settings.githubOwner')}</dt><dd>{settings.githubOwner || t('settings.notSet')}</dd></div>
-          <div><dt>{t('settings.assets')}</dt><dd>{t(assetStrategyLabelKey(settings.assetStrategy))}</dd></div>
-          <div><dt>{t('settings.prerelease')}</dt><dd>{settings.includePrereleases ? t('settings.yes') : t('settings.no')}</dd></div>
           <div><dt>{t('settings.githubCoreLimit')}</dt><dd>{formatRateLimit(githubRateLimit.core)}</dd></div>
           <div><dt>{t('settings.githubSearchLimit')}</dt><dd>{formatRateLimit(githubRateLimit.search)}</dd></div>
           <div><dt>{t('settings.githubCoreReset')}</dt><dd>{formatRateLimitReset(githubRateLimit.core)}</dd></div>
           <div><dt>{t('settings.githubSearchReset')}</dt><dd>{formatRateLimitReset(githubRateLimit.search)}</dd></div>
-          <div><dt>{t('settings.githubQueue')}</dt><dd>{t('settings.githubQueueValue', { active: githubQueue.active, queued: githubQueue.queued, concurrency: githubQueue.concurrency })}</dd></div>
-          <div><dt>{t('settings.githubQueuePriority')}</dt><dd>{t('settings.githubQueuePriorityValue', { high: githubQueue.highPriority, normal: githubQueue.normalPriority })}</dd></div>
-          <div><dt>{t('settings.githubQueueState')}</dt><dd>{formatQueuePause()}</dd></div>
+          <div><dt>{t('settings.githubRequests')}</dt><dd>{t('settings.githubRequestsValue', { active: activeGithubRequests })}</dd></div>
         </dl>
         <div className="settings-maintenance-actions">
           <button className="secondary-btn" onClick={onClearCache}>{t('settings.clearCache')}</button>
@@ -584,13 +565,12 @@ interface SettingsSectionsProps {
   pathValidation: PathValidation
   storageInfo: LauncherStorageInfo | null
   githubRateLimit: GitHubRateLimitStatus
-  githubQueue: GitHubQueueStatus
+  activeGithubRequests: number
   eventLog: string[]
   eventLogLoading: boolean
   eventLogError: string | null
   formatRateLimit: MaintenanceSettingsSectionProps['formatRateLimit']
   formatRateLimitReset: MaintenanceSettingsSectionProps['formatRateLimitReset']
-  formatQueuePause: () => string
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
   onEditLauncherBackground: (theme: ResolvedTheme) => void

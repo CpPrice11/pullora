@@ -1,39 +1,45 @@
 # Процес релізу Pullora
 
-Pullora випускається лише для Windows. GitHub Release містить portable EXE, setup EXE, підпис updater, `SHA256SUMS.txt` і `latest.json`.
+Pullora випускається лише для Windows. GitHub Release містить portable EXE, setup EXE, підпис Tauri updater, `SHA256SUMS.txt` і `latest.json`.
+
+## Політика підпису й перевірки
+
+- Публічні EXE не мають Authenticode-підпису.
+- Встановлена Pullora приймає оновлення лише з чинним підписом Tauri updater.
+- Portable-версія не замінює власний EXE й відкриває офіційний GitHub Release.
+- Release gate перевіряє точний набір артефактів, SHA-256 обох EXE та непорожній updater-підпис.
+- GitHub Actions сканує EXE через Microsoft Defender, коли він доступний на runner. Виявлення або карантин зупиняє публікацію.
+- Виключення антивіруса й вимкнення Windows Security не входять до процесу релізу.
+
+Unsigned-файл може отримати попередження SmartScreen або блокування Smart App Control. SHA-256 підтверджує цілісність завантаження, але не створює репутацію видавця.
 
 ## Перевірки перед релізом
 
-- Закрити разом усі roadmap-пункти з однаковою версією.
+- Закрити roadmap-пункти версії.
 - Звірити версію в `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json` та fallback в `AboutPage`.
 - Переконатися, що Library та install metadata залишаються локальними.
-- У release-папці мають бути тільки portable EXE, setup EXE, підпис updater, `SHA256SUMS.txt` і `latest.json`.
+- Переконатися, що GitHub repository secret `TAURI_SIGNING_PRIVATE_KEY` містить первинний updater-ключ.
+- У release-папці мають бути лише п'ять дозволених артефактів.
 
-## Команди
+## Локальні перевірки
 
 ```powershell
+npm ci
 npm run build
-cd src-tauri
-cargo check
-cd ..
 npm run check:release -- -Version <version> -SkipArtifacts -SkipSmokeTest -RcReadiness
-$env:CI = "true"
-$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -LiteralPath "$env:USERPROFILE\.tauri\pullora-updater.key" -Raw
-npm run tauri-build -- --config src-tauri/tauri.release.conf.json
-Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY
-Remove-Item Env:CI
 ```
 
-Після перенесення EXE у `Pullora Builds\<version>`:
+Rust/Tauri перевіряються в GitHub Actions, оскільки Smart App Control на основній машині блокує локальний Rust toolchain. Захист заради збірки не вимикати.
+
+## Публікація
 
 ```powershell
-npm run check:release -- -Version <version>
-npm run check:release -- -Version <version> -SkipSmokeTest -CheckGitHubRelease
+git tag v<version>
+git push origin main
+git push origin v<version>
 ```
 
-`check:release` створює `SHA256SUMS.txt` для обох EXE та `latest.json` для встановленої Pullora. Portable-збірка звіряє GitHub-репозиторій, тег, ім’я asset, SHA-256 і тип файла, а потім повторно перевіряє SHA-256 безпосередньо перед і після заміни поточного EXE. Встановлена Pullora перевіряє криптографічний підпис setup-пакета через офіційний Tauri updater і оновлює компоненти у пасивному режимі.
-
-Приватний updater-ключ зберігається поза репозиторієм у `%USERPROFILE%\.tauri\pullora-updater.key`. У GitHub Actions його вміст має бути записаний у secret `TAURI_SIGNING_PRIVATE_KEY`. Втрата ключа унеможливить оновлення вже встановлених копій через вбудований updater.
+Push тега запускає `.github/workflows/release.yml`. Workflow виконує frontend, Rust tests, Tauri build, збирає п'ять артефактів, перевіряє їх, за можливості сканує EXE Microsoft Defender, публікує GitHub Release і повторно звіряє завантажені SHA-256.
 
 ## Імена артефактів
 
@@ -43,4 +49,4 @@ npm run check:release -- -Version <version> -SkipSmokeTest -CheckGitHubRelease
 - `SHA256SUMS.txt`
 - `latest.json`
 
-MSI, ZIP та артефакти інших платформ не входять у поточну release-policy. Portable-самоновлення вимкнене без `SHA256SUMS.txt`, а встановлене — без підписаного setup-пакета та `latest.json`.
+MSI, ZIP та артефакти інших платформ не входять у release-policy. Приватний updater-ключ не зберігається в репозиторії й не є Authenticode certificate. Його втрата унеможливить оновлення вже встановлених копій через вбудований updater.

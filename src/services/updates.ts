@@ -12,11 +12,8 @@ export async function getLauncherInstallationMode(): Promise<LauncherInstallatio
 
 export async function installLauncherUpdate(
   version: string,
-  assetUrl: string,
-  assetName: string,
-  checksumUrl: string,
 ): Promise<void> {
-  return callTauri('install_launcher_update', { version, assetUrl, assetName, checksumUrl })
+  return callTauri('install_launcher_update', { version })
 }
 
 export async function getEventLog(): Promise<string[]> {

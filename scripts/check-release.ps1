@@ -49,6 +49,28 @@ function Write-Sha256Manifest($Paths, $Destination) {
   )
 }
 
+function Assert-Sha256Manifest($ManifestPath, $BaseDirectory, $ExpectedNames) {
+  $entries = @{}
+  foreach ($line in (Get-Content -LiteralPath $ManifestPath)) {
+    if ($line -notmatch '^([0-9a-fA-F]{64})  (.+)$') {
+      Fail "Invalid SHA256SUMS.txt line: $line"
+    }
+    $entries[$Matches[2]] = $Matches[1].ToLowerInvariant()
+  }
+
+  if ($entries.Count -ne $ExpectedNames.Count) {
+    Fail "SHA256SUMS.txt must contain exactly $($ExpectedNames.Count) entries"
+  }
+  foreach ($name in $ExpectedNames) {
+    $path = Join-Path $BaseDirectory $name
+    if (-not $entries.ContainsKey($name) -or -not (Test-Path -LiteralPath $path)) {
+      Fail "SHA-256 entry or file is missing: $name"
+    }
+    $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    Assert-Equal "SHA-256 $name" $actual $entries[$name]
+  }
+}
+
 function Write-UpdaterManifest($Version, $Repository, $SetupName, $Signature, $Destination) {
   $manifest = [ordered]@{
     version = $Version
@@ -130,7 +152,6 @@ try {
       "tauri-apps/tauri-action",
       "x64-portable.zip",
       "Compress-Archive",
-      "contents: write",
       "windows-latest",
       "node-version: 20",
       "node-version: '20'",
@@ -141,7 +162,7 @@ try {
 
     foreach ($pattern in $blockedWorkflowPatterns) {
       if ($releaseWorkflow -match [regex]::Escape($pattern)) {
-        Fail "release.yml must be verification-only and must not contain '$pattern'"
+        Fail "release.yml contains blocked release pattern '$pattern'"
       }
     }
 
@@ -153,6 +174,12 @@ try {
     }
     if ($releaseWorkflow -notmatch "TAURI_SIGNING_PRIVATE_KEY" -or $releaseWorkflow -notmatch "tauri\.release\.conf\.json") {
       Fail "release.yml must build signed updater artifacts with the release config"
+    }
+    if ($releaseWorkflow -notmatch "contents:\s*write" -or $releaseWorkflow -notmatch "gh release create") {
+      Fail "release.yml must publish tag builds through GitHub CLI"
+    }
+    if ($releaseWorkflow -notmatch "Scan release executables with Microsoft Defender") {
+      Fail "release.yml must scan release executables with Microsoft Defender when available"
     }
     $releaseTauriConfig = Read-Text "src-tauri\tauri.release.conf.json"
     if ($releaseTauriConfig -notmatch '"createUpdaterArtifacts"\s*:\s*true') {
@@ -233,6 +260,7 @@ try {
 
     Write-Sha256Manifest @($portablePath, $setupPath) $checksumPath
     Write-Host "[ok] SHA-256 manifest: $checksumName"
+    Assert-Sha256Manifest $checksumPath $buildDir @($portableName, $setupName)
     Write-UpdaterManifest $Version $Repository $setupName $signature $updaterManifestPath
     Write-Host "[ok] Updater manifest: $updaterManifestName"
 
@@ -299,6 +327,23 @@ try {
       Fail "GitHub release must contain portable EXE, setup EXE, setup signature, SHA256SUMS.txt, and latest.json. Found: $($releaseAssets -join ', ')"
     }
     Write-Host "[ok] GitHub release assets: $($releaseAssets -join ', ')"
+
+    $verificationDir = Join-Path ([System.IO.Path]::GetTempPath()) "pullora-release-assets-$([guid]::NewGuid().ToString('N'))"
+    try {
+      New-Item -ItemType Directory -Path $verificationDir | Out-Null
+      & gh release download $tag --repo $Repository --dir $verificationDir
+      if ($LASTEXITCODE -ne 0) {
+        Fail "Could not download GitHub release assets for SHA-256 verification"
+      }
+      Assert-Sha256Manifest (Join-Path $verificationDir "SHA256SUMS.txt") $verificationDir @(
+        "Pullora_${Version}_portable_x64.exe",
+        "Pullora_${Version}_x64-setup.exe"
+      )
+    } finally {
+      if (Test-Path -LiteralPath $verificationDir) {
+        Remove-Item -LiteralPath $verificationDir -Recurse -Force
+      }
+    }
   }
 
   Write-Host "[release-check] Done: $tag"

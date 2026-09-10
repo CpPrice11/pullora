@@ -30,7 +30,6 @@ import {
 } from '../../services/projectArt'
 import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
-import { formatNumber } from '../../utils/format'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
 import { getInactiveInstalledVersions, runSequentialBulk } from './libraryBulkOperations'
 import {
@@ -49,6 +48,7 @@ type UninstallTarget = {
 }
 
 const repoLookupKey = projectArtKey
+const CATALOG_OWNER = 'CpPrice11'
 
 function isLauncherRepository(owner: string, repo: string) {
   return owner.trim().toLowerCase() === 'cpprice11' &&
@@ -264,11 +264,9 @@ function LibraryPage({
     previewAspectRatios?: Partial<Record<LibraryDensity, number>>
   } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
     loadDismissedUpdateKeys,
   )
-  const [libraryTrustExpanded, setLibraryTrustExpanded] = useState(false)
   const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
   const [uninstallBusy, setUninstallBusy] = useState(false)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
@@ -281,7 +279,7 @@ function LibraryPage({
   const [bulkConfirm, setBulkConfirm] = useState<'cleanup' | 'uninstall' | null>(null)
   const { settings, loading: settingsLoading } = useSettings()
   const libraryFoldersLoadedRef = useRef(false)
-  const owner = settings.githubOwner?.trim()
+  const owner = CATALOG_OWNER
   const {
     state,
     loadRepositories,
@@ -301,12 +299,8 @@ function LibraryPage({
   } = useLibraryStatus(state.repositories)
 
   const handleRefresh = async () => {
-    const freshRepositories = await refreshRepositories()
+    await refreshRepositories()
     await refreshInstalledApps()
-
-    if (!freshRepositories) return
-
-    setLastRefreshedAt(new Date())
   }
 
   const handleCheckUpdates = useCallback(async () => {
@@ -568,7 +562,6 @@ function LibraryPage({
       minute: '2-digit',
     })
     : null
-  const formattedRefreshTime = formatTime(lastRefreshedAt ?? state.lastRefreshAt ?? state.lastLoadedAt)
   const formattedLatestVersionsTime = formatTime(latestVersionsCheckedAt)
   const libraryErrorKind = classifyLibraryError(state.error)
   const libraryTrustKind: LibraryTrustKind = state.loading || checkingUpdates
@@ -1262,36 +1255,27 @@ function LibraryPage({
   }
 
   const renderLibraryTrustPanel = () => {
-    if (suppressDiagnostics) return null
-    if (libraryTrustKind === 'fresh' && !libraryTrustExpanded) return null
+    if (suppressDiagnostics || libraryTrustKind === 'fresh') return null
 
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
     const shouldOfferRetry = Boolean(state.error)
     const shouldOfferUpdateCheck = latestVersionErrorCount > 0 || !latestVersionsCheckedAt
-    const showInlineRetry = shouldOfferRetry && libraryTrustKind !== 'fresh' && libraryTrustKind !== 'checking'
 
     return (
       <section
-        className={`library-trust-panel library-trust-panel--${libraryTrustKind} ${libraryTrustExpanded ? 'expanded' : ''}`}
+        className={`library-trust-panel library-trust-panel--${libraryTrustKind}`}
         aria-live="polite"
       >
         <span className="library-trust-mark" aria-hidden="true" />
-        <div className="library-trust-summary">
-          <span className="library-trust-kicker">{t('library.trust.kicker')}</span>
-          <div className="library-trust-copy">
-            <strong>{t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}</strong>
-            <span>
-              {t('library.trust.visible')}: {t(`${pageKey}.count`, {
-                visible: formatNumber(visibleRepositories.length, language),
-                total: formatNumber(modeRepositoryCount, language),
-              })}
-            </span>
-            {formattedLatestVersionsTime && (
-              <span>{t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })}</span>
-            )}
-          </div>
-        </div>
+        <strong className="library-trust-title">
+          {t(`library.trust.${libraryTrustKind}.title`, { count: latestVersionErrorCount })}
+        </strong>
+        {formattedLatestVersionsTime && (
+          <span className="library-trust-context">
+            {t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })}
+          </span>
+        )}
         <div className="library-trust-inline-actions">
           {shouldOfferUpdateCheck && (
             <button
@@ -1303,7 +1287,7 @@ function LibraryPage({
               {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
             </button>
           )}
-          {showInlineRetry && (
+          {shouldOfferRetry && libraryTrustKind !== 'checking' && (
             <button
               type="button"
               className="secondary-btn"
@@ -1313,60 +1297,18 @@ function LibraryPage({
               {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
             </button>
           )}
-          <button
-            type="button"
-            className="library-trust-toggle"
-            aria-expanded={libraryTrustExpanded}
-            onClick={() => setLibraryTrustExpanded((expanded) => !expanded)}
-          >
-            {t(libraryTrustExpanded ? 'library.trust.collapse' : 'library.trust.expand')}
-          </button>
+          {retryInstalled && (
+            <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
+              {t('library.trust.retryInstalled')}
+            </button>
+          )}
+          {state.error && state.isStale && (
+            <details className="library-trust-details">
+              <summary>{t('state.details')}</summary>
+              <pre>{state.error}</pre>
+            </details>
+          )}
         </div>
-
-        {libraryTrustExpanded && (
-          <div className="library-trust-expanded">
-            <p>{t(`library.trust.${libraryTrustKind}.text`, { count: latestVersionErrorCount })}</p>
-            <div className="library-trust-meta" aria-label={t('library.trust.meta')}>
-              <span>
-                <strong>{t('library.trust.data')}</strong>
-                {formattedRefreshTime
-                  ? t(state.isStale ? 'refresh.staleAt' : 'refresh.updatedAt', { time: formattedRefreshTime })
-                  : t('library.trust.notLoaded')}
-              </span>
-              <span>
-                <strong>{t('library.trust.versions')}</strong>
-                {checkingUpdates
-                  ? t('library.trust.checkingVersions')
-                  : formattedLatestVersionsTime
-                    ? t('library.trust.versionsCheckedAt', { time: formattedLatestVersionsTime })
-                    : t('library.trust.notChecked')}
-              </span>
-            </div>
-            {state.error && state.isStale && (
-              <details className="library-trust-details">
-                <summary>{t('state.details')}</summary>
-                <pre>{state.error}</pre>
-              </details>
-            )}
-            <div className="library-trust-actions">
-              {shouldOfferRetry && !showInlineRetry && (
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleRefresh}
-                  disabled={!canRetry}
-                >
-                  {state.loading || checkingUpdates ? t('library.refreshing') : t('library.trust.retry')}
-                </button>
-              )}
-              {retryInstalled && (
-                <button type="button" className="secondary-btn" onClick={() => refreshInstalledApps()}>
-                  {t('library.trust.retryInstalled')}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </section>
     )
   }

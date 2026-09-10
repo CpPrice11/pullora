@@ -25,9 +25,6 @@ export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 2,
   installationPath: '',
-  includePrereleases: false,
-  assetStrategy: 'portableFirst',
-  githubOwner: 'CpPrice11',
   githubToken: null,
   theme: 'auto',
   language: 'uk',
@@ -36,13 +33,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export function normalizeSettings(settings: Partial<AppSettings> | null | undefined): AppSettings {
   return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
     version: settings?.version || DEFAULT_SETTINGS.version,
     installationPath: settings?.installationPath || DEFAULT_SETTINGS.installationPath,
-    includePrereleases: DEFAULT_SETTINGS.includePrereleases,
-    assetStrategy: DEFAULT_SETTINGS.assetStrategy,
-    githubOwner: DEFAULT_SETTINGS.githubOwner,
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
     language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,

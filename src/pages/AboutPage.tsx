@@ -12,7 +12,8 @@ import {
   openExternalUrl,
 } from '../services/updates'
 import StatePanel from '../components/State/StatePanel'
-import type { GitHubAsset, GitHubRelease, LauncherInstallationMode, LauncherStorageInfo } from '../types'
+import { CloseIcon, MoreHorizontalIcon, StatusIcon } from '../components/ui/Icons'
+import type { GitHubRelease, LauncherInstallationMode, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
@@ -22,41 +23,11 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.19.0'
-const CHECKSUM_MANIFEST_NAME = 'SHA256SUMS.txt'
-
+const FALLBACK_CURRENT_VERSION = 'v5.20.0'
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
+type LauncherStatus = 'checking' | 'current' | 'update' | 'localNewer' | 'unknown'
 
 const releaseFilters: AboutReleaseFilter[] = ['all', 'rollback', 'current']
-
-function pickPortableLauncherAsset(assets: GitHubAsset[]) {
-  const candidates = assets.filter((asset) => {
-    const name = asset.name.toLowerCase()
-    const isWindowsBinary = name.endsWith('.exe') || name.endsWith('.zip')
-    const isInstaller = name.includes('setup') ||
-      name.includes('installer') ||
-      name.endsWith('.msi')
-
-    return isWindowsBinary && !isInstaller
-  })
-
-  const portable = candidates.find((asset) => asset.name.toLowerCase().includes('portable'))
-  if (portable) return portable
-
-  const pulloraExe = candidates.find((asset) => {
-    const name = asset.name.toLowerCase()
-    return name.endsWith('.exe') && (name.includes('pullora') || name.includes('air.launcher'))
-  })
-  if (pulloraExe) return pulloraExe
-
-  return candidates.find((asset) => asset.name.toLowerCase().endsWith('.zip')) ??
-    candidates.find((asset) => asset.name.toLowerCase().endsWith('.exe')) ??
-    null
-}
-
-function pickChecksumAsset(assets: GitHubAsset[]) {
-  return assets.find((asset) => asset.name === CHECKSUM_MANIFEST_NAME) ?? null
-}
 
 function releaseFilterLabelKey(filter: AboutReleaseFilter) {
   return `about.filter.${filter}`
@@ -96,8 +67,13 @@ function AboutPage() {
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [pendingUpdate, setPendingUpdate] = useState<GitHubRelease | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false)
+  const [cleanupBusy, setCleanupBusy] = useState(false)
+  const [cleanupError, setCleanupError] = useState<string | null>(null)
   const updateModalRef = useRef<HTMLDivElement | null>(null)
   const updateButtonRef = useRef<HTMLButtonElement | null>(null)
+  const cleanupModalRef = useRef<HTMLDivElement | null>(null)
+  const cleanupButtonRef = useRef<HTMLButtonElement | null>(null)
   const notesModalRef = useRef<HTMLDivElement | null>(null)
   const notesReturnFocusRef = useRef<HTMLButtonElement | null>(null)
   const releaseMenuRef = useRef<HTMLDivElement | null>(null)
@@ -191,32 +167,37 @@ function AboutPage() {
     onEscape: pendingUpdate && !updating ? () => setPendingUpdate(null) : undefined,
     returnFocusRef: updateButtonRef,
   })
+  useModalFocus(cleanupModalRef, {
+    active: cleanupConfirmOpen,
+    onEscape: cleanupConfirmOpen && !cleanupBusy ? () => setCleanupConfirmOpen(false) : undefined,
+    returnFocusRef: cleanupButtonRef,
+  })
 
   const latestRelease = releases.find((release) => !release.draft && !release.prerelease) ?? releases[0]
-  const latestPortableAsset = latestRelease ? pickPortableLauncherAsset(latestRelease.assets) : null
-  const latestChecksumAsset = latestRelease ? pickChecksumAsset(latestRelease.assets) : null
-  const hasNewerRelease = Boolean(
-    latestRelease && compareVersionTags(latestRelease.tag_name, currentVersion) > 0,
-  )
-  const canInstallLatest = Boolean(
-    installationMode &&
-    hasNewerRelease &&
-    (installationMode === 'installed' || (latestPortableAsset && latestChecksumAsset)),
-  )
+  const latestVersionComparison = latestRelease
+    ? compareVersionTags(latestRelease.tag_name, currentVersion)
+    : null
+  const hasNewerRelease = latestVersionComparison !== null && latestVersionComparison > 0
+  const launcherStatus: LauncherStatus = loadingReleases
+    ? 'checking'
+    : releaseLoadError || latestVersionComparison === null
+      ? 'unknown'
+      : latestVersionComparison > 0
+        ? 'update'
+        : latestVersionComparison < 0
+          ? 'localNewer'
+          : 'current'
+  const canInstallLatest = Boolean(installationMode && hasNewerRelease)
   const rollbackCount = releases.filter((release) =>
-    pickPortableLauncherAsset(release.assets) &&
-    pickChecksumAsset(release.assets) &&
     release.tag_name !== currentVersion &&
     compareVersionTags(release.tag_name, currentVersion) < 0
   ).length
   const filteredReleases = useMemo(() => {
     return releases.filter((release) => {
-      const hasPortable = Boolean(pickPortableLauncherAsset(release.assets))
-      const hasChecksum = Boolean(pickChecksumAsset(release.assets))
       const isCurrent = release.tag_name === currentVersion
       const comparison = compareVersionTags(release.tag_name, currentVersion)
 
-      if (releaseFilter === 'rollback') return hasPortable && hasChecksum && !isCurrent && comparison < 0
+      if (releaseFilter === 'rollback') return !isCurrent && comparison < 0
       if (releaseFilter === 'current') return isCurrent
       return true
     })
@@ -228,11 +209,12 @@ function AboutPage() {
       minute: '2-digit',
     })
     : null
+  const cleanupFileCount = storageInfo
+    ? storageInfo.updateCacheCount + Math.max(storageInfo.backupCount - 1, 0)
+    : 0
 
-  const getReleaseStatus = (tagName: string, hasPortableAsset: boolean, hasChecksum: boolean) => {
+  const getReleaseStatus = (tagName: string) => {
     if (tagName === currentVersion) return t('about.currentStatus')
-    if (!hasPortableAsset) return t('about.portableUnavailableStatus')
-    if (!hasChecksum) return t('about.checksumUnavailableStatus')
     return compareVersionTags(tagName, currentVersion) > 0
       ? t('about.newerStatus')
       : t('about.olderStatus')
@@ -264,39 +246,35 @@ function AboutPage() {
   }
 
   const cleanupOldLauncherFiles = async () => {
-    if (!window.confirm(t('about.cleanupConfirm'))) return
-
+    setCleanupBusy(true)
+    setCleanupError(null)
     try {
       const info = await cleanupLauncherUpdateFiles()
       setStorageInfo(info)
+      setCleanupConfirmOpen(false)
       setActionError(null)
       setActionMessage(t('about.cleanupDone'))
     } catch (err) {
       setActionMessage(null)
-      setActionError(err instanceof Error ? err.message : t('about.cleanupError'))
+      setCleanupError(err instanceof Error ? err.message : t('about.cleanupError'))
+    } finally {
+      setCleanupBusy(false)
     }
   }
 
   const confirmLauncherUpdate = async () => {
     if (!pendingUpdate || !installationMode) return
 
-    const portableAsset = pickPortableLauncherAsset(pendingUpdate.assets)
-    const checksumAsset = pickChecksumAsset(pendingUpdate.assets)
-    if (installationMode === 'portable' && (!portableAsset || !checksumAsset)) {
+    if (installationMode === 'portable') {
       setPendingUpdate(null)
-      setActionError(t('about.updateFilesMissing'))
+      await openReleaseInBrowser(pendingUpdate)
       return
     }
 
     setUpdating(true)
     setActionError(null)
     try {
-      await installLauncherUpdate(
-        pendingUpdate.tag_name,
-        portableAsset?.browser_download_url ?? '',
-        portableAsset?.name ?? '',
-        checksumAsset?.browser_download_url ?? '',
-      )
+      await installLauncherUpdate(pendingUpdate.tag_name)
     } catch (err) {
       setUpdating(false)
       setPendingUpdate(null)
@@ -316,28 +294,61 @@ function AboutPage() {
           <h3>Pullora</h3>
           <p>{t('about.updateCenter')}</p>
           <div className="about-hero-meta">
-            <span className="about-current-version-chip">{t('about.currentVersion')}: {currentVersion.replace(/^v/, '')}</span>
-            {installationMode && (
-              <span>{t(installationMode === 'portable' ? 'about.portableMode' : 'about.installedMode')}</span>
-            )}
-            {latestRelease && (
+            <div
+              className={`about-launcher-status about-launcher-status--${launcherStatus}`}
+              role="status"
+              aria-live="polite"
+            >
+              <StatusIcon
+                kind={launcherStatus === 'current'
+                  ? 'success'
+                  : launcherStatus === 'localNewer' || launcherStatus === 'unknown'
+                    ? 'warning'
+                    : 'info'}
+                className="about-launcher-status-icon"
+              />
+              <strong>{t(`about.launcherStatus.${launcherStatus}`, {
+                version: latestRelease?.tag_name.replace(/^v/, '') ?? '',
+              })}</strong>
               <span>
-                {t('about.latestVersion')}: {latestRelease.tag_name.replace(/^v/, '')}
+                {latestRelease
+                  ? t('about.versionRelation', {
+                    current: currentVersion.replace(/^v/, ''),
+                    latest: latestRelease.tag_name.replace(/^v/, ''),
+                  })
+                  : t('about.installedVersionOnly', { current: currentVersion.replace(/^v/, '') })}
+                {refreshState === 'success' && formattedRefreshTime
+                  ? ` · ${t('refresh.updatedAt', { time: formattedRefreshTime })}`
+                  : ''}
+              </span>
+            </div>
+            {installationMode && (
+              <span className="about-installation-mode">
+                {t(installationMode === 'portable' ? 'about.portableMode' : 'about.installedMode')}
               </span>
             )}
           </div>
         </div>
         <div className="about-hero-actions" aria-label={t('about.launcherActions')}>
-          {hasNewerRelease && (
+          {canInstallLatest && (
             <button
               ref={updateButtonRef}
               type="button"
               className="primary-btn release-action-primary"
-              onClick={() => latestRelease && setPendingUpdate(latestRelease)}
-              disabled={!canInstallLatest || updating}
+              onClick={() => {
+                if (!latestRelease || !installationMode) return
+                if (installationMode === 'portable') {
+                  void openReleaseInBrowser(latestRelease)
+                } else {
+                  setPendingUpdate(latestRelease)
+                }
+              }}
+              disabled={updating}
               aria-busy={updating}
             >
-              {updating ? t('about.updating') : t('about.update')}
+              {updating
+                ? t('about.updating')
+                : t(installationMode === 'portable' ? 'about.downloadUpdate' : 'about.update')}
             </button>
           )}
           <button type="button" className="secondary-btn" onClick={openLauncherFolder}>
@@ -356,7 +367,8 @@ function AboutPage() {
           aria-live={actionError ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
-          {actionError ?? actionMessage}
+          <StatusIcon kind={actionError ? 'error' : 'success'} />
+          <span>{actionError ?? actionMessage}</span>
         </div>
       )}
 
@@ -368,21 +380,25 @@ function AboutPage() {
               <span className="about-panel-meta">
                 {t('about.rollbackReady')}: {rollbackCount}
                 {storageInfo ? ` · ${t('about.cleanupEstimate')}: ${formatBytes(storageInfo.cleanupBytes, language)}` : ''}
-                {refreshState === 'success' && formattedRefreshTime ? ` · ${t('refresh.updatedAt', { time: formattedRefreshTime })}` : ''}
               </span>
             </div>
-            <div className="segmented-control about-version-filters" aria-label={t('about.filterLabel')}>
-              {releaseFilters.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  className={releaseFilter === filter ? 'active' : ''}
-                  aria-pressed={releaseFilter === filter}
-                  onClick={() => setReleaseFilter(filter)}
-                >
-                  {t(releaseFilterLabelKey(filter))}
-                </button>
-              ))}
+            <div className="about-version-filter-group">
+              <output className="about-filter-count" aria-live="polite">
+                {t('about.availableCount', { count: filteredReleases.length })}
+              </output>
+              <div className="segmented-control about-version-filters" aria-label={t('about.filterLabel')}>
+                {releaseFilters.map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    className={releaseFilter === filter ? 'active' : ''}
+                    aria-pressed={releaseFilter === filter}
+                    onClick={() => setReleaseFilter(filter)}
+                  >
+                    {t(releaseFilterLabelKey(filter))}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="about-panel-toolbar" aria-label={t('about.launcherActions')}>
@@ -390,9 +406,13 @@ function AboutPage() {
               {loadingReleases ? t('library.refreshing') : t('library.refresh')}
             </button>
             <button
+              ref={cleanupButtonRef}
               type="button"
               className="secondary-btn"
-              onClick={cleanupOldLauncherFiles}
+              onClick={() => {
+                setCleanupError(null)
+                setCleanupConfirmOpen(true)
+              }}
               disabled={!storageInfo || storageInfo.cleanupBytes === 0}
             >
               {t('about.cleanupOldVersionsShort')}
@@ -426,22 +446,21 @@ function AboutPage() {
               kind="empty"
               title={t('about.noFilteredReleases')}
               message={t('about.noFilteredReleasesText')}
+              actionLabel={t('about.filter.all')}
+              onAction={() => setReleaseFilter('all')}
             />
           )}
           {!loadingReleases && filteredReleases.length > 0 && (
             <div className="about-release-list">
               {filteredReleases.map((release) => {
-                const portableAsset = pickPortableLauncherAsset(release.assets)
-                const checksumAsset = pickChecksumAsset(release.assets)
                 const isCurrent = release.tag_name === currentVersion
                 const statusClass = isCurrent
                   ? 'current'
-                  : !portableAsset || !checksumAsset
-                  ? 'missing'
                   : compareVersionTags(release.tag_name, currentVersion) > 0
                     ? 'newer'
                     : 'older'
                 const menuOpen = menuReleaseId === release.id
+                const releaseMenuId = `about-release-menu-${release.id}`
 
                 return (
                   <div
@@ -449,16 +468,18 @@ function AboutPage() {
                     className={`about-release-link about-release-link--${statusClass} ${
                       isCurrent ? 'active' : ''
                     }`}
-                    aria-label={`${release.tag_name}, ${getReleaseStatus(release.tag_name, Boolean(portableAsset), Boolean(checksumAsset))}`}
+                    aria-label={`${release.tag_name}, ${getReleaseStatus(release.tag_name)}`}
                   >
                     <div className="about-release-orb" aria-hidden="true">
                       <span>{release.tag_name.replace(/^v/i, '').split('.')[0] ?? 'v'}</span>
                     </div>
                     <div className="about-release-main">
                       <div className="about-release-title">
-                        <span>{release.tag_name}</span>
+                        <span className="about-release-version" title={release.tag_name}>
+                          {release.tag_name}
+                        </span>
                         <span className={`about-release-status ${statusClass}`}>
-                          {getReleaseStatus(release.tag_name, Boolean(portableAsset), Boolean(checksumAsset))}
+                          {getReleaseStatus(release.tag_name)}
                         </span>
                       </div>
                       <span className="about-release-date">
@@ -466,16 +487,6 @@ function AboutPage() {
                           ? formatDate(release.published_at, language)
                           : t('about.noDate')}
                       </span>
-                      {!portableAsset && (
-                        <span className="about-release-warning">
-                          {t('about.portableMissing')}
-                        </span>
-                      )}
-                      {portableAsset && !checksumAsset && !isCurrent && (
-                        <span className="about-release-warning">
-                          {t('about.checksumManifestMissing')}
-                        </span>
-                      )}
                     </div>
                     <div className="about-release-actions">
                       {isCurrent ? (
@@ -496,6 +507,7 @@ function AboutPage() {
                           className="project-actions-trigger"
                           aria-haspopup="menu"
                           aria-expanded={menuOpen}
+                          aria-controls={menuOpen ? releaseMenuId : undefined}
                           aria-label={t('about.moreActions')}
                           onClick={(event) => {
                             if (menuOpen) {
@@ -511,12 +523,14 @@ function AboutPage() {
                             setMenuReleaseId(release.id)
                           }}
                         >
-                          ...
+                          <MoreHorizontalIcon className="menu-overflow-icon" />
                         </button>
                         {menuOpen && releaseMenuPosition && createPortal(
                           <div
                             ref={releaseMenuRef}
-                            className="project-actions-menu about-release-menu-portal open"
+                            className={`project-actions-menu about-release-menu-portal open${
+                              releaseMenuPosition.openUp ? ' about-release-menu-portal--up' : ''
+                            }`}
                             style={{
                               left: releaseMenuPosition.x,
                               top: releaseMenuPosition.openUp
@@ -527,7 +541,9 @@ function AboutPage() {
                           >
                             <div
                               className="project-actions-popover"
+                              id={releaseMenuId}
                               role="menu"
+                              tabIndex={-1}
                               aria-label={t('about.moreActions')}
                               onKeyDown={(event) => handleMenuKeyboard(event, () => {
                                 setMenuReleaseId(null)
@@ -583,9 +599,16 @@ function AboutPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="about-notes-header">
-              <div>
-                <span className="about-notes-kicker">{t('about.releaseNotesPreview')}</span>
-                <h3 id="about-notes-title">{notesRelease.tag_name}</h3>
+              <div className="about-notes-heading">
+                <h3 id="about-notes-title">{t('about.releaseNotesPreview')}</h3>
+                <div className="about-notes-meta">
+                  <span>{t('about.version')} {notesRelease.tag_name}</span>
+                  <time dateTime={notesRelease.published_at ?? undefined}>
+                    {notesRelease.published_at
+                      ? formatDate(notesRelease.published_at, language)
+                      : t('about.noDate')}
+                  </time>
+                </div>
               </div>
               <button
                 type="button"
@@ -593,10 +616,11 @@ function AboutPage() {
                 onClick={() => setNotesRelease(null)}
                 aria-label={t('settings.close')}
               >
-                {'\u00d7'}
+                <CloseIcon className="dialog-close-icon" />
               </button>
             </div>
             <div className="about-notes-body">
+              {/* GitHub release notes stay plain React text; never inject release HTML. */}
               <p>{compactReleaseNotes(notesRelease.body) || t('details.noReleaseNotes')}</p>
             </div>
             <div className="about-notes-actions">
@@ -641,34 +665,23 @@ function AboutPage() {
                 onClick={() => setPendingUpdate(null)}
                 aria-label={t('about.cancel')}
               >
-                {'\u00d7'}
+                <CloseIcon className="dialog-close-icon" />
               </button>
             </div>
             <p className="confirm-copy">
-              {t(installationMode === 'portable'
-                ? 'about.updatePortableDetail'
-                : 'about.updateInstalledDetail')}
+              {t('about.updateInstalledDetail')}
             </p>
             <div className="confirm-facts">
               <div><span>{t('about.confirmCurrent')}</span><strong>{currentVersion}</strong></div>
               <div><span>{t('about.confirmTarget')}</span><strong>{pendingUpdate.tag_name}</strong></div>
               <div>
                 <span>{t('about.installMode')}</span>
-                <strong>{t(installationMode === 'portable' ? 'about.portableMode' : 'about.installedMode')}</strong>
+                <strong>{t('about.installedMode')}</strong>
               </div>
-              {installationMode === 'portable' && (
-                <div>
-                  <span>{t('about.confirmAsset')}</span>
-                  <strong>{pickPortableLauncherAsset(pendingUpdate.assets)?.name}</strong>
-                </div>
-              )}
             </div>
             <ul className="confirm-list">
-              <li>{t(installationMode === 'portable'
-                ? 'about.confirmPortableUpdate'
-                : 'about.confirmSignedUpdate')}</li>
+              <li>{t('about.confirmSignedUpdate')}</li>
               <li>{t('about.confirmClose')}</li>
-              {installationMode === 'portable' && <li>{t('about.confirmBackup')}</li>}
             </ul>
             <div className="modal-actions">
               <button
@@ -688,6 +701,73 @@ function AboutPage() {
                 onClick={() => void confirmLauncherUpdate()}
               >
                 {updating ? t('about.updating') : t('about.confirmUpdate')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.querySelector('.layout') ?? document.body,
+      )}
+
+      {cleanupConfirmOpen && storageInfo && createPortal(
+        <div
+          className="modal-backdrop about-dialog-overlay"
+          role="presentation"
+          onClick={() => !cleanupBusy && setCleanupConfirmOpen(false)}
+        >
+          <div
+            ref={cleanupModalRef}
+            className="confirm-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="launcher-cleanup-title"
+            aria-describedby="launcher-cleanup-description"
+            aria-busy={cleanupBusy}
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="confirm-modal-header">
+              <div>
+                <span className="confirm-modal-kicker">{t('about.cleanupOldVersions')}</span>
+                <h3 id="launcher-cleanup-title">{t('about.cleanupConfirmTitle')}</h3>
+              </div>
+              <button
+                type="button"
+                className="close-btn confirm-close-btn"
+                disabled={cleanupBusy}
+                onClick={() => setCleanupConfirmOpen(false)}
+                aria-label={t('about.cancel')}
+              >
+                <CloseIcon className="dialog-close-icon" />
+              </button>
+            </div>
+            <p id="launcher-cleanup-description" className="confirm-copy">
+              {t('about.cleanupConfirm')}
+            </p>
+            <div className="confirm-facts">
+              <div><span>{t('about.cleanupFiles')}</span><strong>{cleanupFileCount}</strong></div>
+              <div><span>{t('about.cleanupData')}</span><strong>{formatBytes(storageInfo.cleanupBytes, language)}</strong></div>
+            </div>
+            {cleanupError && <div className="error-message" role="alert">{cleanupError}</div>}
+            <span className="visually-hidden" role="status" aria-live="polite">
+              {cleanupBusy ? t('about.cleanupRunning') : ''}
+            </span>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                disabled={cleanupBusy}
+                onClick={() => setCleanupConfirmOpen(false)}
+                data-autofocus="true"
+              >
+                {t('about.cancel')}
+              </button>
+              <button
+                type="button"
+                className="uninstall-danger-btn"
+                disabled={cleanupBusy}
+                onClick={() => void cleanupOldLauncherFiles()}
+              >
+                {cleanupBusy ? t('about.cleanupRunning') : t('about.cleanupOldVersionsShort')}
               </button>
             </div>
           </div>

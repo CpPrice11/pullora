@@ -4,7 +4,6 @@ import { useDownload } from '../../hooks/useDownload'
 import { useSettings } from '../../hooks/useSettings'
 import { useModalFocus } from '../../hooks/useModalFocus'
 import type {
-  AppSettings,
   DownloadProgress,
   GitHubAsset,
   GitHubRelease,
@@ -45,7 +44,6 @@ interface ReleaseSelectorProps {
 type AssetKind = ReleaseAssetKind
 type WizardStep = 'version' | 'file' | 'confirm' | 'progress' | 'result'
 type InstallIntent = 'install' | 'update' | 'reinstall' | 'downgrade'
-type AssetStrategy = NonNullable<AppSettings['assetStrategy']>
 type CleanupResult = { tone: 'success' | 'warning'; message: string }
 type InstallPathValidationState = 'idle' | 'checking' | 'valid' | 'invalid'
 
@@ -89,18 +87,9 @@ function isAutoInstallable(kind: AssetKind | null) {
   return kind === 'portable' || kind === 'archive' || kind === 'installer'
 }
 
-function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
-  if (strategy === 'manual') return [...assets]
-
+function sortAssets(assets: GitHubAsset[]) {
   const rank = (asset: GitHubAsset) => {
     const kind = getAssetKind(asset)
-    if (strategy === 'installerFirst') {
-      if (kind === 'installer') return 0
-      if (kind === 'portable') return 1
-      if (kind === 'archive') return 2
-      return 3
-    }
-
     if (kind === 'portable') return 0
     if (kind === 'archive') return 1
     if (kind === 'installer') return 2
@@ -114,11 +103,8 @@ function sortAssets(assets: GitHubAsset[], strategy: AssetStrategy) {
   })
 }
 
-function pickRecommendedAsset(assets: GitHubAsset[], strategy: AssetStrategy): GitHubAsset | null {
-  if (strategy === 'manual') return null
-  if (strategy === 'portableFirst') return pickPortableReleaseAsset(assets)
-  const sortedAssets = sortAssets(assets, strategy)
-  return sortedAssets.find((asset) => isAutoInstallable(getAssetKind(asset))) ?? null
+function pickRecommendedAsset(assets: GitHubAsset[]): GitHubAsset | null {
+  return pickPortableReleaseAsset(assets)
 }
 
 function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = false) {
@@ -167,23 +153,19 @@ function ReleaseSelector({
   const previousStepRef = useRef<WizardStep>(step)
   const reportedCompletedDownloads = useRef<Set<string>>(new Set())
   const reportedFailedDownloads = useRef<Set<string>>(new Set())
-  const assetStrategy = settings.assetStrategy ?? 'portableFirst'
-
   const visibleReleases = useMemo(
-    () => releases.filter((release) =>
-      settings.includePrereleases ? !release.draft : !release.draft && !release.prerelease,
-    ),
-    [releases, settings.includePrereleases],
+    () => releases.filter((release) => !release.draft && !release.prerelease),
+    [releases],
   )
 
   const sortedAssets = useMemo(
-    () => selectedRelease ? sortAssets(selectedRelease.assets, assetStrategy) : [],
-    [assetStrategy, selectedRelease],
+    () => selectedRelease ? sortAssets(selectedRelease.assets) : [],
+    [selectedRelease],
   )
 
   const recommendedAsset = useMemo(
-    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets, assetStrategy) : null,
-    [assetStrategy, selectedRelease],
+    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets) : null,
+    [selectedRelease],
   )
 
   const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
@@ -295,12 +277,12 @@ function ReleaseSelector({
         ?? visibleReleases[0]
       setSelectedRelease(first)
       setSelectedAsset(
-        pickRecommendedAsset(first.assets, assetStrategy)
-          ?? sortAssets(first.assets, assetStrategy)[0]
+        pickRecommendedAsset(first.assets)
+          ?? sortAssets(first.assets)[0]
           ?? null,
       )
     }
-  }, [assetStrategy, initialReleaseTag, selectedRelease, visibleReleases])
+  }, [initialReleaseTag, selectedRelease, visibleReleases])
 
   useEffect(() => {
     if (!activeDownload) return
@@ -328,8 +310,8 @@ function ReleaseSelector({
   const handleReleaseChange = (release: GitHubRelease) => {
     setSelectedRelease(release)
     setSelectedAsset(
-      pickRecommendedAsset(release.assets, assetStrategy)
-        ?? sortAssets(release.assets, assetStrategy)[0]
+      pickRecommendedAsset(release.assets)
+        ?? sortAssets(release.assets)[0]
         ?? null,
     )
     setDownloadError(null)

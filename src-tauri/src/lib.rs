@@ -20,10 +20,6 @@ pub struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    if commands::updates::apply_portable_update_if_requested() {
-        return;
-    }
-
     let config_dir = get_config_dir();
     let settings = load_runtime_settings(&config_dir).unwrap_or_default();
     let token = settings.github_token.clone();
@@ -91,8 +87,6 @@ pub fn run() {
             commands::library_folders::get_library_folders,
             commands::library_folders::save_library_folders,
             commands::installed::get_installed_apps,
-            commands::installed::export_installed_registry,
-            commands::installed::import_installed_registry,
             commands::installed::switch_version,
             commands::installed::validate_installed_app,
             commands::installed::open_installed_app_dir,
