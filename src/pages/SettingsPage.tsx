@@ -10,10 +10,10 @@ import { cleanupLauncherUpdateFiles, getEventLog, getLauncherStorageInfo, openDi
 import { pickDirectory } from '../services/dialog'
 import {
   clearGithubCache,
-  getGithubQueueStatus,
+  getActiveGithubRequestCount,
   getGithubRateLimitStatus,
 } from '../services/github'
-import type { GitHubQueueStatus, GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
+import type { GitHubRateLimitBucket, GitHubRateLimitStatus, LauncherStorageInfo } from '../types'
 import StatePanel from '../components/State/StatePanel'
 import {
   SettingsSections,
@@ -53,7 +53,6 @@ function SettingsPage({
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pathValidation, setPathValidation] = useState<'idle' | InstallPathValidation['status']>('idle')
   const [confirmation, setConfirmation] = useState<'reset' | 'cleanup' | null>(null)
@@ -61,7 +60,7 @@ function SettingsPage({
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [githubRateLimit, setGithubRateLimit] = useState<GitHubRateLimitStatus>(emptyRateLimitStatus)
-  const [githubQueue, setGithubQueue] = useState<GitHubQueueStatus>(() => getGithubQueueStatus())
+  const [activeGithubRequests, setActiveGithubRequests] = useState(getActiveGithubRequestCount)
   const [eventLog, setEventLog] = useState<string[]>([])
   const [eventLogLoading, setEventLogLoading] = useState(false)
   const [eventLogError, setEventLogError] = useState<string | null>(null)
@@ -107,12 +106,6 @@ function SettingsPage({
   }, [actionMessage])
 
   useEffect(() => {
-    if (!saved) return
-    const timer = window.setTimeout(() => setSaved(false), 2400)
-    return () => window.clearTimeout(timer)
-  }, [saved])
-
-  useEffect(() => {
     if (activeSection !== 'maintenance') return
     getLauncherStorageInfo()
       .then(setStorageInfo)
@@ -127,7 +120,7 @@ function SettingsPage({
     if (activeSection !== 'maintenance') return
 
     const refreshGithubDiagnostics = () => {
-      setGithubQueue(getGithubQueueStatus())
+      setActiveGithubRequests(getActiveGithubRequestCount())
       getGithubRateLimitStatus()
         .then(setGithubRateLimit)
         .catch(() => {})
@@ -146,12 +139,10 @@ function SettingsPage({
 
     setSettings(normalizedSettings)
     setSaving(true)
-    setSaved(false)
     setError(null)
 
     try {
       await updateSettings(normalizedSettings)
-      setSaved(true)
       return normalizedSettings
     } catch (err) {
       if (previousSettings) {
@@ -173,12 +164,10 @@ function SettingsPage({
     setSettings(nextSettings)
     applyThemePreference(theme, true)
     setSaving(true)
-    setSaved(false)
     setError(null)
 
     try {
       await updateSettings(nextSettings)
-      setSaved(true)
     } catch (err) {
       setSettings(previousSettings)
       applyThemePreference(previousSettings.theme, true)
@@ -193,12 +182,10 @@ function SettingsPage({
     if (dir && settings) {
       setPathValidation('idle')
       setSaving(true)
-      setSaved(false)
       setError(null)
       try {
         const installationPath = await saveInstallationPath(dir)
         setSettings((current) => current ? { ...current, installationPath } : current)
-        setSaved(true)
       } catch (err) {
         setError(err instanceof Error ? err.message : t('settings.saveError'))
       } finally {
@@ -245,7 +232,7 @@ function SettingsPage({
     try {
       await clearGithubCache()
       setGithubRateLimit(emptyRateLimitStatus())
-      setGithubQueue(getGithubQueueStatus())
+      setActiveGithubRequests(getActiveGithubRequestCount())
       setActionMessage(t('settings.cacheCleared'))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('settings.cacheError'))
@@ -257,10 +244,7 @@ function SettingsPage({
 
     const lines = [
       'Pullora maintenance diagnostics',
-      `githubOwner: ${settings.githubOwner || 'not set'}`,
       `installationPath: ${settings.installationPath || 'not set'}`,
-      `assetStrategy: ${settings.assetStrategy}`,
-      `includePrereleases: ${settings.includePrereleases ? 'yes' : 'no'}`,
       `theme: ${settings.theme}`,
       `language: ${settings.language}`,
       `launcherDir: ${storageInfo?.launcherDir ?? 'not checked'}`,
@@ -275,12 +259,7 @@ function SettingsPage({
       `githubSearchRemaining: ${githubRateLimit.search.remaining ?? 'unknown'}`,
       `githubSearchLimit: ${githubRateLimit.search.limit ?? 'unknown'}`,
       `githubSearchResetAt: ${githubRateLimit.search.resetAt ?? 'unknown'}`,
-      `githubQueueActive: ${githubQueue.active}`,
-      `githubQueueWaiting: ${githubQueue.queued}`,
-      `githubQueueConcurrency: ${githubQueue.concurrency}`,
-      `githubQueueHighPriority: ${githubQueue.highPriority}`,
-      `githubQueueNormalPriority: ${githubQueue.normalPriority}`,
-      `githubQueuePausedUntil: ${githubQueue.pausedUntil ?? 'not paused'}`,
+      `githubRequestsActive: ${activeGithubRequests}`,
     ]
 
     try {
@@ -341,18 +320,6 @@ function SettingsPage({
       language === 'en' ? 'en-US' : 'uk-UA',
       { hour: '2-digit', minute: '2-digit' },
     )
-  }
-
-  const formatQueuePause = () => {
-    if (!githubQueue.pausedUntil || githubQueue.pausedUntil <= Date.now()) {
-      return t('settings.githubQueueRunning')
-    }
-    return t('settings.githubQueuePausedUntil', {
-      time: new Date(githubQueue.pausedUntil).toLocaleTimeString(
-        language === 'en' ? 'en-US' : 'uk-UA',
-        { hour: '2-digit', minute: '2-digit' },
-      ),
-    })
   }
 
   const handleLanguageChange = async (language: AppLanguage) => {
@@ -448,15 +415,6 @@ function SettingsPage({
             className={`settings-content settings-content--${activeSection}`}
             key={activeSection}
           >
-            <div
-              className={`settings-save-indicator ${saving ? 'is-saving' : saved ? 'is-saved' : 'is-idle'}`}
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <span aria-hidden="true" />
-              {saving ? t('settings.saving') : saved ? t('settings.saved') : ''}
-            </div>
             {error && (
               <StatePanel
                 kind="error"
@@ -472,13 +430,12 @@ function SettingsPage({
               pathValidation={pathValidation}
               storageInfo={storageInfo}
               githubRateLimit={githubRateLimit}
-              githubQueue={githubQueue}
+              activeGithubRequests={activeGithubRequests}
               eventLog={eventLog}
               eventLogLoading={eventLogLoading}
               eventLogError={eventLogError}
               formatRateLimit={formatRateLimit}
               formatRateLimitReset={formatRateLimitReset}
-              formatQueuePause={formatQueuePause}
               onThemeChange={(theme) => void handleThemeChange(theme)}
               onLanguageChange={(nextLanguage) => void handleLanguageChange(nextLanguage)}
               onEditLauncherBackground={onEditLauncherBackground}

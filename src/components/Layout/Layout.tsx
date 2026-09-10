@@ -48,7 +48,7 @@ function Layout({
         <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
       </Header>
       <div className="layout-container">
-        <main id="main-content" className="layout-content" ref={mainRef}>
+        <main id="main-content" className={`layout-content layout-content--${activeTab}`} ref={mainRef}>
           {children}
         </main>
       </div>

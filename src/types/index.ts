@@ -57,22 +57,10 @@ export interface GitHubRateLimitStatus {
   search: GitHubRateLimitBucket
 }
 
-export interface GitHubQueueStatus {
-  active: number
-  queued: number
-  concurrency: number
-  highPriority: number
-  normalPriority: number
-  pausedUntil: number | null
-}
-
 // App settings — matches Rust AppSettings (Tauri returns snake_case by default, but serde renames to camelCase via Tauri)
 export interface AppSettings {
   version?: number
   installationPath: string
-  includePrereleases?: boolean
-  assetStrategy?: 'portableFirst' | 'installerFirst' | 'manual'
-  githubOwner?: string
   githubToken?: string | null
   theme: 'light' | 'dark' | 'auto'
   language: string

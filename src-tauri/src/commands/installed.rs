@@ -4,8 +4,7 @@ use tauri::State;
 use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::installed::{
-    export_registry, import_registry, list_installed, record_launch, remove_app, remove_version,
-    set_active_version, InstalledApp, InstalledRegistryTransfer,
+    list_installed, record_launch, remove_app, remove_version, set_active_version, InstalledApp,
 };
 use crate::AppState;
 
@@ -239,28 +238,6 @@ fn resolve_active_app(
 pub async fn get_installed_apps(_state: State<'_, AppState>) -> Result<Vec<InstalledApp>, String> {
     let config_dir = get_config_dir();
     list_installed(&config_dir).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn export_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
-    let target_path = std::path::PathBuf::from(path);
-    if target_path.as_os_str().is_empty() {
-        return Err(command_error("errors.exportPathRequired"));
-    }
-
-    let config_dir = get_config_dir();
-    export_registry(&config_dir, &target_path).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn import_installed_registry(path: String) -> Result<InstalledRegistryTransfer, String> {
-    let source_path = std::path::PathBuf::from(path);
-    if source_path.as_os_str().is_empty() {
-        return Err(command_error("errors.importPathRequired"));
-    }
-
-    let config_dir = get_config_dir();
-    import_registry(&config_dir, &source_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

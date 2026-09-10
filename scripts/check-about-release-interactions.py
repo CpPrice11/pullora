@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import runpy
 import sys
 from pathlib import Path
@@ -18,6 +19,7 @@ VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 
 def check_source_contract() -> None:
     about = (ROOT / "src" / "pages" / "AboutPage.tsx").read_text(encoding="utf-8")
+    app_styles = (ROOT / "src" / "App.css").read_text(encoding="utf-8")
     focus_hook = (ROOT / "src" / "hooks" / "useModalFocus.ts").read_text(encoding="utf-8")
     styles = (ROOT / "src" / "pages" / "PageStyles.css").read_text(encoding="utf-8")
 
@@ -32,6 +34,39 @@ def check_source_contract() -> None:
     assert ".project-actions-menu.about-release-menu-portal" in styles
     assert "position: fixed" in styles
     for fragment in (
+        "transition: color var(--motion-normal);",
+        "animation: about-toast-enter var(--motion-normal);",
+        "animation: about-menu-enter var(--motion-normal);",
+        "about-release-menu-portal--up",
+    ):
+        assert fragment in styles or fragment in about, fragment
+    for fragment in (
+        "@media (prefers-reduced-motion: reduce)",
+        "animation-duration: 0.001ms !important;",
+        "transition-duration: 0.001ms !important;",
+    ):
+        assert fragment in app_styles, fragment
+    forbidden_layout_property = re.compile(
+        r"(?:^|[;{\s])(width|height|top|right|bottom|left|inset|margin|padding|grid|flex)[-\w]*\s*:",
+        re.MULTILINE,
+    )
+    for name, source in (
+        ("fluent-fade-up", app_styles),
+        ("fluent-overlay-in", app_styles),
+        ("fluent-dialog-in", app_styles),
+        ("about-toast-enter", styles),
+        ("about-menu-enter", styles),
+    ):
+        start = source.index(f"@keyframes {name}")
+        opening = source.index("{", start)
+        depth = 0
+        for end in range(opening, len(source)):
+            depth += source[end] == "{"
+            depth -= source[end] == "}"
+            if depth == 0:
+                break
+        assert not forbidden_layout_property.search(source[opening:end + 1]), name
+    for fragment in (
         "returnFocusRef?: RefObject<HTMLElement>",
         "const focusTarget = returnFocusRef?.current ?? previousFocus",
         "focusTarget && document.contains(focusTarget)",
@@ -40,12 +75,27 @@ def check_source_contract() -> None:
     print("[about-release-interactions] source contract: ok")
 
 
-def open_about(page: Page) -> None:
+def open_about(page: Page, *, enable_motion_test_styles: bool = True) -> None:
     CONTROLS["seed_release_matrix"](page, BASELINE)
     BASELINE.open_library(page)
     page.locator(".nav-item").nth(2).click()
     page.locator(".about-page").wait_for()
-    page.locator(".about-release-link--older").wait_for()
+    page.locator(".about-release-link--older").first.wait_for()
+    if enable_motion_test_styles:
+        page.add_style_tag(
+            content="""
+              .about-launcher-status-icon { transition: color var(--motion-normal) !important; }
+              .about-toast { animation: about-toast-enter var(--motion-normal) !important; }
+              .about-release-menu-portal .project-actions-popover {
+                animation: about-menu-enter var(--motion-normal) !important;
+              }
+            """
+        )
+    else:
+        page.evaluate(
+            """() => [...document.querySelectorAll('style')]
+              .find(style => style.textContent?.includes('animation:none!important'))?.remove()"""
+        )
 
 
 def rounded_box(locator) -> dict:
@@ -58,10 +108,38 @@ def assert_focused(locator) -> None:
     assert locator.evaluate("el => el === document.activeElement")
 
 
+def assert_motion_duration(locator, property_name: str) -> int:
+    duration = locator.evaluate(
+        """(el, propertyName) => {
+          const value = getComputedStyle(el)[propertyName].split(',')[0].trim();
+          return value.endsWith('ms') ? Number.parseFloat(value) : Number.parseFloat(value) * 1000;
+        }""",
+        property_name,
+    )
+    rounded = round(duration)
+    assert 150 <= rounded <= 250, {property_name: duration}
+    return rounded
+
+
+def assert_reduced_motion(locator, property_name: str) -> None:
+    durations = locator.evaluate(
+        """(el, propertyName) => getComputedStyle(el)[propertyName]
+          .split(',')
+          .map(value => value.trim())
+          .map(value => value.endsWith('ms') ? Number.parseFloat(value) : Number.parseFloat(value) * 1000)""",
+        property_name,
+    )
+    assert max(durations) <= 1, {property_name: durations}
+
+
 def inspect_interactions(page: Page, width: int, height: int) -> dict:
-    release = page.locator(".about-release-link--older")
+    release = page.locator(".about-release-link--older").first
     trigger = release.locator(".project-actions-trigger")
     open_release = release.locator(".about-release-actions > .secondary-btn")
+
+    launcher_status_icon = page.locator(".about-launcher-status-icon")
+    assert "color" in launcher_status_icon.evaluate("el => getComputedStyle(el).transitionProperty")
+    status_motion = assert_motion_duration(launcher_status_icon, "transitionDuration")
 
     trigger.click()
     menu_portal = page.locator(".about-release-menu-portal")
@@ -72,6 +150,8 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     assert_focused(items.nth(0))
     assert menu_portal.evaluate("el => el.parentElement === document.body")
     assert menu_portal.evaluate("el => getComputedStyle(el).position === 'fixed'")
+    menu_motion = assert_motion_duration(menu, "animationDuration")
+    assert menu.evaluate("el => getComputedStyle(el).animationName") == "about-menu-enter"
 
     page.keyboard.press("End")
     assert_focused(items.nth(1))
@@ -81,6 +161,8 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     assert_focused(items.nth(1))
     page.keyboard.press("ArrowUp")
     assert_focused(items.nth(0))
+
+    page.wait_for_timeout(menu_motion)
 
     menu_box = rounded_box(menu_portal)
     assert menu_box["x"] >= 0 and menu_box["y"] >= 0
@@ -127,11 +209,62 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     open_release.click()
     assert page.locator(".confirm-modal").count() == 0
 
+    page.evaluate(
+        """() => {
+          const toast = document.createElement('div');
+          toast.className = 'about-toast about-toast--success';
+          toast.dataset.motionTest = 'toast';
+          toast.textContent = 'Готово';
+          document.body.appendChild(toast);
+        }"""
+    )
+    toast = page.locator('[data-motion-test="toast"]')
+    toast_motion = assert_motion_duration(toast, "animationDuration")
+    assert toast.evaluate("el => getComputedStyle(el).animationName") == "about-toast-enter"
+    toast.evaluate("el => el.remove()")
+
     return {
         "viewport": [width, height],
         "menu": menu_box,
         "notes": notes_box,
+        "motion": {
+            "status": status_motion,
+            "toast": toast_motion,
+            "menu": menu_motion,
+        },
     }
+
+
+def inspect_reduced_motion(page: Page) -> None:
+    assert_reduced_motion(page.locator(".about-page"), "animationDuration")
+    assert_reduced_motion(page.locator(".about-panel").first, "animationDuration")
+    assert_reduced_motion(page.locator(".about-launcher-status-icon"), "transitionDuration")
+    assert_reduced_motion(page.locator(".about-release-link--older").first, "transitionDuration")
+
+    trigger = page.locator(".about-release-link--older").first.locator(".project-actions-trigger")
+    trigger.click()
+    menu = page.locator(".about-release-menu-portal [role=menu]")
+    menu.wait_for()
+    assert_reduced_motion(menu, "animationDuration")
+
+    page.evaluate(
+        """() => {
+          const toast = document.createElement('div');
+          toast.className = 'about-toast about-toast--success';
+          toast.dataset.motionTest = 'reduced-toast';
+          toast.textContent = 'Готово';
+          document.body.appendChild(toast);
+        }"""
+    )
+    toast = page.locator('[data-motion-test="reduced-toast"]')
+    assert_reduced_motion(toast, "animationDuration")
+    toast.evaluate("el => el.remove()")
+
+    menu.get_by_role("menuitem").first.click()
+    notes = page.locator(".about-notes-modal")
+    notes.wait_for()
+    assert_reduced_motion(notes, "animationDuration")
+    assert_reduced_motion(notes.locator("xpath=parent::*"), "animationDuration")
 
 
 def main() -> None:
@@ -143,7 +276,7 @@ def main() -> None:
 
     results = []
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = BASELINE.launch_browser(playwright)
         for theme in ("dark", "light"):
             for width, height in VIEWPORTS:
                 context = browser.new_context(
@@ -155,6 +288,17 @@ def main() -> None:
                 open_about(page)
                 results.append({"theme": theme, **inspect_interactions(page, width, height)})
                 context.close()
+        for theme in ("dark", "light"):
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                color_scheme=theme,
+                reduced_motion="reduce",
+                locale="uk-UA",
+            )
+            page = context.new_page()
+            open_about(page, enable_motion_test_styles=False)
+            inspect_reduced_motion(page)
+            context.close()
         browser.close()
 
     for width, height in VIEWPORTS:
@@ -168,7 +312,7 @@ def main() -> None:
                 "light": light[key],
             }
 
-    print(json.dumps({"checks": len(results), "viewports": VIEWPORTS}, ensure_ascii=False))
+    print(json.dumps({"checks": len(results) + 2, "viewports": VIEWPORTS, "reducedMotion": 2}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

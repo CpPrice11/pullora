@@ -1,13 +1,26 @@
 from __future__ import annotations
 
-import runpy
+import importlib.util
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from playwright.sync_api import Page, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import Page
 
 
-BASELINE = runpy.run_path("scripts/capture-visual-baseline.py")
+ROOT = Path(__file__).resolve().parent.parent
+BASELINE_PATH = ROOT / "scripts" / "capture-visual-baseline.py"
+BACKGROUND_MODES = ("standard", "custom")
+
+
+def load_baseline():
+    spec = importlib.util.spec_from_file_location("pullora_visual_baseline", BASELINE_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load visual baseline helper")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def css_rule(source: str, selector: str) -> str:
@@ -20,9 +33,8 @@ def css_rule(source: str, selector: str) -> str:
 
 
 def check_source_contract() -> None:
-    root = Path(__file__).resolve().parent.parent
-    cinematic = (root / "src/styles/Cinematic.css").read_text(encoding="utf-8")
-    pages = (root / "src/pages/PageStyles.css").read_text(encoding="utf-8")
+    cinematic = (ROOT / "src/styles/Cinematic.css").read_text(encoding="utf-8")
+    pages = (ROOT / "src/pages/PageStyles.css").read_text(encoding="utf-8")
     contracts = (
         (cinematic, ":root[data-theme] .cinematic-shell .about-hero,", ("var(--surface-1)", "blur(var(--surface-blur))")),
         (pages, ".cinematic-shell .about-release-link", ("var(--surface-2)", "var(--surface-border)")),
@@ -56,6 +68,13 @@ def set_surface_controls(page: Page, transparency: int, blur: int) -> None:
     open_about(page)
 
 
+def apply_background_mode(page: Page, background_mode: str, baseline) -> None:
+    if background_mode == "custom":
+        baseline.apply_custom_background(page)
+    else:
+        baseline.clear_custom_background(page)
+
+
 def surface_state(page: Page) -> dict:
     return page.evaluate(
         """
@@ -72,11 +91,16 @@ def surface_state(page: Page) -> dict:
             };
           };
           const root = getComputedStyle(document.documentElement);
+          const layout = document.querySelector('.layout');
           const background = document.querySelector('.cinematic-background');
           return {
             opacity: root.getPropertyValue('--surface-opacity').trim(),
             blur: root.getPropertyValue('--surface-blur').trim(),
+            customBackground: layout.classList.contains('has-custom-background'),
+            layoutBackground: getComputedStyle(layout).backgroundImage,
+            layoutBackgroundColor: getComputedStyle(layout).backgroundColor,
             launcherBackgroundVisible: background.classList.contains('is-visible'),
+            launcherBackgroundImage: getComputedStyle(background).backgroundImage,
             launcherBackgroundOpacity: Number(getComputedStyle(background).opacity),
             hero: read('.about-hero'),
             panel: read('.about-panel'),
@@ -97,61 +121,100 @@ def alpha(color: str) -> float:
     return 1.0
 
 
+def surface_signature(state: dict) -> dict:
+    return {
+        "opacity": state["opacity"],
+        "blur": state["blur"],
+        **{
+            surface: state[surface]
+            for surface in ("hero", "panel", "release", "orb")
+        },
+    }
+
+
 def main() -> None:
     check_source_contract()
     if "--static" in sys.argv:
         return
 
+    from playwright.sync_api import sync_playwright
+
+    baseline = load_baseline()
+
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = baseline.launch_browser(playwright)
         checks = 0
         for theme in ("dark", "light"):
-            context = browser.new_context(
-                viewport={"width": 1280, "height": 720},
-                color_scheme=theme,
-                locale="uk-UA",
-            )
-            page = context.new_page()
-            BASELINE["seed_cache"](page)
-            BASELINE["open_library"](page)
-            open_about(page)
-            BASELINE["apply_custom_background"](page)
-            initial = surface_state(page)
-            geometry = {key: initial[key]["box"] for key in ("hero", "panel", "release")}
+            theme_states = {}
+            for background_mode in BACKGROUND_MODES:
+                context = browser.new_context(
+                    viewport={"width": 1280, "height": 720},
+                    color_scheme=theme,
+                    locale="uk-UA",
+                )
+                page = context.new_page()
+                baseline.seed_cache(page)
+                baseline.open_library(page)
+                open_about(page)
+                apply_background_mode(page, background_mode, baseline)
 
-            opacity_states = {}
-            for transparency in (0, 40, 80):
-                set_surface_controls(page, transparency, 12)
-                state = surface_state(page)
-                assert state["opacity"] == f"{100 - transparency}%", state
-                assert state["launcherBackgroundVisible"] and state["launcherBackgroundOpacity"] > 0
-                assert {key: state[key]["box"] for key in geometry} == geometry, state
-                assert "12px" in state["hero"]["filter"]
-                assert "12px" in state["panel"]["filter"]
-                assert state["release"]["filter"] == "none"
-                opacity_states[transparency] = state
-                checks += 1
+                initial = surface_state(page)
+                assert initial["customBackground"] == (background_mode == "custom"), initial
+                assert initial["layoutBackground"] != "none" or alpha(initial["layoutBackgroundColor"]) > 0, initial
+                assert initial["launcherBackgroundVisible"] == (background_mode == "custom"), initial
+                if background_mode == "custom":
+                    assert initial["launcherBackgroundImage"] != "none", initial
+                    assert initial["launcherBackgroundOpacity"] > 0, initial
+                geometry = {key: initial[key]["box"] for key in ("hero", "panel", "release")}
+                scenario_states = {}
 
-            for surface in ("hero", "panel", "release", "orb"):
-                assert (
-                    alpha(opacity_states[0][surface]["background"])
-                    > alpha(opacity_states[40][surface]["background"])
-                    > alpha(opacity_states[80][surface]["background"])
-                ), {surface: opacity_states}
+                opacity_states = {}
+                for transparency in (0, 40, 80):
+                    set_surface_controls(page, transparency, 12)
+                    apply_background_mode(page, background_mode, baseline)
+                    state = surface_state(page)
+                    assert state["opacity"] == f"{100 - transparency}%", state
+                    assert state["customBackground"] == (background_mode == "custom"), state
+                    assert state["launcherBackgroundVisible"] == (background_mode == "custom"), state
+                    assert {key: state[key]["box"] for key in geometry} == geometry, state
+                    assert "12px" in state["hero"]["filter"]
+                    assert "12px" in state["panel"]["filter"]
+                    assert state["release"]["filter"] == "none"
+                    opacity_states[transparency] = state
+                    scenario_states[("opacity", transparency)] = state
+                    checks += 1
 
-            for blur in (0, 12, 32):
-                set_surface_controls(page, 40, blur)
-                state = surface_state(page)
-                assert state["blur"] == f"{blur}px", state
-                if blur == 0:
-                    assert state["hero"]["filter"].startswith("blur(0px)")
-                    assert state["panel"]["filter"].startswith("blur(0px)")
-                else:
-                    assert f"{blur}px" in state["hero"]["filter"]
-                    assert f"{blur}px" in state["panel"]["filter"]
-                checks += 1
+                for surface in ("hero", "panel", "release", "orb"):
+                    assert (
+                        alpha(opacity_states[0][surface]["background"])
+                        > alpha(opacity_states[40][surface]["background"])
+                        > alpha(opacity_states[80][surface]["background"])
+                    ), {"background": background_mode, "surface": surface, "states": opacity_states}
 
-            context.close()
+                for blur in (0, 12, 32):
+                    set_surface_controls(page, 40, blur)
+                    apply_background_mode(page, background_mode, baseline)
+                    state = surface_state(page)
+                    assert state["blur"] == f"{blur}px", state
+                    if blur == 0:
+                        assert state["hero"]["filter"].startswith("blur(0px)")
+                        assert state["panel"]["filter"].startswith("blur(0px)")
+                    else:
+                        assert f"{blur}px" in state["hero"]["filter"]
+                        assert f"{blur}px" in state["panel"]["filter"]
+                    scenario_states[("blur", blur)] = state
+                    checks += 1
+
+                theme_states[background_mode] = scenario_states
+                context.close()
+
+            for scenario, standard in theme_states["standard"].items():
+                assert surface_signature(standard) == surface_signature(theme_states["custom"][scenario]), {
+                    "theme": theme,
+                    "scenario": scenario,
+                    "standard": surface_signature(standard),
+                    "custom": surface_signature(theme_states["custom"][scenario]),
+                }
         browser.close()
     print(f"[about-surfaces] checks={checks}: ok")
 

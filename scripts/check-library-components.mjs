@@ -386,10 +386,9 @@ try {
   assert.match(settingsSectionsSource, /id="surfaceTransparency"[\s\S]*?max="100"/)
   assert.doesNotMatch(settingsSectionsSource, /<h3[^>]*>\{t\('settings\.(?:general|eventLog|maintenance)'\)\}<\/h3>/)
   const migratedSettings = normalizeSettings({ includePrereleases: true, assetStrategy: 'manual', githubOwner: 'OtherOwner' })
-  assert.equal(migratedSettings.githubOwner, 'CpPrice11')
   assert.deepEqual(
     migratedSettings,
-    normalizeSettings({ includePrereleases: false, assetStrategy: 'portableFirst', githubOwner: 'CpPrice11' }),
+    normalizeSettings({}),
   )
   assert.doesNotMatch(settingsPageSource, /id: 'installation'/)
   assert.doesNotMatch(settingsPageSource, /id: 'updates'/)
@@ -430,7 +429,7 @@ try {
   assert.doesNotMatch(settingsSectionsSource, /settings-reset-control|onRequestReset/)
   assert.match(settingsPageSource, /className="settings-nav-reset"[\s\S]*?setConfirmation\('reset'\)/)
   assert.match(settingsPageSource, /settings-nav-reset-divider/)
-  assert.match(settingsPageSource, /settings-save-indicator[\s\S]*?settings\.saved/)
+  assert.doesNotMatch(settingsPageSource, /settings-save-indicator|settings\.saved/)
   assert.match(settingsSectionsSource, /settings-theme-preview[\s\S]*?settings\.livePreviewSummary/)
   assert.match(settingsSectionsSource, /useCurrentMonitorResolution\(\)[\s\S]*?aspectRatio: `\$\{monitorResolution\.width\} \/ \$\{monitorResolution\.height\}`/)
   assert.match(pageStylesSource, /\.settings-theme-preview-canvas\.has-custom-background \.settings-theme-preview-image\s*\{[^}]*var\(--launcher-background-filter\)[^}]*var\(--launcher-background-opacity\)/s)

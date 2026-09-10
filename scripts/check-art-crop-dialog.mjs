@@ -123,9 +123,6 @@ async function seedPage(page, {
           return {
             version: 2,
             installationPath: 'C:\\Users\\Tester\\AppData\\Local\\Pullora\\Apps',
-            includePrereleases: false,
-            assetStrategy: 'portableFirst',
-            githubOwner: 'CpPrice11',
             githubToken: null,
             theme,
             language: 'uk',

@@ -47,7 +47,11 @@ jobs:
 
       - name: Check Rust
         working-directory: src-tauri
-        run: cargo check
+        run: cargo check --locked
+
+      - name: Test Rust
+        working-directory: src-tauri
+        run: cargo test --locked
 
       - name: Build Tauri bundle
         run: npm run tauri-build

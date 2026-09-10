@@ -4,9 +4,7 @@ use tauri::State;
 use crate::error::command_error;
 use crate::storage::get_config_dir;
 use crate::storage::secret_store::save_github_token;
-use crate::storage::settings::{
-    default_installation_path, save_settings, AppSettings, CATALOG_OWNER,
-};
+use crate::storage::settings::{default_installation_path, save_settings, AppSettings};
 use crate::AppState;
 
 #[derive(Debug, Serialize)]
@@ -29,7 +27,6 @@ pub async fn update_settings(
 ) -> Result<(), String> {
     let current_settings = state.settings.lock().await;
     new_settings.installation_path = current_settings.installation_path.clone();
-    new_settings.github_owner = Some(CATALOG_OWNER.to_string());
     let previous_token = current_settings.github_token.clone();
     drop(current_settings);
 

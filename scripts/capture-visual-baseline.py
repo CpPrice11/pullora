@@ -30,6 +30,12 @@ EXPECTED_LIBRARY_PANES = {
 }
 
 
+def launch_browser(playwright):
+    executable_path = os.environ.get("PULLORA_TEST_BROWSER_EXECUTABLE")
+    options = {"executable_path": executable_path} if executable_path else {}
+    return playwright.chromium.launch(headless=True, **options)
+
+
 def repo(repo_id: int, name: str, description: str, language: str) -> dict:
     return {
         "id": repo_id,
@@ -166,17 +172,16 @@ def seed_cache(page: Page) -> None:
                 return {
                   version: 2,
                   installationPath: 'C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Pullora\\\\Apps',
-                  includePrereleases: false,
-                  assetStrategy: 'portableFirst',
-                  githubOwner: 'CpPrice11',
                   githubToken: null,
                   theme: 'auto',
-                  language: 'uk',
+                  language: window.__PULLORA_TEST_LANGUAGE__ ?? 'uk',
                 };
               }
               if (command === 'is_first_launch') return false;
               if (command === 'get_launcher_version') return 'v5.16.1';
-              if (command === 'get_launcher_installation_mode') return 'portable';
+              if (command === 'get_launcher_installation_mode') {
+                return window.__PULLORA_TEST_INSTALLATION_MODE__ ?? 'portable';
+              }
               if (command === 'get_github_rate_limit_status') {
                 return {
                   core: { remaining: null, limit: null, resetAt: null },
@@ -431,7 +436,7 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     geometry: list[dict] = []
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = launch_browser(playwright)
         for theme in THEMES:
             for width, height in VIEWPORTS:
                 for scale in DEVICE_SCALE_FACTORS:

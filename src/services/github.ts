@@ -1,6 +1,5 @@
 import { callTauri } from './tauri'
 import type {
-  GitHubQueueStatus,
   GitHubRateLimitStatus,
   GitHubRelease,
   OwnerRepositoriesResponse,
@@ -22,15 +21,8 @@ function dedupeGithubRequest<T>(key: string, request: () => Promise<T>): Promise
   return pending
 }
 
-export function getGithubQueueStatus(): GitHubQueueStatus {
-  return {
-    active: activeRequestCount,
-    queued: 0,
-    concurrency: activeRequestCount,
-    highPriority: 0,
-    normalPriority: 0,
-    pausedUntil: null,
-  }
+export function getActiveGithubRequestCount(): number {
+  return activeRequestCount
 }
 
 export async function listOwnerRepositories(
