@@ -36,10 +36,19 @@ function Assert-Equal($Name, $Actual, $Expected) {
   Write-Host "[ok] $Name = $Actual"
 }
 
+function Get-Sha256Hex($Path) {
+  $stream = [System.IO.File]::OpenRead($Path)
+  try {
+    [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($stream)).ToLowerInvariant()
+  } finally {
+    $stream.Dispose()
+  }
+}
+
 function Write-Sha256Manifest($Paths, $Destination) {
   $lines = @($Paths | ForEach-Object {
     $file = Get-Item -LiteralPath $_
-    $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    $hash = Get-Sha256Hex $file.FullName
     "$hash  $($file.Name)"
   })
   [System.IO.File]::WriteAllText(
@@ -66,7 +75,7 @@ function Assert-Sha256Manifest($ManifestPath, $BaseDirectory, $ExpectedNames) {
     if (-not $entries.ContainsKey($name) -or -not (Test-Path -LiteralPath $path)) {
       Fail "SHA-256 entry or file is missing: $name"
     }
-    $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $actual = Get-Sha256Hex $path
     Assert-Equal "SHA-256 $name" $actual $entries[$name]
   }
 }
