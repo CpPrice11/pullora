@@ -38,9 +38,11 @@ function Assert-Equal($Name, $Actual, $Expected) {
 
 function Get-Sha256Hex($Path) {
   $stream = [System.IO.File]::OpenRead($Path)
+  $algorithm = [System.Security.Cryptography.SHA256]::Create()
   try {
-    [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($stream)).ToLowerInvariant()
+    ([BitConverter]::ToString($algorithm.ComputeHash($stream)) -replace "-", "").ToLowerInvariant()
   } finally {
+    $algorithm.Dispose()
     $stream.Dispose()
   }
 }
