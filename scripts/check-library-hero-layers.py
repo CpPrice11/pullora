@@ -87,7 +87,7 @@ def inspect_layers(page: Page) -> dict:
     assert int(z_indexes["library-hero-gradient"]) < int(z_indexes["library-hero-main"])
     assert int(z_indexes["library-hero-accent"]) < int(z_indexes["library-hero-main"])
 
-    global_before = page.locator(".cinematic-background").evaluate(
+    global_before = page.locator(".cinematic-background.is-active").evaluate(
         "el => ({ backgroundImage: getComputedStyle(el).backgroundImage, opacity: getComputedStyle(el).opacity })"
     )
     root_before = hero.evaluate("el => getComputedStyle(el).backgroundImage")
@@ -111,7 +111,7 @@ def inspect_layers(page: Page) -> dict:
     assert hero.evaluate("el => getComputedStyle(el).backgroundImage") == root_before
     assert gradient.evaluate("el => getComputedStyle(el).backgroundImage") == gradient_before
     assert hero.locator(".library-hero-cover img").get_attribute("src") == cover_before
-    assert page.locator(".cinematic-background").evaluate(
+    assert page.locator(".cinematic-background.is-active").evaluate(
         "el => ({ backgroundImage: getComputedStyle(el).backgroundImage, opacity: getComputedStyle(el).opacity })"
     ) == global_before
     assert background_image.get_attribute("src") == background_before

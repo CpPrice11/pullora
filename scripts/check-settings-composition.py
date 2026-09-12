@@ -1072,7 +1072,9 @@ def check_surface_and_density_contract(page, theme):
     light_menu_trigger.wait_for(state="detached")
     assert dark_menu_trigger.count() == 1
     if theme == "light":
-        assert "light-bg.png" not in background.evaluate("el => getComputedStyle(el).backgroundImage")
+        page.wait_for_function(
+            "!getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('light-bg.png')"
+        )
         page.locator("#theme").select_option("dark")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'dark' && "

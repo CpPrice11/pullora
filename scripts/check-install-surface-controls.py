@@ -24,7 +24,7 @@ def check_source_contract() -> None:
     modal = (root / "src/components/Modal/Modal.css").read_text(encoding="utf-8")
     library = (root / "src/features/library/components/SearchComponents.css").read_text(encoding="utf-8")
     contracts = (
-        (modal, ".cinematic-shell .release-modal--wizard", ("var(--surface-1)", "blur(var(--surface-blur))")),
+        (modal, ".cinematic-shell .release-modal--wizard", ("var(--surface-1)", "blur(var(--surface-blur-dialog))")),
         (library, ".cinematic-shell .release-modal--wizard > .modal-header", ("var(--surface-2)", "var(--surface-border)")),
         (library, ".cinematic-shell .release-modal--wizard > .release-body", ("var(--surface-1)",)),
         (library, ".cinematic-shell .release-modal--wizard .release-nav-actions", ("var(--surface-2)",)),
@@ -103,7 +103,7 @@ def surface_state(page: Page) -> dict:
             };
           };
           const root = getComputedStyle(document.documentElement);
-          const background = document.querySelector('.cinematic-background');
+          const background = document.querySelector('.cinematic-background.is-active');
           return {
             opacity: root.getPropertyValue('--surface-opacity').trim(),
             blur: root.getPropertyValue('--surface-blur').trim(),
@@ -164,8 +164,8 @@ def main() -> None:
                     "actualGeometry": current_geometry,
                     "state": state,
                 }
-                assert "12px" in state["overlay"]["filter"]
-                assert "12px" in state["modal"]["filter"]
+                assert "16px" in state["overlay"]["filter"]
+                assert "20px" in state["modal"]["filter"]
                 opacity_states[transparency] = state
                 checks += 1
 
@@ -180,8 +180,8 @@ def main() -> None:
                 set_surface_controls(page, 40, blur)
                 state = surface_state(page)
                 assert state["blur"] == f"{blur}px", state
-                assert f"blur({blur}px)" in state["overlay"]["filter"]
-                assert f"blur({blur}px)" in state["modal"]["filter"]
+                assert f"blur({min(32, blur + 4)}px)" in state["overlay"]["filter"]
+                assert f"blur({min(32, blur + 8)}px)" in state["modal"]["filter"]
                 checks += 1
 
             context.close()

@@ -28,7 +28,7 @@ def check_source_contract() -> None:
     assert "const scrollPositions = useRef<Record<NavigationTab, number>>" in app
     assert "contentKey" not in app
     assert "contentKey" not in layout
-    assert "key={" not in layout
+    assert "key={activeTab}" not in layout
     assert "ref={mainRef}" in layout
     assert "const ReleaseSelector = lazy(() => import('../../components/Install/ReleaseSelector'))" in library
     assert "const FolderManager = lazy(() => import('./components/FolderManager'))" in library

@@ -236,14 +236,14 @@ def open_library(page: Page) -> None:
 
 def apply_custom_background(page: Page) -> None:
     page.locator(".layout").evaluate("el => el.classList.add('has-custom-background')")
-    page.locator(".cinematic-background").evaluate(
+    page.locator(".cinematic-background.is-active").evaluate(
         "el => { el.classList.add('is-visible'); el.style.backgroundImage = 'radial-gradient(circle at 72% 14%, rgba(85, 196, 255, .72), transparent 34%), linear-gradient(135deg, #14263a, #382b4c 55%, #0b1724)' }"
     )
 
 
 def clear_custom_background(page: Page) -> None:
     page.locator(".layout").evaluate("el => el.classList.remove('has-custom-background')")
-    page.locator(".cinematic-background").evaluate(
+    page.locator(".cinematic-background.is-active").evaluate(
         "el => { el.classList.remove('is-visible'); el.style.removeProperty('background-image') }"
     )
 
@@ -406,7 +406,7 @@ def capture(page: Page, theme: str, width: int, height: int, scale: float) -> di
     page.get_by_role("button", name="Налаштування").click()
     page.get_by_role("heading", name="Налаштування").wait_for()
     apply_custom_background(page)
-    settings_background = page.locator(".cinematic-background").evaluate(
+    settings_background = page.locator(".cinematic-background.is-active").evaluate(
         "el => { const style = getComputedStyle(el); return { opacity: Number(style.opacity), filter: style.filter } }"
     )
     assert settings_background["opacity"] >= 0.5, settings_background

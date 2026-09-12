@@ -329,7 +329,7 @@ async function assertReducedMotion(locator) {
 }
 
 async function assertGlobalBackground(page, expectedCrop, expectedSurface, expectedMaterial, surfaceSelector) {
-  const background = page.locator('.cinematic-background')
+  const background = page.locator('.cinematic-background.is-active')
   const surface = page.locator(surfaceSelector).first()
   await surface.waitFor()
   assert.deepEqual(await cropContract(background), expectedCrop)
@@ -466,7 +466,7 @@ async function checkPreviewParity(browser) {
     await seedPage(page, scenario)
 
     const librarySurface = page.locator('.library-sam-list-pane')
-    const globalBackground = page.locator('.cinematic-background')
+    const globalBackground = page.locator('.cinematic-background.is-active')
     const heroBackground = page.locator('.library-hero-background img')
     await page.locator(`.library-page.library-density-${scenario.libraryDensity}`).waitFor()
     await page.waitForFunction((element) => getComputedStyle(element).backgroundImage !== 'none', await globalBackground.elementHandle())

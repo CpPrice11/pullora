@@ -2016,7 +2016,7 @@
   .about-toast,
   .library-toast {
     animation: none !important;
-    transform: none;
+    transform: none !important;
   }
 }
 

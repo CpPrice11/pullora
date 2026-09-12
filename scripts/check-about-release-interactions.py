@@ -35,15 +35,20 @@ def check_source_contract() -> None:
     assert "position: fixed" in styles
     for fragment in (
         "transition: color var(--motion-normal);",
-        "animation: about-toast-enter var(--motion-normal);",
-        "animation: about-menu-enter var(--motion-normal);",
+        "transition: opacity var(--motion-normal), transform var(--motion-normal);",
+        "transition: opacity var(--motion-menu), transform var(--motion-menu);",
         "about-release-menu-portal--up",
+        "@starting-style",
     ):
         assert fragment in styles or fragment in about, fragment
+    assert "@keyframes about-toast-enter" not in styles
+    assert "@keyframes about-menu-enter" not in styles
+    assert ".about-toast.is-visible" in styles
     for fragment in (
         "@media (prefers-reduced-motion: reduce)",
         "animation-duration: 0.001ms !important;",
-        "transition-duration: 0.001ms !important;",
+        "transition-duration: 80ms !important;",
+        "transition-property: background-color, border-color, color, box-shadow, opacity !important;",
     ):
         assert fragment in app_styles, fragment
     forbidden_layout_property = re.compile(
@@ -54,8 +59,6 @@ def check_source_contract() -> None:
         ("fluent-fade-up", app_styles),
         ("fluent-overlay-in", app_styles),
         ("fluent-dialog-in", app_styles),
-        ("about-toast-enter", styles),
-        ("about-menu-enter", styles),
     ):
         start = source.index(f"@keyframes {name}")
         opening = source.index("{", start)
@@ -85,9 +88,11 @@ def open_about(page: Page, *, enable_motion_test_styles: bool = True) -> None:
         page.add_style_tag(
             content="""
               .about-launcher-status-icon { transition: color var(--motion-normal) !important; }
-              .about-toast { animation: about-toast-enter var(--motion-normal) !important; }
+              .about-toast {
+                transition: opacity var(--motion-normal), transform var(--motion-normal) !important;
+              }
               .about-release-menu-portal .project-actions-popover {
-                animation: about-menu-enter var(--motion-normal) !important;
+                transition: opacity var(--motion-menu), transform var(--motion-menu) !important;
               }
             """
         )
@@ -132,6 +137,21 @@ def assert_reduced_motion(locator, property_name: str) -> None:
     assert max(durations) <= 1, {property_name: durations}
 
 
+def assert_reduced_transition(locator) -> None:
+    duration = locator.evaluate(
+        """el => {
+          const value = getComputedStyle(el).transitionDuration.split(',')[0].trim();
+          return value.endsWith('ms') ? Number.parseFloat(value) : Number.parseFloat(value) * 1000;
+        }"""
+    )
+    assert 75 <= duration <= 85, {"transitionDuration": duration}
+    properties = {
+        value.strip()
+        for value in locator.evaluate("el => getComputedStyle(el).transitionProperty").split(",")
+    }
+    assert properties <= {"background-color", "border-color", "color", "box-shadow", "opacity"}, properties
+
+
 def inspect_interactions(page: Page, width: int, height: int) -> dict:
     release = page.locator(".about-release-link--older").first
     trigger = release.locator(".project-actions-trigger")
@@ -151,8 +171,8 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     assert menu_portal.evaluate("el => el.parentElement === document.body")
     assert menu_portal.evaluate("el => getComputedStyle(el).position === 'fixed'")
     assert menu_portal.evaluate("el => getComputedStyle(el).zIndex") == "90"
-    menu_motion = assert_motion_duration(menu, "animationDuration")
-    assert menu.evaluate("el => getComputedStyle(el).animationName") == "about-menu-enter"
+    menu_motion = assert_motion_duration(menu, "transitionDuration")
+    assert menu.evaluate("el => getComputedStyle(el).transitionProperty") == "opacity, transform"
 
     page.keyboard.press("End")
     assert_focused(items.nth(1))
@@ -214,15 +234,16 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     page.evaluate(
         """() => {
           const toast = document.createElement('div');
-          toast.className = 'about-toast about-toast--success';
+          toast.className = 'about-toast about-toast--success is-visible';
           toast.dataset.motionTest = 'toast';
           toast.textContent = 'Готово';
           document.body.appendChild(toast);
         }"""
     )
     toast = page.locator('[data-motion-test="toast"]')
-    toast_motion = assert_motion_duration(toast, "animationDuration")
-    assert toast.evaluate("el => getComputedStyle(el).animationName") == "about-toast-enter"
+    toast_motion = assert_motion_duration(toast, "transitionDuration")
+    assert toast.evaluate("el => getComputedStyle(el).opacity") == "1"
+    assert toast.evaluate("el => getComputedStyle(el).transform") == "matrix(1, 0, 0, 1, 0, 0)"
     toast.evaluate("el => el.remove()")
 
     return {
@@ -240,26 +261,28 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
 def inspect_reduced_motion(page: Page) -> None:
     assert_reduced_motion(page.locator(".about-page"), "animationDuration")
     assert_reduced_motion(page.locator(".about-panel").first, "animationDuration")
-    assert_reduced_motion(page.locator(".about-launcher-status-icon"), "transitionDuration")
-    assert_reduced_motion(page.locator(".about-release-link--older").first, "transitionDuration")
+    assert_reduced_transition(page.locator(".about-launcher-status-icon"))
+    assert_reduced_transition(page.locator(".about-release-link--older").first)
 
     trigger = page.locator(".about-release-link--older").first.locator(".project-actions-trigger")
     trigger.click()
     menu = page.locator(".about-release-menu-portal [role=menu]")
     menu.wait_for()
-    assert_reduced_motion(menu, "animationDuration")
+    assert_reduced_transition(menu)
 
     page.evaluate(
         """() => {
           const toast = document.createElement('div');
-          toast.className = 'about-toast about-toast--success';
+          toast.className = 'about-toast about-toast--success is-visible';
           toast.dataset.motionTest = 'reduced-toast';
           toast.textContent = 'Готово';
           document.body.appendChild(toast);
         }"""
     )
     toast = page.locator('[data-motion-test="reduced-toast"]')
-    assert_reduced_motion(toast, "animationDuration")
+    assert_reduced_transition(toast)
+    assert toast.evaluate("el => getComputedStyle(el).opacity") == "1"
+    assert toast.evaluate("el => getComputedStyle(el).transform") == "none"
     toast.evaluate("el => el.remove()")
 
     menu.get_by_role("menuitem").first.click()

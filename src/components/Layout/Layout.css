@@ -257,6 +257,8 @@
 
 .app-view > .page {
   animation: none;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .app-view[data-navigation-input='pointer'] > .page {
