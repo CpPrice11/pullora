@@ -143,7 +143,11 @@ pub fn load_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {
     let content = std::fs::read_to_string(&path)?;
     let settings: AppSettings = serde_json::from_str(&content)?;
     let default_path = PathBuf::from(default_installation_path());
-    Ok(migrate_installation_path(config_dir, settings, &default_path))
+    Ok(migrate_installation_path(
+        config_dir,
+        settings,
+        &default_path,
+    ))
 }
 
 pub fn load_runtime_settings(config_dir: &Path) -> Result<AppSettings, StorageError> {

@@ -10,7 +10,7 @@ import {
 import { createPortal } from 'react-dom'
 import { useI18n } from '../../i18n'
 import { useModalFocus } from '../../hooks/useModalFocus'
-import { useCurrentMonitorResolution } from '../../hooks/useCurrentMonitorResolution'
+import { useCurrentWindowResolution } from '../../hooks/useCurrentWindowResolution'
 import { getProjectArtPreview, type ProjectArtKind } from '../../services/projectArt'
 import type { ArtCrop } from '../../types'
 import { CloseIcon } from '../ui/Icons'
@@ -19,6 +19,13 @@ import './Modal.css'
 type Size = { width: number; height: number }
 type Rect = Size & { left: number; top: number }
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+type WorkspacePreviewSize = 'current' | '1000x700' | '1280x720' | '1920x1080'
+
+const WORKSPACE_PREVIEW_SIZES: Record<Exclude<WorkspacePreviewSize, 'current'>, Size> = {
+  '1000x700': { width: 1000, height: 700 },
+  '1280x720': { width: 1280, height: 720 },
+  '1920x1080': { width: 1920, height: 1080 },
+}
 
 interface ArtCropDialogProps {
   kind: Exclude<ProjectArtKind, 'all'>
@@ -132,7 +139,11 @@ export default function ArtCropDialog({
   const [announcedCrop, setAnnouncedCrop] = useState<ArtCrop | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const screenResolution = useCurrentMonitorResolution(previewShape === 'workspace')
+  const [workspacePreviewSize, setWorkspacePreviewSize] = useState<WorkspacePreviewSize>('current')
+  const windowResolution = useCurrentWindowResolution(previewShape === 'workspace')
+  const workspaceResolution = workspacePreviewSize === 'current'
+    ? windowResolution
+    : WORKSPACE_PREVIEW_SIZES[workspacePreviewSize]
 
   useModalFocus(dialogRef, { onEscape: saving ? undefined : onCancel })
 
@@ -183,7 +194,7 @@ export default function ArtCropDialog({
   }, [])
 
   const targetAspect = previewShape === 'workspace'
-    ? screenResolution.width / screenResolution.height
+    ? workspaceResolution.width / workspaceResolution.height
     : previewShape === 'hero'
       ? previewAspectRatios?.[initialPreviewMode] ?? 4
       : 1
@@ -308,13 +319,18 @@ export default function ArtCropDialog({
   const position = cropPosition(crop)
   const announcedPosition = announcedCrop ? cropPosition(announcedCrop) : null
   const cropTarget = previewShape === 'workspace'
-    ? t('art.cropCurrentScreen', screenResolution)
+    ? t('art.cropWorkspaceTarget', workspaceResolution)
     : t(previewShape === 'cover' ? 'art.cropTargetCover' : 'art.cropTargetHero')
   const frameStyle = {
     left: frame.left,
     top: frame.top,
     width: frame.width,
     height: frame.height,
+    '--art-focus-x': `${crop.focusX * 100}%`,
+    '--art-focus-y': `${crop.focusY * 100}%`,
+    '--art-zoom': String(crop.zoom),
+  } as CSSProperties
+  const cropStyle = {
     '--art-focus-x': `${crop.focusX * 100}%`,
     '--art-focus-y': `${crop.focusY * 100}%`,
     '--art-zoom': String(crop.zoom),
@@ -355,60 +371,105 @@ export default function ArtCropDialog({
         </header>
 
         <div className="art-crop-body">
-          <div
-            ref={stageRef}
-            className={`art-crop-stage art-crop-stage--${previewShape}`}
-            style={previewStyle as CSSProperties}
-            onPointerMove={handlePointerMove}
-            onPointerUp={finishInteraction}
-            onPointerCancel={finishInteraction}
-          >
-            <span className="art-crop-target">{cropTarget}</span>
-            <div className="art-crop-canvas" style={canvasStyle}>
-              {previewUrl && (
-                <img
-                  className={previewReady ? '' : 'is-loading'}
-                  src={previewUrl}
-                  alt=""
-                  draggable="false"
-                  onLoad={(event) => {
-                    setImageSize({
-                      width: event.currentTarget.naturalWidth,
-                      height: event.currentTarget.naturalHeight,
-                    })
-                    setPreviewReady(true)
-                  }}
-                  onError={reportLoadError}
-                />
-              )}
-              {!previewReady && !error && (
-                <span role="status" aria-live="polite">{t('art.cropLoading')}</span>
-              )}
-              {previewReady && (
-                <div
-                  className={`art-crop-preview art-crop-preview--${previewShape}`}
-                  data-preview-mode={initialPreviewMode}
-                  style={frameStyle}
-                  role="group"
-                  aria-label={t('art.cropPreviewPosition', position)}
-                  tabIndex={0}
-                  onKeyDown={handleFrameKeyDown}
-                  onPointerDown={(event) => beginInteraction(event, 'move')}
+          {previewShape === 'workspace' && (
+            <div className="art-crop-preview-sizes" role="group" aria-label={t('art.previewSize')}>
+              {(['current', '1000x700', '1280x720', '1920x1080'] as WorkspacePreviewSize[]).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  className="art-crop-preview-size"
+                  aria-pressed={workspacePreviewSize === size}
+                  disabled={saving}
+                  onClick={() => setWorkspacePreviewSize(size)}
                 >
-                  <span className="art-crop-grid" aria-hidden="true" />
-                  {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as Corner[]).map((corner) => (
-                    <button
-                      key={corner}
-                      type="button"
-                      className={`art-crop-handle art-crop-handle--${corner}`}
-                      aria-label={t('art.cropResizeHandle')}
-                      onKeyDown={handleFrameKeyDown}
-                      onPointerDown={(event) => beginInteraction(event, 'resize', corner)}
-                    />
-                  ))}
-                </div>
-              )}
+                  {size === 'current' ? t('art.previewCurrentWindow') : size.replace('x', ' × ')}
+                </button>
+              ))}
             </div>
+          )}
+
+          <div className={`art-crop-editor art-crop-editor--${previewShape}`}>
+            <div
+              ref={stageRef}
+              className={`art-crop-stage art-crop-stage--${previewShape}`}
+              style={previewStyle as CSSProperties}
+              onPointerMove={handlePointerMove}
+              onPointerUp={finishInteraction}
+              onPointerCancel={finishInteraction}
+            >
+              <span className="art-crop-target">{cropTarget}</span>
+              <div className="art-crop-canvas" style={canvasStyle}>
+                {previewUrl && (
+                  <img
+                    className={previewReady ? '' : 'is-loading'}
+                    src={previewUrl}
+                    alt=""
+                    draggable="false"
+                    onLoad={(event) => {
+                      setImageSize({
+                        width: event.currentTarget.naturalWidth,
+                        height: event.currentTarget.naturalHeight,
+                      })
+                      setPreviewReady(true)
+                    }}
+                    onError={reportLoadError}
+                  />
+                )}
+                {!previewReady && !error && (
+                  <span role="status" aria-live="polite">{t('art.cropLoading')}</span>
+                )}
+                {previewReady && (
+                  <div
+                    className={`art-crop-preview art-crop-preview--${previewShape}`}
+                    data-preview-mode={initialPreviewMode}
+                    style={frameStyle}
+                    role="group"
+                    aria-label={t('art.cropPreviewPosition', position)}
+                    tabIndex={0}
+                    onKeyDown={handleFrameKeyDown}
+                    onPointerDown={(event) => beginInteraction(event, 'move')}
+                  >
+                    <span className="art-crop-grid" aria-hidden="true" />
+                    {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as Corner[]).map((corner) => (
+                      <button
+                        key={corner}
+                        type="button"
+                        className={`art-crop-handle art-crop-handle--${corner}`}
+                        aria-label={t('art.cropResizeHandle')}
+                        onKeyDown={handleFrameKeyDown}
+                        onPointerDown={(event) => beginInteraction(event, 'resize', corner)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {previewShape === 'workspace' && (
+              <div className="art-crop-result">
+                <strong>{t('art.workspacePreview')}</strong>
+                <div
+                  className="settings-theme-preview-canvas has-custom-background art-crop-result-canvas"
+                  style={{
+                    ...previewStyle,
+                    aspectRatio: `${workspaceResolution.width} / ${workspaceResolution.height}`,
+                  } as CSSProperties}
+                  aria-hidden="true"
+                >
+                  {previewUrl && (
+                    <span
+                      className="settings-theme-preview-image"
+                      style={{ ...cropStyle, backgroundImage: `url(${JSON.stringify(previewUrl)})` }}
+                    />
+                  )}
+                  <span className="settings-theme-preview-nav"><i /><i /><i /></span>
+                  <span className="settings-theme-preview-main">
+                    <i className="settings-theme-preview-hero" />
+                    <span><i /><i /></span>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <p className="art-crop-hint">{t('art.cropHint')}</p>

@@ -94,6 +94,10 @@ export function appearanceCssVariables(
     '--surface-opacity-strong': `${strongOpacity}%`,
     '--surface-blur': `${normalized.surfaceBlur}px`,
     '--surface-canvas': palette.background,
+    '--launcher-background-filter': isLight
+      ? 'blur(2px) brightness(1.04) saturate(0.88)'
+      : 'blur(2px) brightness(0.78) saturate(1.02)',
+    '--launcher-background-opacity': isLight ? '0.66' : '0.8',
     '--launcher-background-scrim': `color-mix(in srgb, ${palette.background} ${backgroundScrimOpacity}%, transparent)`,
     '--surface-1': `color-mix(in srgb, ${palette.surface} ${shellOpacity}%, transparent)`,
     '--surface-2': `color-mix(in srgb, ${palette.surface2} ${nestedOpacity}%, transparent)`,

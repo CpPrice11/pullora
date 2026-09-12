@@ -18,7 +18,7 @@ CHECKS = (
     "scripts/check-legacy-shell-parity.py",
     "scripts/check-state-panel-parity.py",
     "scripts/check-download-panel-parity.py",
-    "scripts/check-light-palette.py",
+    "scripts/check-rendered-contrast.py",
     "scripts/check-release-selector-layout.py",
     "scripts/check-install-surface-controls.py",
     "scripts/check-settings-composition.py",

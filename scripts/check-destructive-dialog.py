@@ -60,6 +60,7 @@ with sync_playwright() as playwright:
 
         overlay = page.locator(".modal-overlay.uninstall-overlay")
         assert overlay.evaluate("el => el.parentElement?.classList.contains('layout')")
+        assert overlay.evaluate("el => getComputedStyle(el).zIndex") == "1020"
         assert dialog.get_attribute("aria-modal") == "true"
         assert dialog.get_attribute("aria-busy") == "false"
 

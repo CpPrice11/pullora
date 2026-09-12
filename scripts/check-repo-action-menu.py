@@ -72,6 +72,7 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
 
     assert portal.evaluate("el => el.parentElement?.id") == 'app-overlay-root'
     assert portal.evaluate("el => getComputedStyle(el).position") == 'fixed'
+    assert portal.evaluate("el => getComputedStyle(el).zIndex") == '90'
 
     portal_box = portal.bounding_box()
     assert portal_box is not None
@@ -88,6 +89,7 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
 
     assert submenu.evaluate("el => el.parentElement?.id") == 'app-overlay-root'
     assert submenu.evaluate("el => getComputedStyle(el).position") == 'fixed'
+    assert submenu.evaluate("el => getComputedStyle(el).zIndex") == '90'
 
     surface_styles = page.locator('.repo-context-menu .project-actions-popover:visible, .repo-actions-submenu-panel:visible').evaluate_all(
         """elements => elements.map(element => {

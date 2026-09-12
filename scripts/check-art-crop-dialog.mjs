@@ -458,6 +458,11 @@ async function checkPreviewParity(browser) {
   for (const scenario of scenarios) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: 'uk-UA' })
     const page = await context.newPage()
+    const browserErrors = []
+    page.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text())
+    })
+    page.on('pageerror', (error) => browserErrors.push(error.message))
     await seedPage(page, scenario)
 
     const librarySurface = page.locator('.library-sam-list-pane')
@@ -542,6 +547,40 @@ async function checkPreviewParity(browser) {
     await dialog.locator('.art-crop-canvas > img').waitFor()
     assert.deepEqual(await cropContract(preview), expectedGlobalCrop)
     assert.deepEqual(await surfaceContract(dialog.locator('.art-crop-stage')), expectedSurface)
+    const resultCanvas = dialog.locator('.art-crop-result-canvas')
+    const resultImage = resultCanvas.locator('.settings-theme-preview-image')
+    await resultImage.waitFor()
+    assert.deepEqual(await cropContract(resultImage), expectedGlobalCrop)
+    assert.deepEqual(
+      await resultImage.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { filter: style.filter, opacity: style.opacity }
+      }),
+      await globalBackground.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return { filter: style.filter, opacity: style.opacity }
+      }),
+    )
+    const currentSizeButton = dialog.getByRole('button', { name: 'Поточне вікно' })
+    assert.equal(await currentSizeButton.getAttribute('aria-pressed'), 'true')
+    const currentViewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
+    let [resultBox, cropBox] = await Promise.all([resultCanvas.boundingBox(), preview.boundingBox()])
+    assert(resultBox && cropBox)
+    assert(Math.abs(resultBox.width / resultBox.height - currentViewport.width / currentViewport.height) < 0.01)
+    assert(Math.abs(cropBox.width / cropBox.height - currentViewport.width / currentViewport.height) < 0.01)
+    if (process.env.PULLORA_REVIEW_SCREENSHOT && scenario.theme === 'dark'
+      && scenario.libraryDensity === 'normal' && scenario.appearance.surfaceTransparency === 42) {
+      await dialog.screenshot({ path: resolve(process.env.PULLORA_REVIEW_SCREENSHOT), animations: 'disabled' })
+    }
+    const presetButton = dialog.getByRole('button', { name: '1000 × 700' })
+    await presetButton.focus()
+    await presetButton.press('Enter')
+    assert.equal(await presetButton.getAttribute('aria-pressed'), 'true')
+    await page.waitForFunction(() => document.querySelector('.art-crop-target')?.textContent?.includes('1000 × 700'))
+    ;[resultBox, cropBox] = await Promise.all([resultCanvas.boundingBox(), preview.boundingBox()])
+    assert(resultBox && cropBox)
+    assert(Math.abs(resultBox.width / resultBox.height - 1000 / 700) < 0.01)
+    assert(Math.abs(cropBox.width / cropBox.height - 1000 / 700) < 0.01)
     await dialog.getByRole('button', { name: 'Скасувати' }).click()
     await dialog.waitFor({ state: 'hidden' })
 
@@ -549,6 +588,7 @@ async function checkPreviewParity(browser) {
     await assertGlobalBackground(page, expectedGlobalCrop, expectedSurface, expectedMaterial, '.about-hero')
     await page.getByRole('button', { name: 'Бібліотека' }).click()
     await assertGlobalBackground(page, expectedGlobalCrop, expectedSurface, expectedMaterial, '.library-sam-list-pane')
+    assert.deepEqual(browserErrors, [])
     await context.close()
   }
 }

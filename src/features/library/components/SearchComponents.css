@@ -109,7 +109,7 @@
   border: 1px solid var(--color-border);
   border-radius: 999px;
   color: var(--color-text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   flex: 0 0 auto;
   line-height: 1;
@@ -1098,8 +1098,8 @@
   border-color: rgba(17, 24, 39, 0.12);
 }
 
-.uninstall-overlay {
-  z-index: 1020;
+.modal-overlay.uninstall-overlay {
+  z-index: var(--z-dialog-destructive);
 }
 
 .uninstall-confirm-modal {

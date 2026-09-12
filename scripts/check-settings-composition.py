@@ -664,6 +664,7 @@ def check_general_reset_contract(page):
     reset_trigger.click()
     dialog = page.get_by_role("alertdialog")
     dialog.wait_for()
+    assert page.locator(".settings-reset-overlay").evaluate("el => getComputedStyle(el).zIndex") == "1020"
     assert dialog.get_attribute("aria-describedby") == "settings-reset-description"
     cancel = dialog.get_by_role("button", name="Cancel", exact=True)
     page.wait_for_function(
@@ -820,6 +821,7 @@ def check_background_label_contract(page):
         trigger.click()
         menu = page.get_by_role("menu", name=menu_label, exact=True)
         menu.wait_for()
+        assert menu.locator("xpath=parent::*").evaluate("el => getComputedStyle(el).zIndex") == "90"
         assert menu.get_by_role("menuitem", name="Замінити", exact=True).count() == 1
         assert menu.get_by_role("menuitem", name="Скинути", exact=True).count() == 1
         page.wait_for_function(
