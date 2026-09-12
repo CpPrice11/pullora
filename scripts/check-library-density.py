@@ -8,8 +8,10 @@ from playwright.sync_api import sync_playwright
 baseline = runpy.run_path("scripts/capture-visual-baseline.py")
 seed_cache = baseline["seed_cache"]
 open_library = baseline["open_library"]
+launch_browser = baseline["launch_browser"]
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 THEMES = ("dark", "light")
+LANGUAGES = (("uk", "uk-UA"), ("en", "en-US"))
 
 VIEWPORT_CONTRACT = {
     (1000, 700): {
@@ -35,6 +37,7 @@ COMMON_CONTRACT = {
         "resultsPadding": [12, 18],
         "folder": [17, 31, 3, 16],
         "card": [4, 10, 24, 13, 15.6],
+        "functionalFonts": [11, 11, 11],
         "hero": [26, 28, 124],
         "details": [46, 14, 16],
     },
@@ -46,6 +49,7 @@ COMMON_CONTRACT = {
         "resultsPadding": [8, 10],
         "folder": [14, 25, 1, 13],
         "card": [2, 7, 22, 13, 15.6],
+        "functionalFonts": [11, 11, 11],
         "hero": [18, 18, 92],
         "details": [40, 8, 12],
     },
@@ -85,6 +89,9 @@ def metrics(page) -> dict:
             const hero = read('.library-hero')
             const heroCover = read('.library-hero-cover')
             const heroTitle = read('.library-github-header h2')
+            const folderCount = read('.library-folder-section-header em')
+            const repoStatus = read('.repo-status')
+            const playStatus = read('.library-play-status span')
             const primaryAction = read('.library-ops-action-row .hero-primary-btn')
             const overview = read('.library-inline-overview-grid')
             const inlinePanel = read('.library-inline-panel')
@@ -99,6 +106,7 @@ def metrics(page) -> dict:
                 folder: [folderLabel.box.height, folderHeader.box.height, folderItems.px(folderItems.style.gap), folderItems.px(folderItems.style.marginLeft)],
                 cardHeight: card.box.height,
                 card: [card.px(card.style.paddingTop), card.px(card.style.borderRadius), avatar.box.height, repoName.px(repoName.style.fontSize), repoName.px(repoName.style.lineHeight)],
+                functionalFonts: [folderCount.px(folderCount.style.fontSize), repoStatus.px(repoStatus.style.fontSize), playStatus.px(playStatus.style.fontSize)],
                 heroHeight: hero.box.height,
                 heroTitle: heroTitle.px(heroTitle.style.fontSize),
                 hero: [hero.px(hero.style.gap), hero.px(hero.style.paddingTop), heroCover.box.height],
@@ -122,36 +130,42 @@ def expected(viewport: tuple[int, int], density: str) -> dict:
 
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch(headless=True)
-    theme_contracts: dict[tuple[int, int], dict] = {}
+    browser = launch_browser(playwright)
 
-    for theme in THEMES:
-        for viewport in VIEWPORTS:
-            width, height = viewport
-            context = browser.new_context(
-                viewport={"width": width, "height": height},
-                color_scheme=theme,
-                locale="uk-UA",
-            )
-            page = context.new_page()
-            seed_cache(page)
-            open_library(page)
+    for language, locale in LANGUAGES:
+        for theme in THEMES:
+            for viewport in VIEWPORTS:
+                width, height = viewport
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    color_scheme=theme,
+                    locale=locale,
+                )
+                page = context.new_page()
+                page.add_init_script(f"window.__PULLORA_TEST_LANGUAGE__ = '{language}'")
+                seed_cache(page)
+                open_library(page)
 
-            normal = normalize(metrics(page))
-            assert normal == expected(viewport, "normal"), {"theme": theme, "viewport": viewport, "normal": normal}
+                normal = normalize(metrics(page))
+                assert normal == expected(viewport, "normal"), {
+                    "language": language,
+                    "theme": theme,
+                    "viewport": viewport,
+                    "normal": normal,
+                }
 
-            page.locator(".library-density-toggle button").click()
-            page.locator(".library-page.library-density-compact").wait_for()
-            compact = normalize(metrics(page))
-            assert compact == expected(viewport, "compact"), {"theme": theme, "viewport": viewport, "compact": compact}
+                page.locator(".library-density-toggle button").click()
+                page.locator(".library-page.library-density-compact").wait_for()
+                compact = normalize(metrics(page))
+                assert compact == expected(viewport, "compact"), {
+                    "language": language,
+                    "theme": theme,
+                    "viewport": viewport,
+                    "compact": compact,
+                }
 
-            current = {"normal": normal, "compact": compact}
-            if theme == "dark":
-                theme_contracts[viewport] = current
-            else:
-                assert current == theme_contracts[viewport], {"viewport": viewport, "dark": theme_contracts[viewport], "light": current}
-            context.close()
+                context.close()
 
     browser.close()
 
-print("[density] normal/compact geometry, spacing, avatars and typography: ok")
+print("[density] uk/en normal/compact geometry and typography: ok")

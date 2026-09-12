@@ -12,7 +12,7 @@
   position: fixed;
   right: 0;
   top: 0;
-  z-index: 1000;
+  z-index: var(--z-dialog);
 }
 
 .modal-content {
@@ -342,6 +342,63 @@
   overflow: auto;
 }
 
+.art-crop-editor {
+  min-width: 0;
+}
+
+.art-crop-editor--workspace {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+}
+
+.art-crop-preview-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.art-crop-preview-size {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-height: 32px;
+  padding: 5px 11px;
+}
+
+.art-crop-preview-size:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--surface-border-strong);
+  color: var(--color-text);
+}
+
+.art-crop-preview-size[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--surface-2));
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.art-crop-result {
+  align-content: start;
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.art-crop-result > strong {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.art-crop-result-canvas {
+  max-width: none;
+  width: 100%;
+}
+
 .art-crop-stage {
   background:
     radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 58%),
@@ -354,6 +411,10 @@
   position: relative;
   touch-action: none;
   user-select: none;
+}
+
+.art-crop-stage--workspace {
+  min-height: clamp(340px, calc(100vh - 380px), 520px);
 }
 
 .art-crop-canvas {
@@ -545,6 +606,12 @@
   min-width: 112px;
 }
 
+@media (max-width: 900px) {
+  .art-crop-editor--workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 700px) {
   .art-crop-overlay {
     padding: 12px;
@@ -552,5 +619,9 @@
 
   .art-crop-stage {
     min-height: 300px;
+  }
+
+  .art-crop-preview-size {
+    flex: 1 1 calc(50% - 6px);
   }
 }

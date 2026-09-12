@@ -6,6 +6,7 @@ import { createServer } from 'vite'
 
 const server = await createServer({
   appType: 'custom',
+  configFile: false,
   logLevel: 'error',
   optimizeDeps: { noDiscovery: true },
   plugins: [{
@@ -17,7 +18,8 @@ const server = await createServer({
   }],
   server: {
     middlewareMode: true,
-    watch: { ignored: ['**/src-tauri/target/**'] },
+    watch: null,
+    ws: false,
   },
 })
 
@@ -218,6 +220,11 @@ try {
   assert.equal(darkSurfaces['--surface-1'], 'color-mix(in srgb, #111820 60%, transparent)')
   assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
   assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')
+  assert.equal(darkSurfaces['--launcher-background-filter'], 'blur(2px) brightness(0.78) saturate(1.02)')
+  assert.equal(darkSurfaces['--launcher-background-opacity'], '0.8')
+  const lightSurfaces = appearanceCssVariables(undefined, 'light')
+  assert.equal(lightSurfaces['--launcher-background-filter'], 'blur(2px) brightness(1.04) saturate(0.88)')
+  assert.equal(lightSurfaces['--launcher-background-opacity'], '0.66')
 
   const coverOnlyArt = { coverDataUrl: 'data:image/png;base64,cover' }
   const independentArt = {
@@ -267,10 +274,14 @@ try {
     onSave: async () => {},
   })
   assert.match(workspaceCropDialogMarkup, /class="art-crop-stage art-crop-stage--workspace"/)
-  assert.doesNotMatch(workspaceCropDialogMarkup, /art-crop-preview-select/)
+  assert.match(workspaceCropDialogMarkup, /class="art-crop-preview-sizes"/)
+  assert.match(workspaceCropDialogMarkup, /aria-pressed="true"/)
+  assert.match(workspaceCropDialogMarkup, /\u041f\u043e\u0442\u043e\u0447\u043d\u0435 \u0432\u0456\u043a\u043d\u043e/)
+  assert.match(workspaceCropDialogMarkup, /1000 × 700/)
   assert.match(workspaceCropDialogMarkup, /class="art-crop-canvas"/)
-  assert.match(workspaceCropDialogMarkup, /\u041c\u0456\u0439 \u0435\u043a\u0440\u0430\u043d: 1920 \u00d7 1080/)
-  assert.doesNotMatch(workspaceCropDialogMarkup, /aspect-ratio/)
+  assert.match(workspaceCropDialogMarkup, /\u0412\u0456\u043a\u043d\u043e Pullora: 1280 \u00d7 720/)
+  assert.match(workspaceCropDialogMarkup, /art-crop-result-canvas/)
+  assert.match(workspaceCropDialogMarkup, /aspect-ratio:1280 \/ 720/)
 
   const releaseAsset = (id, name) => ({
     id,
@@ -358,13 +369,20 @@ try {
   const cinematicStylesSource = readFileSync('src/styles/Cinematic.css', 'utf8')
   const searchComponentsStyles = readFileSync('src/features/library/components/SearchComponents.css', 'utf8')
   const installStyles = readFileSync('src/components/Install/Install.css', 'utf8')
+
+  assert.equal((cinematicStylesSource.match(/font-size:\s*10px/g) ?? []).length, 1)
+  assert.equal((pageStylesSource.match(/font-size:\s*10px/g) ?? []).length, 1)
+  assert.doesNotMatch(searchComponentsStyles, /font-size:\s*10px/)
+  for (const styles of [cinematicStylesSource, pageStylesSource, searchComponentsStyles]) {
+    assert.match(styles, /font-size:\s*11px/)
+  }
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
   const batchUpdatesSource = readFileSync('src/features/library/hooks/useBatchUpdates.ts', 'utf8')
   const libraryOperationsSource = readFileSync('src/features/library/components/LibraryOperationsPanel.tsx', 'utf8')
   const libraryHeroSource = readFileSync('src/features/library/components/LibraryHero.tsx', 'utf8')
   const repoCardSource = readFileSync('src/features/library/components/RepoCard.tsx', 'utf8')
   const artCropDialogSource = readFileSync('src/components/Modal/ArtCropDialog.tsx', 'utf8')
-  const monitorResolutionSource = readFileSync('src/hooks/useCurrentMonitorResolution.ts', 'utf8')
+  const windowResolutionSource = readFileSync('src/hooks/useCurrentWindowResolution.ts', 'utf8')
   const layoutStylesSource = readFileSync('src/components/Layout/Layout.css', 'utf8')
   const modalFocusSource = readFileSync('src/hooks/useModalFocus.ts', 'utf8')
   const projectArtServiceSource = readFileSync('src/services/projectArt.ts', 'utf8')
@@ -431,7 +449,7 @@ try {
   assert.match(settingsPageSource, /settings-nav-reset-divider/)
   assert.doesNotMatch(settingsPageSource, /settings-save-indicator|settings\.saved/)
   assert.match(settingsSectionsSource, /settings-theme-preview[\s\S]*?settings\.livePreviewSummary/)
-  assert.match(settingsSectionsSource, /useCurrentMonitorResolution\(\)[\s\S]*?aspectRatio: `\$\{monitorResolution\.width\} \/ \$\{monitorResolution\.height\}`/)
+  assert.match(settingsSectionsSource, /useCurrentWindowResolution\(\)[\s\S]*?aspectRatio: `\$\{windowResolution\.width\} \/ \$\{windowResolution\.height\}`/)
   assert.match(pageStylesSource, /\.settings-theme-preview-canvas\.has-custom-background \.settings-theme-preview-image\s*\{[^}]*var\(--launcher-background-filter\)[^}]*var\(--launcher-background-opacity\)/s)
   assert.match(layoutStylesSource, /\.cinematic-shell\.has-custom-background \.cinematic-background\.is-visible\s*\{[^}]*var\(--launcher-background-filter\)[^}]*var\(--launcher-background-opacity\)/s)
   assert.doesNotMatch(settingsPageSource, /exportInstalledRegistry|importInstalledRegistry|pickJsonFile|pickJsonSavePath|window\.confirm/)
@@ -480,15 +498,16 @@ try {
   assert.match(artCropDialogSource, /finishInteraction[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
   assert.doesNotMatch(artCropPointerMoveSource, /setAnnouncedCrop/)
   assert.match(artCropDialogSource, /previewShape\?: 'cover' \| 'hero' \| 'workspace'/)
-  assert.match(monitorResolutionSource, /window\.screen\.width[\s\S]*?window\.screen\.height/)
-  assert.match(artCropDialogSource, /art\.cropCurrentScreen/)
-  assert.match(monitorResolutionSource, /currentMonitor\(\)/)
-  assert.match(monitorResolutionSource, /getCurrentWindow\(\)\.onMoved/)
-  assert.match(monitorResolutionSource, /displayDimension\(window\.screen\.width \* scale\)/)
+  assert.match(windowResolutionSource, /window\.innerWidth[\s\S]*?window\.innerHeight/)
+  assert.match(windowResolutionSource, /window\.addEventListener\('resize', sync\)/)
+  assert.doesNotMatch(windowResolutionSource, /window\.screen|currentMonitor|getCurrentWindow/)
+  assert.match(artCropDialogSource, /art\.cropWorkspaceTarget/)
   assert.match(artCropDialogSource, /const containedRect = \(stage: Size, image: Size\)/)
   assert.match(artCropDialogSource, /const frameRect = \(crop: ArtCrop, image: Size, aspect: number\)/)
-  assert.doesNotMatch(artCropDialogSource, /art-crop-preview-select/)
-  assert.match(artCropDialogSource, /previewShape === 'workspace'[\s\S]*?screenResolution\.width \/ screenResolution\.height/)
+  assert.match(artCropDialogSource, /art-crop-preview-sizes/)
+  assert.match(artCropDialogSource, /WORKSPACE_PREVIEW_SIZES/)
+  assert.match(artCropDialogSource, /previewShape === 'workspace'[\s\S]*?workspaceResolution\.width \/ workspaceResolution\.height/)
+  assert.match(artCropDialogSource, /art-crop-result-canvas[\s\S]*?settings-theme-preview-image/)
   assert.match(artCropDialogSource, /previewAspectRatios\?\.\[initialPreviewMode\]/)
   assert.doesNotMatch(artCropDialogSource, /onWheel|pinchRef|pointersRef/)
   assert.match(libraryPageSource, /getBoundingClientRect\(\)[\s\S]*?\{ \[libraryDensity\]: bounds\.width \/ bounds\.height \}/)
@@ -518,11 +537,32 @@ try {
     appStylesSource,
     /@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration:\s*0\.001ms !important/,
   )
+  for (const [token, value] of Object.entries({
+    content: 2,
+    sticky: 8,
+    menu: 90,
+    dialog: 1000,
+    'dialog-destructive': 1020,
+    toast: 1100,
+    'skip-link': 1000,
+  })) {
+    assert.match(appStylesSource, new RegExp(`--z-${token}:\\s*${value};`))
+  }
+  assert.doesNotMatch(appStylesSource, /--z-notification:/)
+  assert.match(appStylesSource, /\.skip-link\s*\{[^}]*z-index:\s*var\(--z-skip-link\)/s)
+  assert.match(layoutStylesSource, /\.layout-container\s*\{[^}]*z-index:\s*var\(--z-content\)/s)
+  assert.match(cinematicStylesSource, /\.library-bulk-actions\s*\{[^}]*z-index:\s*var\(--z-sticky\)/s)
+  assert.match(cinematicStylesSource, /\.library-bulk-menu-portal\s*\{[^}]*z-index:\s*var\(--z-menu\)/s)
+  assert.match(modalStylesSource, /\.modal-overlay\s*\{[^}]*z-index:\s*var\(--z-dialog\)/s)
+  assert.match(pageStylesSource, /\.modal-backdrop\s*\{[^}]*z-index:\s*var\(--z-dialog\)/s)
+  assert.match(pageStylesSource, /\.settings-reset-overlay\s*\{[^}]*z-index:\s*var\(--z-dialog-destructive\)/s)
+  assert.match(pageStylesSource, /\.settings-background-menu-portal\s*\{[^}]*z-index:\s*var\(--z-menu\)/s)
+  assert.match(pageStylesSource, /\.about-release-menu-portal\s*\{[^}]*z-index:\s*var\(--z-menu\)/s)
   assert.match(
     pageStylesSource,
-    /\.about-toast,\s*\.library-toast\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*var\(--z-notification\);/s,
+    /\.about-toast,\s*\.library-toast\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*var\(--z-toast\);/s,
   )
-  assert.match(appStylesSource, /--z-notification:\s*1100;/)
+  assert.match(searchComponentsStyles, /\.modal-overlay\.uninstall-overlay\s*\{[^}]*z-index:\s*var\(--z-dialog-destructive\)/s)
   assert.match(settingsSectionsSource, /pathValidation === 'noWritePermission'[\s\S]*?settings\.pathNoWrite/)
   assert.match(settingsPageSource, /setInstallationPath as saveInstallationPath/)
   assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)

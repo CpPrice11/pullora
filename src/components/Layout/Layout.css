@@ -17,18 +17,18 @@
   --shadow-control: 0 12px 28px rgba(0, 0, 0, 0.18);
   --shadow-control-hover: 0 16px 34px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 22px 46px rgba(0, 0, 0, 0.32);
-  --launcher-background-filter: blur(7px) brightness(0.78) saturate(1.02);
-  --launcher-background-opacity: 0.72;
+  --launcher-background-filter: blur(2px) brightness(0.78) saturate(1.02);
+  --launcher-background-opacity: 0.8;
 }
 
 :root[data-theme='light'] .cinematic-shell {
-  --color-success: #107c10;
+  --color-success: #0f6c0f;
   --color-error: #c42b1c;
   --shadow-control: 0 12px 28px rgba(15, 23, 42, 0.12);
   --shadow-control-hover: 0 16px 34px rgba(15, 23, 42, 0.18);
   --shadow-md: 0 22px 46px rgba(15, 23, 42, 0.2);
-  --launcher-background-filter: blur(7px) brightness(1.04) saturate(0.88);
-  --launcher-background-opacity: 0.54;
+  --launcher-background-filter: blur(2px) brightness(1.04) saturate(0.88);
+  --launcher-background-opacity: 0.66;
 }
 
 .cinematic-background {
@@ -75,7 +75,7 @@
   overscroll-behavior: none;
   overflow: hidden;
   position: relative;
-  z-index: 2;
+  z-index: var(--z-content);
 }
 
 .sidebar {

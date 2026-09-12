@@ -150,6 +150,7 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
     assert_focused(items.nth(0))
     assert menu_portal.evaluate("el => el.parentElement === document.body")
     assert menu_portal.evaluate("el => getComputedStyle(el).position === 'fixed'")
+    assert menu_portal.evaluate("el => getComputedStyle(el).zIndex") == "90"
     menu_motion = assert_motion_duration(menu, "animationDuration")
     assert menu.evaluate("el => getComputedStyle(el).animationName") == "about-menu-enter"
 
@@ -183,6 +184,7 @@ def inspect_interactions(page: Page, width: int, height: int) -> dict:
         "el => el.classList.contains('modal-overlay') && el.classList.contains('about-dialog-overlay')"
     )
     assert overlay.evaluate("el => el.parentElement?.classList.contains('layout')")
+    assert overlay.evaluate("el => getComputedStyle(el).zIndex") == "1000"
     assert page.locator(".about-release-menu-portal").count() == 0
 
     notes_buttons = notes.locator("button:not([disabled])")

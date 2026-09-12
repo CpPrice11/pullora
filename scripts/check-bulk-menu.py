@@ -50,6 +50,8 @@ with sync_playwright() as playwright:
             portal.wait_for()
 
             assert portal.evaluate("el => el.parentElement?.classList.contains('layout')")
+            assert portal.evaluate("el => getComputedStyle(el).zIndex") == "90"
+            assert toolbar.evaluate("el => getComputedStyle(el).zIndex") == "8"
             assert_menu_in_viewport(portal, width, height)
 
             enabled_items = portal.locator('[role="menuitem"]:not(:disabled)')
