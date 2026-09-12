@@ -44,7 +44,7 @@
 | `v5.19.0` | Контраст і єдина primary-дія | Випущено |
 | `v5.19.1` | Захист релізу від повторних спрацювань Defender | Скасовано; зміни включено до `v5.20.0` |
 | `v5.20.0` | Покращення вкладки «Про застосунок» | Випущено |
-| `v5.21.0` | UI hardening і завершення серії | Release candidate; автоматичні gate-перевірки пройдено |
+| `v5.21.0` | UI hardening і завершення серії | Випущено |
 
 ## Незмінний дизайн-контракт
 
@@ -1071,8 +1071,9 @@
 - `cargo check --locked` і `cargo test --locked` локально зупиняються через відсутній MSVC `link.exe`; Visual Studio Build Tools на машині не встановлені. Версію синхронізовано як `5.21.0`, а двомовні release notes підготовлено в `docs/releases/v5.21.0.md`. Rust tests, Tauri build, artifact release-check і portable smoke-test перенесено до GitHub Actions.
 - Windows CI run `34688434936` пройшов metadata, frontend, rendered contrast, `cargo check`, Rust tests і Tauri bundle. Перший manual Release run `34689194537` виявив, що portable smoke був вимкнений параметром `-SkipSmokeTest`; workflow виправлено комітом `944a02d`.
 - Фінальний manual Release run `34689946430` пройшов metadata, frontend, rendered contrast, Rust checks/tests, підпис Tauri updater, перевірку відсутності MSI/ZIP, складання release assets, реальний запуск portable EXE та Microsoft Defender scan. Кроки публікації пропущені, бо тег не створювався.
+- Публікаційний Release run `34692273653` пройшов усі gate-перевірки та опублікував `v5.21.0`. Віддалено підтверджено рівно п’ять assets, версію `5.21.0` і updater signature у `latest.json`, а також SHA-256 portable і setup EXE за `SHA256SUMS.txt`.
 
-- [ ] Пройти спільний release gate і випустити `v5.21.0`.
+- [x] Пройти спільний release gate і випустити `v5.21.0`.
 
 ## Спільний release gate для кожної версії
 
