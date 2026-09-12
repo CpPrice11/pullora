@@ -45,7 +45,7 @@
 | `v5.19.1` | Захист релізу від повторних спрацювань Defender | Скасовано; зміни включено до `v5.20.0` |
 | `v5.20.0` | Покращення вкладки «Про застосунок» | Випущено |
 | `v5.21.0` | UI hardening і завершення серії | Випущено |
-| `v5.22.0` | Візуальне полірування | У роботі |
+| `v5.22.0` | Візуальне полірування | Випущено |
 
 ## Незмінний дизайн-контракт
 
@@ -1056,7 +1056,7 @@
 
 ## Спільний release gate для кожної версії
 
-Цей список виконується заново перед кожним релізом `v5.13.0`–`v5.21.0`; позначки не переносяться автоматично з попередньої версії.
+Цей список виконується заново перед кожним релізом `v5.13.0`–`v5.22.0`; позначки не переносяться автоматично з попередньої версії.
 
 - [x] `npm run build`
 - [x] `cargo fmt --all -- --check`
@@ -1103,8 +1103,10 @@
 - [x] Перевірити frontend normalization і Rust-десеріалізацію старого `appearance` без `effectsLevel`.
 - [x] Перевірити `Off`, `Balanced`, `High`, збереження Blur/Transparency, dark/light, keyboard, reduced motion і `1000×700`, `1280×720`, `1920×1080`.
 - [x] Пройти TypeScript, i18n, статичний contrast, component contracts, production build і локальний Playwright smoke-test без console errors.
-- [ ] Пройти повний Windows UI gate, Rust checks/tests, Tauri build, release-check, portable smoke-test і Defender scan у GitHub Actions.
-- [ ] Випустити `v5.22.0` через чинний release pipeline та перевірити п'ять опублікованих assets.
+- [x] Пройти повний Windows UI gate, Rust checks/tests, Tauri build, release-check, portable smoke-test і Defender scan у GitHub Actions.
+- [x] Випустити `v5.22.0` через чинний release pipeline та перевірити п'ять опублікованих assets.
+
+Windows CI run `34711280982` пройшов metadata, frontend, rendered contrast, Rust checks/tests і Tauri bundle. Release run `34712115995` на тегу `v5.22.0` пройшов portable smoke-test, Microsoft Defender scan, публікацію та remote verification. Публічний реліз містить п'ять підготовлених assets; `latest.json` повідомляє версію `5.22.0`, правильний setup URL і updater signature. SHA-256: portable `ceb5e565885129c0d315de363ed70e66086aff386450caf6f7ddc93f4e281256`, setup `1b71305cc5c82a35a79e528751d3775811b6bdf68f4c402a09e55b2d106361ac`.
 
 ## Поза поточним планом
 
