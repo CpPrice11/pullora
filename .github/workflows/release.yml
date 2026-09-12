@@ -84,7 +84,7 @@ jobs:
           }
           Write-Host "[ok] Updater signature: $($signatures[0].Name)"
 
-      - name: Assemble release assets
+      - name: Assemble and smoke-test release assets
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
@@ -93,7 +93,7 @@ jobs:
           Copy-Item src-tauri\target\release\app.exe (Join-Path $releaseDir "Pullora_${version}_portable_x64.exe")
           Copy-Item "src-tauri\target\release\bundle\nsis\Pullora_${version}_x64-setup.exe" $releaseDir
           Copy-Item "src-tauri\target\release\bundle\nsis\Pullora_${version}_x64-setup.exe.sig" $releaseDir
-          npm run check:release -- -Version $version -BuildRoot (Join-Path $PWD "release-assets") -SkipSmokeTest
+          npm run check:release -- -Version $version -BuildRoot (Join-Path $PWD "release-assets")
 
       - name: Scan release executables with Microsoft Defender
         shell: pwsh
