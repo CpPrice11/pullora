@@ -2,11 +2,13 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './App.css'
 import Layout from './components/Layout/Layout'
+import type { NavigationInput } from './components/Layout/Sidebar'
 import LibraryPage from './features/library/LibraryPage'
 import { useSettings } from './hooks/useSettings'
 import { appearanceCssVariables, applyAppearanceSettings, applyThemePreference, resolveThemePreference, type ResolvedTheme, type ThemePreference } from './utils/theme'
 import { LanguageProvider, useI18n } from './i18n'
 import { pickImageFile } from './services/dialog'
+import { useToastPresence } from './hooks/useToastPresence'
 import {
   clearLauncherBackgroundArt,
   getLauncherBackgroundArt,
@@ -39,6 +41,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<ContentTab>('library')
   const [visitedTabs, setVisitedTabs] = useState<Set<ContentTab>>(() => new Set(['library']))
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [navigationInput, setNavigationInput] = useState<NavigationInput>('pointer')
   const mainContentRef = useRef<HTMLElement>(null)
   const scrollPositions = useRef<Record<NavigationTab, number>>({
     library: 0,
@@ -50,6 +53,7 @@ function App() {
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveThemePreference(settings.theme))
   const [showPathModal, setShowPathModal] = useState(false)
   const [launcherArtError, setLauncherArtError] = useState<string | null>(null)
+  const launcherArtToast = useToastPresence(launcherArtError)
   const [launcherBackgrounds, setLauncherBackgrounds] = useState<Record<ResolvedTheme, ProjectArt | null>>({
     light: null,
     dark: null,
@@ -178,14 +182,16 @@ function App() {
     }
   }
 
-  const openSettings = () => {
+  const openSettings = (input: NavigationInput = 'pointer') => {
     saveCurrentScroll()
+    setNavigationInput(input)
     setSettingsOpen(true)
   }
 
-  const handleTabChange = (tab: NavigationTab) => {
+  const handleTabChange = (tab: NavigationTab, input: NavigationInput) => {
+    setNavigationInput(input)
     if (tab === 'settings') {
-      openSettings()
+      openSettings(input)
       return
     }
 
@@ -199,8 +205,10 @@ function App() {
 
   const shouldRenderTab = (tab: ContentTab) => visitedTabs.has(tab) || activeTab === tab
   const tabPanelProps = (tab: ContentTab) => ({
+    className: 'app-view',
     hidden: settingsOpen || activeTab !== tab,
     'aria-hidden': settingsOpen || activeTab !== tab,
+    'data-navigation-input': navigationInput,
   })
 
   const renderContent = () => (
@@ -237,14 +245,16 @@ function App() {
         {renderContent()}
 
         {settingsOpen && (
-          <Suspense fallback={<LazyPageFallback />}>
-            <SettingsPage
-              launcherBackgrounds={launcherBackgrounds}
-              onEditLauncherBackground={handleEditLauncherBackground}
-              onChangeLauncherBackground={handleChangeLauncherBackground}
-              onClearLauncherBackground={handleClearLauncherBackground}
-            />
-          </Suspense>
+          <div className="app-view" data-navigation-input={navigationInput}>
+            <Suspense fallback={<LazyPageFallback />}>
+              <SettingsPage
+                launcherBackgrounds={launcherBackgrounds}
+                onEditLauncherBackground={handleEditLauncherBackground}
+                onChangeLauncherBackground={handleChangeLauncherBackground}
+                onClearLauncherBackground={handleClearLauncherBackground}
+              />
+            </Suspense>
+          </div>
         )}
 
         {showPathModal && (
@@ -271,14 +281,14 @@ function App() {
           </Suspense>
         )}
 
-        {launcherArtError && typeof document !== 'undefined' && createPortal(
+        {launcherArtToast.message && typeof document !== 'undefined' && createPortal(
           <div
-            className="library-toast library-toast--error"
+            className={`library-toast library-toast--error ${launcherArtToast.visible ? 'is-visible' : ''}`}
             role="alert"
             aria-live="assertive"
             aria-atomic="true"
           >
-            <span>{launcherArtError}</span>
+            <span>{launcherArtToast.message}</span>
           </div>,
           document.body,
         )}

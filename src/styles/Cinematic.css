@@ -1,5 +1,7 @@
 :root {
   --surface-blur: 12px;
+  --surface-blur-elevated: 16px;
+  --surface-blur-dialog: 20px;
   --surface-canvas: #070b10;
   --surface-1: rgba(17, 24, 32, 0.58);
   --surface-2: rgba(24, 34, 45, 0.32);
@@ -7,6 +9,7 @@
   --surface-border: rgba(51, 68, 85, 0.58);
   --surface-border-strong: rgba(51, 68, 85, 0.78);
   --surface-shadow: 0 18px 48px rgba(2, 6, 10, 0.58);
+  --surface-edge-highlight: color-mix(in srgb, #ffffff 11%, transparent);
   --surface-material: var(--surface-1);
   --surface-material-strong: rgba(17, 24, 32, 0.7);
   --surface-radius-shell: 22px;
@@ -90,6 +93,7 @@
   --about-status-success-text: #15803d;
   --shadow-control: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-control-hover: 0 8px 20px rgba(15, 23, 42, 0.12);
+  --surface-edge-highlight: color-mix(in srgb, #ffffff 78%, transparent);
   background: var(--surface-canvas);
 }
 
@@ -955,6 +959,10 @@
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--surface-border));
 }
 
+:root[data-theme='light'] .cinematic-shell .settings-content--general .settings-background-action--edit {
+  color: var(--color-primary-dark);
+}
+
 .cinematic-shell .settings-content--general .settings-source-summary,
 .cinematic-shell .settings-content--general .launcher-background-theme,
 .cinematic-shell .settings-content--general .path-input-row {
@@ -1092,7 +1100,7 @@
 }
 
 .cinematic-shell .settings-page .settings-status {
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
   border-radius: 7px;
   font-size: 11px;
   padding: 5px 9px;
@@ -1283,10 +1291,11 @@
 
 .modal-overlay {
   background: var(--launcher-background-scrim);
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
 }
 
 .modal-overlay .modal-content {
+  backdrop-filter: blur(var(--surface-blur-dialog)) saturate(1.08);
   background: rgba(15, 20, 27, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--surface-radius-shell);
@@ -1473,7 +1482,7 @@
   backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
   background: var(--surface-1);
   border-color: var(--surface-border);
-  box-shadow: var(--surface-shadow);
+  box-shadow: inset 0 1px 0 var(--surface-edge-highlight), var(--surface-shadow);
 }
 
 :root[data-theme] .cinematic-shell .library-page .library-sam-details-pane {
@@ -1484,7 +1493,7 @@
 
 /* About keeps the shared material, with depth coming from an inner highlight only. */
 :root[data-theme] .cinematic-shell .about-hero {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 12%, transparent);
+  box-shadow: inset 0 1px 0 var(--surface-edge-highlight), var(--surface-shadow);
 }
 
 :root[data-theme] .cinematic-shell .about-hero-mark {

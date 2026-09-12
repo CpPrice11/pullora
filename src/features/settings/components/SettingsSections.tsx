@@ -7,6 +7,7 @@ import { useCurrentWindowResolution } from '../../../hooks/useCurrentWindowResol
 import { useI18n, type AppLanguage } from '../../../i18n'
 import type {
   AppSettings,
+  EffectsLevel,
   GitHubRateLimitStatus,
   InstallPathValidation,
   LauncherStorageInfo,
@@ -31,6 +32,7 @@ interface GeneralSettingsSectionProps {
   onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
+  onEffectsLevelChange: (level: EffectsLevel) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
   pathValidation: PathValidation
@@ -162,6 +164,7 @@ function GeneralSettingsSection({
   onEditLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
+  onEffectsLevelChange,
   onPreviewSurfaceSetting,
   onCommitSurfaceSetting,
   pathValidation,
@@ -172,6 +175,7 @@ function GeneralSettingsSection({
   const { t } = useI18n()
   const surfaceTransparency = settings.appearance?.surfaceTransparency ?? 42
   const surfaceBlur = settings.appearance?.surfaceBlur ?? 12
+  const effectsLevel = settings.appearance?.effectsLevel ?? 'balanced'
   const previewTheme: ResolvedTheme = settings.theme === 'light' || settings.theme === 'dark'
     ? settings.theme
     : typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light'
@@ -278,6 +282,19 @@ function GeneralSettingsSection({
           <span id="underlay-controls-title" className="underlay-controls-title">
             {t('settings.underlayAppearance')}
           </span>
+          <div className="underlay-control underlay-control--effects">
+            <label htmlFor="effectsLevel">{t('settings.effectsLevel')}</label>
+            <NativeSelect
+              id="effectsLevel"
+              value={effectsLevel}
+              onValueChange={(value) => onEffectsLevelChange(value as EffectsLevel)}
+              options={([
+                ['off', t('settings.effectsOff')],
+                ['balanced', t('settings.effectsBalanced')],
+                ['high', t('settings.effectsHigh')],
+              ] as const).map(([value, label]) => ({ value, label }))}
+            />
+          </div>
           <div className="underlay-control">
             <label htmlFor="surfaceTransparency">{t('settings.surfaceTransparency')}</label>
             <input
@@ -306,6 +323,7 @@ function GeneralSettingsSection({
               max="32"
               step="1"
               value={surfaceBlur}
+              disabled={effectsLevel === 'off'}
               style={rangeProgressStyle(surfaceBlur, 0, 32)}
               aria-valuetext={`${surfaceBlur} px`}
               onChange={(event) => onPreviewSurfaceSetting('surfaceBlur', Number(event.target.value))}
@@ -397,6 +415,7 @@ function GeneralSettingsSection({
             <strong>{t('settings.livePreview')}</strong>
             <span>{t('settings.livePreviewSummary', {
               theme: previewThemeLabel,
+              effects: t(`settings.effects${effectsLevel === 'off' ? 'Off' : effectsLevel === 'high' ? 'High' : 'Balanced'}`),
               transparency: surfaceTransparency,
               blur: surfaceBlur,
             })}</span>
@@ -576,6 +595,7 @@ interface SettingsSectionsProps {
   onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
+  onEffectsLevelChange: (level: EffectsLevel) => void
   onPreviewSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onCommitSurfaceSetting: (key: SurfaceSetting, value: number) => void
   onBrowse: () => void

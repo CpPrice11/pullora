@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AppSettings, InstallPathValidation, ProjectArt } from '../types'
+import type { AppSettings, EffectsLevel, InstallPathValidation, ProjectArt } from '../types'
 import {
   getSettings,
   setInstallationPath as saveInstallationPath,
@@ -20,6 +20,7 @@ import {
   type SettingsSectionId,
 } from '../features/settings/components/SettingsSections'
 import { useModalFocus } from '../hooks/useModalFocus'
+import { useToastPresence } from '../hooks/useToastPresence'
 import { applyAppearanceSettings, applyThemePreference, type ResolvedTheme, type ThemePreference } from '../utils/theme'
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { useI18n, type AppLanguage } from '../i18n'
@@ -50,6 +51,7 @@ function SettingsPage({
 }: SettingsPageProps) {
   const { language, t } = useI18n()
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('general')
+  const [sectionNavigationInput, setSectionNavigationInput] = useState<'pointer' | 'keyboard'>('pointer')
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -58,6 +60,7 @@ function SettingsPage({
   const [confirmation, setConfirmation] = useState<'reset' | 'cleanup' | null>(null)
   const [cleanupBusy, setCleanupBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const actionToast = useToastPresence(actionMessage)
   const [storageInfo, setStorageInfo] = useState<LauncherStorageInfo | null>(null)
   const [githubRateLimit, setGithubRateLimit] = useState<GitHubRateLimitStatus>(emptyRateLimitStatus)
   const [activeGithubRequests, setActiveGithubRequests] = useState(getActiveGithubRequestCount)
@@ -147,6 +150,7 @@ function SettingsPage({
     } catch (err) {
       if (previousSettings) {
         setSettings(previousSettings)
+        applyAppearanceSettings(previousSettings.appearance)
       }
       setError(err instanceof Error ? err.message : t('settings.saveError'))
       return null
@@ -350,6 +354,16 @@ function SettingsPage({
     void persistSettings(nextSettings, previousSettings)
   }
 
+  const changeEffectsLevel = (effectsLevel: EffectsLevel) => {
+    if (!settings) return
+    const previousSettings = settings
+    const appearance = normalizeAppearance({ ...settings.appearance, effectsLevel })
+    const nextSettings = normalizeSettings({ ...settings, appearance })
+    setSettings(nextSettings)
+    applyAppearanceSettings(appearance)
+    void persistSettings(nextSettings, previousSettings)
+  }
+
   if (loading || !settings) {
     return (
       <section className="page settings-page settings-page-loading" aria-label={t('settings.title')}>
@@ -375,7 +389,8 @@ function SettingsPage({
       })
     : t('settings.resetConfirmText')
 
-  const handleSectionSelect = (sectionId: SettingsSectionId) => {
+  const handleSectionSelect = (sectionId: SettingsSectionId, input: 'pointer' | 'keyboard') => {
+    setSectionNavigationInput(input)
     setActiveSection(sectionId)
   }
 
@@ -393,7 +408,7 @@ function SettingsPage({
                 className={activeSection === section.id ? 'active' : ''}
                 aria-current={activeSection === section.id ? 'page' : undefined}
                 aria-controls={activeSection === section.id ? settingsPanelId(section.id) : undefined}
-                onClick={() => handleSectionSelect(section.id)}
+                onClick={(event) => handleSectionSelect(section.id, event.detail === 0 ? 'keyboard' : 'pointer')}
                 data-autofocus={activeSection === section.id ? 'true' : undefined}
               >
                 {section.label}
@@ -413,6 +428,7 @@ function SettingsPage({
 
           <div
             className={`settings-content settings-content--${activeSection}`}
+            data-navigation-input={sectionNavigationInput}
             key={activeSection}
           >
             {error && (
@@ -441,6 +457,7 @@ function SettingsPage({
               onEditLauncherBackground={onEditLauncherBackground}
               onChangeLauncherBackground={onChangeLauncherBackground}
               onClearLauncherBackground={onClearLauncherBackground}
+              onEffectsLevelChange={changeEffectsLevel}
               onPreviewSurfaceSetting={previewSurfaceSetting}
               onCommitSurfaceSetting={commitSurfaceSetting}
               onBrowse={() => void handleBrowse()}
@@ -513,9 +530,9 @@ function SettingsPage({
         </section>
       </div>
     )}
-    {actionMessage && (
-      <div className="library-toast library-toast--success" role="status" aria-live="polite" aria-atomic="true">
-        {actionMessage}
+    {actionToast.message && (
+      <div className={`library-toast library-toast--success ${actionToast.visible ? 'is-visible' : ''}`} role="status" aria-live="polite" aria-atomic="true">
+        {actionToast.message}
       </div>
     )}
     </>

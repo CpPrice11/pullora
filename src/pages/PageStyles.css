@@ -725,13 +725,13 @@
 }
 
 :root[data-theme] .cinematic-shell .about-dialog-overlay {
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
   background: var(--launcher-background-scrim);
 }
 
 :root[data-theme] .cinematic-shell .about-dialog-overlay .about-notes-modal,
 :root[data-theme] .cinematic-shell .about-dialog-overlay .confirm-modal {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--surface-blur-dialog)) saturate(1.08);
   background:
     radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 30%),
     var(--surface-material-strong);
@@ -878,7 +878,7 @@
 .modal-backdrop {
   align-items: center;
   background: var(--launcher-background-scrim);
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
   display: flex;
   inset: 0;
   justify-content: center;
@@ -1600,7 +1600,7 @@
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
     rgba(16, 18, 22, 0.74);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(var(--surface-blur));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 26px;
   box-shadow: 0 34px 86px rgba(0, 0, 0, 0.42);
@@ -1983,7 +1983,7 @@
 .about-toast,
 .library-toast {
   align-items: center;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(var(--surface-blur-elevated));
   border-radius: 14px;
   bottom: 24px;
   box-shadow: 0 22px 64px rgba(0, 0, 0, 0.36);
@@ -1997,22 +1997,26 @@
   padding: 0 16px;
   position: fixed;
   right: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+  transition: opacity var(--motion-normal), transform var(--motion-normal);
   width: fit-content;
   z-index: var(--z-toast);
 }
 
-.about-toast {
-  animation: about-toast-enter var(--motion-normal);
+.about-toast.is-visible,
+.library-toast.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
-@keyframes about-toast-enter {
-  from {
-    opacity: 0;
-    transform: translateX(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+@media (prefers-reduced-motion: reduce) {
+  .about-toast,
+  .library-toast {
+    animation: none !important;
+    transform: none;
   }
 }
 
@@ -2250,7 +2254,6 @@
 }
 
 .about-release-menu-portal .project-actions-popover {
-  animation: about-menu-enter var(--motion-normal);
   box-sizing: border-box;
   max-height: calc(100vh - 16px);
   min-width: 0;
@@ -2263,17 +2266,6 @@
 
 .about-release-menu-portal--up .project-actions-popover {
   transform-origin: right bottom;
-}
-
-@keyframes about-menu-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 .about-release-active-badge {
@@ -2973,7 +2965,7 @@
 .settings-reset-overlay {
   align-items: center;
   background: var(--launcher-background-scrim);
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
   display: flex;
   inset: 0;
   justify-content: center;
@@ -3104,10 +3096,13 @@
 
 .project-actions-popover,
 .repo-actions-submenu-panel {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--surface-blur-elevated)) saturate(1.08);
   background: var(--surface-material-strong);
   border: 1px solid var(--surface-border-strong);
   box-shadow: var(--surface-shadow);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity var(--motion-menu), transform var(--motion-menu);
 }
 
 .project-actions-popover {
@@ -3176,6 +3171,7 @@
 
 .repo-context-menu {
   position: fixed;
+  transform-origin: left top;
   z-index: var(--z-menu);
 }
 
@@ -3209,7 +3205,19 @@
 .hero-actions-menu .project-actions-popover {
   bottom: auto;
   top: calc(100% + 8px);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: right top;
+  transition: opacity var(--motion-menu), transform var(--motion-menu);
   z-index: var(--z-menu);
+}
+
+@starting-style {
+  .project-actions-popover,
+  .repo-actions-submenu-panel {
+    opacity: 0;
+    transform: scale(0.985);
+  }
 }
 
 .cinematic-shell .about-release-link {
@@ -5332,12 +5340,25 @@
   background: linear-gradient(90deg, var(--surface-material-strong) 0%, var(--surface-material) 58%, transparent 100%);
 }
 
+.underlay-control--effects {
+  grid-template-columns: minmax(100px, 1fr) minmax(148px, 2fr) 48px;
+}
+
+.underlay-control--effects select {
+  grid-column: 2 / 4;
+  width: 100%;
+}
+
 @media (max-width: 720px) {
   .underlay-control {
     grid-template-columns: 1fr 54px;
   }
 
   .underlay-control label {
+    grid-column: 1 / -1;
+  }
+
+  .underlay-control--effects select {
     grid-column: 1 / -1;
   }
 
@@ -5366,6 +5387,21 @@
   align-content: start;
   flex: 1 1 auto;
   grid-template-rows: auto auto auto auto minmax(120px, 1fr);
+}
+
+.settings-content[data-navigation-input='keyboard'] {
+  animation: none !important;
+}
+
+.library-folder-group,
+.release-wizard-panel,
+.settings-event-log-list {
+  animation: content-reveal var(--motion-page);
+}
+
+@keyframes content-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .settings-source-summary {
@@ -5491,6 +5527,7 @@
   background-size: cover;
   inset: 0;
   position: absolute;
+  z-index: 0;
   transform: scale(var(--art-zoom, 1));
   transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
 }
@@ -5500,11 +5537,29 @@
   opacity: var(--launcher-background-opacity);
 }
 
+.settings-theme-preview-canvas::before,
 .settings-theme-preview-canvas::after {
-  background: var(--launcher-background-scrim);
   content: '';
   inset: 0;
+  pointer-events: none;
   position: absolute;
+}
+
+.settings-theme-preview-canvas::before {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-primary) 48%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 48%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(ellipse 82% 76% at 72% 18%, #000 0%, transparent 78%);
+  opacity: var(--effects-grid-opacity, 0.045);
+}
+
+.settings-theme-preview-canvas.has-custom-background::before {
+  opacity: 0;
+}
+
+.settings-theme-preview-canvas::after {
+  background: var(--launcher-background-scrim);
 }
 
 .settings-theme-preview-nav,
@@ -5526,6 +5581,7 @@
 
 .settings-theme-preview-main {
   background: var(--surface-1);
+  box-shadow: inset 0 1px 0 var(--surface-edge-highlight);
   grid-template-rows: 1fr auto;
 }
 

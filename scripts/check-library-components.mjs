@@ -220,11 +220,23 @@ try {
   assert.equal(darkSurfaces['--surface-1'], 'color-mix(in srgb, #111820 60%, transparent)')
   assert.equal(darkSurfaces['--surface-2'], 'color-mix(in srgb, #18222d 33%, transparent)')
   assert.equal(darkSurfaces['--surface-material'], 'var(--surface-1)')
+  assert.equal(darkSurfaces['--surface-blur'], '12px')
+  assert.equal(darkSurfaces['--surface-blur-elevated'], '16px')
+  assert.equal(darkSurfaces['--surface-blur-dialog'], '20px')
+  assert.equal(darkSurfaces['--effects-grid-opacity'], '0.045')
   assert.equal(darkSurfaces['--launcher-background-filter'], 'blur(2px) brightness(0.78) saturate(1.02)')
   assert.equal(darkSurfaces['--launcher-background-opacity'], '0.8')
   const lightSurfaces = appearanceCssVariables(undefined, 'light')
   assert.equal(lightSurfaces['--launcher-background-filter'], 'blur(2px) brightness(1.04) saturate(0.88)')
   assert.equal(lightSurfaces['--launcher-background-opacity'], '0.66')
+  const offSurfaces = appearanceCssVariables({ effectsLevel: 'off', surfaceBlur: 24 }, 'dark')
+  assert.equal(offSurfaces['--surface-blur'], '0px')
+  assert.equal(offSurfaces['--surface-blur-elevated'], '0px')
+  assert.equal(offSurfaces['--surface-blur-dialog'], '0px')
+  const highSurfaces = appearanceCssVariables({ effectsLevel: 'high', surfaceBlur: 12 }, 'dark')
+  assert.equal(highSurfaces['--surface-blur'], '14px')
+  assert.equal(highSurfaces['--surface-blur-elevated'], '20px')
+  assert.equal(highSurfaces['--surface-blur-dialog'], '24px')
 
   const coverOnlyArt = { coverDataUrl: 'data:image/png;base64,cover' }
   const independentArt = {
@@ -384,6 +396,7 @@ try {
   const artCropDialogSource = readFileSync('src/components/Modal/ArtCropDialog.tsx', 'utf8')
   const windowResolutionSource = readFileSync('src/hooks/useCurrentWindowResolution.ts', 'utf8')
   const layoutStylesSource = readFileSync('src/components/Layout/Layout.css', 'utf8')
+  const layoutSource = readFileSync('src/components/Layout/Layout.tsx', 'utf8')
   const modalFocusSource = readFileSync('src/hooks/useModalFocus.ts', 'utf8')
   const projectArtServiceSource = readFileSync('src/services/projectArt.ts', 'utf8')
   const artCropPointerMoveSource = artCropDialogSource.slice(
@@ -402,12 +415,15 @@ try {
   assert.match(settingsSectionsSource, /const displayPath = \(path: string\) => path\.replace/)
   assert.match(settingsSectionsSource, /className="launcher-background-preview"/)
   assert.match(settingsSectionsSource, /id="surfaceTransparency"[\s\S]*?max="100"/)
+  assert.match(settingsSectionsSource, /id="effectsLevel"[\s\S]*?'off'[\s\S]*?'balanced'[\s\S]*?'high'/)
+  assert.match(settingsSectionsSource, /id="surfaceBlur"[\s\S]*?disabled=\{effectsLevel === 'off'\}/)
   assert.doesNotMatch(settingsSectionsSource, /<h3[^>]*>\{t\('settings\.(?:general|eventLog|maintenance)'\)\}<\/h3>/)
   const migratedSettings = normalizeSettings({ includePrereleases: true, assetStrategy: 'manual', githubOwner: 'OtherOwner' })
   assert.deepEqual(
     migratedSettings,
     normalizeSettings({}),
   )
+  assert.equal(migratedSettings.appearance.effectsLevel, 'balanced')
   assert.doesNotMatch(settingsPageSource, /id: 'installation'/)
   assert.doesNotMatch(settingsPageSource, /id: 'updates'/)
   assert.doesNotMatch(settingsPageSource, /workspaceSubtitle/)
@@ -452,6 +468,8 @@ try {
   assert.match(settingsSectionsSource, /useCurrentWindowResolution\(\)[\s\S]*?aspectRatio: `\$\{windowResolution\.width\} \/ \$\{windowResolution\.height\}`/)
   assert.match(pageStylesSource, /\.settings-theme-preview-canvas\.has-custom-background \.settings-theme-preview-image\s*\{[^}]*var\(--launcher-background-filter\)[^}]*var\(--launcher-background-opacity\)/s)
   assert.match(layoutStylesSource, /\.cinematic-shell\.has-custom-background \.cinematic-background\.is-visible\s*\{[^}]*var\(--launcher-background-filter\)[^}]*var\(--launcher-background-opacity\)/s)
+  assert.match(layoutStylesSource, /\.cinematic-shell:not\(\.has-custom-background\) \.cinematic-backdrop::before\s*\{[^}]*background-size:\s*32px 32px[^}]*var\(--effects-grid-opacity/s)
+  assert.match(layoutSource, /backgroundLayers\.map\([\s\S]*?cinematic-background[\s\S]*?is-active[\s\S]*?is-visible/)
   assert.doesNotMatch(settingsPageSource, /exportInstalledRegistry|importInstalledRegistry|pickJsonFile|pickJsonSavePath|window\.confirm/)
   assert.doesNotMatch(settingsSectionsSource, /exportInstalledRegistry|importInstalledRegistry|registryBusy|settings-diagnostics-card/)
   assert.match(settingsSectionsSource, /settings-storage-title[\s\S]*?settings-diagnostics-title/)
@@ -492,7 +510,8 @@ try {
   assert.match(artCropDialogSource, /let active = true[\s\S]*?return \(\) => \{[\s\S]*?active = false[\s\S]*?interactionRef\.current = null/)
   assert.doesNotMatch(projectArtServiceSource, /URL\.(?:createObjectURL|revokeObjectURL)/)
   assert.match(modalFocusSource, /document\.addEventListener\('keydown', handleKeyDown\)[\s\S]*?window\.clearTimeout\(focusTimer\)[\s\S]*?document\.removeEventListener\('keydown', handleKeyDown\)/)
-  assert.match(libraryPageSource, /onError=\{handleInstallError\}[\s\S]*?library-toast--\$\{libraryToastTone\}/)
+  assert.match(libraryPageSource, /onError=\{handleInstallError\}/)
+  assert.match(libraryPageSource, /useToastPresence\(libraryToastMessage\)[\s\S]*?library-toast--\$\{libraryToastToneRef\.current\}/)
   assert.doesNotMatch(libraryHeroSource, /artError|library-hero-error/)
   assert.match(appSource, /onError=\{setLauncherArtError\}[\s\S]*?createPortal\([\s\S]*?library-toast--error/)
   assert.match(artCropDialogSource, /finishInteraction[\s\S]*?setAnnouncedCrop\(cropRef\.current\)/)
@@ -535,8 +554,9 @@ try {
   )
   assert.match(
     appStylesSource,
-    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration:\s*0\.001ms !important/,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*?transition-duration:\s*80ms !important[\s\S]*?transition-property:[^;]*opacity !important/,
   )
+  assert.match(appStylesSource, /--motion-press:\s*120ms[\s\S]*?--motion-menu:\s*160ms[\s\S]*?--motion-page:\s*180ms[\s\S]*?--motion-dialog:\s*240ms[\s\S]*?--motion-background:\s*280ms/)
   for (const [token, value] of Object.entries({
     content: 2,
     sticky: 8,
@@ -580,7 +600,7 @@ try {
   )
   assert.match(
     libraryPageSource,
-    /libraryToastMessage[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastTone\}[\s\S]*?updates\.chooseFile[\s\S]*?document\.body/,
+    /useToastPresence\(libraryToastMessage\)[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastToneRef\.current\}[\s\S]*?updates\.chooseFile[\s\S]*?document\.body/,
   )
   assert.match(libraryPageSource, /handleAutomaticUpdates[\s\S]*?result\.skippedKeys[\s\S]*?setManualUpdateRepo/)
   assert.doesNotMatch(batchUpdatesSource, /failedResults\[0\]\?\.error \?\? t\('updates\.noPortableAssets'\)/)
@@ -938,6 +958,7 @@ try {
   assert.match(download, /aria-valuenow="48"/)
   assert.match(download, /role="status" aria-live="polite"/)
   assert.match(download, /aria-busy="true"/)
+  assert.match(download, /style="--download-progress:0\.48"/)
   assert.match(download, /class="cancel-btn"/)
   assert.doesNotMatch(download, /download-action-btn primary/)
 
