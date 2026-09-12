@@ -2,6 +2,7 @@ import type { AppAppearanceSettings, AppSettings } from '../types'
 
 export const DEFAULT_APPEARANCE: AppAppearanceSettings = {
   density: 'comfortable',
+  effectsLevel: 'balanced',
   surfaceTransparency: 42,
   surfaceBlur: 12,
 }
@@ -17,6 +18,9 @@ export function normalizeAppearance(value: Partial<AppAppearanceSettings> | null
     density: value?.density === 'compact' || value?.density === 'comfortable' || value?.density === 'spacious'
       ? value.density
       : DEFAULT_APPEARANCE.density,
+    effectsLevel: value?.effectsLevel === 'off' || value?.effectsLevel === 'high'
+      ? value.effectsLevel
+      : DEFAULT_APPEARANCE.effectsLevel,
     surfaceTransparency: normalizeNumber(value?.surfaceTransparency, DEFAULT_APPEARANCE.surfaceTransparency, 0, 100),
     surfaceBlur: normalizeNumber(value?.surfaceBlur, DEFAULT_APPEARANCE.surfaceBlur, 0, 32),
   }

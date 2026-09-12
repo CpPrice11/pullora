@@ -31,6 +31,7 @@ import {
 import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
 import { useI18n } from '../../i18n'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
+import { useToastPresence } from '../../hooks/useToastPresence'
 import { getInactiveInstalledVersions, runSequentialBulk } from './libraryBulkOperations'
 import {
   loadLibraryViewState,
@@ -1482,6 +1483,9 @@ function LibraryPage({
     : null
   const libraryToastMessage = libraryToastError ?? libraryToastWarning ?? libraryActionMessage
   const libraryToastTone = libraryToastError ? 'error' : libraryToastWarning ? 'warning' : 'success'
+  const libraryToast = useToastPresence(libraryToastMessage)
+  const libraryToastToneRef = useRef(libraryToastTone)
+  if (libraryToastMessage) libraryToastToneRef.current = libraryToastTone
 
   return (
     <div
@@ -1714,15 +1718,15 @@ function LibraryPage({
         </Suspense>
       )}
 
-      {libraryToastMessage && typeof document !== 'undefined' && createPortal(
+      {libraryToast.message && typeof document !== 'undefined' && createPortal(
         <div
-          className={`library-toast library-toast--${libraryToastTone}`}
-          role={libraryToastError ? 'alert' : 'status'}
-          aria-live={libraryToastError ? 'assertive' : 'polite'}
+          className={`library-toast library-toast--${libraryToastToneRef.current} ${libraryToast.visible ? 'is-visible' : ''}`}
+          role={libraryToastToneRef.current === 'error' ? 'alert' : 'status'}
+          aria-live={libraryToastToneRef.current === 'error' ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
-          <span>{libraryToastMessage}</span>
-          {manualUpdateRepo && !libraryToastError && (
+          <span>{libraryToast.message}</span>
+          {manualUpdateRepo && libraryToastToneRef.current !== 'error' && (
             <button
               type="button"
               className="secondary-btn library-toast-action"

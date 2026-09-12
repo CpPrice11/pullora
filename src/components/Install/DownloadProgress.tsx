@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import type { DownloadProgress as DL, DownloadStage } from '../../types'
 import { useI18n } from '../../i18n'
 import { getLocalizedErrorMessage } from '../../services/tauri'
@@ -164,7 +164,7 @@ function DownloadProgressPanel({
               >
                 <div
                   className="progress-bar-fill"
-                  style={{ width: `${progress}%` }}
+                  style={{ '--download-progress': String(progress / 100) } as CSSProperties}
                 />
               </div>
 

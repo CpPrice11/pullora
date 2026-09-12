@@ -21,6 +21,8 @@ pub struct AppSettings {
 pub struct AppAppearanceSettings {
     #[serde(default = "default_density")]
     pub density: String,
+    #[serde(default = "default_effects_level")]
+    pub effects_level: String,
     #[serde(default = "default_surface_transparency")]
     pub surface_transparency: u32,
     #[serde(default = "default_surface_blur")]
@@ -29,6 +31,10 @@ pub struct AppAppearanceSettings {
 
 fn default_density() -> String {
     "comfortable".to_string()
+}
+
+fn default_effects_level() -> String {
+    "balanced".to_string()
 }
 
 fn default_surface_transparency() -> u32 {
@@ -197,8 +203,19 @@ fn settings_json(settings: &AppSettings) -> Result<String, StorageError> {
 mod tests {
     use super::{
         default_installation_path, installed_installation_path, is_portable, is_portable_path,
-        migrate_installation_path, portable_installation_path, settings_json, AppSettings,
+        migrate_installation_path, portable_installation_path, settings_json,
+        AppAppearanceSettings, AppSettings,
     };
+
+    #[test]
+    fn legacy_appearance_defaults_to_balanced_effects() {
+        let appearance: AppAppearanceSettings = serde_json::from_str(
+            r#"{"density":"comfortable","surfaceTransparency":42,"surfaceBlur":12}"#,
+        )
+        .unwrap();
+
+        assert_eq!(appearance.effects_level, "balanced");
+    }
 
     #[test]
     fn portable_mode_uses_the_release_name_or_marker() {

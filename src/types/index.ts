@@ -67,8 +67,11 @@ export interface AppSettings {
   appearance?: AppAppearanceSettings
 }
 
+export type EffectsLevel = 'off' | 'balanced' | 'high'
+
 export interface AppAppearanceSettings {
   density: 'compact' | 'comfortable' | 'spacious'
+  effectsLevel: EffectsLevel
   surfaceTransparency: number
   surfaceBlur: number
 }

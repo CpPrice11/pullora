@@ -16,6 +16,7 @@ import { CloseIcon, MoreHorizontalIcon, StatusIcon } from '../components/ui/Icon
 import type { GitHubRelease, LauncherInstallationMode, LauncherStorageInfo } from '../types'
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
+import { useToastPresence } from '../hooks/useToastPresence'
 import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../utils/menuKeyboard'
 import '../components/Modal/Modal.css'
@@ -23,7 +24,7 @@ import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.21.0'
+const FALLBACK_CURRENT_VERSION = 'v5.22.0'
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
 type LauncherStatus = 'checking' | 'current' | 'update' | 'localNewer' | 'unknown'
 
@@ -63,6 +64,9 @@ function AboutPage() {
   const [releaseLoadError, setReleaseLoadError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const actionToast = useToastPresence(actionError ?? actionMessage)
+  const actionToastToneRef = useRef<'error' | 'success'>('success')
+  if (actionError || actionMessage) actionToastToneRef.current = actionError ? 'error' : 'success'
   const [refreshState, setRefreshState] = useState<'idle' | 'success' | 'error'>('idle')
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
   const [pendingUpdate, setPendingUpdate] = useState<GitHubRelease | null>(null)
@@ -360,15 +364,15 @@ function AboutPage() {
         </div>
       </section>
 
-      {(actionMessage || actionError) && (
+      {actionToast.message && (
         <div
-          className={actionError ? 'about-toast about-toast--error' : 'about-toast about-toast--success'}
-          role={actionError ? 'alert' : 'status'}
-          aria-live={actionError ? 'assertive' : 'polite'}
+          className={`about-toast about-toast--${actionToastToneRef.current} ${actionToast.visible ? 'is-visible' : ''}`}
+          role={actionToastToneRef.current === 'error' ? 'alert' : 'status'}
+          aria-live={actionToastToneRef.current === 'error' ? 'assertive' : 'polite'}
           aria-atomic="true"
         >
-          <StatusIcon kind={actionError ? 'error' : 'success'} />
-          <span>{actionError ?? actionMessage}</span>
+          <StatusIcon kind={actionToastToneRef.current} />
+          <span>{actionToast.message}</span>
         </div>
       )}
 

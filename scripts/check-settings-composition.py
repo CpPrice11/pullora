@@ -343,14 +343,20 @@ def check_select_contract(page):
     page.locator("#settings-general").wait_for()
     theme_select = page.locator("#theme")
     language_select = page.locator("#language")
+    effects_select = page.locator("#effectsLevel")
     assert [option["value"] for option in select_state(page, "#theme")["options"]] == [
         "light", "dark", "auto"
     ]
     assert [option["value"] for option in select_state(page, "#language")["options"]] == [
         "uk", "en"
     ]
+    assert [option["value"] for option in select_state(page, "#effectsLevel")["options"]] == [
+        "off", "balanced", "high"
+    ]
     assert select_state(page, "#theme")["labelled"]
     assert select_state(page, "#language")["labelled"]
+    assert select_state(page, "#effectsLevel")["labelled"]
+    assert effects_select.input_value() == "balanced"
 
     theme_select.focus()
     assert theme_select.evaluate("el => el === document.activeElement")
@@ -360,7 +366,7 @@ def check_select_contract(page):
     theme_select.select_option("light")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'light' && "
-        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+        "getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('light-bg.png')"
     )
     assert page.locator("html").get_attribute("data-theme") == "light"
     theme_select.select_option("auto")
@@ -395,13 +401,17 @@ def root_appearance_state(page):
           densityScale: root.style.getPropertyValue('--density-scale').trim(),
           surfaceOpacity: root.style.getPropertyValue('--surface-opacity').trim(),
           surfaceBlur: root.style.getPropertyValue('--surface-blur').trim(),
+          surfaceBlurElevated: root.style.getPropertyValue('--surface-blur-elevated').trim(),
+          surfaceBlurDialog: root.style.getPropertyValue('--surface-blur-dialog').trim(),
+          effectsGridOpacity: root.style.getPropertyValue('--effects-grid-opacity').trim(),
+          effectsLevel: root.dataset.effectsLevel,
         })
         """
     )
 
 
 def background_art_state(page):
-    return page.locator(".cinematic-background").evaluate(
+    return page.locator(".cinematic-background.is-active").evaluate(
         """
         element => {
           const style = getComputedStyle(element);
@@ -420,16 +430,16 @@ def check_appearance_contract(page, target_theme):
     page.get_by_role("button", name="Загальне", exact=True).click()
     page.locator("#settings-general").wait_for()
 
-    background = page.locator(".cinematic-background")
+    background = page.locator(".cinematic-background.is-active")
     page.wait_for_function(
-        "document.querySelector('.cinematic-background')?.classList.contains('is-visible')"
+        "document.querySelector('.cinematic-background.is-active')?.classList.contains('is-visible')"
     )
     theme_select = page.locator("#theme")
 
     theme_select.select_option("light")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'light' && "
-        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+        "getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('light-bg.png')"
     )
     light_art = background_art_state(page)
     assert "light-bg.png" in light_art["image"]
@@ -445,7 +455,7 @@ def check_appearance_contract(page, target_theme):
     theme_select.select_option("dark")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'dark' && "
-        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('dark-bg.png')"
+        "getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('dark-bg.png')"
     )
     dark_art = background_art_state(page)
     assert "dark-bg.png" in dark_art["image"]
@@ -459,7 +469,7 @@ def check_appearance_contract(page, target_theme):
     theme_select.select_option("light")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'light' && "
-        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('light-bg.png')"
+        "getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('light-bg.png')"
     )
     restored_light_art = background_art_state(page)
     assert restored_light_art == light_art, {
@@ -503,7 +513,7 @@ def surface_state(page):
             };
           };
           return {
-            background: read('.cinematic-background'),
+            background: read('.cinematic-background.is-active'),
             workspace: read('.settings-workspace'),
             navigation: read('.settings-nav'),
             content: read('.settings-content'),
@@ -697,6 +707,7 @@ def check_general_reset_contract(page):
     assert after["appearance"]["surfaceTransparency"] == 42, after
     assert after["appearance"]["surfaceBlur"] == 12, after
     assert after["appearance"]["density"] == "comfortable", after
+    assert after["appearance"]["effectsLevel"] == "balanced", after
     assert after["installationPath"].endswith("\\AppData\\Local\\Pullora\\Apps"), after
     assert page.evaluate(
         "Object.values(window.__PULLORA_SETTINGS_TEST__.launcherBackgrounds).every(value => value === null)"
@@ -919,7 +930,7 @@ def check_maintenance_contract(page):
 
 
 def check_surface_and_density_contract(page, theme):
-    background = page.locator(".cinematic-background")
+    background = page.locator(".cinematic-background.is-active")
     for label, panel_id in SECTIONS:
         page.get_by_role("button", name=label, exact=True).click()
         page.locator(f"#{panel_id}").wait_for()
@@ -1005,6 +1016,34 @@ def check_surface_and_density_contract(page, theme):
     assert blur_state["surfaceBlur"] == "32px", blur_state
     assert "32px" in surface_state(page)["workspace"]["backdropFilter"]
 
+    blur.fill("12")
+    effects = page.locator("#effectsLevel")
+    effects.select_option("off")
+    off_state = root_appearance_state(page)
+    assert off_state["effectsLevel"] == "off", off_state
+    assert off_state["surfaceBlur"] == "0px", off_state
+    assert off_state["surfaceBlurElevated"] == "0px", off_state
+    assert off_state["surfaceBlurDialog"] == "0px", off_state
+    assert off_state["effectsGridOpacity"] == "0", off_state
+    assert blur.is_disabled()
+    stored_off = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
+    assert stored_off["appearance"]["surfaceBlur"] == 12, stored_off
+
+    effects.select_option("high")
+    high_state = root_appearance_state(page)
+    assert high_state["effectsLevel"] == "high", high_state
+    assert high_state["surfaceBlur"] == "14px", high_state
+    assert high_state["surfaceBlurElevated"] == "20px", high_state
+    assert high_state["surfaceBlurDialog"] == "24px", high_state
+    assert not blur.is_disabled()
+
+    effects.select_option("balanced")
+    balanced_state = root_appearance_state(page)
+    assert balanced_state["effectsLevel"] == "balanced", balanced_state
+    assert balanced_state["surfaceBlur"] == "12px", balanced_state
+    assert balanced_state["surfaceBlurElevated"] == "16px", balanced_state
+    assert balanced_state["surfaceBlurDialog"] == "20px", balanced_state
+
     stored = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
     assert stored["appearance"]["surfaceTransparency"] == 100, stored
     dragged_transparency = drag_range_control(page, "#surfaceTransparency", 0.25)
@@ -1015,7 +1054,8 @@ def check_surface_and_density_contract(page, theme):
     )
     stored = page.evaluate("window.__PULLORA_SETTINGS_TEST__.settings")
     assert stored["appearance"]["surfaceTransparency"] == dragged_transparency, stored
-    assert stored["appearance"]["surfaceBlur"] == 32, stored
+    assert stored["appearance"]["surfaceBlur"] == 12, stored
+    assert stored["appearance"]["effectsLevel"] == "balanced", stored
     assert stored["appearance"]["density"] == "compact", stored
     assert root_appearance_state(page)["densityScale"] == "0.86"
 
@@ -1036,7 +1076,7 @@ def check_surface_and_density_contract(page, theme):
         page.locator("#theme").select_option("dark")
     page.wait_for_function(
         "document.documentElement.dataset.theme === 'dark' && "
-        "getComputedStyle(document.querySelector('.cinematic-background')).backgroundImage.includes('dark-bg.png')"
+        "getComputedStyle(document.querySelector('.cinematic-background.is-active')).backgroundImage.includes('dark-bg.png')"
     )
 
 
@@ -1044,7 +1084,7 @@ def check_settings_baseline_matrix(page, theme, width, height, scale):
     page.get_by_role("button", name=SECTIONS[0][0], exact=True).click()
     page.locator("#settings-general").wait_for()
     states = {}
-    background = page.locator(".cinematic-background")
+    background = page.locator(".cinematic-background.is-active")
 
     for density in ("comfortable", "compact"):
         set_density(page, density)
@@ -1060,7 +1100,7 @@ def check_settings_baseline_matrix(page, theme, width, height, scale):
                   const workspace = document.querySelector('.settings-workspace');
                   const content = document.querySelector('.settings-content');
                   const section = document.querySelector('#settings-general');
-                  const background = document.querySelector('.cinematic-background');
+                  const background = document.querySelector('.cinematic-background.is-active');
                   const pageBox = page.getBoundingClientRect();
                   const workspaceBox = workspace.getBoundingClientRect();
                   const contentBox = content.getBoundingClientRect();

@@ -1,10 +1,10 @@
 .modal-overlay {
   align-items: center;
-  animation: fluent-overlay-in var(--motion-fast);
+  animation: fluent-overlay-in var(--motion-dialog);
   background:
     radial-gradient(circle at 72% 12%, rgba(91, 215, 255, 0.12), transparent 24%),
     rgba(3, 5, 8, 0.66);
-  backdrop-filter: blur(10px) brightness(0.68);
+  backdrop-filter: blur(var(--surface-blur-elevated, 16px)) brightness(0.68);
   bottom: 0;
   display: flex;
   justify-content: center;
@@ -20,7 +20,8 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: fluent-dialog-in var(--motion-normal);
+  animation: fluent-dialog-in var(--motion-dialog);
+  backdrop-filter: blur(var(--surface-blur-dialog, 20px)) saturate(1.08);
 }
 
 .modal-content.release-modal {
@@ -196,7 +197,7 @@
 /* v5 cohesive workstation pass */
 .modal-overlay {
   background: var(--launcher-background-scrim);
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
 }
 
 .modal-content {
@@ -224,7 +225,7 @@
 /* Light dialogs must win over the legacy dark workstation fallbacks above. */
 :root[data-theme='light'] .modal-overlay {
   background: var(--launcher-background-scrim);
-  backdrop-filter: blur(var(--surface-blur));
+  backdrop-filter: blur(var(--surface-blur-elevated));
 }
 
 :root[data-theme='light'] .modal-content {
@@ -280,7 +281,7 @@
 
 /* Install uses the same launcher surface contract in both themes. */
 :root[data-theme] .cinematic-shell .release-modal--wizard {
-  backdrop-filter: blur(var(--surface-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--surface-blur-dialog)) saturate(1.08);
   background: var(--surface-1);
   border-color: var(--surface-border-strong);
   box-shadow: var(--surface-shadow);

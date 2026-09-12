@@ -194,9 +194,13 @@
 
 .progress-bar-fill {
   height: 100%;
+  width: 100%;
   background: var(--color-primary);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transform: scaleX(var(--download-progress, 0));
+  transform-origin: left center;
+  transition: transform var(--motion-normal);
+  will-change: transform;
 }
 
 .download-item--completed .progress-bar-fill {

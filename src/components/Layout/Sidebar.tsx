@@ -2,10 +2,11 @@ import { useI18n } from '../../i18n'
 
 type Tab = 'library' | 'settings' | 'about'
 type NavIconName = 'library' | 'settings' | 'about'
+export type NavigationInput = 'pointer' | 'keyboard'
 
 interface SidebarProps {
   activeTab: Tab
-  onTabChange: (tab: Tab) => void
+  onTabChange: (tab: Tab, input: NavigationInput) => void
 }
 
 interface NavItem {
@@ -70,7 +71,7 @@ function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           <button
             key={item.id}
             className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => onTabChange(item.id)}
+            onClick={(event) => onTabChange(item.id, event.detail === 0 ? 'keyboard' : 'pointer')}
             title={label}
             aria-current={activeTab === item.id ? 'page' : undefined}
             aria-label={label}

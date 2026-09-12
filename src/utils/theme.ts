@@ -59,6 +59,15 @@ export function appearanceCssVariables(
   const palette = THEME_PALETTES[theme]
   const isLight = theme === 'light'
   const densityScale = normalized.density === 'compact' ? 0.86 : normalized.density === 'spacious' ? 1.12 : 1
+  const baseBlur = normalized.effectsLevel === 'off'
+    ? 0
+    : Math.min(32, normalized.surfaceBlur + (normalized.effectsLevel === 'high' ? 2 : 0))
+  const elevatedBlur = normalized.effectsLevel === 'off'
+    ? 0
+    : Math.min(32, normalized.surfaceBlur + (normalized.effectsLevel === 'high' ? 8 : 4))
+  const dialogBlur = normalized.effectsLevel === 'off'
+    ? 0
+    : Math.min(32, normalized.surfaceBlur + (normalized.effectsLevel === 'high' ? 12 : 8))
   const surfaceOpacity = 100 - normalized.surfaceTransparency
   const shellOpacity = isLight ? Math.min(92, surfaceOpacity + 8) : surfaceOpacity
   const nestedOpacity = Math.round(shellOpacity * (isLight ? 0.68 : 0.55))
@@ -92,7 +101,16 @@ export function appearanceCssVariables(
     '--density-scale': String(densityScale),
     '--surface-opacity': `${surfaceOpacity}%`,
     '--surface-opacity-strong': `${strongOpacity}%`,
-    '--surface-blur': `${normalized.surfaceBlur}px`,
+    '--surface-blur': `${baseBlur}px`,
+    '--surface-blur-elevated': `${elevatedBlur}px`,
+    '--surface-blur-dialog': `${dialogBlur}px`,
+    '--effects-grid-opacity': normalized.effectsLevel === 'off'
+      ? '0'
+      : normalized.effectsLevel === 'high'
+        ? (isLight ? '0.055' : '0.075')
+        : (isLight ? '0.032' : '0.045'),
+    '--effects-glow-opacity': normalized.effectsLevel === 'off' ? '0' : normalized.effectsLevel === 'high' ? '1' : '0.72',
+    '--motion-page-offset': normalized.effectsLevel === 'high' ? '6px' : normalized.effectsLevel === 'off' ? '0px' : '4px',
     '--surface-canvas': palette.background,
     '--launcher-background-filter': isLight
       ? 'blur(2px) brightness(1.04) saturate(0.88)'
@@ -104,6 +122,9 @@ export function appearanceCssVariables(
     '--surface-3': `color-mix(in srgb, ${palette.background} ${insetOpacity}%, transparent)`,
     '--surface-border': `color-mix(in srgb, ${palette.border} ${isLight ? 82 : 58}%, transparent)`,
     '--surface-border-strong': `color-mix(in srgb, ${palette.border} ${isLight ? 100 : 78}%, transparent)`,
+    '--surface-edge-highlight': isLight
+      ? 'color-mix(in srgb, #ffffff 78%, transparent)'
+      : 'color-mix(in srgb, #ffffff 11%, transparent)',
     '--surface-shadow': isLight
       ? `0 18px 48px color-mix(in srgb, ${palette.border} 24%, transparent)`
       : `0 18px 48px color-mix(in srgb, ${palette.background} 58%, transparent)`,
@@ -127,5 +148,6 @@ export function applyAppearanceSettings(
   const normalized = normalizeAppearance(appearance)
   const variables = appearanceCssVariables(normalized, theme)
 
+  root.dataset.effectsLevel = normalized.effectsLevel
   Object.entries(variables).forEach(([key, value]) => root.style.setProperty(key, value))
 }

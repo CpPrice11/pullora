@@ -40,7 +40,8 @@
   position: absolute;
   transform: scale(var(--art-zoom, 1));
   transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
-  transition: opacity var(--motion-slow), transform var(--motion-slow);
+  transition: opacity var(--motion-background), transform var(--motion-background);
+  will-change: opacity;
   z-index: 0;
 }
 
@@ -55,6 +56,32 @@
   inset: 0;
   position: absolute;
   z-index: 1;
+}
+
+.cinematic-backdrop::before,
+.cinematic-backdrop::after {
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.cinematic-shell:not(.has-custom-background) .cinematic-backdrop::before {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-primary) 48%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 48%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 78% 72% at 70% 24%, #000 0%, transparent 78%);
+  opacity: var(--effects-grid-opacity, 0.045);
+}
+
+.cinematic-backdrop::after {
+  background: radial-gradient(circle at 72% 8%, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 36%);
+  opacity: var(--effects-glow-opacity, 0.72);
+}
+
+:root[data-effects-level='off'] .cinematic-backdrop {
+  background: var(--launcher-background-scrim);
 }
 
 .cinematic-shell.has-custom-background .cinematic-background.is-visible {
@@ -112,7 +139,7 @@
   padding: 3px;
   position: relative;
   text-align: left;
-  transition: var(--transition), width var(--motion-normal);
+  transition: var(--transition);
   width: 68px;
 }
 
@@ -214,6 +241,26 @@
   overflow-y: auto;
   padding: calc(34px * var(--density-scale)) clamp(28px, 4vw, 58px) calc(42px * var(--density-scale));
   scrollbar-gutter: stable;
+}
+
+.app-view {
+  align-self: stretch;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.app-view[hidden] {
+  display: none;
+}
+
+.app-view > .page {
+  animation: none;
+}
+
+.app-view[data-navigation-input='pointer'] > .page {
+  animation: fluent-page-enter var(--motion-page);
 }
 
 @media (max-width: 1100px) {
