@@ -50,7 +50,7 @@ def background_state(page: Page, dialog_selector: str | None = None) -> dict:
     return page.evaluate(
         """
         (dialogSelector) => {
-          const background = document.querySelector('.cinematic-background');
+          const background = document.querySelector('.cinematic-background.is-active');
           const layout = document.querySelector('.layout');
           const pageElement = document.querySelector('.about-page');
           const overlay = document.querySelector('.about-dialog-overlay');
@@ -71,6 +71,8 @@ def background_state(page: Page, dialog_selector: str | None = None) -> dict:
             overlayParentIsLayout: overlay?.parentElement?.classList.contains('layout') ?? false,
             dialog: read(dialog),
             surfaceBlur: root.getPropertyValue('--surface-blur').trim(),
+            surfaceBlurElevated: root.getPropertyValue('--surface-blur-elevated').trim(),
+            surfaceBlurDialog: root.getPropertyValue('--surface-blur-dialog').trim(),
           };
         }
         """,
@@ -119,9 +121,9 @@ def assert_continuity(state: dict, expected_artwork: str | None, *, dialog: bool
 
     assert state["overlayParentIsLayout"]
     assert alpha(state["overlay"]["backgroundColor"]) < 1
-    assert state["surfaceBlur"] in state["overlay"]["backdropFilter"]
+    assert state["surfaceBlurElevated"] in state["overlay"]["backdropFilter"]
     assert alpha(state["dialog"]["backgroundColor"]) < 1
-    assert state["surfaceBlur"] in state["dialog"]["backdropFilter"]
+    assert state["surfaceBlurDialog"] in state["dialog"]["backdropFilter"]
 
 
 def inspect(page: Page, *, custom_background: bool) -> dict:

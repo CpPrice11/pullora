@@ -92,7 +92,7 @@ def surface_state(page: Page) -> dict:
           };
           const root = getComputedStyle(document.documentElement);
           const layout = document.querySelector('.layout');
-          const background = document.querySelector('.cinematic-background');
+          const background = document.querySelector('.cinematic-background.is-active');
           return {
             opacity: root.getPropertyValue('--surface-opacity').trim(),
             blur: root.getPropertyValue('--surface-blur').trim(),

@@ -92,7 +92,7 @@ def check_source_contract() -> None:
     assert app.count("backgroundImage={visibleBackground}") == 1
     assert "backgroundImage={visibleBackground}" in app
     assert "className={`cinematic-background" in layout
-    assert "backgroundImage: toCssUrl(backgroundImage)" in layout
+    assert "backgroundImage: toCssUrl(layer.image)" in layout
     launcher_background_rule = css_rule(layout_styles, ".cinematic-background {")
     assert "inset: 0" in launcher_background_rule
     assert "transform: scale(var(--art-zoom, 1))" in launcher_background_rule

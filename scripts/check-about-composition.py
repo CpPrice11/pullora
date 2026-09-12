@@ -56,7 +56,7 @@ def check_source_contract() -> None:
     assert "from '../components/ui/Icons'" in source
     assert source.count('<CloseIcon className="dialog-close-icon" />') == 3
     assert 'className="about-launcher-status-icon"' in source
-    assert "<StatusIcon kind={actionError ? 'error' : 'success'} />" in source
+    assert "<StatusIcon kind={actionToastToneRef.current} />" in source
     assert "about-launcher-status-dot" not in source
     assert "window.confirm" not in source
     assert 'role="alertdialog"' in source
@@ -114,7 +114,7 @@ def check_source_contract() -> None:
     )
     assert hero_rule is not None
     assert "inset 0 1px 0" in hero_rule.group(1)
-    assert "var(--surface-shadow)" not in hero_rule.group(1)
+    assert "var(--surface-shadow)" in hero_rule.group(1)
     assert mark_rule is not None
     assert "inset 0 1px 0" in mark_rule.group(1)
     assert "var(--color-primary)" in mark_rule.group(1)
@@ -224,7 +224,7 @@ def inspect_composition(page: Page, width: int, height: int) -> dict:
     )
     assert overflow["root"] <= 1 and overflow["content"] <= 1, overflow
 
-    background = page.locator(".cinematic-background")
+    background = page.locator(".cinematic-background.is-active")
     assert background.evaluate("el => el.classList.contains('is-visible')")
     assert float(background.evaluate("el => getComputedStyle(el).opacity")) > 0
 
