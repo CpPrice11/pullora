@@ -44,7 +44,7 @@
 | `v5.19.0` | Контраст і єдина primary-дія | Випущено |
 | `v5.19.1` | Захист релізу від повторних спрацювань Defender | Скасовано; зміни включено до `v5.20.0` |
 | `v5.20.0` | Покращення вкладки «Про застосунок» | Випущено |
-| `v5.21.0` | UI hardening і завершення серії | Release candidate; CI-перевірка |
+| `v5.21.0` | UI hardening і завершення серії | Release candidate; автоматичні gate-перевірки пройдено |
 
 ## Незмінний дизайн-контракт
 
@@ -1057,7 +1057,7 @@
 - [x] Перевірити Library, Settings, About та Install у темній/світлій темах, normal/compact, зі стандартним/власним фоном на `1000×700`, `1280×720`, `1920×1080`.
 - [x] Перевірити клавіатуру, focus-visible, `aria-live`, disabled-стани та `prefers-reduced-motion`.
 - [x] Перевірити рівність українських та англійських i18n-ключів.
-- [ ] Виконати frontend build, компонентні й headless-тести, Rust checks/tests, Tauri build, release-check і smoke-test portable EXE.
+- [x] Виконати frontend build, компонентні й headless-тести, Rust checks/tests, Tauri build, release-check і smoke-test portable EXE.
 - [x] Повторити `$impeccable audit`; ціль — не нижче `19/20`, без P0/P1 та без візуального дрейфу айдентики.
 - [x] Оновити версію, release notes і roadmap для CI validation candidate без тегу та публікації.
 
@@ -1068,7 +1068,9 @@
 - `$impeccable audit`: Accessibility `4/4`, Performance `4/4`, Responsive Design `4/4`, Theming `4/4`, Implementation Integrity `4/4`; разом `20/20`, підтверджених P0/P1/P2/P3 немає. Усі `11` detector-попереджень перевірені: статусні смуги й crop handles є навмисною семантикою, а `width` transition лежить нижче недосяжного для production вікна breakpoint `760px` при `minWidth: 1000px`.
 - Ponytail-аудит: `Lean already. Ship.` Нових залежностей або зайвих абстракцій у release diff немає. Debt ledger містить один чинний marker у `src-tauri/src/commands/download.rs`: оцінка вільного місця `asset_size × 2`, з явним тригером переходу до читання metadata архіву, якщо реальні пакети доведуть неточність.
 - `npm audit --omit=dev`: `0 vulnerabilities`. `cargo fmt --all -- --check` пройшов після одного суто форматувального перенесення в `src-tauri/src/storage/settings.rs`.
-- `cargo check --locked` і `cargo test --locked` локально зупиняються через відсутній MSVC `link.exe`; Visual Studio Build Tools на машині не встановлені. Версію синхронізовано як `5.21.0`, а двомовні release notes підготовлено в `docs/releases/v5.21.0.md` для CI validation candidate. Rust tests, Tauri build, artifact release-check і portable smoke-test мають пройти у GitHub Actions до тегування.
+- `cargo check --locked` і `cargo test --locked` локально зупиняються через відсутній MSVC `link.exe`; Visual Studio Build Tools на машині не встановлені. Версію синхронізовано як `5.21.0`, а двомовні release notes підготовлено в `docs/releases/v5.21.0.md`. Rust tests, Tauri build, artifact release-check і portable smoke-test перенесено до GitHub Actions.
+- Windows CI run `34688434936` пройшов metadata, frontend, rendered contrast, `cargo check`, Rust tests і Tauri bundle. Перший manual Release run `34689194537` виявив, що portable smoke був вимкнений параметром `-SkipSmokeTest`; workflow виправлено комітом `944a02d`.
+- Фінальний manual Release run `34689946430` пройшов metadata, frontend, rendered contrast, Rust checks/tests, підпис Tauri updater, перевірку відсутності MSI/ZIP, складання release assets, реальний запуск portable EXE та Microsoft Defender scan. Кроки публікації пропущені, бо тег не створювався.
 
 - [ ] Пройти спільний release gate і випустити `v5.21.0`.
 
@@ -1078,12 +1080,12 @@
 
 - [x] `npm run build`
 - [x] `cargo fmt --all -- --check`
-- [ ] `cargo check --locked`
-- [ ] `cargo test --locked`
+- [x] `cargo check --locked`
+- [x] `cargo test --locked`
 - [x] `npm audit --omit=dev`
-- [ ] `npm run tauri-build`
-- [ ] `npm run check:release -- -Version <version> -RcReadiness`
-- [ ] Smoke-test portable EXE
+- [x] `npm run tauri-build`
+- [x] `npm run check:release -- -Version <version> -RcReadiness`
+- [x] Smoke-test portable EXE
 - [ ] Чисте встановлення поточної версії без наявних налаштувань або локальних даних
 - [ ] Оновлення з безпосередньо попередньої стабільної версії зі збереженням чинних налаштувань і даних
 - [ ] Перевірка незмінності встановлених застосунків, активних і старих версій, користувацького шляху, фонів, обкладинок, hero-фонів, папок бібліотеки й обраного
