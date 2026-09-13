@@ -1115,7 +1115,9 @@ Windows CI run `34711280982` пройшов metadata, frontend, rendered contras
 - [x] Передати `forceRefresh` до backend release request, а не обходити лише frontend cache.
 - [x] Перевірити EN/UK parity, component contracts, TypeScript, contrast і production build.
 - [ ] Перевірити у зібраному застосунку, що новий GitHub release з'являється після одного натискання.
-- [ ] Пройти release gate і випустити `v5.22.1`.
+- [x] Пройти release gate і випустити `v5.22.1`.
+
+Windows CI run `34727592057` пройшов rendered UI, Rust checks/tests і Tauri bundle. Release run `34728300376` пройшов release metadata, portable smoke-test, Microsoft Defender scan, публікацію та remote verification. Опубліковано рівно п'ять assets; `latest.json` повідомляє `5.22.1` і містить updater signature. SHA-256: portable `dee94f5f07cf2d23945c9f706c44195e2ba5ad390c76068256b399896d133177`, setup `b35f364bf1ff02f0b91a28ef670e405f2f8949ebf4225ef442c2c1b17dd95316`.
 
 ## Поза поточним планом
 
