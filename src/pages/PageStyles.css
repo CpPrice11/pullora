@@ -4730,6 +4730,45 @@
   min-height: 42px;
 }
 
+.cinematic-shell .library-page .library-refresh-btn {
+  align-items: center;
+  align-self: stretch;
+  background: var(--color-control);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  color: var(--color-text);
+  display: inline-flex;
+  flex: 0 0 var(--library-search-height);
+  justify-content: center;
+  min-height: var(--library-search-height);
+  padding: 0;
+  width: var(--library-search-height);
+}
+
+.cinematic-shell .library-page .library-refresh-btn:hover:not(:disabled) {
+  background: var(--color-control-hover);
+  border-color: color-mix(in srgb, var(--color-primary) 46%, var(--surface-border));
+}
+
+.cinematic-shell .library-page .library-refresh-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.cinematic-shell .library-page .library-refresh-icon {
+  height: 18px;
+  width: 18px;
+}
+
+.cinematic-shell .library-page .library-refresh-btn.is-refreshing .library-refresh-icon {
+  animation: library-refresh-spin 800ms linear infinite;
+  color: var(--color-primary-dark);
+}
+
+@keyframes library-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
 .cinematic-shell .library-page .search-results {
   padding: var(--library-results-padding);
 }

@@ -389,6 +389,7 @@ try {
     assert.match(styles, /font-size:\s*11px/)
   }
   const libraryPageSource = readFileSync('src/features/library/LibraryPage.tsx', 'utf8')
+  const libraryStatusSource = readFileSync('src/features/library/hooks/useLibraryStatus.ts', 'utf8')
   const batchUpdatesSource = readFileSync('src/features/library/hooks/useBatchUpdates.ts', 'utf8')
   const libraryOperationsSource = readFileSync('src/features/library/components/LibraryOperationsPanel.tsx', 'utf8')
   const libraryHeroSource = readFileSync('src/features/library/components/LibraryHero.tsx', 'utf8')
@@ -511,6 +512,8 @@ try {
   assert.doesNotMatch(projectArtServiceSource, /URL\.(?:createObjectURL|revokeObjectURL)/)
   assert.match(modalFocusSource, /document\.addEventListener\('keydown', handleKeyDown\)[\s\S]*?window\.clearTimeout\(focusTimer\)[\s\S]*?document\.removeEventListener\('keydown', handleKeyDown\)/)
   assert.match(libraryPageSource, /onError=\{handleInstallError\}/)
+  assert.match(libraryPageSource, /await clearGithubCache\(\)[\s\S]*?refreshRepositories\(\)[\s\S]*?refreshLatestVersions\([\s\S]*?true,/)
+  assert.match(libraryStatusSource, /getReleases\(app\.owner, app\.repo, forceRefresh\)/)
   assert.match(libraryPageSource, /useToastPresence\(libraryToastMessage\)[\s\S]*?library-toast--\$\{libraryToastToneRef\.current\}/)
   assert.doesNotMatch(libraryHeroSource, /artError|library-hero-error/)
   assert.match(appSource, /onError=\{setLauncherArtError\}[\s\S]*?createPortal\([\s\S]*?library-toast--error/)
@@ -734,6 +737,7 @@ try {
     emptyMessage: '',
     emptyActionLabel: '',
     loading: false,
+    refreshing: false,
     hasMore: false,
     onFilterChange: noop,
     onSortChange: noop,
@@ -742,6 +746,7 @@ try {
     onToggleSection: noop,
     onEmptyAction: noop,
     onLoadMore: noop,
+    onRefresh: noop,
     renderRepository: (item) => React.createElement('span', { key: item.id }, item.name),
   })
   assert.match(sidebar, /library-sam-list-pane/)
@@ -759,6 +764,8 @@ try {
   }
   assert.match(sidebar, /Favorites/)
   assert.match(sidebar, /library-search/)
+  assert.match(sidebar, /library-refresh-btn/)
+  assert.match(sidebar, new RegExp(`aria-label="${ukDictionary['library.refresh']}"`))
   assert.match(sidebar, /library-sidebar-filter-nav/)
   assert.match(sidebar, /library-density-toggle/)
   assert.match(sidebar, /library-sort-control/)

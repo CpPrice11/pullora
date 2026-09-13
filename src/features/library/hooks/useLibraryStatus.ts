@@ -125,7 +125,7 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
         }
 
         try {
-          const releases = await getReleases(app.owner, app.repo)
+          const releases = await getReleases(app.owner, app.repo, forceRefresh)
           const latest = releases.find(
             (release) => !release.draft && !release.prerelease,
           )
