@@ -1108,6 +1108,15 @@
 
 Windows CI run `34711280982` пройшов metadata, frontend, rendered contrast, Rust checks/tests і Tauri bundle. Release run `34712115995` на тегу `v5.22.0` пройшов portable smoke-test, Microsoft Defender scan, публікацію та remote verification. Публічний реліз містить п'ять підготовлених assets; `latest.json` повідомляє версію `5.22.0`, правильний setup URL і updater signature. SHA-256: portable `ceb5e565885129c0d315de363ed70e66086aff386450caf6f7ddc93f4e281256`, setup `1b71305cc5c82a35a79e528751d3775811b6bdf68f4c402a09e55b2d106361ac`.
 
+## v5.22.1 — ручне оновлення Library
+
+- [x] Додати постійну локалізовану кнопку оновлення біля пошуку Library.
+- [x] Під час ручного оновлення очистити GitHub cache, повторно завантажити repositories і локальний стан та примусово перевірити latest releases.
+- [x] Передати `forceRefresh` до backend release request, а не обходити лише frontend cache.
+- [x] Перевірити EN/UK parity, component contracts, TypeScript, contrast і production build.
+- [ ] Перевірити у зібраному застосунку, що новий GitHub release з'являється після одного натискання.
+- [ ] Пройти release gate і випустити `v5.22.1`.
+
 ## Поза поточним планом
 
 - Будь-який редизайн, зміна синьої палітри, прозорості, композиції або поточної айдентики без окремого рішення користувача.

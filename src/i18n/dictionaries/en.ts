@@ -129,6 +129,7 @@ const dictionary: Record<string, string> = {
     'library.localSource': 'My GitHub projects and installed apps',
     'library.refresh': 'Refresh',
     'library.refreshing': 'Refreshing...',
+    'library.refreshDone': 'Library refreshed',
     'refresh.updatedAt': 'Updated at {time}',
     'refresh.error': 'Refresh failed',
     'library.noOwnerTitle': 'GitHub owner is not set',

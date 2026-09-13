@@ -16,6 +16,7 @@ import StatePanel from '../../components/State/StatePanel'
 import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
 import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
+import { clearGithubCache } from '../../services/github'
 import { pickImageFile } from '../../services/dialog'
 import {
   clearProjectArt,
@@ -278,6 +279,7 @@ function LibraryPage({
   const [bulkMessage, setBulkMessage] = useState<string | null>(null)
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [bulkConfirm, setBulkConfirm] = useState<'cleanup' | 'uninstall' | null>(null)
+  const [refreshingLibrary, setRefreshingLibrary] = useState(false)
   const { settings, loading: settingsLoading } = useSettings()
   const libraryFoldersLoadedRef = useRef(false)
   const owner = CATALOG_OWNER
@@ -300,8 +302,28 @@ function LibraryPage({
   } = useLibraryStatus(state.repositories)
 
   const handleRefresh = async () => {
-    await refreshRepositories()
-    await refreshInstalledApps()
+    if (refreshingLibrary) return
+
+    setRefreshingLibrary(true)
+    setLibraryActionMessage(null)
+    setLibraryActionError(null)
+    try {
+      await clearGithubCache()
+      const [freshRepositories, freshInstalledApps] = await Promise.all([
+        refreshRepositories(),
+        refreshInstalledApps(),
+      ])
+      await refreshLatestVersions(
+        freshInstalledApps,
+        freshRepositories ?? state.repositories,
+        true,
+      )
+      if (freshRepositories) setLibraryActionMessage(t('library.refreshDone'))
+    } catch (err) {
+      setLibraryActionError(err instanceof Error ? err.message : t('refresh.error'))
+    } finally {
+      setRefreshingLibrary(false)
+    }
   }
 
   const handleCheckUpdates = useCallback(async () => {
@@ -1570,6 +1592,7 @@ function LibraryPage({
             emptyMessage={t(emptyTextKey)}
             emptyActionLabel={emptyActionLabel}
             loading={state.loading}
+            refreshing={refreshingLibrary || state.loading || checkingUpdates}
             hasMore={state.hasMore}
             onFilterChange={(nextFilter) => {
               bulkSelection.clear()
@@ -1594,6 +1617,7 @@ function LibraryPage({
             }}
             onEmptyAction={emptyAction}
             onLoadMore={loadMore}
+            onRefresh={() => { void handleRefresh() }}
             renderRepository={renderSidebarRepository}
             resultsRef={sidebarResultsRef}
             onResultsScroll={(event) => {

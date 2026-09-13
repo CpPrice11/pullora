@@ -129,6 +129,7 @@ const dictionary: Record<string, string> = {
     'library.localSource': 'Мої GitHub-проєкти та встановлені застосунки',
     'library.refresh': 'Оновити',
     'library.refreshing': 'Оновлюємо...',
+    'library.refreshDone': 'Бібліотеку оновлено',
     'refresh.updatedAt': 'Оновлено о {time}',
     'refresh.error': 'Помилка оновлення',
     'library.noOwnerTitle': 'Власника GitHub не вказано',

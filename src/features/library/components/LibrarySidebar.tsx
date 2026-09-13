@@ -40,6 +40,7 @@ interface LibrarySidebarProps {
   emptyMessage: string
   emptyActionLabel: string
   loading: boolean
+  refreshing: boolean
   hasMore: boolean
   onFilterChange: (filter: LibraryFilter) => void
   onSortChange: (sort: LibrarySort) => void
@@ -48,6 +49,7 @@ interface LibrarySidebarProps {
   onToggleSection: (sectionId: string) => void
   onEmptyAction: () => void
   onLoadMore: () => void
+  onRefresh: () => void
   renderRepository: (repo: GitHubSearchResult) => ReactNode
   resultsRef?: Ref<HTMLDivElement>
   onResultsScroll?: UIEventHandler<HTMLDivElement>
@@ -59,10 +61,12 @@ type LibrarySidebarControlsProps = Pick<
   | 'sort'
   | 'density'
   | 'query'
+  | 'refreshing'
   | 'onFilterChange'
   | 'onSortChange'
   | 'onDensityChange'
   | 'onQueryChange'
+  | 'onRefresh'
 >
 
 function LibrarySidebarControls({
@@ -70,10 +74,12 @@ function LibrarySidebarControls({
   sort,
   density,
   query,
+  refreshing,
   onFilterChange,
   onSortChange,
   onDensityChange,
   onQueryChange,
+  onRefresh,
 }: LibrarySidebarControlsProps) {
   const { t } = useI18n()
 
@@ -125,6 +131,17 @@ function LibrarySidebarControls({
           className="search-input"
           aria-label={t('library.searchLabel')}
         />
+        <button
+          type="button"
+          className={`library-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
+          aria-label={refreshing ? t('library.refreshing') : t('library.refresh')}
+          aria-busy={refreshing}
+          title={refreshing ? t('library.refreshing') : t('library.refresh')}
+          disabled={refreshing}
+          onClick={onRefresh}
+        >
+          <UpdateIcon className="library-refresh-icon" />
+        </button>
       </div>
 
       <div className="library-density-toggle">
@@ -158,6 +175,7 @@ export default function LibrarySidebar({
   emptyMessage,
   emptyActionLabel,
   loading,
+  refreshing,
   hasMore,
   onFilterChange,
   onSortChange,
@@ -166,6 +184,7 @@ export default function LibrarySidebar({
   onToggleSection,
   onEmptyAction,
   onLoadMore,
+  onRefresh,
   renderRepository,
   resultsRef,
   onResultsScroll,
@@ -179,10 +198,12 @@ export default function LibrarySidebar({
         sort={sort}
         density={density}
         query={query}
+        refreshing={refreshing}
         onFilterChange={onFilterChange}
         onSortChange={onSortChange}
         onDensityChange={onDensityChange}
         onQueryChange={onQueryChange}
+        onRefresh={onRefresh}
       />
 
       <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>
