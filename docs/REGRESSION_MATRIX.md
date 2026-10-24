@@ -1,43 +1,57 @@
-# Pullora Regression Matrix
+# Матриця регресій Pullora
 
-Use this matrix before user-facing releases and after large roadmap patches.
+Pullora доступний усім, але розвивається насамперед для власного використання автора та його застосунків. Каталог має фіксованого власника `CpPrice11`. Цю матрицю виконують перед релізом і після значних змін; наведені сценарії не є позначкою про їх проходження.
 
-## Library
+## Бібліотека
 
-- Owner empty, invalid owner, valid owner, owner without releases.
-- Online, offline/cached, GitHub rate-limit or partial latest-version failures.
-- Search, filters, sort, favorites, update filter, hover/focus project-art preview.
-- Install, update, launch, open folder, context menu and details panels.
+- Каталог `CpPrice11`: завантажений, порожній, тимчасово недоступний, із частиною програм без релізів.
+- Підключення до мережі, робота з кешем без мережі, ліміт GitHub API та частковий збій перевірки версій.
+- Оновлення бібліотеки одним натисканням після публікації нового релізу програми.
+- Пошук, фільтри, сортування, обране, папки й масові дії.
+- Встановлення, оновлення, запуск, відкриття папки, контекстне меню та подробиці.
+- Репозиторій самої Pullora прихований зі списку встановлюваних програм.
 
-## Install And Versions
+## Встановлення та версії
 
-- Portable EXE install.
-- Archive with EXE install.
-- Unsupported asset and setup/MSI manual path.
-- Failed/cancelled download, retry, choose another asset, cleanup incomplete installs.
-- Install v1, install v2, switch active version, delete inactive version, delete active app, missing executable repair state.
+- Portable EXE та архів із запускним EXE.
+- Setup/MSI та непідтримуваний файл із відповідним поясненням.
+- Помилка або скасування завантаження, повторна спроба, вибір іншого файлу та очищення незавершеного встановлення.
+- Встановлення двох версій, перемикання активної версії, видалення неактивної версії та всього застосунку.
+- Відсутній запускний файл і відновлення після помилки.
 
-## Settings And Maintenance
+## Налаштування та обслуговування
 
 - Темна, світла й автоматична теми.
-- Зміна, видимість і видалення власного фону Pullora.
-- GitHub owner change, recent owner chips, cache invalidation.
-- Install path validation: ok, missing, inaccessible, no write permission.
-- Maintenance diagnostics, cache clear, launcher update cleanup, diagnostics copy.
-- Reset settings confirmation; installed apps must remain on disk.
+- Зміна, видимість, кадрування та видалення власного фону Pullora.
+- Каталог залишається прив'язаним до `CpPrice11`; старі налаштування іншого власника нормалізуються.
+- Шлях встановлення: коректний, відсутній, недоступний, без права запису або заборонений.
+- Діагностика, очищення кешу GitHub і старих файлів оновлення, копіювання діагностики.
+- Підтвердження скидання налаштувань; встановлені програми залишаються на диску.
 
-## About And Self Update
+## Відомості про програму та оновлення Pullora
 
-- Current version display.
-- Latest release detection.
-- Portable self-update asset selection.
-- Rollback list and cleanup old launcher files.
-- No portable asset recovery state.
+- Поточна версія та виявлення нового стабільного релізу.
+- Встановлена версія: перевірка підпису Tauri updater й оновлення через нього.
+- Portable-версія: відкриття офіційного GitHub Release для ручного оновлення.
+- Відсутній або неповний реліз, помилка мережі, список доступних відкатів і очищення старих файлів.
+- Відсутність вимог вимикати захист Windows або додавати антивірусні виключення.
 
-## UI
+## Інтерфейс
 
-- Ukrainian and English.
-- 1000x700, 1280x720, 1920x1080.
-- Keyboard focus, Escape close, disabled buttons.
-- Reduced motion preference.
-- Without project art, cover-only project art, custom launcher background.
+- Українська та англійська мови.
+- Вікна 1000×700, 1280×720 і 1920×1080.
+- Клавіатура, видимий фокус, закриття через `Escape`, недоступні дії.
+- `prefers-reduced-motion` та рівні ефектів Off, Balanced, High.
+- Стандартне оформлення, лише власна обкладинка, окремий фон програми та загальний фон лаунчера.
+
+## Погоджені зміни, які ще не випущені
+
+Ці сценарії стосуються локальної реалізації карток і підключення `pullora-assets`. Їх потрібно включити до перевірки перед відповідним релізом.
+
+- Повна картка: опис, статус, версії, основна дія, GitHub і Website лише за наявності коректного HTTPS-посилання.
+- Типові іконки з `pullora-assets`; власна обкладинка й кадрування мають пріоритет, а скидання повертає типову іконку без видалення власного фону.
+- Галерея лише в подробицях і лише за наявності скриншотів; збільшення, Tab, Escape та повернення фокусу.
+- Завантаження скриншотів при відкритті подробиць, оновлення маніфесту кнопкою бібліотеки та робота з раніше завантаженими файлами без мережі.
+- Відсутні, пошкоджені або завеликі файли; недоступний сервер; некоректний маніфест і недозволені шляхи.
+- `pullora-assets` прихований зі списку програм, зокрема при читанні кешу бібліотеки.
+- Окремо перевірити нативні команди, файловий кеш і запуск на Windows: браузерні підміни Tauri цього не підтверджують.

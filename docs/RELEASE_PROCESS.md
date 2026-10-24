@@ -1,6 +1,6 @@
 # Процес релізу Pullora
 
-Pullora випускається лише для Windows. GitHub Release містить portable EXE, setup EXE, підпис Tauri updater, `SHA256SUMS.txt` і `latest.json`.
+Pullora доступний усім і випускається для Windows. Автор розвиває його насамперед для власного використання з каталогом застосунків `CpPrice11`. GitHub Release містить portable EXE, setup EXE, підпис Tauri updater, `SHA256SUMS.txt` і `latest.json`.
 
 ## Політика підпису й перевірки
 
@@ -29,7 +29,7 @@ npm run build
 npm run check:release -- -Version <version> -SkipArtifacts -SkipSmokeTest -RcReadiness
 ```
 
-Rust/Tauri перевіряються в GitHub Actions, оскільки Smart App Control на основній машині блокує локальний Rust toolchain. Захист заради збірки не вимикати.
+Офіційні Rust/Tauri перевірки та нативна збірка виконуються в GitHub Actions. Локальна збірка потребує повного Windows toolchain; відсутність інструментів або блокування їхнього запуску не замінює проходження перевірок. Захист заради збірки не вимикати.
 
 ## Публікація
 

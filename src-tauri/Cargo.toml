@@ -1,10 +1,10 @@
 [package]
 name = "app"
 version = "5.22.1"
-description = "Pullora - GitHub program launcher"
-authors = ["you"]
+description = "Public Windows launcher for CpPrice11's applications, developed primarily for the author's own use."
+authors = ["CpPrice11"]
 license = ""
-repository = ""
+repository = "https://github.com/CpPrice11/pullora"
 edition = "2021"
 rust-version = "1.85.0"
 
