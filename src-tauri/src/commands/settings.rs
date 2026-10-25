@@ -224,9 +224,22 @@ fn is_protected_installation_path(
         return false;
     }
 
-    protected_roots
-        .iter()
-        .any(|root| crate::storage::path_scope::ensure_within(path, root, true).is_ok())
+    protected_roots.iter().any(|root| {
+        let Ok(resolved_path) = crate::storage::path_scope::ensure_within(path, root, true) else {
+            return false;
+        };
+        let Ok(resolved_root) = crate::storage::path_scope::ensure_within(root, root, true) else {
+            return true;
+        };
+        // Older installations and portable copies keep apps beside the launcher.
+        // Check the resolved location so a junction cannot expose service files.
+        !resolved_path
+            .strip_prefix(resolved_root)
+            .ok()
+            .and_then(|relative| relative.iter().next())
+            .and_then(|part| part.to_str())
+            .is_some_and(|name| name.eq_ignore_ascii_case("Apps"))
+    })
 }
 
 fn prepare_installation_path_setting(path: &str) -> Result<String, String> {
@@ -330,8 +343,10 @@ mod tests {
             std::process::id()
         ));
         let protected_root = root.join("pullora");
-        let allowed_apps = protected_root.join("apps");
+        let allowed_apps = root.join("program-files").join("Pullora").join("Apps");
+        let legacy_apps = protected_root.join("Apps");
         std::fs::create_dir_all(&allowed_apps).unwrap();
+        std::fs::create_dir_all(&legacy_apps).unwrap();
 
         assert!(is_protected_installation_path(
             &protected_root,
@@ -354,6 +369,38 @@ mod tests {
             std::slice::from_ref(&protected_root),
         ));
 
+        for legacy in [&legacy_apps, &legacy_apps.join("CpPrice11-demo")] {
+            assert!(!is_protected_installation_path(
+                legacy,
+                &allowed_apps,
+                std::slice::from_ref(&protected_root),
+            ));
+        }
+        assert!(is_protected_installation_path(
+            &protected_root.join("Apps-evil"),
+            &allowed_apps,
+            std::slice::from_ref(&protected_root),
+        ));
+
+        #[cfg(windows)]
+        {
+            let cache = protected_root.join("package-cache");
+            std::fs::create_dir_all(&cache).unwrap();
+            let link = legacy_apps.join("redirect");
+            assert!(std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(&link)
+                .arg(&cache)
+                .status()
+                .unwrap()
+                .success());
+            assert!(is_protected_installation_path(
+                &link,
+                &allowed_apps,
+                std::slice::from_ref(&protected_root),
+            ));
+            std::fs::remove_dir(link).unwrap();
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 
