@@ -31,6 +31,13 @@ def load_baseline():
     return module
 
 
+def open_keyboard_menu(page, card):
+    card.scroll_into_view_if_needed()
+    card.focus()
+    page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+    card.press('Shift+F10')
+
+
 def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale: float) -> dict:
     baseline.seed_cache(page)
     page.add_init_script(
@@ -38,7 +45,10 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
     )
     baseline.open_library(page)
 
+    page.wait_for_function("document.querySelectorAll('.library-folder-section-header').length >= 60")
     card = page.locator('.repo-card:visible').first
+    card.scroll_into_view_if_needed()
+    page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
     layout_before = page.locator(
         '.library-sam-workspace, .library-sam-list-pane, .library-sam-details-pane'
     ).evaluate_all(
@@ -220,7 +230,7 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
     portal.wait_for(state='hidden')
     assert other_card.evaluate('el => el === document.activeElement')
 
-    card.press('Shift+F10')
+    open_keyboard_menu(page, card)
     menu.wait_for()
     page.wait_for_function("() => document.activeElement?.closest('.project-actions-popover')")
     assert menu.get_by_role('menuitem').first.evaluate('el => el === document.activeElement')
@@ -228,41 +238,48 @@ def check_menu(page: Page, baseline, theme: str, width: int, height: int, scale:
     portal.wait_for(state='hidden')
     assert card.evaluate('el => el === document.activeElement')
 
-    card.press('Shift+F10')
+    open_keyboard_menu(page, card)
     menu.wait_for()
     page.wait_for_function("() => document.activeElement?.closest('.project-actions-popover')")
-    menu.get_by_role('menuitem').nth(1).click()
+    menu.get_by_role('menuitem', name='Версії', exact=True).click()
     portal.wait_for(state='hidden')
+    modal = page.locator('.release-modal--wizard')
+    modal.wait_for()
+    page.keyboard.press('Escape')
+    modal.wait_for(state='hidden')
     assert card.evaluate('el => el === document.activeElement')
 
-    card.press('Shift+F10')
+    open_keyboard_menu(page, card)
     menu.wait_for()
     page.wait_for_function("() => document.activeElement?.closest('.project-actions-popover')")
     page.evaluate("window.dispatchEvent(new Event('resize'))")
     portal.wait_for(state='hidden')
     assert card.evaluate('el => el === document.activeElement')
 
-    card.press('Shift+F10')
+    open_keyboard_menu(page, card)
     menu.wait_for()
     page.wait_for_function("() => document.activeElement?.closest('.project-actions-popover')")
     page.evaluate("window.dispatchEvent(new Event('scroll'))")
     portal.wait_for(state='hidden')
     assert card.evaluate('el => el === document.activeElement')
 
-    page.get_by_role('switch', name='Компактний').click()
-    page.locator('.library-page.library-density-compact').wait_for()
+    page.locator('.library-view-toggle button').nth(1).click()
+    page.locator('.library-table').first.wait_for()
+    card = page.locator('.repo-card:visible').first
+    card.scroll_into_view_if_needed()
+    page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
     card.evaluate(
         "(element, point) => element.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: point.x, clientY: point.y }))",
         {'x': width - 2, 'y': height - 2},
     )
     menu.wait_for()
-    page.screenshot(path=OUTPUT_DIR / f'repo-menu-compact-root-{suffix}.png')
+    page.screenshot(path=OUTPUT_DIR / f'repo-menu-table-root-{suffix}.png')
     menu.locator('.repo-actions-submenu-trigger').first.hover()
     submenu.wait_for()
-    page.screenshot(path=OUTPUT_DIR / f'repo-menu-compact-add-{suffix}.png')
+    page.screenshot(path=OUTPUT_DIR / f'repo-menu-table-add-{suffix}.png')
     menu.locator('.repo-actions-submenu-trigger').nth(1).hover()
     submenu.wait_for()
-    page.screenshot(path=OUTPUT_DIR / f'repo-menu-compact-remove-{suffix}.png')
+    page.screenshot(path=OUTPUT_DIR / f'repo-menu-table-remove-{suffix}.png')
     page.keyboard.press('Escape')
     portal.wait_for(state='hidden')
 

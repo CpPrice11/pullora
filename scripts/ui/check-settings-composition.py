@@ -135,6 +135,13 @@ def install_settings_mock(page):
             runCallback(id, value) { callbacks.get(id)?.(value); },
             convertFileSrc(path) { return path; },
             async invoke(command, args = {}) {
+              if (command === 'get_installation_snapshot') return {installedApps:[],discoveredApps:[],health:[]};
+              if (['get_app_runtime_states','discover_installed_apps','list_default_project_icons'].includes(command)) return [];
+
+              const cache = window.__PULLORA_TEST_GITHUB_CACHE__ ?? {};
+              if (command === 'list_owner_repositories') return structuredClone(cache[`owner:${String(args.owner).toLowerCase()}:${args.page ?? 1}:${Boolean(args.releasesOnly)}`]?.data ?? {items:[],page:1,has_more:false});
+              if (command === 'get_releases') return structuredClone(cache[`releases:${String(args.owner).toLowerCase()}/${String(args.repo).toLowerCase()}`]?.data ?? []);
+
               if (command === 'plugin:event|listen') return args.handler;
               if (command === 'plugin:event|unlisten') return null;
               commands.push(command);

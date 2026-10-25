@@ -105,7 +105,7 @@ def main() -> None:
                 page = context.new_page()
                 BASELINE["seed_cache"](page)
                 BASELINE["open_library"](page)
-                page.locator(".hero-primary-btn:visible").first.click()
+                BASELINE["open_versions"](page)
                 page.locator(".release-modal").wait_for()
                 page.locator(".release-modal .close-btn").click()
                 mount_fixture(page)

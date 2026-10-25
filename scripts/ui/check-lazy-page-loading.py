@@ -63,7 +63,7 @@ def check_source_contract() -> None:
 
 
 def set_library_scroll(page: Page) -> int:
-    return page.locator(".library-sam-details-pane").evaluate(
+    return page.locator(".search-results").evaluate(
         """
         element => {
           element.scrollTop = Math.min(220, Math.max(0, element.scrollHeight - element.clientHeight));
@@ -74,16 +74,17 @@ def set_library_scroll(page: Page) -> int:
 
 
 def assert_scroll(page: Page, expected: int) -> None:
-    actual = page.locator(".library-sam-details-pane").evaluate("element => element.scrollTop")
+    actual = page.locator(".search-results").evaluate("element => element.scrollTop")
     assert abs(actual - expected) <= 1, {"expected": expected, "actual": actual}
 
 
 def check_navigation_state(page: Page) -> dict:
-    BASELINE["seed_cache"](page)
+    catalog = runpy.run_path(str(ROOT / "scripts" / "ui" / "check-library-catalog.py"))
+    catalog["prepare"](page)
     BASELINE["open_library"](page)
 
-    page.get_by_role("switch", name="Компактний", exact=True).click()
-    library = page.locator(".library-page.library-density-compact")
+    page.locator(".library-view-toggle button").nth(1).click()
+    library = page.locator(".library-page.library-view-table")
     library.wait_for()
     library.evaluate("element => { element.dataset.lazyProbe = 'preserved' }")
     library_scroll = set_library_scroll(page)

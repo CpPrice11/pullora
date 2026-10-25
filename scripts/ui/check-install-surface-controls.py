@@ -47,7 +47,7 @@ def click_range(page: Page, selector: str, value: int) -> None:
 def open_install(page: Page) -> None:
     page.locator(".nav-item").nth(0).click()
     page.locator(".library-page").wait_for()
-    page.locator(".library-ops-action-row .hero-primary-btn").click()
+    BASELINE["open_versions"](page)
     page.locator(".release-modal--wizard").wait_for()
     page.wait_for_function(
         """() => {

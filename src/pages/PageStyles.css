@@ -5112,68 +5112,6 @@
   min-height: var(--library-search-height);
 }
 
-.cinematic-shell .library-page .library-density-toggle {
-  background: rgba(6, 13, 20, 0.48);
-  border: 1px solid rgba(102, 192, 244, 0.16);
-  border-radius: 12px;
-  padding: 3px;
-}
-
-.cinematic-shell .library-page .library-density-toggle button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  color: var(--color-text-secondary);
-  display: flex;
-  font-size: 12px;
-  font-weight: 800;
-  justify-content: space-between;
-  min-height: var(--library-density-control-height);
-  padding: 0 9px;
-  width: 100%;
-}
-
-.cinematic-shell .library-page .library-density-switch-indicator {
-  background: var(--color-control-hover);
-  border: 1px solid var(--surface-border);
-  border-radius: 999px;
-  display: block;
-  height: 18px;
-  padding: 2px;
-  width: 34px;
-}
-
-.cinematic-shell .library-page .library-density-switch-indicator::after {
-  background: var(--color-text-secondary);
-  border-radius: 50%;
-  content: '';
-  display: block;
-  height: 12px;
-  transition: transform 160ms ease;
-  width: 12px;
-}
-
-.cinematic-shell .library-page .library-density-toggle button:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--color-text);
-}
-
-.cinematic-shell .library-page .library-density-toggle button.active {
-  background: rgba(66, 199, 244, 0.18);
-  box-shadow: inset 0 -2px 0 var(--library-fluent-accent);
-  color: #f2f8fe;
-}
-
-.cinematic-shell .library-page .library-density-toggle button.active .library-density-switch-indicator {
-  background: var(--library-fluent-accent);
-}
-
-.cinematic-shell .library-page .library-density-toggle button.active .library-density-switch-indicator::after {
-  background: #061018;
-  transform: translateX(16px);
-}
-
 .cinematic-shell .library-page .library-sort-control {
   align-items: stretch;
   color: var(--color-text-secondary);
@@ -5196,21 +5134,10 @@
   width: 100%;
 }
 
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle {
-  background: rgba(241, 245, 249, 0.76);
-  border-color: rgba(15, 23, 42, 0.12);
-}
-
 :root[data-theme='light'] .cinematic-shell .library-page .library-sort-control select {
   background: rgba(255, 255, 255, 0.82);
   border-color: rgba(15, 23, 42, 0.14);
   color: #1e293b;
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle button.active {
-  background: rgba(0, 103, 192, 0.12);
-  box-shadow: inset 0 -2px 0 #0067c0;
-  color: #0f2942;
 }
 
 :root[data-theme='light'] .cinematic-shell .library-page .library-sidebar-nav-btn {
@@ -5248,26 +5175,6 @@
 :root[data-theme='light'] .cinematic-shell .library-page .library-sort-control select option {
   background: var(--color-bg-elevated);
   color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle {
-  background: var(--surface-3);
-  border-color: var(--surface-border);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle button {
-  color: var(--color-text-secondary);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle button:hover {
-  background: var(--color-control-hover);
-  color: var(--color-text);
-}
-
-:root[data-theme='light'] .cinematic-shell .library-page .library-density-toggle button.active {
-  background: var(--color-control);
-  box-shadow: inset 0 -2px 0 var(--color-primary), var(--shadow-control);
-  color: var(--color-primary-dark);
 }
 
 :root[data-theme='light'] .cinematic-shell .library-page .library-folder-group-label,

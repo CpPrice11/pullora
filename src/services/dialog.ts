@@ -1,11 +1,7 @@
 // Tauri dialog plugin wrapper — falls back gracefully in browser
-let dialogApi: typeof import('@tauri-apps/plugin-dialog') | null = null
-
 async function getDialogApi() {
-  if (dialogApi) return dialogApi
   try {
-    dialogApi = await import('@tauri-apps/plugin-dialog')
-    return dialogApi
+    return await import('@tauri-apps/plugin-dialog')
   } catch {
     return null
   }

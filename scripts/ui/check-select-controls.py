@@ -69,28 +69,13 @@ with sync_playwright() as playwright:
             search.fill("")
             page.wait_for_function("document.querySelectorAll('.repo-card').length >= 2")
 
-            density_toggle = page.locator(".library-density-toggle button")
-            assert density_toggle.count() == 1
-            assert density_toggle.get_attribute("role") == "switch"
-            assert density_toggle.get_attribute("aria-checked") == "false"
-            density_toggle.click()
-            page.locator(".library-page.library-density-compact").wait_for()
-            assert density_toggle.get_attribute("aria-checked") == "true"
-            page.wait_for_timeout(200)
-            assert page.evaluate(
-                "JSON.parse(localStorage.getItem('pullora-library-view-v1')).density"
-            ) == "compact"
-            search.focus()
-            page.keyboard.press("Tab")
-            assert density_toggle.evaluate("el => el === document.activeElement")
-            assert density_toggle.evaluate("el => el.matches(':focus-visible')")
-            density_toggle.press("Space")
-            page.locator(".library-page.library-density-normal").wait_for()
-            assert density_toggle.get_attribute("aria-checked") == "false"
-            page.wait_for_timeout(200)
-            assert page.evaluate(
-                "JSON.parse(localStorage.getItem('pullora-library-view-v1')).density"
-            ) == "normal"
+            views = page.locator(".library-view-toggle button")
+            assert views.count() == 2
+            assert views.first.get_attribute("aria-pressed") == "true"
+            views.nth(1).click()
+            assert views.nth(1).get_attribute("aria-pressed") == "true"
+            views.first.click()
+
 
             page.get_by_role("button", name="Налаштування").click()
             page.get_by_role("heading", name="Налаштування").wait_for()

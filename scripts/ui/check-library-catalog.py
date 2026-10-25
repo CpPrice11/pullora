@@ -71,7 +71,7 @@ def interactions(page):
     title.click()
     details = page.locator(".library-catalog-details")
     details.wait_for()
-    assert details.locator(".library-hero").is_visible()
+    details.locator(".library-hero").wait_for()
     details.locator(".library-catalog-details-toolbar button").click()
     assert title.evaluate("el => el === document.activeElement")
     title.click()

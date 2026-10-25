@@ -339,7 +339,7 @@ try {
   assert.deepEqual([...LIBRARY_DENSITIES], ['normal', 'compact'])
 
   const densityStyles = readFileSync('src/styles/features/LibraryDensity.css', 'utf8')
-  assert.equal((densityStyles.match(/library-density-compact/g) ?? []).length, 1)
+  assert.doesNotMatch(densityStyles, /library-density-compact/)
   for (const legacyStylesPath of ['src/pages/PageStyles.css', 'src/styles/Cinematic.css']) {
     assert.doesNotMatch(readFileSync(legacyStylesPath, 'utf8'), /library-density-compact/)
   }

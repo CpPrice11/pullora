@@ -101,7 +101,7 @@
   padding: var(--catalog-card-padding);
 }
 
-.cinematic-shell .library-page.library-catalog .library-toolstrip :is(.search-input, .library-refresh-btn, .library-sidebar-nav-btn, .library-density-toggle button, .library-sort-control select) {
+.cinematic-shell .library-page.library-catalog .library-toolstrip :is(.search-input, .library-refresh-btn, .library-sidebar-nav-btn, .library-sort-control select) {
   height: var(--catalog-control-height);
   min-height: var(--catalog-control-height);
 }

@@ -257,6 +257,16 @@ def open_library(page: Page, *, details: bool = False) -> None:
         open_details(page)
 
 
+def open_versions(page: Page):
+    trigger = page.locator('.repo-card.selected .repo-more-action').first
+    trigger.scroll_into_view_if_needed()
+    page.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+    trigger.click()
+    page.locator('.repo-context-menu').get_by_role('menuitem', name='Версії', exact=True).click()
+    page.locator('.release-modal--wizard').wait_for()
+    return trigger
+
+
 def open_details(page: Page) -> None:
     if not page.locator('.library-catalog-details').is_visible():
         page.locator('.repo-card.selected .repo-name button').click()

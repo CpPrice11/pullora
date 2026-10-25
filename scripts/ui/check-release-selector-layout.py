@@ -367,6 +367,11 @@ def install_pending_download_mock(page: Page) -> None:
             runCallback,
             convertFileSrc(path) { return path },
             async invoke(command, args = {}) {
+              if (command === 'get_installation_architecture') return 'x64';
+              if (command === 'plan_release_installation') return {requiredFormat:null,allowedAssetNames:['Pullora_v1.0.0_portable_x64.exe','Pullora_v1.0.0_setup_x64.exe'],recommendedAssetName:'Pullora_v1.0.0_portable_x64.exe'};
+              if (command === 'get_installation_snapshot') return {installedApps:[],discoveredApps:[],health:[]};
+              if (['get_app_runtime_states','discover_installed_apps','list_default_project_icons'].includes(command)) return [];
+
               if (command === 'plugin:event|listen') {
                 const eventListeners = listeners.get(args.event) ?? []
                 eventListeners.push(args.handler)
@@ -444,8 +449,7 @@ def check_active_download_close_guard(page: Page, baseline) -> None:
     baseline.seed_cache(page)
     baseline.open_library(page)
 
-    trigger = page.locator(".library-ops-action-row .hero-primary-btn")
-    trigger.click()
+    trigger = baseline.open_versions(page)
     modal = page.locator(".release-modal--wizard")
     modal.wait_for()
     for _ in range(3):
@@ -473,7 +477,7 @@ def check_install_path_prevalidation(page: Page, baseline) -> None:
     baseline.open_library(page)
     page.evaluate("window.__PULLORA_TEST_INSTALL_PATH_VALIDATION_PENDING__ = true")
 
-    page.locator(".library-ops-action-row .hero-primary-btn").click()
+    baseline.open_versions(page)
     modal = page.locator(".release-modal--wizard")
     modal.wait_for()
     modal.locator(".release-nav-actions .release-action-primary").click()
@@ -505,8 +509,7 @@ def check_install_path_prevalidation(page: Page, baseline) -> None:
 def check_context(page: Page, theme: str, width: int, height: int, baseline) -> dict:
     baseline.seed_cache(page)
     baseline.open_library(page)
-    trigger = page.locator(".library-ops-action-row .hero-primary-btn")
-    trigger.click()
+    trigger = baseline.open_versions(page)
     page.locator(".release-modal--wizard").wait_for()
     geometry = inspect_dialog(page, width, height)
     check_step_navigation(
@@ -520,7 +523,7 @@ def check_context(page: Page, theme: str, width: int, height: int, baseline) -> 
     page.locator(".release-modal").wait_for(state="hidden")
     assert trigger.evaluate("el => el === document.activeElement")
 
-    trigger.click()
+    baseline.open_versions(page)
     page.locator(".release-modal--wizard").wait_for()
     page.locator(".modal-overlay").evaluate("el => el.click()")
     page.locator(".release-modal").wait_for(state="hidden")
