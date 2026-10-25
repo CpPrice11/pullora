@@ -21,7 +21,7 @@ function menuItems(menu: HTMLElement) {
 }
 
 export function focusFirstMenuItem(menu: HTMLElement | null) {
-  menu && menuItems(menu)[0]?.focus()
+  menu && menuItems(menu)[0]?.focus({ preventScroll: true })
 }
 
 export function handleMenuKeyboard(

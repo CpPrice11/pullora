@@ -30,13 +30,17 @@ export function classifyReleaseAsset(asset: GitHubAsset): ReleaseAssetKind {
   if (sourceArchiveNames.some((sourceName) => name.includes(sourceName))) {
     return 'unsupported'
   }
+  if (!/\.(exe|msi|zip)$/.test(name) ||
+      /(^|[^a-z0-9])(linux|darwin|mac|macos|osx|android|symbols|debug|pdb|delta|nupkg|update|updater|src|sources?)([^a-z0-9]|$)/i.test(name)) {
+    return 'unsupported'
+  }
 
   const isInstaller =
     name.includes('setup') ||
     name.includes('installer') ||
     name.endsWith('.msi')
 
-  if (isInstaller) return 'installer'
+  if (isInstaller) return /\.(exe|msi)$/.test(name) ? 'installer' : 'unsupported'
 
   if (name.includes('portable')) {
     return 'portable'
@@ -61,6 +65,7 @@ export function classifyReleaseAssetArchitecture(asset: GitHubAsset): ReleaseAss
 
 export function classifyReleaseAssetCompatibility(
   asset: GitHubAsset,
+  target: ReleaseAssetArchitecture = 'x64',
 ): ReleaseAssetCompatibility {
   const kind = classifyReleaseAsset(asset)
   const architecture = classifyReleaseAssetArchitecture(asset)
@@ -68,25 +73,12 @@ export function classifyReleaseAssetCompatibility(
   return {
     kind,
     architecture,
-    compatible: kind !== 'unsupported',
+    compatible: kind !== 'unsupported' && ['unknown', 'universal', target].includes(architecture),
   }
 }
 
 export function isInstallableReleaseAsset(asset: GitHubAsset) {
   return classifyReleaseAssetCompatibility(asset).compatible
-}
-
-export function pickPortableReleaseAsset(assets: GitHubAsset[]) {
-  const rank = (asset: GitHubAsset) => {
-    const kind = classifyReleaseAsset(asset)
-    if (kind === 'portable') return asset.name.toLowerCase().includes('portable') ? 0 : 1
-    if (kind === 'archive') return 2
-    return 3
-  }
-
-  return [...assets]
-    .sort((left, right) => rank(left) - rank(right) || left.name.localeCompare(right.name))
-    .find((asset) => rank(asset) < 3) ?? null
 }
 
 export function releaseAssetKindLabelKey(kind: ReleaseAssetKind) {

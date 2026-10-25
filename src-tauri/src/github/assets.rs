@@ -19,6 +19,23 @@ impl InstallAssetKind {
 
 const SOURCE_ARCHIVE_NAMES: [&str; 3] = ["source code", "source-code", "source_code"];
 
+pub(crate) fn normalize_sha256(value: &str) -> Result<String, String> {
+    let value = value.trim();
+    if value.len() != 64 || !value.bytes().all(|c| c.is_ascii_hexdigit()) {
+        return Err(command_error("errors.appChecksumInvalid"));
+    }
+    Ok(value.to_ascii_lowercase())
+}
+
+pub(crate) fn checksum_entry(line: &str) -> Option<(&str, &str)> {
+    if let Some(rest) = line.strip_prefix("SHA256 (") {
+        rest.rsplit_once(") = ")
+    } else {
+        line.split_once(char::is_whitespace)
+            .map(|(hash, name)| (name.trim_start().trim_start_matches('*'), hash))
+    }
+}
+
 pub fn validate_release_asset_url(url: &str, owner: &str, repo: &str) -> Result<(), String> {
     let parsed = reqwest::Url::parse(url).map_err(|_| command_error("errors.invalidUrl"))?;
     let segments = parsed
@@ -64,6 +81,21 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
     if name.is_empty() {
         return None;
     }
+    if ![".exe", ".msi", ".zip"]
+        .iter()
+        .any(|ext| name.ends_with(ext))
+        || name
+            .split(|c: char| !c.is_ascii_alphanumeric())
+            .any(|part| {
+                [
+                    "linux", "darwin", "mac", "macos", "osx", "android", "symbols", "debug", "pdb",
+                    "delta", "nupkg", "update", "updater", "src", "source", "sources",
+                ]
+                .contains(&part)
+            })
+    {
+        return None;
+    }
 
     if SOURCE_ARCHIVE_NAMES
         .iter()
@@ -75,7 +107,8 @@ pub fn classify_install_asset_name(file_name: &str) -> Option<InstallAssetKind> 
     let is_installer =
         name.contains("setup") || name.contains("installer") || name.ends_with(".msi");
     if is_installer {
-        return Some(InstallAssetKind::Installer);
+        return (name.ends_with(".exe") || name.ends_with(".msi"))
+            .then_some(InstallAssetKind::Installer);
     }
 
     if name.contains("portable") {
@@ -99,6 +132,20 @@ mod tests {
         classify_install_asset_name, validate_release_asset_url,
         validate_versioned_release_asset_url, InstallAssetKind,
     };
+
+    #[test]
+    fn rejects_partial_foreign_and_metadata_packages() {
+        for name in [
+            "RecycleDesk-windows-x64-update.zip",
+            "app-portable.exe.sha256",
+            "app-linux.zip",
+            "app-macos-portable.zip",
+            "app-setup.zip",
+            "app-src.zip",
+        ] {
+            assert_eq!(classify_install_asset_name(name), None, "{name}");
+        }
+    }
 
     #[test]
     fn classifies_supported_windows_assets() {

@@ -57,7 +57,7 @@ jobs:
 
       - name: Verify rendered component contrast
         shell: pwsh
-        run: ./scripts/check-rendered-contrast.ps1
+        run: ./scripts/ui/check-rendered-contrast.ps1
 
       - name: Check Rust
         working-directory: src-tauri

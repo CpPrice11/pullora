@@ -12,6 +12,8 @@ pub struct FavoriteApp {
     pub display_name: String,
     pub description: Option<String>,
     pub last_checked: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub website_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,7 +50,11 @@ fn save_store(config_dir: &Path, store: &FavoritesStore) -> Result<(), StorageEr
 }
 
 pub fn list_favorites(config_dir: &Path) -> Result<Vec<FavoriteApp>, StorageError> {
-    let store = load_store(config_dir)?;
+    let mut store = load_store(config_dir)?;
+    for app in &mut store.favorites {
+        app.website_url =
+            crate::github::models::website_url(&app.owner, &app.repo).map(str::to_owned);
+    }
     Ok(store.favorites)
 }
 

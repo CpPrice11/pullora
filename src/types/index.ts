@@ -11,6 +11,8 @@ export interface GitHubSearchResult {
   stargazers_count: number
   updated_at: string
   html_url: string
+  homepage?: string | null
+  website_url?: string | null
   language: string | null
   topics: string[] | null
   has_releases: boolean
@@ -44,6 +46,7 @@ export interface GitHubAsset {
   size: number
   content_type: string
   download_count: number
+  digest?: string | null
 }
 
 export interface GitHubRateLimitBucket {
@@ -78,7 +81,7 @@ export interface AppAppearanceSettings {
 
 export interface InstallPathValidation {
   ok: boolean
-  status: 'ok' | 'missing' | 'unsafe' | 'inaccessible' | 'noWritePermission' | 'busy'
+  status: 'ok' | 'elevationRequired' | 'missing' | 'unsafe' | 'inaccessible' | 'noWritePermission' | 'busy'
 }
 
 // Installed app types
@@ -101,6 +104,33 @@ export interface InstalledApp {
   lastLaunchedAt?: string | null
 }
 
+export interface AppRuntimeState {
+  owner: string
+  repo: string
+  running: boolean
+  uncertain: boolean
+}
+
+export interface DetectedInstallation {
+  owner: string
+  repo: string
+  version: string
+  executablePath: string
+  installDir: string
+}
+
+export type InstallationStatus = 'ready' | 'missing' | 'unavailable'
+export interface InstallationSnapshot {
+  installedApps: InstalledApp[]
+  discoveredApps: DetectedInstallation[]
+  health: { owner: string; repo: string; status: InstallationStatus }[]
+}
+export interface InstallationPlan {
+  allowedAssetNames: string[]
+  recommendedAssetName: string | null
+  requiredFormat: 'portable' | 'archive' | 'installer' | null
+}
+
 export interface InstalledAppHealth {
   ok: boolean
   status: 'ready' | 'missingExecutable' | 'needsRepair'
@@ -114,6 +144,7 @@ export interface FavoriteApp {
   displayName: string
   description?: string
   lastChecked?: string
+  websiteUrl?: string | null
 }
 
 export interface LibraryFolder {
@@ -162,6 +193,7 @@ export type DownloadStage =
   | 'failed'
 
 export interface DownloadProgress {
+  checksumStatus?: 'pending' | 'verified' | 'unavailable' | 'failed' | null
   id: string
   fileName: string
   progress: number

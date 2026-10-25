@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { GitHubSearchResult, InstalledApp } from '../../../types'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { GitHubSearchResult, InstalledApp, DetectedInstallation, AppRuntimeState, InstallationSnapshot } from '../../../types'
 import { getReleases } from '../../../services/github'
-import { getInstalledApps } from '../../../services/installed'
+import { getInstallationSnapshot, getAppRuntimeStates } from '../../../services/installed'
 import { projectArtKey } from '../../../services/projectArt'
 
 interface LibraryStatusState {
@@ -64,6 +64,37 @@ function writeCachedLatestVersion(key: string, latestVersion: string | null) {
 }
 
 export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
+  const [runtimeStates, setRuntimeStates] = useState<AppRuntimeState[]>([])
+  const [runtimeError, setRuntimeError] = useState<string | null>(null)
+  const [discoveredApps, setDiscoveredApps] = useState<DetectedInstallation[]>([])
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null)
+  const [installationHealth, setInstallationHealth] = useState<InstallationSnapshot['health']>([])
+  const localRefreshRef = useRef<Promise<InstalledApp[]> | null>(null)
+
+  const refreshRuntime = useCallback(async () => {
+    try { setRuntimeStates(await getAppRuntimeStates()); setRuntimeError(null) }
+    catch (error) { setRuntimeError(error instanceof Error ? error.message : String(error)) }
+  }, [])
+  useEffect(() => {
+    let active = true
+    let pending = false
+    let timer: number | undefined
+    const poll = async () => {
+      if (!active || pending || document.hidden) return
+      window.clearTimeout(timer)
+      pending = true
+      await refreshRuntime()
+      pending = false
+      if (active && !document.hidden) timer = window.setTimeout(poll, 3000)
+    }
+    const wake = () => { window.clearTimeout(timer); void poll() }
+    void poll()
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('focus', wake)
+    return () => { active = false; window.clearTimeout(timer); document.removeEventListener('visibilitychange', wake); window.removeEventListener('focus', wake) }
+  }, [refreshRuntime])
+  const runtimeByRepo = useMemo(() => new Map(runtimeStates.filter((app) => app.running || app.uncertain)
+    .map((app) => [projectArtKey(app.owner, app.repo), app.uncertain ? 'unknown' as const : 'running' as const])), [runtimeStates])
   const [state, setState] = useState<LibraryStatusState>({
     installedApps: [],
     latestVersions: new Map(),
@@ -79,24 +110,44 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     )
   }, [state.installedApps])
 
-  const refreshInstalledApps = useCallback(async () => {
-    try {
-      const apps = await getInstalledApps()
-      setState((prev) => ({ ...prev, installedApps: apps, installedLoadError: null }))
-      return apps
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        installedApps: [],
-        installedLoadError: err instanceof Error ? err.message : 'Failed to load installed apps',
-      }))
+  const refreshInstalledApps = useCallback((): Promise<InstalledApp[]> => {
+    if (localRefreshRef.current) return localRefreshRef.current
+    const pending = getInstallationSnapshot().then((snapshot) => {
+      setState((prev) => ({ ...prev, installedApps: snapshot.installedApps, installedLoadError: null }))
+      setDiscoveredApps(snapshot.discoveredApps)
+      setInstallationHealth(snapshot.health)
+      setDiscoveryError(null)
+      return snapshot.installedApps
+    }).catch((error) => {
+      const message = error instanceof Error ? error.message : String(error)
+      setDiscoveryError(message)
+      // A failed scan must not erase library records or replace them with an empty list.
       return []
-    }
+    }).finally(() => { localRefreshRef.current = null })
+    localRefreshRef.current = pending
+    return pending
   }, [])
 
   useEffect(() => {
-    refreshInstalledApps()
+    let active = true
+    let scanning = false
+    let timer: number | undefined
+    const scan = async () => {
+      window.clearTimeout(timer)
+      if (!active || document.hidden || scanning) return
+      scanning = true
+      await refreshInstalledApps()
+      scanning = false
+      if (active && !document.hidden) timer = window.setTimeout(scan, 30000)
+    }
+    const wake = () => { void scan() }
+    void scan()
+    window.addEventListener('focus', wake)
+    document.addEventListener('visibilitychange', wake)
+    return () => { active = false; window.clearTimeout(timer); window.removeEventListener('focus', wake); document.removeEventListener('visibilitychange', wake) }
   }, [refreshInstalledApps])
+
+  const healthByRepo = useMemo(() => new Map(installationHealth.map((app) => [projectArtKey(app.owner, app.repo), app.status])), [installationHealth])
 
   const refreshLatestVersions = useCallback(async (
     apps: InstalledApp[] = state.installedApps,
@@ -159,16 +210,18 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
   }, [state.installedApps])
 
   const getInstalledApp = useCallback(
-    (repo: GitHubSearchResult) => installedByRepo.get(projectArtKey(repo.owner.login, repo.name)),
+    (repo: GitHubSearchResult) => repo.website_url ? undefined : installedByRepo.get(projectArtKey(repo.owner.login, repo.name)),
     [installedByRepo],
   )
 
   const getLatestVersion = useCallback(
-    (repo: GitHubSearchResult) => state.latestVersions.get(projectArtKey(repo.owner.login, repo.name)),
+    (repo: GitHubSearchResult) => repo.website_url ? undefined : state.latestVersions.get(projectArtKey(repo.owner.login, repo.name)),
     [state.latestVersions],
   )
 
   return {
+    discoveredApps, discoveryError, refreshDiscovered: refreshInstalledApps, healthByRepo,
+    runtimeByRepo, runtimeError, refreshRuntime,
     installedApps: state.installedApps,
     latestVersions: state.latestVersions,
     checkingUpdates: state.checkingUpdates,

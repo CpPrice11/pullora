@@ -1,5 +1,5 @@
 import { useI18n } from '../../../i18n'
-import type { GitHubSearchResult, InstalledApp } from '../../../types'
+import type { GitHubSearchResult, InstalledApp, InstallationStatus } from '../../../types'
 import { formatDate } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
 import ApplicationDetails from './ApplicationDetails'
@@ -8,9 +8,11 @@ import VersionPanel from './VersionPanel'
 interface LibraryOperationsPanelProps {
   repo: GitHubSearchResult
   installedApp?: InstalledApp
+  installationHealth?: InstallationStatus
   latestVersion?: string | null
   installationPath?: string | null
   updating?: boolean
+  runtimeStatus?: 'running' | 'unknown'
   onInstall: () => void
   onUpdate: () => void
   onLaunch: () => void
@@ -22,6 +24,8 @@ export default function LibraryOperationsPanel({
   latestVersion,
   installationPath,
   updating = false,
+  runtimeStatus,
+  installationHealth,
   onInstall,
   onUpdate,
   onLaunch,
@@ -29,7 +33,7 @@ export default function LibraryOperationsPanel({
   const { language, t } = useI18n()
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
-  const actionBusy = hasUpdate && updating
+  const actionBusy = !repo.website_url && (updating || Boolean(runtimeStatus) || installationHealth === 'unavailable')
   const updatedDate = formatDate(repo.updated_at, language)
   const installPath = installationPath && installedApp
     ? `${installationPath}\\${installedApp.owner}-${installedApp.repo}`
@@ -44,7 +48,7 @@ export default function LibraryOperationsPanel({
             <h3>{t('library.ops.title')}</h3>
           </div>
           <span className={`library-ops-state ${status}`}>
-            {t(`repo.${status}`)}
+            {t(repo.website_url ? 'repo.webApp' : `repo.${status}`)}
           </span>
         </div>
 
@@ -52,13 +56,13 @@ export default function LibraryOperationsPanel({
           <button
             type="button"
             className="hero-primary-btn"
-            onClick={hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
+            onClick={repo.website_url ? onInstall : installationHealth === 'missing' ? onInstall : hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
             disabled={actionBusy}
-            aria-busy={actionBusy}
+            aria-busy={updating}
           >
-            {actionBusy
+            {repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : actionBusy
               ? t('updates.updatingAll')
-              : hasUpdate
+              : installationHealth === 'missing' ? t('repo.reinstall') : hasUpdate
                 ? t('repo.updateAction')
                 : installedApp
                   ? t('repo.launch')
@@ -68,10 +72,10 @@ export default function LibraryOperationsPanel({
             <span>{t('library.ops.updated')}</span>
             <strong>{updatedDate}</strong>
           </div>
-          <div className="library-play-status">
+          {!repo.website_url && <div className="library-play-status">
             <span>{t('library.ops.active')}</span>
             <strong>{installedApp?.activeVersion ?? t('library.ops.notInstalled')}</strong>
-          </div>
+          </div>}
           <div className="library-play-status">
             <span>{t('library.ops.language')}</span>
             <strong>{repo.language ?? t('details.unknown')}</strong>
@@ -80,11 +84,11 @@ export default function LibraryOperationsPanel({
       </section>
 
       <div className="library-inline-overview-grid">
-        <VersionPanel
+        {!repo.website_url && <VersionPanel
           repoName={repo.name}
           installedApp={installedApp}
           latestVersion={latestVersion}
-        />
+        />}
         <ApplicationDetails
           repo={repo}
           updatedDate={updatedDate}

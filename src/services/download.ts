@@ -1,5 +1,14 @@
 import { callTauri } from './tauri'
-import type { DownloadProgress } from '../types'
+import type { DownloadProgress, InstallationPlan } from '../types'
+import type { ReleaseAssetArchitecture } from '../features/library/releaseAssetClassifier'
+
+export async function getInstallationArchitecture(): Promise<ReleaseAssetArchitecture> {
+  return callTauri<ReleaseAssetArchitecture>('get_installation_architecture')
+}
+
+export async function planReleaseInstallation(owner: string, repo: string, tag: string): Promise<InstallationPlan> {
+  return callTauri('plan_release_installation', { owner, repo, tag })
+}
 
 export async function startDownload(
   url: string,

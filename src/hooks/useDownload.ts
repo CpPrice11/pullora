@@ -53,7 +53,11 @@ export function useDownload() {
       size: number,
       preferExistingInstall = false,
     ): Promise<string> => {
-      return startDownload(url, fileName, owner, repo, tag, size, preferExistingInstall)
+      const id = await startDownload(url, fileName, owner, repo, tag, size, preferExistingInstall)
+      // The initial progress event may arrive before this listener is attached.
+      // Preserve events received while the snapshot request was in flight.
+      await getDownloads().then((items) => setDownloads((previous) => mergeDownloads(items, previous))).catch(() => {})
+      return id
     },
     [],
   )

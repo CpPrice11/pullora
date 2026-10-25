@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use super::models::{OwnerRepositoriesResponse, Release};
 
-const CACHE_VERSION: u32 = 1;
+const CACHE_VERSION: u32 = 2;
 const CACHE_RETENTION_DAYS: i64 = 7;
 const MAX_CACHE_ENTRIES: usize = 250;
 
@@ -161,6 +161,13 @@ impl ApiCache {
         let content = std::fs::read_to_string(path).ok()?;
         match serde_json::from_str::<PersistentApiCache>(&content) {
             Ok(cache) if cache.version == CACHE_VERSION => Some(cache),
+            Ok(mut cache) if cache.version == 1 => {
+                // Old serialized assets discarded GitHub digests. Their ETags
+                // must not turn a 304 into a false "no checksum published".
+                cache.releases.clear();
+                cache.version = CACHE_VERSION;
+                Some(cache)
+            }
             _ => {
                 let _ = std::fs::remove_file(path);
                 None
@@ -226,6 +233,40 @@ fn trim_oldest<T>(entries: &mut HashMap<String, CacheEntry<T>>) {
 #[cfg(test)]
 mod tests {
     use super::ApiCache;
+
+    #[test]
+    fn old_cache_keeps_catalog_but_refreshes_digest_metadata() {
+        let path = std::env::temp_dir().join(format!(
+            "pullora-cache-migrate-{}.json",
+            uuid::Uuid::new_v4()
+        ));
+        let mut cache = ApiCache::load(path.clone());
+        cache.set_owner_repositories(
+            "owner:cpprice11:1:false".into(),
+            crate::github::models::OwnerRepositoriesResponse {
+                items: vec![],
+                page: 1,
+                has_more: false,
+            },
+            Some("catalog-etag".into()),
+        );
+        cache.set_releases(
+            "releases:owner/repo".into(),
+            vec![],
+            Some("old-etag".into()),
+        );
+        let mut json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        json["version"] = 1.into();
+        std::fs::write(&path, serde_json::to_vec(&json).unwrap()).unwrap();
+        let mut reloaded = ApiCache::load(path.clone());
+        assert!(reloaded.get_releases("releases:owner/repo").is_none());
+        assert!(reloaded.get_releases_etag("releases:owner/repo").is_none());
+        assert!(reloaded
+            .get_owner_repositories("owner:cpprice11:1:false")
+            .is_some());
+        reloaded.clear();
+    }
 
     #[test]
     fn persists_release_data_and_etag_between_instances() {

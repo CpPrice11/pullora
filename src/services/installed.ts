@@ -1,5 +1,21 @@
 import { callTauri } from './tauri'
-import type { InstalledApp } from '../types'
+import type { AppRuntimeState, DetectedInstallation, InstalledApp, InstallationSnapshot } from '../types'
+
+export async function getInstallationSnapshot(): Promise<InstallationSnapshot> {
+  return callTauri('get_installation_snapshot')
+}
+
+export async function getAppRuntimeStates(): Promise<AppRuntimeState[]> {
+  return callTauri('get_app_runtime_states')
+}
+
+export async function discoverInstalledApps(): Promise<DetectedInstallation[]> {
+  return callTauri('discover_installed_apps')
+}
+
+export async function adoptInstalledApp(app: DetectedInstallation): Promise<void> {
+  return callTauri('adopt_installed_app', { owner: app.owner, repo: app.repo, executablePath: app.executablePath })
+}
 
 export async function getInstalledApps(): Promise<InstalledApp[]> {
   return callTauri<InstalledApp[]>('get_installed_apps')

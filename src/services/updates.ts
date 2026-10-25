@@ -28,6 +28,22 @@ export async function openExternalUrl(url: string): Promise<void> {
   return callTauri('open_external_url', { url })
 }
 
+export function projectWebsiteUrl(value?: string | null): string | null {
+  if (!value || value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) return null
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname && !url.username && !url.password && !url.port
+      ? url.href
+      : null
+  } catch {
+    return null
+  }
+}
+
+export async function openWebsiteUrl(url: string): Promise<void> {
+  return callTauri('open_website_url', { url })
+}
+
 export async function getLauncherStorageInfo(): Promise<LauncherStorageInfo> {
   return callTauri<LauncherStorageInfo>('get_launcher_storage_info')
 }

@@ -27,6 +27,7 @@ pub async fn add_to_favorites(
         display_name,
         description,
         last_checked: None,
+        website_url: None,
     };
     add_favorite(&config_dir, app).map_err(|e| e.to_string())
 }

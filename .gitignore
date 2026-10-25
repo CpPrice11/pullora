@@ -56,3 +56,7 @@ __pycache__/
 
 # Generated visual regression captures (keep the parity contract itself in Git)
 /docs/visual-baseline/design-contract/*.png
+
+# Local project memory and generated review artifacts
+/.codex/
+/.artifacts/

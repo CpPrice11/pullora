@@ -127,6 +127,54 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+fn validate_website_url(url: &str) -> Result<reqwest::Url, String> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| command_error("errors.invalidUrl"))?;
+    if url.len() > 2048
+        || url.chars().any(|ch| ch.is_control() || ch.is_whitespace())
+        || parsed.scheme() != "https"
+        || parsed.host_str().is_none()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.port_or_known_default() != Some(443)
+    {
+        return Err(command_error("errors.invalidUrl"));
+    }
+    Ok(parsed)
+}
+
+#[tauri::command]
+pub async fn open_website_url(url: String) -> Result<(), String> {
+    let parsed = validate_website_url(&url)?;
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::UI::Shell::ShellExecuteW;
+        use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+        let wide_url: Vec<u16> = std::ffi::OsStr::new(parsed.as_str())
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+        let verb: Vec<u16> = "open\0".encode_utf16().collect();
+        let result = unsafe {
+            ShellExecuteW(
+                std::ptr::null_mut(),
+                verb.as_ptr(),
+                wide_url.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                SW_SHOWNORMAL,
+            )
+        };
+        if result as isize <= 32 {
+            return Err(command_error("errors.commandFailed"));
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    let _ = parsed;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn get_launcher_storage_info() -> Result<LauncherStorageInfo, String> {
     collect_launcher_storage_info()
@@ -270,7 +318,24 @@ fn old_backup_size(path: &std::path::Path) -> Result<u64, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_version;
+    use super::{validate_version, validate_website_url};
+
+    #[test]
+    fn website_links_accept_only_https_without_credentials() {
+        assert!(validate_website_url("https://example.com/app?from=github&lang=uk").is_ok());
+        for url in [
+            "http://example.com",
+            "javascript:alert(1)",
+            "file:///C:/Windows",
+            "https://user:secret@example.com",
+            "https://example.com:8443",
+            "https://example.com/\ninvalid",
+            "",
+            "https://",
+        ] {
+            assert!(validate_website_url(url).is_err(), "accepted {url}");
+        }
+    }
 
     #[test]
     fn launcher_update_accepts_only_a_plain_version() {

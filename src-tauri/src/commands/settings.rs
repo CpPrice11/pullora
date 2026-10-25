@@ -124,6 +124,17 @@ pub fn ensure_installation_path(path: &str) -> InstallPathValidation {
             status: "unsafe".to_string(),
         };
     }
+    if crate::storage::path_scope::is_program_files_apps(&folder) {
+        return InstallPathValidation {
+            ok: !folder.exists() || folder.is_dir(),
+            status: if folder.exists() && !folder.is_dir() {
+                "inaccessible"
+            } else {
+                "elevationRequired"
+            }
+            .into(),
+        };
+    }
     if !folder.exists() {
         if let Err(error) = std::fs::create_dir_all(&folder) {
             return InstallPathValidation {
@@ -224,6 +235,12 @@ fn prepare_installation_path_setting(path: &str) -> Result<String, String> {
     let folder = crate::storage::path_scope::installation_root(&requested)?;
     if is_pullora_service_path(&folder) {
         return Err(command_error("errors.installPathUnsafe"));
+    }
+    if crate::storage::path_scope::is_program_files_apps(&folder) {
+        if folder.exists() && !folder.is_dir() {
+            return Err(command_error("errors.installPathNotDirectory"));
+        }
+        return Ok(folder.display().to_string());
     }
     if folder.exists() {
         if folder.is_dir() {

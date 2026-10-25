@@ -59,11 +59,10 @@ fn is_portable_path(exe_path: &Path) -> bool {
             .is_some_and(|dir| dir.join(".portable").exists())
 }
 
-fn portable_installation_path(exe_dir: &Path) -> PathBuf {
-    exe_dir.join("apps")
-}
-
 fn installed_installation_path() -> PathBuf {
+    #[cfg(windows)]
+    return super::path_scope::program_files_apps();
+    #[cfg(not(windows))]
     dirs::data_local_dir()
         .unwrap_or_else(std::env::temp_dir)
         .join("Pullora")
@@ -71,16 +70,6 @@ fn installed_installation_path() -> PathBuf {
 }
 
 pub fn default_installation_path() -> String {
-    if is_portable() {
-        if let Ok(exe_path) = std::env::current_exe() {
-            if let Some(exe_dir) = exe_path.parent() {
-                return portable_installation_path(exe_dir)
-                    .to_string_lossy()
-                    .to_string();
-            }
-        }
-    }
-
     installed_installation_path().to_string_lossy().to_string()
 }
 
@@ -110,8 +99,9 @@ fn migrate_installation_path(
         return settings;
     }
 
+    let protected = super::path_scope::is_program_files_apps(default_path);
     let path_existed = default_path.exists();
-    if std::fs::create_dir_all(default_path).is_err() || !default_path.is_dir() {
+    if !protected && (std::fs::create_dir_all(default_path).is_err() || !default_path.is_dir()) {
         return settings;
     }
 
@@ -119,7 +109,7 @@ fn migrate_installation_path(
     migrated.installation_path = Some(default_path.display().to_string());
     if let Err(error) = save_settings(config_dir, &migrated) {
         log::error!("Failed to migrate the installation path: {error}");
-        if !path_existed {
+        if !protected && !path_existed {
             let _ = std::fs::remove_dir(default_path);
         }
         return settings;
@@ -203,8 +193,7 @@ fn settings_json(settings: &AppSettings) -> Result<String, StorageError> {
 mod tests {
     use super::{
         default_installation_path, installed_installation_path, is_portable, is_portable_path,
-        migrate_installation_path, portable_installation_path, settings_json,
-        AppAppearanceSettings, AppSettings,
+        migrate_installation_path, settings_json, AppAppearanceSettings, AppSettings,
     };
 
     #[test]
@@ -249,9 +238,11 @@ mod tests {
     }
 
     #[test]
-    fn portable_installations_store_apps_beside_the_executable() {
-        let exe_dir = std::path::Path::new(r"C:\Portable\Pullora");
-        assert_eq!(portable_installation_path(exe_dir), exe_dir.join("apps"));
+    fn portable_and_installed_launchers_share_the_default_apps_folder() {
+        assert_eq!(
+            std::path::PathBuf::from(default_installation_path()),
+            installed_installation_path()
+        );
     }
 
     #[test]

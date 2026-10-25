@@ -90,6 +90,23 @@ fn version_install_dir(
     repo: &str,
     version: &crate::storage::installed::VersionInfo,
 ) -> Result<std::path::PathBuf, String> {
+    if version.install_kind.as_deref() == Some("external") {
+        let executable =
+            crate::storage::discovery::external_executable(owner, repo, &version.executable)?;
+        let dir = executable
+            .parent()
+            .ok_or_else(|| command_error("errors.discoveryInvalid"))?;
+        if version
+            .install_dir
+            .as_deref()
+            .and_then(|p| std::fs::canonicalize(p).ok())
+            .as_deref()
+            != Some(dir)
+        {
+            return Err(command_error("errors.discoveryInvalid"));
+        }
+        return Ok(dir.to_path_buf());
+    }
     let install_root = crate::storage::path_scope::installation_root(install_path)?;
     let roots = [install_root.clone(), get_config_dir()];
     if let Some(path) = version
@@ -99,6 +116,9 @@ fn version_install_dir(
     {
         let path = std::path::Path::new(path);
         if let Ok(path) = crate::storage::path_scope::ensure_within_any(path, &roots, false) {
+            if crate::storage::path_scope::is_program_files_descendant(&path) {
+                return recorded_version_install_dir(&path, owner, repo, &version.tag);
+            }
             return Ok(path);
         }
         return recorded_version_install_dir(path, owner, repo, &version.tag);
@@ -135,7 +155,20 @@ fn recorded_version_install_dir(
     let path = crate::storage::path_scope::ensure_within(path, &root, false)?;
     let expected = installed_app_dir(&root.to_string_lossy(), owner, repo)
         .join(crate::storage::path_scope::safe_component(tag));
-    if path != expected {
+    let expected = crate::storage::path_scope::ensure_within(&expected, &root, false)?;
+    let protected_version = crate::storage::path_scope::is_program_files_descendant(&path)
+        && path.parent() == expected.parent()
+        && path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|name| {
+                name.strip_prefix(&format!(
+                    "{}.install-",
+                    crate::storage::path_scope::safe_component(tag)
+                ))
+                .is_some_and(|id| uuid::Uuid::parse_str(id).is_ok())
+            });
+    if path != expected && !protected_version {
         return Err(command_error("errors.pathOutsideAllowedRoots"));
     }
     Ok(path)
@@ -154,6 +187,13 @@ pub(crate) fn active_installation_root(
         .versions
         .iter()
         .find(|version| version.tag == app.active_version)?;
+    if matches!(
+        version.install_kind.as_deref(),
+        Some("installer" | "external")
+    ) {
+        // This directory stores installer metadata, not the installed program.
+        return None;
+    }
     let path = version.install_dir.as_deref()?.trim();
     if path.is_empty() {
         return None;
@@ -187,6 +227,22 @@ fn version_executable_path(
         version_dir.join(path)
     };
     crate::storage::path_scope::ensure_within(&path, version_dir, false)
+}
+
+fn launch_executable_path(
+    dir: &std::path::Path,
+    owner: &str,
+    repo: &str,
+    version: &crate::storage::installed::VersionInfo,
+) -> Result<std::path::PathBuf, String> {
+    if matches!(
+        version.install_kind.as_deref(),
+        Some("external" | "installer")
+    ) && std::path::Path::new(&version.executable).is_absolute()
+    {
+        return crate::storage::discovery::external_executable(owner, repo, &version.executable);
+    }
+    version_executable_path(dir, &version.executable)
 }
 
 fn is_launchable_exe(path: &std::path::Path) -> bool {
@@ -241,12 +297,101 @@ pub async fn get_installed_apps(_state: State<'_, AppState>) -> Result<Vec<Insta
 }
 
 #[tauri::command]
+pub async fn get_app_runtime_states(
+) -> Result<Vec<crate::storage::running_apps::AppRuntimeState>, String> {
+    tokio::task::spawn_blocking(|| crate::storage::running_apps::inspect(&get_config_dir()))
+        .await
+        .map_err(|_| command_error("errors.appRuntimeUnknown"))?
+}
+
+#[tauri::command]
+pub async fn get_installation_snapshot(
+    state: State<'_, AppState>,
+) -> Result<crate::storage::local_installations::InstallationSnapshot, String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    tokio::task::spawn_blocking(|| crate::storage::local_installations::snapshot(&get_config_dir()))
+        .await
+        .map_err(|_| command_error("errors.discoveryFailed"))?
+}
+
+#[tauri::command]
+pub async fn discover_installed_apps(
+) -> Result<Vec<crate::storage::discovery::DetectedInstallation>, String> {
+    tokio::task::spawn_blocking(|| {
+        let installed =
+            list_installed(&get_config_dir()).map_err(|_| command_error("errors.commandFailed"))?;
+        Ok(crate::storage::discovery::discover()?
+            .into_iter()
+            .filter(|candidate| {
+                !installed.iter().any(|app| {
+                    app.owner.eq_ignore_ascii_case(&candidate.owner)
+                        && app.repo.eq_ignore_ascii_case(&candidate.repo)
+                })
+            })
+            .collect())
+    })
+    .await
+    .map_err(|_| command_error("errors.discoveryFailed"))?
+}
+
+#[tauri::command]
+pub async fn adopt_installed_app(
+    owner: String,
+    repo: String,
+    executable_path: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    state
+        .download_manager
+        .ensure_app_idle(&owner, &repo)
+        .await?;
+    let config = get_config_dir();
+    let snapshot = crate::storage::local_installations::snapshot(&config)?;
+    if !crate::storage::local_installations::can_connect(&snapshot.health, &owner, &repo) {
+        return Err(command_error("errors.discoveryAlreadyAdded"));
+    }
+    let candidate = snapshot
+        .discovered_apps
+        .into_iter()
+        .find(|candidate| {
+            candidate.owner.eq_ignore_ascii_case(&owner)
+                && candidate.repo.eq_ignore_ascii_case(&repo)
+                && candidate
+                    .executable_path
+                    .eq_ignore_ascii_case(&executable_path)
+        })
+        .ok_or_else(|| command_error("errors.discoveryInvalid"))?;
+    crate::storage::installed::add_version(
+        &config,
+        &candidate.owner,
+        &candidate.repo,
+        crate::storage::installed::VersionInfo {
+            tag: candidate.version,
+            installed_at: chrono::Utc::now(),
+            executable: candidate.executable_path,
+            size_bytes: 0,
+            asset_name: None,
+            install_kind: Some("external".into()),
+            install_dir: Some(candidate.install_dir),
+        },
+    )
+    .map_err(|_| command_error("errors.commandFailed"))
+}
+
+#[tauri::command]
 pub async fn switch_version(
     owner: String,
     repo: String,
     tag: String,
-    _state: State<'_, AppState>,
+    state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    state
+        .download_manager
+        .ensure_app_idle(&owner, &repo)
+        .await?;
+    crate::storage::running_apps::ensure_stopped(&get_config_dir(), &owner, &repo)?;
     let config_dir = get_config_dir();
     set_active_version(&config_dir, &owner, &repo, &tag).map_err(|e| e.to_string())
 }
@@ -258,6 +403,12 @@ pub async fn uninstall_version(
     tag: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    state
+        .download_manager
+        .ensure_app_idle(&owner, &repo)
+        .await?;
+    crate::storage::running_apps::ensure_stopped(&get_config_dir(), &owner, &repo)?;
     let config_dir = get_config_dir();
     let settings = state.settings.lock().await;
     let install_path = settings.installation_path.clone().unwrap_or_default();
@@ -273,10 +424,13 @@ pub async fn uninstall_version(
         .iter()
         .find(|item| item.tag == tag)
         .ok_or_else(|| command_error("errors.versionNotFound"))?;
+    if version.install_kind.as_deref() == Some("external") {
+        return remove_version(&config_dir, &owner, &repo, &tag).map_err(|e| e.to_string());
+    }
     let app_dir = version_install_dir(&install_path, &owner, &repo, version)?;
 
     if app_dir.exists() {
-        std::fs::remove_dir_all(&app_dir).map_err(|e| e.to_string())?;
+        crate::storage::protected_files::remove_dir(&app_dir)?;
     }
 
     remove_version(&config_dir, &owner, &repo, &tag).map_err(|e| e.to_string())
@@ -288,6 +442,12 @@ pub async fn uninstall_app(
     repo: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    state
+        .download_manager
+        .ensure_app_idle(&owner, &repo)
+        .await?;
+    crate::storage::running_apps::ensure_stopped(&get_config_dir(), &owner, &repo)?;
     let config_dir = get_config_dir();
     let settings = state.settings.lock().await;
     let install_path = settings.installation_path.clone().unwrap_or_default();
@@ -300,19 +460,30 @@ pub async fn uninstall_app(
     {
         let mut removed_dirs = std::collections::HashSet::new();
         for version in &app.versions {
-            let version_dir = version_install_dir(&install_path, &owner, &repo, version)?;
-            if removed_dirs.insert(version_dir.clone()) && version_dir.exists() {
-                std::fs::remove_dir_all(&version_dir).map_err(|e| e.to_string())?;
+            if version.install_kind.as_deref() == Some("external") {
+                continue;
             }
+            let version_dir = version_install_dir(&install_path, &owner, &repo, version)?;
+            removed_dirs.insert(version_dir);
         }
 
         let legacy_app_dir = installed_app_dir(&install_path, &owner, &repo);
-        if !install_path.trim().is_empty() && legacy_app_dir.exists() {
+        if !removed_dirs.is_empty() && !install_path.trim().is_empty() && legacy_app_dir.exists() {
             let root = crate::storage::path_scope::installation_root(&install_path)?;
             let legacy_app_dir =
                 crate::storage::path_scope::ensure_within(&legacy_app_dir, &root, false)?;
-            std::fs::remove_dir_all(legacy_app_dir).map_err(|e| e.to_string())?;
+            removed_dirs.insert(legacy_app_dir);
         }
+        let roots = removed_dirs
+            .iter()
+            .filter(|path| {
+                !removed_dirs
+                    .iter()
+                    .any(|parent| path != &parent && path.starts_with(parent))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        crate::storage::protected_files::remove_dirs(&roots)?;
     }
 
     remove_app(&config_dir, &owner, &repo).map_err(|e| e.to_string())
@@ -335,7 +506,7 @@ pub async fn validate_installed_app(
         .find(|v| v.tag == app.active_version)
         .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
-    let expected_exe = version_executable_path(&version_dir, &version.executable)?;
+    let expected_exe = launch_executable_path(&version_dir, &owner, &repo, version)?;
     if expected_exe.exists() {
         return Ok(InstalledAppHealth {
             ok: true,
@@ -376,7 +547,7 @@ pub async fn open_installed_app_dir(
                 .iter()
                 .find(|v| v.tag == app.active_version)
                 .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
-            let executable = version_executable_path(&version_dir, &version.executable)?;
+            let executable = launch_executable_path(&version_dir, &owner, &repo, version)?;
             if std::path::PathBuf::from(&version.executable).is_absolute() {
                 executable
                     .parent()
@@ -412,7 +583,44 @@ pub async fn cleanup_incomplete_installs(state: State<'_, AppState>) -> Result<u
     let install_path = settings.installation_path.clone();
     drop(settings);
 
-    let removed = cleanup_incomplete_installs_at(install_path.as_deref(), &get_config_dir())?;
+    let config_dir = get_config_dir();
+    let mut removed = cleanup_incomplete_installs_at(install_path.as_deref(), &config_dir)?;
+    // Protected recovery is explicit: ordinary launcher startup must never ask
+    // for UAC just because a previous copy was interrupted.
+    if let Some(path) = install_path.as_deref() {
+        let root = crate::storage::path_scope::installation_root(path)?;
+        if crate::storage::path_scope::is_program_files_apps(&root) && root.is_dir() {
+            let registered = list_installed(&config_dir)
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .flat_map(|app| app.versions)
+                .filter_map(|v| v.install_dir)
+                .filter_map(|p| std::fs::canonicalize(p).ok())
+                .collect::<std::collections::HashSet<_>>();
+            for app in std::fs::read_dir(&root).map_err(|e| e.to_string())? {
+                let app = app.map_err(|e| e.to_string())?.path();
+                if !crate::storage::path_scope::is_program_files_descendant(&app) || !app.is_dir() {
+                    continue;
+                }
+                for entry in std::fs::read_dir(&app).map_err(|e| e.to_string())? {
+                    let entry = entry.map_err(|e| e.to_string())?;
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    let path = entry.path();
+                    if path.is_dir()
+                        && name
+                            .rsplit_once(".install-")
+                            .is_some_and(|(_, id)| uuid::Uuid::parse_str(id).is_ok())
+                        && crate::storage::path_scope::is_program_files_descendant(&path)
+                        && !registered
+                            .contains(&std::fs::canonicalize(&path).map_err(|e| e.to_string())?)
+                    {
+                        crate::storage::protected_files::remove_dir(&path)?;
+                        removed += 1;
+                    }
+                }
+            }
+        }
+    }
     state.download_manager.clear_failed().await;
     Ok(removed)
 }
@@ -440,6 +648,9 @@ pub fn cleanup_incomplete_installs_at(
 }
 
 fn cleanup_install_root(root: &std::path::Path) -> Result<usize, String> {
+    if crate::storage::path_scope::is_program_files_apps(root) {
+        return Ok(0);
+    }
     if !root.exists() {
         return Ok(0);
     }
@@ -451,6 +662,16 @@ fn cleanup_install_root(root: &std::path::Path) -> Result<usize, String> {
     let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
     for app_entry in entries.flatten() {
         let app_path = app_entry.path();
+        if app_entry
+            .file_name()
+            .to_string_lossy()
+            .strip_prefix(".publish-")
+            .is_some_and(|id| uuid::Uuid::parse_str(id).is_ok())
+        {
+            remove_path(&app_path)?;
+            removed += 1;
+            continue;
+        }
         if !app_entry.file_type().is_ok_and(|kind| kind.is_dir()) {
             continue;
         }
@@ -553,6 +774,12 @@ pub async fn launch_app(
     repo: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let _guard = state.download_manager.operation_lock.lock().await;
+    state
+        .download_manager
+        .ensure_app_idle(&owner, &repo)
+        .await?;
+    crate::storage::running_apps::ensure_stopped(&get_config_dir(), &owner, &repo)?;
     let settings = state.settings.lock().await;
     let install_path = settings.installation_path.clone().unwrap_or_default();
     drop(settings);
@@ -564,7 +791,7 @@ pub async fn launch_app(
         .find(|v| v.tag == app.active_version)
         .ok_or_else(|| command_error("errors.activeVersionNotFound"))?;
 
-    let exe_path = version_executable_path(&version_dir, &version.executable)?;
+    let exe_path = launch_executable_path(&version_dir, &owner, &repo, version)?;
 
     let resolved = if exe_path.exists() {
         exe_path
@@ -580,7 +807,14 @@ pub async fn launch_app(
         })?
     };
 
-    let resolved = crate::storage::path_scope::ensure_within(&resolved, &version_dir, false)?;
+    let resolved = if matches!(
+        version.install_kind.as_deref(),
+        Some("external" | "installer")
+    ) {
+        crate::storage::discovery::external_executable(&owner, &repo, &resolved.to_string_lossy())?
+    } else {
+        crate::storage::path_scope::ensure_within(&resolved, &version_dir, false)?
+    };
     std::process::Command::new(&resolved)
         .current_dir(resolved.parent().unwrap_or(&version_dir))
         .spawn()

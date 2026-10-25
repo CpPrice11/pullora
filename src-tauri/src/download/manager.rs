@@ -37,6 +37,8 @@ pub struct DownloadProgress {
     pub executable_path: Option<String>,
     pub error: Option<String>,
     pub source_url: Option<String>,
+    #[serde(default)]
+    pub checksum_status: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -71,6 +73,7 @@ pub struct DownloadRequest {
     pub repo: String,
     pub tag: String,
     pub asset_size: u64,
+    pub expected_sha256: Option<String>,
 }
 
 struct DownloadTask {
@@ -79,6 +82,9 @@ struct DownloadTask {
 }
 
 pub struct DownloadManager {
+    // ponytail: one mutation lock for this small catalog; split per-app work only
+    // if concurrent copy/launch actions become a practical bottleneck.
+    pub operation_lock: Arc<Mutex<()>>,
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     pending: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
@@ -105,6 +111,7 @@ impl DownloadManager {
             .collect();
 
         Self {
+            operation_lock: Arc::new(Mutex::new(())),
             active: Arc::new(Mutex::new(active)),
             pending: Arc::new(Mutex::new(pending)),
             cancelled: Arc::new(Mutex::new(HashSet::new())),
@@ -124,6 +131,7 @@ impl DownloadManager {
         let cancelled = self.cancelled.clone();
         let download_slots = self.download_slots.clone();
         let recovery_path = self.recovery_path.clone();
+        let operation_lock = self.operation_lock.clone();
         let id = request.id.clone();
 
         let progress = DownloadProgress {
@@ -141,6 +149,14 @@ impl DownloadManager {
             executable_path: None,
             error: None,
             source_url: Some(request.url.clone()),
+            checksum_status: Some(
+                if request.expected_sha256.is_some() {
+                    "pending"
+                } else {
+                    "unavailable"
+                }
+                .into(),
+            ),
         };
 
         {
@@ -188,6 +204,7 @@ impl DownloadManager {
                         task,
                         active_clone.clone(),
                         cancelled_clone.clone(),
+                        operation_lock,
                     )
                     .await
                 }
@@ -236,6 +253,21 @@ impl DownloadManager {
         self.active.lock().await.iter().any(download_is_running)
     }
 
+    pub async fn ensure_app_idle(&self, owner: &str, repo: &str) -> Result<(), String> {
+        if self.active.lock().await.iter().any(|p| {
+            download_is_running(p)
+                && p.owner
+                    .as_deref()
+                    .is_some_and(|v| v.eq_ignore_ascii_case(owner))
+                && p.repo
+                    .as_deref()
+                    .is_some_and(|v| v.eq_ignore_ascii_case(repo))
+        }) {
+            return Err(command_error("errors.installAlreadyRunning"));
+        }
+        Ok(())
+    }
+
     pub async fn cancel(&self, id: &str) {
         let mut list = self.active.lock().await;
         let running = list.iter().any(|progress| {
@@ -279,9 +311,14 @@ fn download_is_running(progress: &DownloadProgress) -> bool {
 
 fn same_install_target(progress: &DownloadProgress, request: &DownloadRequest) -> bool {
     download_is_running(progress)
-        && progress.owner.as_deref() == Some(request.owner.as_str())
-        && progress.repo.as_deref() == Some(request.repo.as_str())
-        && progress.tag.as_deref() == Some(request.tag.as_str())
+        && progress
+            .owner
+            .as_deref()
+            .is_some_and(|owner| owner.eq_ignore_ascii_case(&request.owner))
+        && progress
+            .repo
+            .as_deref()
+            .is_some_and(|repo| repo.eq_ignore_ascii_case(&request.repo))
 }
 
 fn load_pending_downloads(path: &Path) -> Vec<DownloadProgress> {
@@ -386,6 +423,7 @@ async fn download_task(
     task: DownloadTask,
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
+    operation_lock: Arc<Mutex<()>>,
 ) -> Result<(), String> {
     let DownloadTask {
         request:
@@ -398,6 +436,7 @@ async fn download_task(
                 repo,
                 tag,
                 asset_size,
+                expected_sha256,
             },
         install_kind,
     } = task;
@@ -481,6 +520,26 @@ async fn download_task(
     })
     .await;
 
+    if let Some(expected) = expected_sha256 {
+        let path = tmp_path.clone();
+        let verified =
+            tokio::task::spawn_blocking(move || super::checksum::verify_file(&path, &expected))
+                .await
+                .map_err(|_| command_error("errors.appChecksumUnavailable"))?;
+        if let Err(error) = verified {
+            emit_progress(&app, &active, &id, |p| {
+                p.checksum_status = Some("failed".into())
+            })
+            .await;
+            let _ = fs::remove_file(&tmp_path);
+            return Err(error);
+        }
+        emit_progress(&app, &active, &id, |p| {
+            p.checksum_status = Some("verified".into())
+        })
+        .await;
+    }
+
     emit_progress(&app, &active, &id, |p| {
         p.status = DownloadStatus::Extracting;
         p.stage = DownloadStage::Extracting;
@@ -500,12 +559,20 @@ async fn download_task(
     } else {
         final_app_dir
     };
-    let version_name = crate::storage::path_scope::safe_component(&tag);
+    let mut version_name = crate::storage::path_scope::safe_component(&tag);
+    if install_kind != "installer" && crate::storage::path_scope::is_program_files_apps(&dest_dir) {
+        version_name = format!("{version_name}.install-{id}");
+    }
     let version_dir = app_dir.join(&version_name);
     let partial_dir = staging_app_dir.join(format!("{}.partial-{}", version_name, id));
     let backup_dir = app_dir.join(format!("{}.backup-{}", version_name, id));
 
     if install_kind == "installer" {
+        crate::storage::running_apps::ensure_stopped(
+            &crate::storage::get_config_dir(),
+            &owner,
+            &repo,
+        )?;
         cleanup_path(&backup_dir)?;
         if version_dir.exists() {
             retry_file_operation(|| fs::rename(&version_dir, &backup_dir))
@@ -593,6 +660,7 @@ async fn download_task(
         })
         .await;
 
+        let _guard = operation_lock.lock().await;
         let install_record_result = record_installed_version(
             &owner,
             &repo,
@@ -677,6 +745,16 @@ async fn download_task(
     })
     .await;
 
+    let _guard = operation_lock.lock().await;
+    if let Err(error) = crate::storage::running_apps::ensure_stopped(
+        &crate::storage::get_config_dir(),
+        &owner,
+        &repo,
+    ) {
+        let _ = fs::remove_file(&tmp_path);
+        let _ = cleanup_path(&partial_dir);
+        return Err(error);
+    }
     if let Err(error) = install_version_dir(&partial_dir, &version_dir, &backup_dir) {
         let _ = fs::remove_file(&tmp_path);
         let _ = cleanup_path(&partial_dir);
@@ -881,6 +959,10 @@ fn record_installed_version(
     record: InstalledVersionRecord,
 ) -> Result<(), String> {
     let config_dir = crate::storage::get_config_dir();
+    if record.install_kind != "installer" {
+        // The app may have been opened outside Pullora during the copy.
+        crate::storage::running_apps::ensure_stopped(&config_dir, owner, repo)?;
+    }
     record_installed_version_at(&config_dir, owner, repo, record)
 }
 
@@ -1373,6 +1455,9 @@ fn cleanup_path(path: &std::path::Path) -> Result<(), String> {
     if !path.exists() {
         return Ok(());
     }
+    if crate::storage::path_scope::is_program_files_descendant(path) {
+        return crate::storage::protected_files::remove_dir(path);
+    }
 
     let metadata =
         retry_file_operation(|| fs::metadata(path)).map_err(|error| install_io_error(&error))?;
@@ -1483,6 +1568,9 @@ fn install_version_dir(
     version_dir: &std::path::Path,
     backup_dir: &std::path::Path,
 ) -> Result<(), String> {
+    if crate::storage::path_scope::is_program_files_descendant(version_dir) {
+        return crate::storage::protected_files::publish(partial_dir, version_dir);
+    }
     replace_version_dir(partial_dir, version_dir, backup_dir)
 }
 
@@ -1541,6 +1629,7 @@ mod tests {
             executable_path: None,
             error: None,
             source_url: None,
+            checksum_status: None,
         }
     }
 
@@ -1576,6 +1665,7 @@ mod tests {
             repo: "repo".to_string(),
             tag: "v1".to_string(),
             asset_size: 1,
+            expected_sha256: None,
         };
 
         assert!(manager.has_running_downloads().await);
@@ -1731,6 +1821,7 @@ mod tests {
                 "https://github.com/CpPrice11/demo/releases/download/v1.0.0/demo-portable.zip"
                     .to_string(),
             ),
+            checksum_status: None,
         };
         save_pending_downloads(&recovery_path, &[pending]).unwrap();
 

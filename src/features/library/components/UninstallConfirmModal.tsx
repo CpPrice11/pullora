@@ -34,6 +34,10 @@ function UninstallConfirmModal({
   const descriptionId = useId()
   const targetVersion = tag ?? installedApp.activeVersion
   const removesAll = scope === 'app'
+  const targetVersions = removesAll ? installedApp.versions : installedApp.versions.filter((v) => v.tag === targetVersion)
+  const hasExternal = targetVersions.some((v) => v.installKind === 'external')
+  const onlyExternal = targetVersions.length > 0 && targetVersions.every((v) => v.installKind === 'external')
+  const targetDirectory = targetVersions.find((v) => v.tag === targetVersion)?.installDir ?? appPath
 
   useModalFocus(modalRef)
 
@@ -64,7 +68,7 @@ function UninstallConfirmModal({
           <div>
             <span className="uninstall-confirm-kicker">{t('installed.uninstallKicker')}</span>
             <h2 id={titleId}>
-              {t(removesAll ? 'installed.uninstallAppTitle' : 'installed.uninstallVersionTitle', {
+              {t(onlyExternal ? 'installed.disconnectTitle' : removesAll ? 'installed.uninstallAppTitle' : 'installed.uninstallVersionTitle', {
                 name: installedApp.name,
                 version: targetVersion,
               })}
@@ -83,7 +87,7 @@ function UninstallConfirmModal({
 
         <div className="uninstall-confirm-body">
           <p id={descriptionId} className="uninstall-confirm-copy">
-            {t(removesAll ? 'installed.uninstallCopyApp' : 'installed.uninstallCopyVersion')}
+            {t(onlyExternal ? 'installed.disconnectCopy' : removesAll ? 'installed.uninstallCopyApp' : 'installed.uninstallCopyVersion')}
           </p>
 
           <div className="uninstall-confirm-facts">
@@ -103,19 +107,20 @@ function UninstallConfirmModal({
             )}
             <div className="uninstall-confirm-path">
               <span>{t('installed.uninstallFolder')}</span>
-              <strong>{appPath || t('details.unknown')}</strong>
+              <strong>{targetDirectory.replace(/^\\\\\?\\/, '') || t('details.unknown')}</strong>
             </div>
           </div>
 
           <div className="uninstall-confirm-warning">
-            <strong>{t('installed.uninstallRemovesTitle')}</strong>
+            <strong>{t(onlyExternal ? 'installed.externalKeepTitle' : 'installed.uninstallRemovesTitle')}</strong>
             <p>
-              {t(removesAll ? 'installed.uninstallAppRemoves' : 'installed.uninstallVersionRemoves', {
+              {t(onlyExternal ? 'installed.externalKeepCopy' : removesAll ? 'installed.uninstallAppRemoves' : 'installed.uninstallVersionRemoves', {
                 count: installedApp.versions.length,
                 version: targetVersion,
               })}
             </p>
-            {removesAll && <p>{t('installed.uninstallFolderWarning')}</p>}
+            {!onlyExternal && removesAll && <p>{t('installed.uninstallFolderWarning')}</p>}
+            {!onlyExternal && hasExternal && <p>{t('installed.externalKeepCopy')}</p>}
           </div>
 
           {error && <div className="error-message" role="alert">{error}</div>}
@@ -136,7 +141,7 @@ function UninstallConfirmModal({
             >
               {busy
                 ? t('installed.uninstalling')
-                : t(removesAll ? 'installed.uninstallConfirmApp' : 'installed.uninstallConfirmVersion')}
+                : t(onlyExternal ? 'repo.disconnect' : removesAll ? 'installed.uninstallConfirmApp' : 'installed.uninstallConfirmVersion')}
             </button>
           </div>
         </div>

@@ -34,9 +34,15 @@ Pullora показує застосунки `CpPrice11` і працює з їх�
 
 Репозиторій [pullora-assets](https://github.com/CpPrice11/pullora-assets) містить типові іконки та призначений також для скриншотів цих програм. Зараз у ньому є три іконки; справжні скриншоти ще не додані. Джерела й умови використання зображень наведені в [SOURCES.md](https://github.com/CpPrice11/pullora-assets/blob/main/SOURCES.md).
 
-Підключення цього сховища, галерея в подробицях і нові самодостатні картки реалізовані локально та ще не входять до опублікованого `v5.22.1`. Перевірки frontend пройдено; нативна збірка й перевірка встановленого застосунку залишаються перед випуском. Власні зображення зберігатимуть пріоритет над типовими.
+Підключення цього сховища, галерея, самодостатні картки, статус запущених програм, підключення наявних Windows-інсталяцій і перевірка завантажень за GitHub digest реалізовані у розробці та ще не входять до опублікованого `v5.22.1`. Frontend, перевірка типів Rust і тести основних нативних модулів пройдені; повний запуск Tauri, встановлення й UAC залишаються неперевіреними. Власні зображення зберігатимуть пріоритет над типовими.
+
+У версії в розробці також додано встановлення останнього stable portable EXE/повного ZIP одним натисканням із прогресом у картці; setup/MSI лишається запасним варіантом. Стандартна папка нових налаштувань — `C:\Program Files\Pullora\Apps`; збережені вибрані шляхи й старі встановлення не переносяться. UAC передбачений лише для захищених операцій із файлами. Реальна перевірка цього механізму Windows ще не виконана, тому ці зміни також не входять до випущеної версії.
 
 ## Розробка
+
+У версії в розробці є швидкий запуск із системного трея та перемикач подання бібліотеки «Картки / Таблиця» з двома іконками. Він замінює компактний режим і зберігає вибір після перезапуску. Обидва подання використовують спільні пошук, папки, дії та прогрес. Меню трея запускає встановлені застосунки, відкриває Warframe Arsenal, показує або приховує вікно й завершує Pullora; звичайна кнопка закриття діє як раніше. Ці зміни ще не опубліковані.
+
+У версії в розробці оновлення також зберігають тип встановлення: EXE, ZIP або інсталятор. Бібліотека автоматично звіряє наявність файлів і Windows-інсталяцій; зниклі програми позначає для відновлення, зберігаючи їхні записи. Підключення знайденої програми потребує явної дії. Ця логіка реалізована на Rust і ще не випущена.
 
 Стек: Tauri 2, Rust, React, TypeScript і Vite. Для нативної збірки потрібні інструменти розробки Windows.
 
@@ -60,6 +66,9 @@ npm run tauri-build
 
 ## Документація
 
+- [Структура файлів і правила розміщення](docs/PROJECT_STRUCTURE.md)
+
+- [Як підготувати застосунок до встановлення й оновлень через Pullora](docs/APP_UPDATE_INTEGRATION.md)
 - [Дорожня карта та стан робіт](docs/roadmaps/PRODUCT_IMPROVEMENT_ROADMAP.md)
 - [Процес релізу](docs/RELEASE_PROCESS.md)
 - [Матриця регресій](docs/REGRESSION_MATRIX.md)
@@ -68,6 +77,10 @@ npm run tauri-build
 
 ## English
 
+The current development version adds native tray quick launch and an icon-only Cards / Table switch, replacing compact mode. The selected view persists across restarts; search, folders, actions, and progress are shared. The tray can launch installed apps, visit Warframe Arsenal, show or hide the window, and exit Pullora. Closing the window keeps its previous behavior. These changes have not shipped yet.
+
+Application authors: see the [packaging and update integration guide](docs/APP_UPDATE_INTEGRATION.md), including checksum generation and a GitHub Actions example.
+
 Pullora is a publicly available Windows 11 launcher for CpPrice11's applications. The author develops it primarily for their own use, and anyone can download and use it. The catalog is fixed to `CpPrice11`; the UI supports Ukrainian and English. Applications are installed from public GitHub Releases, while installed versions and user settings stay on the user's computer.
 
-Installed copies use the signed Tauri updater. Portable copies open the official release page and are updated manually. The EXE files are not Authenticode-signed. The public [pullora-assets](https://github.com/CpPrice11/pullora-assets) repository stores application icons and will also hold screenshots. Its launcher integration, screenshot gallery, and revised application cards are local work that has not yet shipped in `v5.22.1`.
+Installed copies use the signed Tauri updater. Portable copies open the official release page and are updated manually. The EXE files are not Authenticode-signed. The public [pullora-assets](https://github.com/CpPrice11/pullora-assets) repository stores application icons and will also hold screenshots. Its launcher integration, screenshot gallery, and revised application cards are development work that has not yet shipped in `v5.22.1`.

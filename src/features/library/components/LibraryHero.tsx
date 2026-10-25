@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../i18n'
-import type { GitHubSearchResult, InstalledApp } from '../../../types'
+import type { GitHubSearchResult, InstalledApp, InstallationStatus } from '../../../types'
 import { formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
@@ -8,6 +8,7 @@ import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeybo
 interface LibraryHeroProps {
   repo: GitHubSearchResult
   installedApp?: InstalledApp
+  installationHealth?: InstallationStatus
   latestVersion?: string | null
   cover?: string | null
   coverStyle?: CSSProperties
@@ -15,6 +16,8 @@ interface LibraryHeroProps {
   backgroundStyle?: CSSProperties
   isFavorite: boolean
   favoriteBusy: boolean
+  busy?: boolean
+  runtimeStatus?: 'running' | 'unknown'
   canResetCover: boolean
   canResetBackground: boolean
   onInstall: () => void
@@ -60,6 +63,9 @@ export default function LibraryHero({
   backgroundStyle,
   isFavorite,
   favoriteBusy,
+  busy = false,
+  runtimeStatus,
+  installationHealth,
   canResetCover,
   canResetBackground,
   onInstall,
@@ -82,8 +88,8 @@ export default function LibraryHero({
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
   const isInstalled = status !== 'available'
-  const statusLabel = t(`repo.${status}`)
-  const primaryLabel = t(hasUpdate ? 'repo.updateAction' : isInstalled ? 'repo.launch' : 'repo.install')
+  const statusLabel = t(repo.website_url ? 'repo.webApp' : `repo.${status}`)
+  const primaryLabel = t(repo.website_url ? 'repo.visit' : hasUpdate ? 'repo.updateAction' : isInstalled ? 'repo.launch' : 'repo.install')
 
   useEffect(() => {
     if (!actionsOpen) return
@@ -122,6 +128,10 @@ export default function LibraryHero({
             alt=""
             className={cover ? 'project-art-cover' : undefined}
             style={cover ? coverStyle : undefined}
+            onError={(event) => {
+              const image = event.currentTarget
+              if (image.getAttribute('src') !== repo.owner.avatar_url) image.src = repo.owner.avatar_url
+            }}
           />
         </div>
 
@@ -151,8 +161,8 @@ export default function LibraryHero({
         </div>
 
         <div className="library-hero-actions library-github-actions">
-          <button type="button" className="hero-primary-btn" onClick={isInstalled && !hasUpdate ? onLaunch : onInstall}>
-            {primaryLabel}
+          <button type="button" className="hero-primary-btn" disabled={!repo.website_url && (busy || Boolean(runtimeStatus) || installationHealth === 'unavailable')} aria-busy={!repo.website_url && busy} title={runtimeStatus ? t('repo.closeToChange') : undefined} onClick={repo.website_url ? onInstall : isInstalled && !hasUpdate && installationHealth !== 'missing' ? onLaunch : onInstall}>
+            {repo.website_url ? primaryLabel : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : busy ? t('repo.busy') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : installationHealth === 'missing' ? t('repo.reinstall') : primaryLabel}
           </button>
           <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
             <button
@@ -197,7 +207,7 @@ export default function LibraryHero({
                 {canResetCover && <button type="button" role="menuitem" onClick={() => runAction(onResetCover)}>{t('art.resetCover')}</button>}
                 {canResetBackground && <button type="button" role="menuitem" onClick={() => runAction(onResetBackground)}>{t('art.resetBackground')}</button>}
                 {isInstalled && (
-                  <button type="button" role="menuitem" className="danger-menu-item" onClick={() => runAction(onUninstall)}>
+                  <button type="button" role="menuitem" className="danger-menu-item" disabled={busy || Boolean(runtimeStatus)} onClick={() => runAction(onUninstall)}>
                     {t('installed.uninstallApp')}
                   </button>
                 )}

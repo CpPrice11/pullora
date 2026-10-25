@@ -1,11 +1,17 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+// GNU library test executables do not receive Tauri's binary-only resource linker flag.
+#[cfg(all(test, windows, target_env = "gnu"))]
+#[link(name = "resource", kind = "static", modifiers = "+whole-archive")]
+extern "C" {}
+
 mod commands;
 mod download;
 mod error;
 mod github;
 mod storage;
+mod tray;
 
 use download::DownloadManager;
 use github::GitHubClient;
@@ -68,6 +74,9 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            if let Err(error) = tray::setup(app.handle()) {
+                log::warn!("Quick-launch tray is unavailable: {error}");
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -76,6 +85,8 @@ pub fn run() {
             commands::github::clear_github_cache,
             commands::github::get_github_rate_limit_status,
             commands::settings::get_settings,
+            commands::download::get_installation_architecture,
+            commands::download::plan_release_installation,
             commands::settings::update_settings,
             commands::settings::set_installation_path,
             commands::settings::is_first_launch,
@@ -87,6 +98,10 @@ pub fn run() {
             commands::library_folders::get_library_folders,
             commands::library_folders::save_library_folders,
             commands::installed::get_installed_apps,
+            commands::installed::get_installation_snapshot,
+            commands::installed::get_app_runtime_states,
+            commands::installed::discover_installed_apps,
+            commands::installed::adopt_installed_app,
             commands::installed::switch_version,
             commands::installed::validate_installed_app,
             commands::installed::open_installed_app_dir,
@@ -95,6 +110,8 @@ pub fn run() {
             commands::installed::uninstall_app,
             commands::installed::launch_app,
             commands::project_art::list_project_art_assets,
+            commands::default_media::list_default_project_icons,
+            commands::default_media::get_default_project_screenshots,
             commands::project_art::get_project_art_asset,
             commands::project_art::get_project_art_preview,
             commands::project_art::set_project_art_asset_command,
@@ -109,6 +126,7 @@ pub fn run() {
             commands::updates::get_event_log,
             commands::updates::open_dir,
             commands::updates::open_external_url,
+            commands::updates::open_website_url,
             commands::updates::get_launcher_storage_info,
             commands::updates::cleanup_launcher_update_files,
         ])

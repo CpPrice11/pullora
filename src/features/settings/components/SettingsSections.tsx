@@ -345,7 +345,7 @@ function GeneralSettingsSection({
               value={displayPath(settings.installationPath)}
               readOnly
               aria-describedby={pathValidation !== 'idle' ? 'installPath-status' : undefined}
-              aria-invalid={pathValidation !== 'idle' && pathValidation !== 'ok' ? true : undefined}
+              aria-invalid={!['idle', 'ok', 'elevationRequired'].includes(pathValidation) ? true : undefined}
               title={displayPath(settings.installationPath)}
               placeholder={t('settings.installPathPlaceholder')}
             />
@@ -369,11 +369,12 @@ function GeneralSettingsSection({
           {pathValidation !== 'idle' && (
             <span
               id="installPath-status"
-              className={`settings-status ${pathValidation === 'ok' ? 'success' : 'error'}`}
+              className={`settings-status ${['ok', 'elevationRequired'].includes(pathValidation) ? 'success' : 'error'}`}
               role="status"
               aria-live="polite"
             >
               {pathValidation === 'ok' && t('settings.pathOk')}
+              {pathValidation === 'elevationRequired' && t('settings.pathElevation')}
               {pathValidation === 'missing' && t('settings.pathMissing')}
               {pathValidation === 'unsafe' && t('settings.pathUnsafe')}
               {pathValidation === 'inaccessible' && t('settings.pathInaccessible')}

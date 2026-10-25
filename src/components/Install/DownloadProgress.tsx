@@ -3,6 +3,7 @@ import type { DownloadProgress as DL, DownloadStage } from '../../types'
 import { useI18n } from '../../i18n'
 import { getLocalizedErrorMessage } from '../../services/tauri'
 import { formatBytes } from '../../utils/format'
+import { canCancel, currentStage, downloadPercent, stageLabel } from '../../utils/downloadProgress'
 import './Install.css'
 
 interface DownloadProgressProps {
@@ -27,20 +28,6 @@ const installStages: DownloadStage[] = [
   'completed',
 ]
 
-function stageLabel(stage: DownloadStage | undefined, t: (key: string) => string) {
-  switch (stage) {
-    case 'queued': return t('download.stageQueued')
-    case 'downloading': return t('download.stageDownloading')
-    case 'verifying': return t('download.stageVerifying')
-    case 'extracting': return t('download.stageExtracting')
-    case 'installing': return t('download.stageInstalling')
-    case 'launchChecking': return t('download.stageLaunchChecking')
-    case 'completed': return t('download.stageCompleted')
-    case 'failed': return t('download.stageFailed')
-    default: return t('download.stageQueued')
-  }
-}
-
 function stageDescription(stage: DownloadStage | undefined, t: (key: string) => string) {
   switch (stage) {
     case 'queued': return t('download.stageQueuedText')
@@ -53,20 +40,6 @@ function stageDescription(stage: DownloadStage | undefined, t: (key: string) => 
     case 'failed': return t('download.stageFailedText')
     default: return t('download.stageQueuedText')
   }
-}
-
-function currentStage(download: DL): DownloadStage {
-  if (download.stage) return download.stage
-  if (download.status === 'pending') return 'queued'
-  if (download.status === 'extracting') return 'extracting'
-  if (download.status === 'completed') return 'completed'
-  if (download.status === 'failed') return 'failed'
-  return 'downloading'
-}
-
-function canCancel(download: DL) {
-  const stage = currentStage(download)
-  return download.status === 'pending' || stage === 'queued' || stage === 'downloading'
 }
 
 function DownloadProgressPanel({
@@ -115,7 +88,7 @@ function DownloadProgressPanel({
           const failed = download.status === 'failed' || stage === 'failed'
           const completed = download.status === 'completed' || stage === 'completed'
           const hasInstalledTarget = Boolean(download.owner && download.repo)
-          const progress = Math.max(0, Math.min(100, Math.round(download.progress)))
+          const progress = downloadPercent(download)
 
           return (
             <div
@@ -187,6 +160,7 @@ function DownloadProgressPanel({
               </div>
 
               <div className="download-meta">
+                {download.checksumStatus && <span>{t(`download.checksum.${download.checksumStatus}`)}</span>}
                 {download.totalSize > 0 && (
                   <span>
                     {formatBytes(download.downloadedSize, language)} / {formatBytes(download.totalSize, language)}

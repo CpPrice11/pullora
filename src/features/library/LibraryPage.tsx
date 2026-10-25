@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { listen } from '@tauri-apps/api/event'
+import { getLocalizedErrorMessage } from '../../services/tauri'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
 import { useLibraryStatus } from './hooks/useLibraryStatus'
@@ -9,14 +11,14 @@ import { useBatchUpdates } from './hooks/useBatchUpdates'
 import { useLibraryBulkSelection } from './hooks/useLibraryBulkSelection'
 import RepoCard from './components/RepoCard'
 import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
-import LibraryHero from './components/LibraryHero'
-import LibraryOperationsPanel from './components/LibraryOperationsPanel'
-import BatchUpdatePanel, { type BatchUpdateItem } from './components/BatchUpdatePanel'
+import type { BatchUpdateItem } from './components/BatchUpdatePanel'
 import StatePanel from '../../components/State/StatePanel'
-import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion } from '../../services/installed'
+import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion, adoptInstalledApp } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
 import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
 import { clearGithubCache } from '../../services/github'
+import { openWebsiteUrl } from '../../services/updates'
+import { getDefaultProjectScreenshots, listDefaultProjectIcons } from '../../services/defaultMedia'
 import { pickImageFile } from '../../services/dialog'
 import {
   clearProjectArt,
@@ -29,7 +31,7 @@ import {
   setProjectArt,
   setProjectArtCrop,
 } from '../../services/projectArt'
-import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt } from '../../types'
+import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt, DetectedInstallation } from '../../types'
 import { useI18n } from '../../i18n'
 import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
 import { useToastPresence } from '../../hooks/useToastPresence'
@@ -39,8 +41,11 @@ import {
   saveLibraryViewState,
   type LibraryViewState,
 } from './libraryViewState'
-import type { LibraryDensity } from './libraryViewControls'
+import type { LibraryDensity, LibraryViewMode } from './libraryViewControls'
+import { CloseIcon } from '../../components/ui/Icons'
+import { currentStage } from '../../utils/downloadProgress'
 import '../../pages/PageStyles.css'
+import './LibraryCatalog.css'
 
 type LibraryErrorKind = 'rateLimit' | 'offline' | 'notFound' | 'generic'
 type LibraryTrustKind = 'fresh' | 'checking' | 'cached' | 'rateLimit' | 'offline' | 'partial'
@@ -50,11 +55,15 @@ type UninstallTarget = {
 }
 
 const repoLookupKey = projectArtKey
+const LibraryHero = lazy(() => import('./components/LibraryHero'))
+const LibraryOperationsPanel = lazy(() => import('./components/LibraryOperationsPanel'))
+const ProjectGallery = lazy(() => import('./components/ProjectGallery'))
+const BatchUpdatePanel = lazy(() => import('./components/BatchUpdatePanel'))
 const CATALOG_OWNER = 'CpPrice11'
 
 function isLauncherRepository(owner: string, repo: string) {
   return owner.trim().toLowerCase() === 'cpprice11' &&
-    repo.trim().toLowerCase() === 'pullora'
+    ['pullora', 'pullora-assets'].includes(repo.trim().toLowerCase())
 }
 
 function syntheticRepoId(owner: string, repo: string) {
@@ -88,6 +97,7 @@ function makeInstalledRepository(app: InstalledApp, favorite?: FavoriteApp): Git
     stargazers_count: 0,
     updated_at: latestInstalledAt(app),
     html_url: `https://github.com/${app.owner}/${app.repo}`,
+    website_url: favorite?.websiteUrl,
     language: null,
     topics: null,
     has_releases: true,
@@ -110,6 +120,7 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
     stargazers_count: 0,
     updated_at: favorite.lastChecked ?? new Date(0).toISOString(),
     html_url: `https://github.com/${favorite.owner}/${favorite.repo}`,
+    website_url: favorite.websiteUrl,
     language: null,
     topics: null,
     has_releases: true,
@@ -248,12 +259,14 @@ function LibraryPage({
   const { language, t } = useI18n()
   const pageKey = 'library'
   const [initialLibraryView] = useState(loadLibraryViewState)
-  const [libraryDensity, setLibraryDensity] = useState<LibraryDensity>(initialLibraryView.density)
+  const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(initialLibraryView.viewMode)
   const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>(() => ensureFavoritesFolder([]))
   const [folderDialogRepo, setFolderDialogRepo] = useState<GitHubSearchResult | null>(null)
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => loadCollapsedFolderIds())
   const [recentlyInstalledKey, setRecentlyInstalledKey] = useState<string | null>(null)
   const [projectArt, setProjectArtState] = useState<Record<string, ProjectArt>>({})
+  const [defaultIcons, setDefaultIcons] = useState<Record<string, string>>({})
+  const [defaultScreenshots, setDefaultScreenshots] = useState<{ key: string; urls: string[] } | null>(null)
   const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<FavoriteApp[]>([])
   const [favoriteBusy, setFavoriteBusy] = useState(false)
@@ -280,6 +293,14 @@ function LibraryPage({
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [bulkConfirm, setBulkConfirm] = useState<'cleanup' | 'uninstall' | null>(null)
   const [refreshingLibrary, setRefreshingLibrary] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [releasePickerStartsAtFile, setReleasePickerStartsAtFile] = useState(false)
+  const [adoptingKey, setAdoptingKey] = useState<string | null>(null)
+  const detailsReturnFocus = useRef<HTMLElement | null>(null)
+  const closeDetails = () => {
+    setDetailsOpen(false)
+    detailsReturnFocus.current?.focus()
+  }
   const { settings, loading: settingsLoading } = useSettings()
   const libraryFoldersLoadedRef = useRef(false)
   const owner = CATALOG_OWNER
@@ -299,6 +320,8 @@ function LibraryPage({
     getLatestVersion,
     refreshInstalledApps,
     refreshLatestVersions,
+    discoveredApps, discoveryError, refreshDiscovered, healthByRepo,
+    runtimeByRepo, runtimeError, refreshRuntime,
   } = useLibraryStatus(state.repositories)
 
   const handleRefresh = async () => {
@@ -312,6 +335,9 @@ function LibraryPage({
       const [freshRepositories, freshInstalledApps] = await Promise.all([
         refreshRepositories(),
         refreshInstalledApps(),
+        listDefaultProjectIcons(true).then(setDefaultIcons).catch(() => {}),
+        refreshDiscovered(),
+        refreshRuntime(),
       ])
       await refreshLatestVersions(
         freshInstalledApps,
@@ -344,8 +370,8 @@ function LibraryPage({
   }
 
   const refreshLocalStatus = useCallback(async () => {
-    await refreshInstalledApps()
-  }, [refreshInstalledApps])
+    await Promise.all([refreshInstalledApps(), refreshDiscovered(), refreshRuntime()])
+  }, [refreshInstalledApps, refreshDiscovered, refreshRuntime])
 
   const handleRequestUninstall = (repo: GitHubSearchResult) => {
     const installedApp = getInstalledApp(repo)
@@ -605,6 +631,12 @@ function LibraryPage({
   }, [loadRepositories, owner, settingsLoading])
 
   useEffect(() => {
+    let cancelled = false
+    listDefaultProjectIcons().then((icons) => { if (!cancelled) setDefaultIcons(icons) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
     listProjectArt()
       .then((items) => {
         setProjectArtState(Object.fromEntries(
@@ -637,6 +669,18 @@ function LibraryPage({
     setLibraryActionMessage(null)
     setLibraryActionError(message)
   }, [])
+
+  useEffect(() => {
+    let active = true
+    let cleanup: (() => void) | undefined
+    void listen<string>('tray-action-error', ({ payload }) => {
+      handleInstallError(getLocalizedErrorMessage(payload))
+    }).then((unlisten) => {
+      if (active) cleanup = unlisten
+      else unlisten()
+    }).catch(() => {})
+    return () => { active = false; cleanup?.() }
+  }, [handleInstallError])
 
   const libraryRepositories = useMemo(() => {
     const reposByKey = new Map(
@@ -682,6 +726,8 @@ function LibraryPage({
 
   const {
     batchDownloads,
+    installingKeys,
+    startAutomaticInstall,
     cancelBatchDownload,
     batchUpdating,
     batchUpdateMessage,
@@ -747,8 +793,41 @@ function LibraryPage({
     selectFeaturedRepo,
   } = useLibrarySelection(visibleRepositories, initialLibraryView.featuredRepoKey)
 
+  const handleQuickInstall = async (repo: GitHubSearchResult, preferExistingInstall = false) => {
+    setLibraryActionError(null)
+    setLibraryActionMessage(null)
+    try {
+      if (repo.website_url) {
+        await openWebsiteUrl(repo.website_url)
+        return
+      }
+      if (await startAutomaticInstall(repo, preferExistingInstall) === 'choose') {
+        setReleasePickerStartsAtFile(true)
+        setSelectedRepo(repo)
+      }
+    } catch (error) {
+      handleInstallError(error instanceof Error ? error.message : t('errors.commandFailed'))
+    }
+  }
+
+  const handleAdopt = async (candidate: DetectedInstallation) => {
+    if (adoptingKey) return
+    setAdoptingKey(projectArtKey(candidate.owner, candidate.repo))
+    setLibraryActionError(null)
+    try {
+      await adoptInstalledApp(candidate)
+      await refreshLocalStatus()
+    } catch (error) { handleInstallError(error instanceof Error ? error.message : t('errors.discoveryFailed')) }
+    finally { setAdoptingKey(null) }
+  }
+
   const sidebarResultsRef = useRef<HTMLDivElement>(null)
   const detailsPaneRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!detailsOpen) return
+    detailsPaneRef.current?.focus({ preventScroll: true })
+    detailsPaneRef.current?.scrollIntoView({ block: 'start' })
+  }, [detailsOpen, featuredRepo?.id])
   const sidebarScrollTopRef = useRef(initialLibraryView.sidebarScrollTop)
   const detailsScrollTopRef = useRef(
     initialLibraryView.filter === 'updates' ? 0 : initialLibraryView.detailsScrollTop,
@@ -759,6 +838,16 @@ function LibraryPage({
   const featuredRepoKey = featuredRepo
     ? projectArtKey(featuredRepo.owner.login, featuredRepo.name)
     : null
+
+  useEffect(() => {
+    let cancelled = false
+    if (detailsOpen && featuredRepoKey) {
+      getDefaultProjectScreenshots(featuredRepoKey)
+        .then((urls) => { if (!cancelled) setDefaultScreenshots({ key: featuredRepoKey, urls }) })
+        .catch(() => {})
+    }
+    return () => { cancelled = true }
+  }, [detailsOpen, featuredRepoKey, defaultIcons])
   const libraryViewSnapshotRef = useRef<LibraryViewState>(initialLibraryView)
 
   if (featuredRepoKey) lastFeaturedRepoKeyRef.current = featuredRepoKey
@@ -767,7 +856,8 @@ function LibraryPage({
     query,
     filter,
     sort,
-    density: libraryDensity,
+    density: initialLibraryView.density,
+    viewMode: libraryViewMode,
     featuredRepoKey: lastFeaturedRepoKeyRef.current,
     sidebarScrollTop: sidebarScrollTopRef.current,
     detailsScrollTop: detailsScrollTopRef.current,
@@ -793,7 +883,7 @@ function LibraryPage({
 
   useEffect(() => {
     scheduleLibraryViewPersistence()
-  }, [featuredRepoKey, filter, libraryDensity, query, scheduleLibraryViewPersistence, sort])
+  }, [featuredRepoKey, filter, libraryViewMode, query, scheduleLibraryViewPersistence, sort])
 
   useEffect(() => {
     const dataReady = !settingsLoading && !state.loading && (
@@ -878,12 +968,12 @@ function LibraryPage({
     })
   }, [visibleRepositorySections])
   const orderedVisibleKeys = useMemo(
-    () => orderedVisibleRepositories.map((repo) => normalizeRepoKey(repo.owner.login, repo.name)),
+    () => orderedVisibleRepositories.filter((repo) => !repo.website_url).map((repo) => normalizeRepoKey(repo.owner.login, repo.name)),
     [orderedVisibleRepositories],
   )
   const bulkSelection = useLibraryBulkSelection(orderedVisibleKeys)
   const bulkSelectedRepositories = useMemo(
-    () => libraryRepositories.filter((repo) =>
+    () => libraryRepositories.filter((repo) => !repo.website_url &&
       bulkSelection.selectedKeys.has(normalizeRepoKey(repo.owner.login, repo.name)),
     ),
     [bulkSelection.selectedKeys, libraryRepositories],
@@ -914,8 +1004,8 @@ function LibraryPage({
   const featuredArt = featuredRepo
     ? projectArt[projectArtKey(featuredRepo.owner.login, featuredRepo.name)]
     : undefined
-  const featuredCover = projectArtCoverUrl(featuredArt)
-  const featuredCoverStyle = featuredCover ? projectArtCoverCropStyle(featuredArt) : undefined
+  const featuredCover = projectArtCoverUrl(featuredArt) ?? (featuredRepoKey ? defaultIcons[featuredRepoKey] : null)
+  const featuredCoverStyle = projectArtCoverUrl(featuredArt) ? projectArtCoverCropStyle(featuredArt) : { objectFit: 'contain' as const }
   const featuredBackground = projectArtBackgroundUrl(featuredArt, { fallbackToCover: false })
   const featuredBackgroundStyle = featuredBackground
     ? projectArtCropStyle(featuredArt)
@@ -926,6 +1016,7 @@ function LibraryPage({
     try {
       await launchApp(repo.owner.login, repo.name)
       await refreshInstalledApps()
+      await refreshRuntime()
     } catch (err) {
       setLaunchError(err instanceof Error ? err.message : t('library.launchError'))
     }
@@ -956,7 +1047,7 @@ function LibraryPage({
     const bounds = hero.getBoundingClientRect()
     if (!bounds.width || !bounds.height) return undefined
 
-    return { [libraryDensity]: bounds.width / bounds.height }
+    return { normal: bounds.width / bounds.height }
   }
 
   const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
@@ -1254,8 +1345,12 @@ function LibraryPage({
         onCheck={handleCheckUpdates}
         onUpdateAll={() => { void handleAutomaticUpdates() }}
         onClearSkipped={handleClearSkippedUpdates}
-        onUpdate={(repo) => { void handleAutomaticUpdates([repo]) }}
-        onShowDetails={(repo) => selectFeaturedRepo(repo, 'details')}
+        onUpdate={(repo) => { void handleQuickInstall(repo, true) }}
+        onShowDetails={(repo) => {
+          detailsReturnFocus.current = document.activeElement as HTMLElement
+          selectFeaturedRepo(repo, 'details')
+          setDetailsOpen(true)
+        }}
         onSkip={handleSkipUpdate}
       >
         <Suspense fallback={null}>
@@ -1360,7 +1455,9 @@ function LibraryPage({
       <LibraryHero
         key={featuredRepo.id}
         repo={featuredRepo}
+        runtimeStatus={runtimeError && installedApp ? 'unknown' : runtimeByRepo.get(featuredRepoKey ?? '')}
         installedApp={installedApp}
+        installationHealth={healthByRepo.get(featuredRepoKey ?? '')}
         latestVersion={latestVersion}
         cover={featuredCover}
         coverStyle={featuredCoverStyle}
@@ -1370,7 +1467,8 @@ function LibraryPage({
         favoriteBusy={favoriteBusy}
         canResetCover={Boolean(featuredArt?.coverPath)}
         canResetBackground={Boolean(featuredArt?.backgroundPath)}
-        onInstall={() => setSelectedRepo(featuredRepo)}
+        busy={installingKeys.has(featuredRepoKey ?? '') || batchDownloads.some((d) => projectArtKey(d.owner ?? '', d.repo ?? '') === featuredRepoKey && !['completed', 'failed'].includes(currentStage(d)))}
+        onInstall={() => { void handleQuickInstall(featuredRepo, Boolean(installedApp)) }}
         onLaunch={() => handleLaunch(featuredRepo)}
         onToggleFavorite={handleToggleFeaturedFavorite}
         onShowDetails={() => setHeroPanel('details')}
@@ -1393,16 +1491,21 @@ function LibraryPage({
     const latestVersion = getLatestVersion(featuredRepo)
 
     return (
-      <LibraryOperationsPanel
-        repo={featuredRepo}
-        installedApp={installedApp}
-        latestVersion={latestVersion}
-        installationPath={settings.installationPath}
-        updating={batchUpdating}
-        onInstall={() => setSelectedRepo(featuredRepo)}
-        onUpdate={() => { void handleAutomaticUpdates([featuredRepo]) }}
-        onLaunch={() => handleLaunch(featuredRepo)}
-      />
+      <>
+        <ProjectGallery key={featuredRepoKey} name={featuredRepo.name} screenshots={defaultScreenshots?.key === featuredRepoKey ? defaultScreenshots.urls : []} />
+        <LibraryOperationsPanel
+          repo={featuredRepo}
+          installedApp={installedApp}
+          installationHealth={healthByRepo.get(featuredRepoKey ?? '')}
+          latestVersion={latestVersion}
+          installationPath={settings.installationPath}
+          updating={batchUpdating || installingKeys.has(featuredRepoKey ?? '')}
+          runtimeStatus={runtimeError && installedApp ? 'unknown' : runtimeByRepo.get(featuredRepoKey ?? '')}
+          onInstall={() => { void handleQuickInstall(featuredRepo, Boolean(installedApp)) }}
+          onUpdate={() => { void handleQuickInstall(featuredRepo, true) }}
+          onLaunch={() => handleLaunch(featuredRepo)}
+        />
+      </>
     )
   }
 
@@ -1443,6 +1546,10 @@ function LibraryPage({
 
   const renderSidebarRepository = (repo: GitHubSearchResult) => {
     const key = projectArtKey(repo.owner.login, repo.name)
+    const activeDownload = batchDownloads.find((download) =>
+      projectArtKey(download.owner ?? '', download.repo ?? '') === key
+      && !['completed', 'failed'].includes(currentStage(download)),
+    )
     const addableFolders = displayFolders
       .filter((folder) => !folder.repoKeys.includes(key))
       .map((folder) => ({
@@ -1458,22 +1565,33 @@ function LibraryPage({
 
     return (
       <RepoCard
+        viewMode={libraryViewMode}
         key={repo.id}
         repo={repo}
         installedApp={getInstalledApp(repo)}
+        installationHealth={healthByRepo.get(key)}
+        runtimeStatus={runtimeError && getInstalledApp(repo) ? 'unknown' : runtimeByRepo.get(key)}
+        discovered={discoveredApps.filter((app) => projectArtKey(app.owner, app.repo) === key)}
+        onAdopt={handleAdopt}
         latestVersion={getLatestVersion(repo)}
         art={projectArt[key]}
+        defaultIcon={defaultIcons[key]}
+        download={activeDownload ?? batchDownloads.filter((d) => projectArtKey(d.owner ?? '', d.repo ?? '') === key).at(-1)}
+        onCancelDownload={cancelBatchDownload}
+        onRetryDownload={handleBatchRetry}
         isFavorite={favoriteKeys.has(key)}
         isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
         isBulkSelected={bulkSelection.selectedKeys.has(key)}
-        onBulkSelect={(range) => {
+        onBulkSelect={repo.website_url ? undefined : (range) => {
           setBulkMessage(null)
           setBulkError(null)
           bulkSelection.select(key, range)
         }}
         onPreview={() => {
           bulkSelection.clear()
+          detailsReturnFocus.current = document.activeElement as HTMLElement
           selectFeaturedRepo(repo)
+          setDetailsOpen(true)
         }}
         onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
         onPickArt={() => handlePickArt('cover', repo)}
@@ -1484,9 +1602,13 @@ function LibraryPage({
         onClearBackground={() => handleClearArt(repo, 'background')}
         onUninstall={() => handleRequestUninstall(repo)}
         onOpenFolder={() => handleOpenFolder(repo)}
-        onShowVersions={() => selectFeaturedRepo(repo)}
-        onInstall={() => setSelectedRepo(repo)}
+        onShowVersions={repo.website_url ? undefined : () => {
+          setSelectedRepo(repo)
+        }}
+        onInstall={() => { void handleQuickInstall(repo, Boolean(getInstalledApp(repo))) }}
         onLaunch={() => handleLaunch(repo)}
+        onError={(error) => handleInstallError(error instanceof Error ? error.message : t('errors.commandFailed'))}
+        busy={Boolean(activeDownload) || installingKeys.has(key) || adoptingKey === key}
         folders={addableFolders}
         removableFolders={removableFolders}
         onCreateFolder={() => openCreateFolderDialog(repo)}
@@ -1511,19 +1633,46 @@ function LibraryPage({
 
   return (
     <div
-      className={`page library-page library-density-${libraryDensity}`}
+      className={`page library-page library-catalog library-view-${libraryViewMode}`}
       onKeyDown={handleLibraryKeyboard}
     >
       <div className="library-sam-workspace">
           <LibrarySidebar
             filter={filter}
             sort={sort}
-            density={libraryDensity}
+            viewMode={libraryViewMode}
             query={query}
+            summary={<Suspense fallback={<StatePanel kind="loading" title={t('library.loading')} />}>{renderUpdatesCenter()}</Suspense>}
+            details={detailsOpen && (
+              <aside
+                className="library-sam-details-pane library-catalog-details"
+                aria-label={featuredRepo?.name ?? t('details.open')}
+                ref={detailsPaneRef}
+                tabIndex={-1}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape' && !event.defaultPrevented) closeDetails()
+                }}
+              >
+                <div className="library-catalog-details-toolbar">
+                  <h2>{featuredRepo?.name ?? t('details.open')}</h2>
+                  <button type="button" className="secondary-btn" onClick={closeDetails}>
+                    <CloseIcon />{t('release.close')}
+                  </button>
+                </div>
+                <Suspense fallback={<StatePanel kind="loading" title={t('library.loading')} />}>
+                  {renderDetailsEmpty()}
+                  {renderHero()}
+                  {renderOperationsPanel()}
+                  {heroPanel === 'details' && renderLibraryTrustPanel()}
+                </Suspense>
+              </aside>
+            )}
             groups={sidebarSectionGroups}
             collapsedFolderIds={collapsedFolderIds}
             notices={(
               <>
+                {(runtimeError || discoveryError) && <StatePanel kind="error" title={t(runtimeError ? 'repo.runtimeUnknown' : 'repo.discoveryFailed')}
+                  message={runtimeError ?? discoveryError ?? ''} actionLabel={t('library.tryAgain')} onAction={() => { void refreshRuntime(); void refreshDiscovered() }} />}
                 {state.error && !state.isStale && !suppressDiagnostics && (
                   <StatePanel
                     kind="error"
@@ -1595,6 +1744,7 @@ function LibraryPage({
             refreshing={refreshingLibrary || state.loading || checkingUpdates}
             hasMore={state.hasMore}
             onFilterChange={(nextFilter) => {
+              setDetailsOpen(false)
               bulkSelection.clear()
               if (nextFilter === 'updates') {
                 detailsScrollTopRef.current = 0
@@ -1603,11 +1753,13 @@ function LibraryPage({
               handleFilterChange(nextFilter)
             }}
             onSortChange={(nextSort) => {
+              setDetailsOpen(false)
               bulkSelection.clear()
               handleSortChange(nextSort)
             }}
-            onDensityChange={setLibraryDensity}
+            onViewModeChange={setLibraryViewMode}
             onQueryChange={(nextQuery) => {
+              setDetailsOpen(false)
               bulkSelection.clear()
               setQuery(nextQuery)
             }}
@@ -1626,26 +1778,15 @@ function LibraryPage({
             }}
           />
 
-          <aside
-            className="library-sam-details-pane"
-            aria-label={featuredRepo?.name ?? t('details.open')}
-            ref={detailsPaneRef}
-            onScroll={(event) => {
-              detailsScrollTopRef.current = event.currentTarget.scrollTop
-              scheduleLibraryViewPersistence()
-            }}
-          >
-            {filter === 'updates' ? (
-              renderUpdatesCenter()
-            ) : (
-              <>
-                {renderDetailsEmpty()}
-                {renderHero()}
-                {renderOperationsPanel()}
-                {heroPanel === 'details' && renderLibraryTrustPanel()}
-              </>
-            )}
-          </aside>
+          <footer className="library-catalog-status" role="status" aria-live="polite" aria-atomic="true">
+            {refreshingLibrary || state.loading
+              ? t('library.refreshing')
+              : state.error
+                ? t(state.repositories.length ? 'library.catalog.cached' : 'library.catalog.unavailable')
+                : state.lastLoadedAt
+                  ? t('library.catalog.loadedAt', { time: formatTime(state.lastLoadedAt) ?? '' })
+                  : t('library.loading')}
+          </footer>
         </div>
 
       {selectedRepo && (
@@ -1664,7 +1805,8 @@ function LibraryPage({
             displayName={selectedRepo.name}
             description={selectedRepo.description ?? undefined}
             currentVersion={getInstalledApp(selectedRepo)?.activeVersion}
-            onClose={() => setSelectedRepo(null)}
+            initialStep={releasePickerStartsAtFile ? 'file' : 'version'}
+            onClose={() => { setSelectedRepo(null); setReleasePickerStartsAtFile(false) }}
             onInstalled={handleInstalledFromRelease}
             onError={handleInstallError}
           />
@@ -1731,7 +1873,7 @@ function LibraryPage({
           <ArtCropDialog
             kind={pendingArtCrop.kind}
             previewShape={pendingArtCrop.kind === 'cover' ? 'cover' : 'hero'}
-            initialPreviewMode={libraryDensity}
+            initialPreviewMode="normal"
             previewAspectRatios={pendingArtCrop.previewAspectRatios}
             sourcePath={pendingArtCrop.sourcePath}
             initialCrop={pendingArtCrop.initialCrop}

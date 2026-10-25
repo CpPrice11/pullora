@@ -1,3 +1,4 @@
+pub mod default_media;
 pub mod download;
 pub mod favorites;
 pub mod github;

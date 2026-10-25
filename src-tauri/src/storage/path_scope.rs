@@ -5,10 +5,73 @@ use crate::error::command_error;
 pub fn installation_root(path: &str) -> Result<PathBuf, String> {
     let root = absolute_path(Path::new(path.trim()))?;
     let root = resolve_path(&root).map_err(|_| command_error("errors.installPathUnavailable"))?;
-    if root.parent().is_none() || is_system_installation_path(&root) {
+    #[cfg(windows)]
+    if is_program_files_apps(&root) {
+        return resolve_path(&program_files_apps());
+    }
+    if root.parent().is_none()
+        || (is_system_installation_path(&root) && !is_program_files_apps(&root))
+    {
         return Err(command_error("errors.installPathUnsafe"));
     }
     Ok(root)
+}
+
+#[cfg(windows)]
+pub fn program_files_apps() -> PathBuf {
+    std::env::var_os("ProgramW6432")
+        .or_else(|| std::env::var_os("ProgramFiles"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(r"C:\Program Files"))
+        .join("Pullora")
+        .join("Apps")
+}
+
+/// Only the exact managed root is selectable inside Program Files. Reject
+/// junctions at every existing component instead of allowing them to redefine it.
+pub fn is_program_files_apps(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        let expected = program_files_apps();
+        let Ok(resolved) = resolve_path(&expected) else {
+            return false;
+        };
+        let Ok(base) = std::fs::canonicalize(expected.parent().unwrap().parent().unwrap()) else {
+            return false;
+        };
+        let canonical_expected = base.join("Pullora").join("Apps");
+        let matches = |value: &Path| {
+            value
+                .to_string_lossy()
+                .eq_ignore_ascii_case(&canonical_expected.to_string_lossy())
+        };
+        matches(&resolved) && resolve_path(path).is_ok_and(|p| matches(&p))
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        false
+    }
+}
+
+pub fn is_program_files_descendant(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        let root = program_files_apps();
+        is_program_files_apps(&root)
+            && ensure_within(path, &root, false).is_ok()
+            && path.ancestors().all(|ancestor| {
+                std::fs::symlink_metadata(ancestor)
+                    .map(|m| m.file_attributes() & 0x400 == 0)
+                    .unwrap_or(true)
+            })
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        false
+    }
 }
 
 #[cfg(windows)]
@@ -150,6 +213,27 @@ mod tests {
             "release_.._.._escape"
         );
         assert_eq!(safe_component(".."), "_");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn only_the_managed_program_files_root_is_selectable() {
+        let root = super::program_files_apps();
+        assert!(super::is_program_files_apps(&root));
+        assert!(installation_root(&root.to_string_lossy()).is_ok());
+        assert_eq!(
+            installation_root(&root.to_string_lossy().to_ascii_lowercase()).unwrap(),
+            installation_root(&root.to_string_lossy()).unwrap()
+        );
+        assert!(installation_root(&root.parent().unwrap().to_string_lossy()).is_err());
+        assert!(installation_root(&root.join("other").to_string_lossy()).is_err());
+        assert!(!super::is_program_files_descendant(&root));
+        assert!(super::is_program_files_descendant(
+            &root.join("owner-repo").join("v1")
+        ));
+        assert!(!super::is_program_files_descendant(
+            &root.with_file_name("Apps-evil").join("v1")
+        ));
     }
 
     #[cfg(windows)]

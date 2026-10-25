@@ -46,16 +46,16 @@ export default function ApplicationDetails({
           <span>{t('library.ops.stars')}</span>
           <strong>{formatNumber(repo.stargazers_count, language)}</strong>
         </div>
-        <div>
+        {!repo.website_url && <div>
           <span>{t('release.installPath')}</span>
           <strong className="library-inline-install-path" title={installPath ?? unknown}>
             {installPath ?? unknown}
           </strong>
-        </div>
-        <div>
+        </div>}
+        {!repo.website_url && <div>
           <span>{t('library.ops.latest')}</span>
           <strong>{latestVersion ?? t('library.ops.notChecked')}</strong>
-        </div>
+        </div>}
       </div>
     </section>
   )

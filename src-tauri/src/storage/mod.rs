@@ -1,10 +1,15 @@
+pub mod discovery;
 pub mod disk_space;
 pub mod favorites;
+pub mod installation_policy;
 pub mod installed;
 pub mod library_folders;
+pub mod local_installations;
 pub mod logs;
 pub mod path_scope;
 pub mod project_art;
+pub mod protected_files;
+pub mod running_apps;
 pub mod secret_store;
 pub mod settings;
 

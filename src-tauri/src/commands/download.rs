@@ -6,6 +6,41 @@ use crate::error::{command_error, command_error_with_detail};
 use crate::AppState;
 
 #[tauri::command]
+pub fn get_installation_architecture() -> &'static str {
+    crate::storage::installation_policy::native_architecture()
+}
+
+#[tauri::command]
+pub async fn plan_release_installation(
+    owner: String,
+    repo: String,
+    tag: String,
+    state: State<'_, AppState>,
+) -> Result<crate::storage::installation_policy::InstallationPlan, String> {
+    if crate::github::models::website_url(&owner, &repo).is_some() {
+        return Err(command_error("errors.websiteOnly"));
+    }
+    let releases = state
+        .github_client
+        .get_releases(&owner, &repo, false)
+        .await?;
+    let release = releases
+        .iter()
+        .find(|release| !release.draft && !release.prerelease && release.tag_name == tag)
+        .ok_or_else(|| command_error("errors.releaseAssetSource"))?;
+    let current = crate::storage::installation_policy::active_record(
+        &crate::storage::get_config_dir(),
+        &owner,
+        &repo,
+    )?;
+    crate::storage::installation_policy::plan(
+        &release.assets,
+        current.as_ref(),
+        crate::storage::installation_policy::native_architecture(),
+    )
+}
+
+#[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn start_download(
     app: AppHandle,
@@ -18,8 +53,34 @@ pub async fn start_download(
     prefer_existing_install: Option<bool>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
+    if crate::github::models::website_url(&owner, &repo).is_some() {
+        return Err(command_error("errors.websiteOnly"));
+    }
     crate::github::assets::validate_versioned_release_asset_url(
         &url, &owner, &repo, &tag, &file_name,
+    )?;
+    crate::storage::running_apps::ensure_stopped(&crate::storage::get_config_dir(), &owner, &repo)?;
+    crate::storage::installation_policy::validate_recorded_file(
+        &crate::storage::get_config_dir(),
+        &owner,
+        &repo,
+        &file_name,
+    )?;
+    let expected_sha256 = crate::download::checksum::release_digest(
+        &state.github_client,
+        &owner,
+        &repo,
+        &tag,
+        &file_name,
+    )
+    .await?;
+    let _guard = state.download_manager.operation_lock.lock().await;
+    crate::storage::running_apps::ensure_stopped(&crate::storage::get_config_dir(), &owner, &repo)?;
+    crate::storage::installation_policy::validate_recorded_file(
+        &crate::storage::get_config_dir(),
+        &owner,
+        &repo,
+        &file_name,
     )?;
 
     let configured_install_path = {
@@ -68,6 +129,7 @@ pub async fn start_download(
                 repo,
                 tag,
                 asset_size: size,
+                expected_sha256,
             },
         )
         .await

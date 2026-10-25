@@ -1,15 +1,15 @@
 import type { ReactNode, Ref, UIEventHandler } from 'react'
 import StatePanel from '../../../components/State/StatePanel'
 import NativeSelect from '../../../components/Select/NativeSelect'
-import { PlayIcon, UpdateIcon } from '../../../components/ui/Icons'
+import { CardsIcon, TableIcon, PlayIcon, UpdateIcon } from '../../../components/ui/Icons'
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
 import {
   LIBRARY_FILTERS,
   LIBRARY_SORTS,
-  type LibraryDensity,
   type LibraryFilter,
   type LibrarySort,
+  type LibraryViewMode,
 } from '../libraryViewControls'
 
 export interface LibrarySection {
@@ -28,12 +28,14 @@ interface LibrarySidebarGroup {
 interface LibrarySidebarProps {
   filter: LibraryFilter
   sort: LibrarySort
-  density: LibraryDensity
+  viewMode?: LibraryViewMode
   query: string
   groups: LibrarySidebarGroup[]
   collapsedFolderIds: Set<string>
   notices?: ReactNode
   bulkActions?: ReactNode
+  details?: ReactNode
+  summary?: ReactNode
   showLoading: boolean
   showEmpty: boolean
   emptyTitle: string
@@ -44,7 +46,7 @@ interface LibrarySidebarProps {
   hasMore: boolean
   onFilterChange: (filter: LibraryFilter) => void
   onSortChange: (sort: LibrarySort) => void
-  onDensityChange: (density: LibraryDensity) => void
+  onViewModeChange?: (mode: LibraryViewMode) => void
   onQueryChange: (query: string) => void
   onToggleSection: (sectionId: string) => void
   onEmptyAction: () => void
@@ -59,12 +61,12 @@ type LibrarySidebarControlsProps = Pick<
   LibrarySidebarProps,
   | 'filter'
   | 'sort'
-  | 'density'
+  | 'viewMode'
   | 'query'
   | 'refreshing'
   | 'onFilterChange'
   | 'onSortChange'
-  | 'onDensityChange'
+  | 'onViewModeChange'
   | 'onQueryChange'
   | 'onRefresh'
 >
@@ -72,12 +74,12 @@ type LibrarySidebarControlsProps = Pick<
 function LibrarySidebarControls({
   filter,
   sort,
-  density,
+  viewMode = 'cards',
   query,
   refreshing,
   onFilterChange,
   onSortChange,
-  onDensityChange,
+  onViewModeChange,
   onQueryChange,
   onRefresh,
 }: LibrarySidebarControlsProps) {
@@ -144,17 +146,11 @@ function LibrarySidebarControls({
         </button>
       </div>
 
-      <div className="library-density-toggle">
-        <button
-          type="button"
-          className={density === 'compact' ? 'active' : ''}
-          role="switch"
-          aria-checked={density === 'compact'}
-          onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
-        >
-          <span>{t('library.viewCompact')}</span>
-          <span className="library-density-switch-indicator" aria-hidden="true" />
-        </button>
+      <div className="library-view-toggle" role="group" aria-label={t('library.viewMode')}>
+        {(['cards', 'table'] as const).map((mode) => {
+          const Icon = mode === 'cards' ? CardsIcon : TableIcon
+          return <button key={mode} type="button" aria-label={t(`library.view.${mode}`)} title={t(`library.view.${mode}`)} aria-pressed={viewMode === mode} onClick={() => onViewModeChange?.(mode)}><Icon /></button>
+        })}
       </div>
     </section>
   )
@@ -163,12 +159,14 @@ function LibrarySidebarControls({
 export default function LibrarySidebar({
   filter,
   sort,
-  density,
+  viewMode = 'cards',
   query,
   groups,
   collapsedFolderIds,
   notices,
   bulkActions,
+  details,
+  summary,
   showLoading,
   showEmpty,
   emptyTitle,
@@ -179,7 +177,7 @@ export default function LibrarySidebar({
   hasMore,
   onFilterChange,
   onSortChange,
-  onDensityChange,
+  onViewModeChange,
   onQueryChange,
   onToggleSection,
   onEmptyAction,
@@ -196,24 +194,20 @@ export default function LibrarySidebar({
       <LibrarySidebarControls
         filter={filter}
         sort={sort}
-        density={density}
+        viewMode={viewMode}
         query={query}
         refreshing={refreshing}
         onFilterChange={onFilterChange}
         onSortChange={onSortChange}
-        onDensityChange={onDensityChange}
+        onViewModeChange={onViewModeChange}
         onQueryChange={onQueryChange}
         onRefresh={onRefresh}
       />
 
       <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>
         {notices}
-        <div className="library-results-header" aria-hidden="true">
-          <span>{t('library.name')}</span>
-          <span>{t('nav.source')}</span>
-          <span>{t('library.status')}</span>
-          <span>{t('library.action')}</span>
-        </div>
+        {summary}
+        {details}
 
         {showLoading && <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />}
         {showEmpty && (
@@ -258,7 +252,22 @@ export default function LibrarySidebar({
                     <em>{t('library.folder.itemsCount', { count: section.repositories.length })}</em>
                   </button>
                   {!isCollapsed && (
-                    <div className="library-folder-section-items">
+                    viewMode === 'table' ? (
+                      <div className="library-table-scroll" role="region" aria-label={t('library.tableFor', { name: section.title })} tabIndex={0}>
+                        <table className="library-table">
+                          <caption className="visually-hidden">{t('library.tableFor', { name: section.title })}</caption>
+                          <thead><tr>
+                            <th scope="col" aria-sort={sort === 'name' ? 'ascending' : undefined}>{t('library.table.app')}</th>
+                            <th scope="col">{t('library.table.status')}</th>
+                            <th scope="col">{t('library.table.installed')}</th>
+                            <th scope="col">{t('library.ops.latest')}</th>
+                            <th scope="col" aria-sort={sort === 'updated' ? 'descending' : undefined}>{t('library.table.updated')}</th>
+                            <th scope="col">{t('library.action')}</th>
+                          </tr></thead>
+                          <tbody>{section.repositories.map(renderRepository)}</tbody>
+                        </table>
+                      </div>
+                    ) : <div className="library-folder-section-items">
                       {section.repositories.map(renderRepository)}
                     </div>
                   )}

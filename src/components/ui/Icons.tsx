@@ -2,6 +2,14 @@ interface IconProps {
   className?: string
 }
 
+export function CardsIcon({ className = 'ui-icon' }: IconProps) {
+  return <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3zM12 12h5v5h-5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+}
+
+export function TableIcon({ className = 'ui-icon' }: IconProps) {
+  return <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><rect x="2.5" y="3" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M3 7.5h14M3 12h14M8 8v9" stroke="currentColor" strokeWidth="1.6" /></svg>
+}
+
 export type StatusIconKind = 'info' | 'success' | 'warning' | 'error'
 
 export function StatusIcon({ kind, className = 'ui-icon' }: IconProps & { kind: StatusIconKind }) {

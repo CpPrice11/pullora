@@ -95,7 +95,12 @@ fn save_store(config_dir: &Path, store: &InstalledStore) -> Result<(), StorageEr
     std::fs::create_dir_all(config_dir)?;
     let path = config_dir.join("installed_apps.json");
     let content = serde_json::to_string_pretty(store)?;
-    std::fs::write(&path, content)?;
+    let temporary = config_dir.join(format!(".installed-{}.tmp", uuid::Uuid::new_v4()));
+    std::fs::write(&temporary, content)?;
+    if let Err(error) = std::fs::rename(&temporary, &path) {
+        let _ = std::fs::remove_file(&temporary);
+        return Err(error.into());
+    }
     Ok(())
 }
 
@@ -217,4 +222,37 @@ pub fn record_launch(config_dir: &Path, owner: &str, repo: &str) -> Result<(), S
         .ok_or_else(|| StorageError::NotFound(format!("App {}/{} not found", owner, repo)))?;
     app.last_launched_at = Some(Utc::now());
     save_store(config_dir, &store)
+}
+
+#[cfg(test)]
+mod ownership_tests {
+    use super::*;
+    #[test]
+    fn disconnecting_external_entry_keeps_original_files() {
+        let root = std::env::temp_dir().join(format!("pullora-external-{}", uuid::Uuid::new_v4()));
+        let external = root.join("outside-library");
+        let config = root.join("config");
+        std::fs::create_dir_all(&external).unwrap();
+        let executable = external.join("recycle-desk.exe");
+        std::fs::write(&executable, b"MZtest").unwrap();
+        add_version(
+            &config,
+            "CpPrice11",
+            "recycle-desk",
+            VersionInfo {
+                tag: "v1".into(),
+                installed_at: Utc::now(),
+                executable: executable.to_string_lossy().into(),
+                size_bytes: 0,
+                asset_name: None,
+                install_kind: Some("external".into()),
+                install_dir: Some(external.to_string_lossy().into()),
+            },
+        )
+        .unwrap();
+        remove_version(&config, "CpPrice11", "recycle-desk", "v1").unwrap();
+        assert!(list_installed(&config).unwrap().is_empty());
+        assert_eq!(std::fs::read(&executable).unwrap(), b"MZtest");
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

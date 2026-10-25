@@ -35,6 +35,7 @@ export function useLibraryFiltering({
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
     const filtered = repositories.filter((repo) => {
+      if (repo.website_url && filter !== 'all') return false
       const installedApp = getInstalledApp(repo)
       const latestVersion = getLatestVersion(repo)
       const status = getLibraryAppStatus(installedApp, latestVersion)

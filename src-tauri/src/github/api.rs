@@ -23,6 +23,21 @@ struct RateLimitState {
     resources: HashMap<String, RateLimitBucket>,
 }
 
+fn rate_limited(
+    status: reqwest::StatusCode,
+    headers: &reqwest::header::HeaderMap,
+    body: &str,
+) -> bool {
+    status == reqwest::StatusCode::TOO_MANY_REQUESTS
+        || (status == reqwest::StatusCode::FORBIDDEN
+            && (headers
+                .get("x-ratelimit-remaining")
+                .and_then(|v| v.to_str().ok())
+                == Some("0")
+                || headers.contains_key(reqwest::header::RETRY_AFTER)
+                || body.to_ascii_lowercase().contains("rate limit")))
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitHubRateLimitStatus {
@@ -38,14 +53,55 @@ pub struct GitHubClient {
 }
 
 fn remove_launcher_repository(mut data: OwnerRepositoriesResponse) -> OwnerRepositoriesResponse {
+    // Apply the curated project kind to fresh responses and older cached catalogs alike.
+    for repo in &mut data.items {
+        repo.website_url =
+            super::models::website_url(&repo.owner.login, &repo.name).map(str::to_owned);
+    }
     data.items.retain(|repo| {
         !(repo.owner.login.eq_ignore_ascii_case("cpprice11")
-            && repo.name.eq_ignore_ascii_case("pullora"))
+            && (repo.name.eq_ignore_ascii_case("pullora")
+                || repo.name.eq_ignore_ascii_case("pullora-assets")))
     });
     data
 }
 
 impl GitHubClient {
+    async fn public_releases(
+        &self,
+        owner: &str,
+        repo: &str,
+        cache_key: &str,
+        api_error: String,
+    ) -> Result<Vec<Release>, String> {
+        let mut latest = match super::public_release::latest(owner, repo).await {
+            Ok(latest) => latest,
+            Err(error) => {
+                log::warn!("Public release check unavailable for {owner}/{repo}: {error}");
+                return Err(api_error);
+            }
+        };
+        let mut cache = self.cache.lock().unwrap();
+        let mut releases = cache
+            .get_releases_stale(cache_key)
+            .cloned()
+            .unwrap_or_default();
+        if let Some(previous) = releases
+            .iter()
+            .find(|release| release.tag_name == latest.tag_name)
+        {
+            latest.id = previous.id;
+            latest.name.clone_from(&previous.name);
+            latest.body.clone_from(&previous.body);
+            latest.published_at.clone_from(&previous.published_at);
+        }
+        releases.retain(|release| release.tag_name != latest.tag_name);
+        releases.insert(0, latest);
+        // Public metadata must not retain the API ETag or erase known older versions.
+        cache.set_releases(cache_key.to_owned(), releases.clone(), None);
+        Ok(releases)
+    }
+
     pub fn new(token: Option<String>, cache_path: PathBuf) -> Self {
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(
@@ -288,7 +344,9 @@ impl GitHubClient {
             }
         }
 
-        self.check_rate_limit("core", 10)?;
+        if let Err(error) = self.check_rate_limit("core", 10) {
+            return self.public_releases(owner, repo, &cache_key, error).await;
+        }
 
         let url = format!(
             "https://api.github.com/repos/{}/{}/releases?per_page=10",
@@ -335,8 +393,15 @@ impl GitHubClient {
 
         if !response.status().is_success() {
             let status = response.status();
+            let headers = response.headers().clone();
             let body = response.text().await.unwrap_or_default();
-            return Err(self.github_error("core", status, body));
+            let limited = rate_limited(status, &headers, &body);
+            let error = self.github_error("core", status, body);
+            return if limited {
+                self.public_releases(owner, repo, &cache_key, error).await
+            } else {
+                Err(error)
+            };
         }
 
         let data: Vec<Release> = response.json().await.map_err(|e| e.to_string())?;
@@ -360,6 +425,149 @@ impl GitHubClient {
         GitHubRateLimitStatus {
             core: state.resources.get("core").cloned().unwrap_or_default(),
             search: state.resources.get("search").cloned().unwrap_or_default(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn distinguishes_quota_errors_from_access_and_missing_resources() {
+        use reqwest::{header::HeaderMap, StatusCode};
+        let mut headers = HeaderMap::new();
+        assert!(rate_limited(StatusCode::TOO_MANY_REQUESTS, &headers, ""));
+        assert!(!rate_limited(
+            StatusCode::FORBIDDEN,
+            &headers,
+            "Resource not accessible"
+        ));
+        assert!(!rate_limited(
+            StatusCode::UNAUTHORIZED,
+            &headers,
+            "Bad credentials"
+        ));
+        assert!(!rate_limited(StatusCode::NOT_FOUND, &headers, "Not Found"));
+        assert!(rate_limited(
+            StatusCode::FORBIDDEN,
+            &headers,
+            "Secondary rate limit exceeded"
+        ));
+        headers.insert("x-ratelimit-remaining", "0".parse().unwrap());
+        assert!(rate_limited(StatusCode::FORBIDDEN, &headers, ""));
+        headers.clear();
+        headers.insert(reqwest::header::RETRY_AFTER, "60".parse().unwrap());
+        assert!(rate_limited(StatusCode::FORBIDDEN, &headers, ""));
+    }
+
+    fn limited_client(path: PathBuf) -> GitHubClient {
+        let client = GitHubClient::new(Some("test-token-must-not-reach-public-hosts".into()), path);
+        client.rate_limit.lock().unwrap().resources.insert(
+            "core".into(),
+            RateLimitBucket {
+                remaining: Some(0),
+                limit: Some(60),
+                reset_at: Some(
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs()
+                        + 600,
+                ),
+            },
+        );
+        client
+    }
+
+    #[tokio::test]
+    async fn quota_fallback_failure_preserves_existing_cache_and_error() {
+        let path = std::env::temp_dir().join(format!(
+            "pullora-public-failure-{}.json",
+            uuid::Uuid::new_v4()
+        ));
+        let client = limited_client(path.clone());
+        let key = "releases:owner/../repo";
+        client
+            .cache
+            .lock()
+            .unwrap()
+            .set_releases(key.into(), vec![], Some("known-etag".into()));
+        let result = client.get_releases("owner", "../repo", true).await;
+        assert!(result.unwrap_err().contains("errors.githubRateLimited"));
+        let cache = client.cache.lock().unwrap();
+        assert_eq!(cache.get_releases_etag(key), Some("known-etag"));
+        assert_eq!(cache.get_releases_stale(key).unwrap().len(), 0);
+        drop(cache);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "opt-in: public GitHub HTTP smoke; no API request or executable download"]
+    async fn public_release_live_smoke() {
+        for repo in ["pullora", "recycle-desk"] {
+            let path = std::env::temp_dir().join(format!(
+                "pullora-public-smoke-{}.json",
+                uuid::Uuid::new_v4()
+            ));
+            let client = limited_client(path.clone());
+            let key = format!("releases:cpprice11/{repo}");
+            let old = Release {
+                id: 42,
+                tag_name: "v0.0.0-qa".into(),
+                name: None,
+                html_url: None,
+                draft: false,
+                prerelease: false,
+                published_at: None,
+                body: None,
+                assets: vec![],
+            };
+            client.cache.lock().unwrap().set_releases(
+                key.clone(),
+                vec![old],
+                Some("old-api-etag".into()),
+            );
+            let releases = client.get_releases("CpPrice11", repo, true).await.unwrap();
+            let latest = &releases[0];
+            assert!(!latest.assets.is_empty());
+            let checksum = crate::download::checksum::release_digest(
+                &client,
+                "CpPrice11",
+                repo,
+                &latest.tag_name,
+                &latest.assets[0].name,
+            )
+            .await
+            .unwrap();
+            assert_eq!(
+                checksum.as_deref(),
+                latest.assets[0]
+                    .digest
+                    .as_deref()
+                    .and_then(|value| value.strip_prefix("sha256:"))
+            );
+            assert!(latest.assets.iter().all(|a| a
+                .digest
+                .as_deref()
+                .is_some_and(|v| v.starts_with("sha256:"))));
+            assert_eq!(releases[1].tag_name, "v0.0.0-qa");
+            assert_ne!(latest.id, releases[1].id);
+            assert!(client
+                .cache
+                .lock()
+                .unwrap()
+                .get_releases_etag(&key)
+                .is_none());
+            let cached = client.get_releases("CpPrice11", repo, false).await.unwrap();
+            assert_eq!(cached[0].tag_name, latest.tag_name);
+            assert_eq!(client.rate_limit_status().core.remaining, Some(0));
+            println!(
+                "Public fallback {repo}: {} / {} verified package hashes; old history kept",
+                latest.tag_name,
+                latest.assets.len()
+            );
+            std::fs::remove_file(path).unwrap();
         }
     }
 }

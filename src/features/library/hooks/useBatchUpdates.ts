@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDownload } from '../../../hooks/useDownload'
 import { getReleases } from '../../../services/github'
+import { planReleaseInstallation } from '../../../services/download'
 import { cleanupIncompleteInstalls, openInstalledAppDir } from '../../../services/installed'
-import type { DownloadProgress, GitHubRelease, GitHubSearchResult } from '../../../types'
+import type { DownloadProgress, GitHubSearchResult } from '../../../types'
 import { useI18n } from '../../../i18n'
-import { pickPortableReleaseAsset } from '../releaseAssetClassifier'
+import { currentStage } from '../../../utils/downloadProgress'
 
 interface BatchUpdateJob {
   url: string
@@ -31,19 +32,6 @@ function repositoryKey(repo: GitHubSearchResult) {
   return `${repo.owner.login}/${repo.name}`.toLowerCase()
 }
 
-export function selectAutomaticUpdate(
-  releases: GitHubRelease[],
-  latestVersion: string | undefined,
-) {
-  if (!latestVersion) return null
-  const release = releases.find((item) =>
-    !item.draft && !item.prerelease && item.tag_name === latestVersion,
-  )
-  if (!release) return null
-  const asset = pickPortableReleaseAsset(release.assets)
-  return asset ? { release, asset } : null
-}
-
 export function useBatchUpdates({
   repositories,
   getLatestVersion,
@@ -53,16 +41,31 @@ export function useBatchUpdates({
   const {
     downloads: batchDownloads,
     download: startBatchDownload,
-    cancel: cancelBatchDownload,
+    cancel: cancelDownload,
     refresh: refreshBatchDownloads,
   } = useDownload()
-  const [batchUpdating, setBatchUpdating] = useState(false)
+  const [batchStarting, setBatchStarting] = useState(false)
+  const startingInstalls = useRef(new Set<string>())
+  const [installingKeys, setInstallingKeys] = useState<Set<string>>(new Set())
   const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
   const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
   const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
   const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
+  const seenCompletedDownloads = useRef(new Set<string>())
+  const batchUpdating = batchStarting || installingKeys.size > 0 || batchDownloads.some((download) =>
+    !['completed', 'failed'].includes(currentStage(download)),
+  )
 
-  const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob) => {
+  const cancelBatchDownload = useCallback(async (id: string) => {
+    await cancelDownload(id)
+    setBatchUpdateJobs((current) => {
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+  }, [cancelDownload])
+
+  const startBatchUpdateJob = useCallback(async (job: BatchUpdateJob, preferExistingInstall = true) => {
     const id = await startBatchDownload(
       job.url,
       job.fileName,
@@ -70,11 +73,35 @@ export function useBatchUpdates({
       job.repo,
       job.tag,
       job.size,
-      true,
+      preferExistingInstall,
     )
     setBatchUpdateJobs((current) => ({ ...current, [id]: job }))
     return id
   }, [startBatchDownload])
+
+  const startAutomaticInstall = async (repo: GitHubSearchResult, preferExistingInstall = false): Promise<'started' | 'choose' | 'busy'> => {
+    const key = repositoryKey(repo)
+    if (startingInstalls.current.has(key) || batchDownloads.some((item) =>
+      `${item.owner}/${item.repo}`.toLowerCase() === key && !['completed', 'failed'].includes(currentStage(item)),
+    )) return 'busy'
+    startingInstalls.current.add(key)
+    setInstallingKeys(new Set(startingInstalls.current))
+    try {
+      const releases = await getReleases(repo.owner.login, repo.name)
+      const release = releases.find((item) => !item.draft && !item.prerelease)
+      if (!release) throw new Error(t('library.installNoRelease'))
+      const plan = await planReleaseInstallation(repo.owner.login, repo.name, release.tag_name)
+      if (!plan.allowedAssetNames.length && plan.requiredFormat) throw new Error(t('errors.installFormatMismatch'))
+      const asset = release.assets.find((item) => item.name === plan.recommendedAssetName)
+      if (!asset) return 'choose'
+      await startBatchUpdateJob({ url: asset.browser_download_url, fileName: asset.name,
+        owner: repo.owner.login, repo: repo.name, tag: release.tag_name, size: asset.size }, preferExistingInstall)
+      return 'started'
+    } finally {
+      startingInstalls.current.delete(key)
+      setInstallingKeys(new Set(startingInstalls.current))
+    }
+  }
 
   const handleUpdateAllPortable = useCallback(async (
     selectedRepositories: GitHubSearchResult[] = repositories,
@@ -88,7 +115,7 @@ export function useBatchUpdates({
       return { startedKeys: [], skippedKeys: [], failedKeys: [] }
     }
 
-    setBatchUpdating(true)
+    setBatchStarting(true)
     const results = await Promise.all(selectedRepositories.map(async (repo) => {
       const key = repositoryKey(repo)
       const latestVersion = getLatestVersion(repo)
@@ -98,18 +125,21 @@ export function useBatchUpdates({
 
       try {
         const releases = await getReleases(repo.owner.login, repo.name)
-        const update = selectAutomaticUpdate(releases, latestVersion)
-        if (!update) {
+        const release = releases.find((item) => !item.draft && !item.prerelease && item.tag_name === latestVersion)
+        if (!release) return { key, status: 'skipped' as const }
+        const plan = await planReleaseInstallation(repo.owner.login, repo.name, release.tag_name)
+        const asset = release.assets.find((item) => item.name === plan.recommendedAssetName)
+        if (!asset || plan.requiredFormat === 'installer') {
           return { key, status: 'skipped' as const }
         }
 
         await startBatchUpdateJob({
-          url: update.asset.browser_download_url,
-          fileName: update.asset.name,
+          url: asset.browser_download_url,
+          fileName: asset.name,
           owner: repo.owner.login,
           repo: repo.name,
-          tag: update.release.tag_name,
-          size: update.asset.size,
+          tag: release.tag_name,
+          size: asset.size,
         })
         return { key, status: 'started' as const }
       } catch (error) {
@@ -122,11 +152,11 @@ export function useBatchUpdates({
     }))
 
     const startedKeys = results.filter((item) => item.status === 'started').map((item) => item.key)
+    setBatchStarting(false)
     const skippedKeys = results.filter((item) => item.status === 'skipped').map((item) => item.key)
     const failedResults = results.filter((item) => item.status === 'failed')
     const failedKeys = failedResults.map((item) => item.key)
     if (startedKeys.length === 0) {
-      setBatchUpdating(false)
       if (failedResults.length > 0) {
         setBatchUpdateError(failedResults[0].error)
       } else {
@@ -159,7 +189,7 @@ export function useBatchUpdates({
     if (!job) return
 
     setBatchUpdateError(null)
-    setBatchUpdating(true)
+    setBatchStarting(true)
     try {
       const id = await startBatchDownload(
         job.url,
@@ -178,8 +208,9 @@ export function useBatchUpdates({
         return next
       })
     } catch (error) {
-      setBatchUpdating(false)
       setBatchUpdateError(error instanceof Error ? error.message : t('updates.batchFailed'))
+    } finally {
+      setBatchStarting(false)
     }
   }
 
@@ -210,23 +241,17 @@ export function useBatchUpdates({
   }, [batchUpdateError])
 
   useEffect(() => {
-    if (!batchUpdating) return
-    const batchIds = Object.keys(batchUpdateJobs)
-    if (batchIds.length === 0) return
-
-    const relevantDownloads = batchDownloads.filter((download) => batchUpdateJobs[download.id])
-    const allSettled = relevantDownloads.length === batchIds.length &&
-      relevantDownloads.every((download) =>
-        download.status === 'completed' || download.status === 'failed',
-      )
-    if (!allSettled) return
-
-    setBatchUpdating(false)
-    void refreshLocalStatus()
-  }, [batchDownloads, batchUpdateJobs, batchUpdating, refreshLocalStatus])
+    const newlyCompleted = batchDownloads.filter((download) =>
+      currentStage(download) === 'completed' && !seenCompletedDownloads.current.has(download.id),
+    )
+    newlyCompleted.forEach((download) => seenCompletedDownloads.current.add(download.id))
+    if (newlyCompleted.length > 0) void refreshLocalStatus()
+  }, [batchDownloads, refreshLocalStatus])
 
   return {
     batchDownloads,
+    installingKeys,
+    startAutomaticInstall,
     cancelBatchDownload,
     batchUpdating,
     batchUpdateMessage,

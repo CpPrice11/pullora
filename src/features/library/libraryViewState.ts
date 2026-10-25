@@ -5,6 +5,7 @@ import {
   type LibraryDensity,
   type LibraryFilter,
   type LibrarySort,
+  type LibraryViewMode,
 } from './libraryViewControls'
 
 const storageKey = 'pullora-library-view-v1'
@@ -15,6 +16,7 @@ export interface LibraryViewState {
   filter: LibraryFilter
   sort: LibrarySort
   density: LibraryDensity
+  viewMode: LibraryViewMode
   featuredRepoKey: string | null
   sidebarScrollTop: number
   detailsScrollTop: number
@@ -26,6 +28,7 @@ const defaults: LibraryViewState = {
   filter: 'all',
   sort: 'updated',
   density: 'normal',
+  viewMode: 'cards',
   featuredRepoKey: null,
   sidebarScrollTop: 0,
   detailsScrollTop: 0,
@@ -54,6 +57,7 @@ export function parseLibraryViewState(raw: string | null): LibraryViewState {
       density: densities.has(value.density as LibraryDensity)
         ? value.density as LibraryDensity
         : 'normal',
+      viewMode: value.viewMode === 'table' ? 'table' : 'cards',
       featuredRepoKey: typeof value.featuredRepoKey === 'string'
         ? value.featuredRepoKey.slice(0, 500)
         : null,

@@ -8,11 +8,13 @@ import type {
   GitHubAsset,
   GitHubRelease,
   InstallPathValidation,
+  InstallationPlan,
 } from '../../types'
 import DownloadProgressPanel from './DownloadProgress'
 import { openExternalUrl } from '../../services/updates'
 import { pickDirectory } from '../../services/dialog'
 import { setInstallationPath, validateInstallationPath } from '../../services/settings'
+import { getInstallationArchitecture, planReleaseInstallation } from '../../services/download'
 import StatePanel from '../State/StatePanel'
 import { cleanupIncompleteInstalls, launchApp, openInstalledAppDir } from '../../services/installed'
 import { getLocalizedErrorMessage } from '../../services/tauri'
@@ -22,9 +24,9 @@ import {
   classifyReleaseAsset,
   classifyReleaseAssetArchitecture,
   classifyReleaseAssetCompatibility,
-  pickPortableReleaseAsset,
   releaseAssetKindLabelKey,
   type ReleaseAssetKind,
+  type ReleaseAssetArchitecture,
 } from '../../features/library/releaseAssetClassifier'
 import '../../features/library/components/SearchComponents.css'
 import '../Modal/Modal.css'
@@ -36,6 +38,7 @@ interface ReleaseSelectorProps {
   description?: string
   currentVersion?: string
   initialReleaseTag?: string | null
+  initialStep?: 'version' | 'file'
   onClose: () => void
   onInstalled?: () => void
   onError?: (message: string) => void
@@ -103,10 +106,6 @@ function sortAssets(assets: GitHubAsset[]) {
   })
 }
 
-function pickRecommendedAsset(assets: GitHubAsset[]): GitHubAsset | null {
-  return pickPortableReleaseAsset(assets)
-}
-
 function stepLabel(step: WizardStep, t: (key: string) => string, failedResult = false) {
   switch (step) {
     case 'version': return t('release.stepVersion')
@@ -132,6 +131,7 @@ function ReleaseSelector({
   description,
   currentVersion,
   initialReleaseTag,
+  initialStep = 'version',
   onClose,
   onInstalled,
   onError,
@@ -142,7 +142,9 @@ function ReleaseSelector({
   const { settings } = useSettings()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
-  const [step, setStep] = useState<WizardStep>('version')
+  const [installationPlan, setInstallationPlan] = useState<InstallationPlan | null>(null)
+  const [step, setStep] = useState<WizardStep>(initialStep)
+  const [architecture, setArchitecture] = useState<ReleaseAssetArchitecture | null>(null)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null)
@@ -164,8 +166,8 @@ function ReleaseSelector({
   )
 
   const recommendedAsset = useMemo(
-    () => selectedRelease ? pickRecommendedAsset(selectedRelease.assets) : null,
-    [selectedRelease],
+    () => selectedRelease?.assets.find((asset) => asset.name === installationPlan?.recommendedAssetName) ?? null,
+    [selectedRelease, installationPlan],
   )
 
   const selectedAssetKind = selectedAsset ? getAssetKind(selectedAsset) : null
@@ -173,7 +175,7 @@ function ReleaseSelector({
     ? classifyReleaseAssetArchitecture(selectedAsset)
     : 'unknown'
   const selectedAssetCompatible = selectedAsset
-    ? classifyReleaseAssetCompatibility(selectedAsset).compatible
+    ? Boolean(installationPlan?.allowedAssetNames.includes(selectedAsset.name))
     : false
   const selectedAssetAutoInstallable = isAutoInstallable(selectedAssetKind)
   const activeDownload = activeDownloadId
@@ -210,6 +212,13 @@ function ReleaseSelector({
   useEffect(() => {
     fetchReleases()
   }, [fetchReleases])
+
+  useEffect(() => {
+    let active = true
+    getInstallationArchitecture().then((value) => { if (active) setArchitecture(value) })
+      .catch((error) => { if (active) onError?.(error instanceof Error ? error.message : t('errors.commandFailed')) })
+    return () => { active = false }
+  }, [onError, t])
 
   useEffect(() => {
     if (error) onError?.(error)
@@ -272,17 +281,26 @@ function ReleaseSelector({
   }, [step])
 
   useEffect(() => {
-    if (visibleReleases.length > 0 && !selectedRelease) {
+    if (visibleReleases.length > 0 && !selectedRelease && architecture) {
       const first = visibleReleases.find((release) => release.tag_name === initialReleaseTag)
         ?? visibleReleases[0]
       setSelectedRelease(first)
-      setSelectedAsset(
-        pickRecommendedAsset(first.assets)
-          ?? sortAssets(first.assets)[0]
-          ?? null,
-      )
     }
-  }, [initialReleaseTag, selectedRelease, visibleReleases])
+  }, [initialReleaseTag, initialStep, selectedRelease, visibleReleases, architecture])
+
+  useEffect(() => {
+    if (!selectedRelease) return
+    let cancelled = false
+    setInstallationPlan(null)
+    setSelectedAsset(null)
+    void planReleaseInstallation(owner, repo, selectedRelease.tag_name).then((plan) => {
+      if (cancelled) return
+      setInstallationPlan(plan)
+      setSelectedAsset(selectedRelease.assets.find((asset) => asset.name === plan.recommendedAssetName) ?? null)
+      if (!plan.allowedAssetNames.length) setDownloadError(t(plan.requiredFormat ? 'errors.installFormatMismatch' : 'store.details.noCompatibleAsset'))
+    }).catch((error) => { if (!cancelled) setDownloadError(error instanceof Error ? error.message : getLocalizedErrorMessage(error)) })
+    return () => { cancelled = true }
+  }, [owner, repo, selectedRelease, t])
 
   useEffect(() => {
     if (!activeDownload) return
@@ -308,12 +326,9 @@ function ReleaseSelector({
   }, [activeDownload, onError, onInstalled, t])
 
   const handleReleaseChange = (release: GitHubRelease) => {
+    setInstallationPlan(null)
     setSelectedRelease(release)
-    setSelectedAsset(
-      pickRecommendedAsset(release.assets)
-        ?? sortAssets(release.assets)[0]
-        ?? null,
-    )
+    setSelectedAsset(null)
     setDownloadError(null)
   }
 
@@ -322,6 +337,7 @@ function ReleaseSelector({
       !selectedAsset
       || !selectedRelease
       || !selectedAssetAutoInstallable
+      || !selectedAssetCompatible
       || installPathValidation !== 'valid'
     ) return
 
@@ -545,16 +561,18 @@ function ReleaseSelector({
 
               {step === 'file' && selectedRelease && (
                 <>
+                  {installationPlan?.requiredFormat && <p role="note">{t('release.preserveFormat', { format: t(releaseAssetKindLabelKey(installationPlan.requiredFormat)) })}</p>}
                   {sortedAssets.length > 0 ? (
                     <div className="release-picker">
+                      {initialStep === 'file' && <p role="note">{t('library.installAmbiguous')}</p>}
                       <span className="release-section-label">{t('release.file')}</span>
                       <div className="release-asset-list">
                         {sortedAssets.map((asset) => {
-                          const compatibility = classifyReleaseAssetCompatibility(asset)
+                          const compatibility = classifyReleaseAssetCompatibility(asset, architecture ?? 'unknown')
                           const kind = compatibility.kind
-                          const architecture = compatibility.architecture
+                          const assetArchitecture = compatibility.architecture
                           const isSelected = selectedAsset?.id === asset.id
-                          const disabled = !compatibility.compatible
+                          const disabled = !installationPlan?.allowedAssetNames.includes(asset.name)
 
                           return (
                             <button
@@ -568,15 +586,15 @@ function ReleaseSelector({
                               <span className="release-asset-main">
                                 <strong>{asset.name}</strong>
                                 <span className="release-asset-meta">
-                                  <span className="release-asset-size">{formatBytes(asset.size, language)}</span>
+                                  <span className="release-asset-size">{asset.size > 0 ? formatBytes(asset.size, language) : t('details.unknown')}</span>
                                   <span aria-hidden="true">·</span>
-                                  <span className="release-asset-architecture">{t(`store.architecture.${architecture}`)}</span>
+                                  <span className="release-asset-architecture">{t(`store.architecture.${assetArchitecture}`)}</span>
                                 </span>
                               </span>
                               <span className="release-asset-badges">
                                 <span className="asset-kind">{t(assetKindKey(kind))}</span>
-                                <span className={`asset-compatibility ${compatibility.compatible ? 'compatible' : 'incompatible'}`}>
-                                  {t(compatibility.compatible
+                                <span className={`asset-compatibility ${!disabled ? 'compatible' : 'incompatible'}`}>
+                                  {t(!disabled
                                     ? 'store.compatibility.compatible'
                                     : 'store.compatibility.incompatible')}
                                 </span>
@@ -652,7 +670,7 @@ function ReleaseSelector({
                       </div>
                       <div>
                         <span>{t('release.size')}</span>
-                        <strong>{formatBytes(selectedAsset.size, language)}</strong>
+                        <strong>{selectedAsset.size > 0 ? formatBytes(selectedAsset.size, language) : t('details.unknown')}</strong>
                       </div>
                       <div>
                         <span>{t('release.currentVersion')}</span>
@@ -768,7 +786,7 @@ function ReleaseSelector({
                 type="button"
                 className="download-btn release-action-primary"
                 onClick={() => setStep('confirm')}
-                disabled={!selectedAssetAutoInstallable}
+                disabled={!selectedAssetAutoInstallable || !selectedAssetCompatible}
               >
                 {t('release.next')}
               </button>
@@ -777,7 +795,7 @@ function ReleaseSelector({
               <button
                 type="button"
                 onClick={handleDownload}
-                disabled={!selectedAssetAutoInstallable || downloading || installPathValidation !== 'valid'}
+                disabled={!selectedAssetAutoInstallable || !selectedAssetCompatible || downloading || installPathValidation !== 'valid'}
                 aria-describedby={downloadError ? 'release-install-error' : undefined}
                 aria-busy={installPathValidation === 'checking' || downloading}
                 className="download-btn release-action-primary"
