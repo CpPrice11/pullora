@@ -276,6 +276,7 @@ function LibraryPage({
     kind: 'cover' | 'background'
     mode: 'replace' | 'edit'
     initialCrop?: ArtCrop
+    previewShape?: 'hero' | 'card' | 'row'
     previewAspectRatios?: Partial<Record<LibraryDensity, number>>
   } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
@@ -318,6 +319,7 @@ function LibraryPage({
     installedApps,
     getInstalledApp,
     getLatestVersion,
+    getReleaseDate,
     refreshInstalledApps,
     refreshLatestVersions,
     discoveredApps, discoveryError, refreshDiscovered, healthByRepo,
@@ -729,6 +731,7 @@ function LibraryPage({
     installingKeys,
     startAutomaticInstall,
     cancelBatchDownload,
+    setBatchDownloadPaused,
     batchUpdating,
     batchUpdateMessage,
     batchUpdateError,
@@ -1022,10 +1025,10 @@ function LibraryPage({
     }
   }
 
-  const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
+  const handlePickArt = async (kind: 'cover' | 'background', targetRepo = featuredRepo, previewShape: 'hero' | 'card' | 'row' = 'hero', target?: HTMLElement | null) => {
     if (!targetRepo) return
 
-    const previewAspectRatios = kind === 'background' ? getHeroAspectRatios() : undefined
+    const previewAspectRatios = kind === 'background' ? getArtAspectRatios(previewShape, target) : undefined
 
     setLibraryActionError(null)
     const imagePath = await pickImageFile()
@@ -1036,26 +1039,27 @@ function LibraryPage({
       sourcePath: imagePath,
       kind,
       mode: 'replace',
+      previewShape,
       previewAspectRatios,
     })
   }
 
-  const getHeroAspectRatios = () => {
-    const hero = document.querySelector('.library-page .library-hero')
-    if (!hero) return undefined
+  const getArtAspectRatios = (previewShape: 'hero' | 'card' | 'row', target?: HTMLElement | null) => {
+    const surface = previewShape === 'hero' ? document.querySelector('.library-page .library-hero') : target
+    if (!surface) return undefined
 
-    const bounds = hero.getBoundingClientRect()
+    const bounds = surface.getBoundingClientRect()
     if (!bounds.width || !bounds.height) return undefined
 
     return { normal: bounds.width / bounds.height }
   }
 
-  const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo) => {
+  const handleEditArt = (kind: 'cover' | 'background', targetRepo = featuredRepo, previewShape: 'hero' | 'card' | 'row' = 'hero', target?: HTMLElement | null) => {
     if (!targetRepo) return
     const art = projectArt[projectArtKey(targetRepo.owner.login, targetRepo.name)]
     const sourcePath = kind === 'cover' ? art?.coverPath : art?.backgroundPath
     if (!sourcePath) return
-    const previewAspectRatios = kind === 'background' ? getHeroAspectRatios() : undefined
+    const previewAspectRatios = kind === 'background' ? getArtAspectRatios(previewShape, target) : undefined
 
     setLibraryActionError(null)
     setPendingArtCrop({
@@ -1064,6 +1068,7 @@ function LibraryPage({
       kind,
       mode: 'edit',
       initialCrop: kind === 'cover' ? art.coverCrop : art.backgroundCrop,
+      previewShape,
       previewAspectRatios,
     })
   }
@@ -1358,6 +1363,7 @@ function LibraryPage({
             compact
             downloads={batchDownloads}
             onCancel={cancelBatchDownload}
+            onSetPaused={setBatchDownloadPaused}
             onLaunch={(download) => {
               if (!download.owner || !download.repo) return
               launchApp(download.owner, download.repo).catch(() => {})
@@ -1578,6 +1584,8 @@ function LibraryPage({
         defaultIcon={defaultIcons[key]}
         download={activeDownload ?? batchDownloads.filter((d) => projectArtKey(d.owner ?? '', d.repo ?? '') === key).at(-1)}
         onCancelDownload={cancelBatchDownload}
+        onSetDownloadPaused={setBatchDownloadPaused}
+        releaseDate={getReleaseDate(repo)}
         onRetryDownload={handleBatchRetry}
         isFavorite={favoriteKeys.has(key)}
         isSelected={featuredRepo?.id === repo.id || recentlyInstalledKey === key}
@@ -1596,8 +1604,8 @@ function LibraryPage({
         onFavoriteChange={(nextValue) => handleFavoriteChange(repo, nextValue)}
         onPickArt={() => handlePickArt('cover', repo)}
         onEditArt={() => handleEditArt('cover', repo)}
-        onPickBackground={() => handlePickArt('background', repo)}
-        onEditBackground={() => handleEditArt('background', repo)}
+        onPickBackground={(target) => handlePickArt('background', repo, libraryViewMode === 'table' ? 'row' : 'card', target)}
+        onEditBackground={(target) => handleEditArt('background', repo, libraryViewMode === 'table' ? 'row' : 'card', target)}
         onClearArt={() => handleClearArt(repo, 'cover')}
         onClearBackground={() => handleClearArt(repo, 'background')}
         onUninstall={() => handleRequestUninstall(repo)}
@@ -1872,7 +1880,7 @@ function LibraryPage({
         <Suspense fallback={null}>
           <ArtCropDialog
             kind={pendingArtCrop.kind}
-            previewShape={pendingArtCrop.kind === 'cover' ? 'cover' : 'hero'}
+            previewShape={pendingArtCrop.kind === 'cover' ? 'cover' : pendingArtCrop.previewShape}
             initialPreviewMode="normal"
             previewAspectRatios={pendingArtCrop.previewAspectRatios}
             sourcePath={pendingArtCrop.sourcePath}

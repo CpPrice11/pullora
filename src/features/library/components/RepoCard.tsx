@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { DownloadProgress, GitHubSearchResult, InstalledApp, ProjectArt, DetectedInstallation, InstallationStatus } from '../../../types'
 import { addToFavorites, checkIsFavorite, removeFromFavorites } from '../../../services/favorites'
-import { projectArtCoverCropStyle, projectArtCoverUrl } from '../../../services/projectArt'
+import { projectArtCoverCropStyle, projectArtCoverUrl, projectArtBackgroundUrl, projectArtCropStyle, projectArtKey } from '../../../services/projectArt'
 import { useI18n } from '../../../i18n'
 import { formatBytes, formatDate, formatNumber } from '../../../utils/format'
 import { canCancel, currentStage, downloadPercent, stageLabel } from '../../../utils/downloadProgress'
@@ -12,6 +12,7 @@ import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeybo
 import { ChevronRightIcon, MoreHorizontalIcon, PlayIcon, UpdateIcon } from '../../../components/ui/Icons'
 import { openExternalUrl, openWebsiteUrl, projectWebsiteUrl } from '../../../services/updates'
 import { getLocalizedErrorMessage } from '../../../services/tauri'
+import DownloadPauseButton from '../../../components/Install/DownloadPauseButton'
 import './SearchComponents.css'
 
 const REPO_MENU_OPEN_EVENT = 'pullora:repo-menu-open'
@@ -23,9 +24,11 @@ interface RepoCardProps {
   installedApp?: InstalledApp
   installationHealth?: InstallationStatus
   latestVersion?: string
+  releaseDate?: string | null
   art?: ProjectArt
   defaultIcon?: string
   download?: DownloadProgress
+  onSetDownloadPaused?: (id: string, paused: boolean) => Promise<void>
   onCancelDownload?: (id: string) => Promise<void>
   onRetryDownload?: (download: DownloadProgress) => Promise<void>
   runtimeStatus?: 'running' | 'unknown'
@@ -45,8 +48,8 @@ interface RepoCardProps {
   onMoveToUncategorized?: () => void
   onPickArt?: () => void
   onEditArt?: () => void
-  onPickBackground?: () => void
-  onEditBackground?: () => void
+  onPickBackground?: (target: HTMLElement | null) => void
+  onEditBackground?: (target: HTMLElement | null) => void
   onClearArt?: () => void
   onClearBackground?: () => void
   onUninstall?: () => void
@@ -63,10 +66,12 @@ function RepoCard({
   repo,
   installedApp,
   latestVersion,
+  releaseDate,
   art,
   defaultIcon,
   download,
   onCancelDownload,
+  onSetDownloadPaused,
   onRetryDownload,
   runtimeStatus,
   installationHealth,
@@ -278,7 +283,7 @@ function RepoCard({
   const handlePickBackground = (event: React.MouseEvent) => {
     event.stopPropagation()
     closeActions()
-    onPickBackground?.()
+    onPickBackground?.(cardRef.current)
   }
 
   const handleClearArt = (event: React.MouseEvent) => {
@@ -338,7 +343,7 @@ function RepoCard({
   const handleEditBackground = (event: React.MouseEvent) => {
     event.stopPropagation()
     closeActions()
-    onEditBackground?.()
+    onEditBackground?.(cardRef.current)
   }
 
   const handleEditArt = (event: React.MouseEvent) => {
@@ -378,7 +383,8 @@ function RepoCard({
     handlePreview()
   }
 
-  const updatedDate = formatDate(repo.updated_at, language)
+  const validReleaseDate = releaseDate && Number.isFinite(Date.parse(releaseDate)) ? releaseDate : null
+  const updatedDate = validReleaseDate ? formatDate(validReleaseDate, language) : null
   const statusLabel = t(repo.website_url ? 'repo.webApp' : installationHealth === 'missing' ? 'repo.needsRepair' : installationHealth === 'unavailable' ? 'repo.runtimeUnknown' : `repo.${status}`)
   const operation = download && !['completed', 'failed'].includes(currentStage(download)) ? download : null
   const failedDownload = download && currentStage(download) === 'failed' ? download : null
@@ -399,7 +405,7 @@ function RepoCard({
   const primaryAction = repo.website_url ? handleInstall : needsRepair ? handleInstall : failedDownload && onRetryDownload
     ? isInstalled ? handleLaunch : retryFailed
     : isInstalled && !hasUpdate ? handleLaunch : handleInstall
-  const operationStage = operation ? stageLabel(currentStage(operation), t) : null
+  const operationStage = operation ? operation.paused ? t('download.paused') : stageLabel(currentStage(operation), t) : null
   const progress = operation ? downloadPercent(operation) : 0
   const progressKnown = Boolean(operation && operation.totalSize > 0)
   const progressText = `${formatNumber(progress, language)}%`
@@ -455,6 +461,12 @@ function RepoCard({
     </div>
   )
 
+  const backgroundUrl = projectArtBackgroundUrl(art, { fallbackToCover: false })
+  const backgroundLayer = backgroundUrl && (
+    <span className="repo-card-background" aria-hidden="true">
+      <img src={backgroundUrl} alt="" style={projectArtCropStyle(art)} draggable={false} loading="lazy" onLoad={(event) => { event.currentTarget.hidden = false }} onError={(event) => { event.currentTarget.hidden = true }} />
+    </span>
+  )
   const coverUrl = projectArtCoverUrl(art)
   const websiteUrl = projectWebsiteUrl(repo.website_url ?? repo.homepage)
   const titleId = `${menuId}-title`
@@ -542,7 +554,7 @@ function RepoCard({
             {t('repo.new', { version: latestVersion })}
           </span>
         )}
-        <span>{t('repo.updated', { date: updatedDate })}</span>
+        {!repo.website_url && <span>{updatedDate ? t('repo.released', { date: updatedDate }) : t('repo.releaseDateUnknown')}</span>}
       </div>
     </div>
   )
@@ -591,6 +603,7 @@ function RepoCard({
           {runtimeBlocked ? primaryLabel : actionBusy ? t('repo.busy') : primaryLabel}
         </button>
       )}
+      {operation && onSetDownloadPaused && <DownloadPauseButton download={operation} onChange={onSetDownloadPaused} onError={(error) => onError?.(error)} />}
       {operation && canCancel(operation) && onCancelDownload && (
         <button type="button" className="repo-cancel-download" aria-label={t('repo.cancelFor', { name: repo.name })} disabled={cancelling} aria-busy={cancelling} onClick={(event) => { void cancelOperation(event) }}>
           {t('download.cancel')}
@@ -617,7 +630,8 @@ function RepoCard({
   return (
     <Container
       ref={(element) => { cardRef.current = element }}
-      className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''} ${isBulkSelected ? 'bulk-selected' : ''}`}
+      className={`repo-card repo-card--${status} ${isSelected ? 'selected' : ''} ${isBulkSelected ? 'bulk-selected' : ''} ${backgroundUrl ? 'has-background' : ''}`}
+      data-repo-key={projectArtKey(repo.owner.login, repo.name)}
       onClick={handleCardClick}
       onContextMenu={handleContextMenu}
       tabIndex={0}
@@ -648,13 +662,13 @@ function RepoCard({
       }}
     >
       {viewMode === 'table' ? <>
-        <td className="repo-table-identity" title={repo.description ?? undefined}>{heading}{links}{description}</td>
+        <td className="repo-table-identity" title={repo.description ?? undefined}>{backgroundLayer}{heading}{links}{description}</td>
         <td className="repo-table-status">{summary}{recovery}</td>
         <td className="repo-table-version">{repo.website_url ? '—' : installedApp?.activeVersion ?? t('library.ops.notInstalled')}</td>
         <td className="repo-table-version">{repo.website_url ? '—' : latestVersion ?? t('library.ops.notChecked')}</td>
-        <td className="repo-table-date"><time dateTime={repo.updated_at}>{updatedDate}</time></td>
+        <td className="repo-table-date">{validReleaseDate ? <time dateTime={validReleaseDate}>{updatedDate}</time> : <span aria-label={t('repo.releaseDateUnknown')}>—</span>}</td>
         <td className="repo-table-actions">{actions}</td>
-      </> : <>{links}{heading}{description}{summary}{recovery}{actions}</>}
+      </> : <>{backgroundLayer}{links}{heading}{description}{summary}{recovery}{actions}</>}
 
       {actionsOpen && menuAnchor && createPortal(
         <>

@@ -65,6 +65,7 @@ export interface AppSettings {
   version?: number
   installationPath: string
   githubToken?: string | null
+  updateNotifications?: boolean
   theme: 'light' | 'dark' | 'auto'
   language: string
   appearance?: AppAppearanceSettings
@@ -193,6 +194,7 @@ export type DownloadStage =
   | 'failed'
 
 export interface DownloadProgress {
+  paused?: boolean
   checksumStatus?: 'pending' | 'verified' | 'unavailable' | 'failed' | null
   id: string
   fileName: string

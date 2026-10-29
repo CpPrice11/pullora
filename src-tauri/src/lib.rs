@@ -12,6 +12,7 @@ mod error;
 mod github;
 mod storage;
 mod tray;
+mod update_notifications;
 
 use download::DownloadManager;
 use github::GitHubClient;
@@ -77,6 +78,7 @@ pub fn run() {
             if let Err(error) = tray::setup(app.handle()) {
                 log::warn!("Quick-launch tray is unavailable: {error}");
             }
+            update_notifications::start(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -120,6 +122,7 @@ pub fn run() {
             commands::download::start_download,
             commands::download::get_downloads,
             commands::download::cancel_download,
+            commands::download::set_download_paused,
             commands::updates::get_launcher_version,
             commands::updates::get_launcher_installation_mode,
             commands::updates::install_launcher_update,

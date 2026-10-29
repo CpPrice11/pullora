@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import type { DownloadProgress } from '../types'
-import { startDownload, getDownloads, cancelDownload } from '../services/download'
+import { startDownload, getDownloads, cancelDownload, setDownloadPaused } from '../services/download'
 
 function mergeDownloads(existing: DownloadProgress[], incoming: DownloadProgress[]) {
   const byId = new Map(existing.map((item) => [item.id, item]))
@@ -67,5 +67,10 @@ export function useDownload() {
     setDownloads((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  return { downloads, download, cancel, refresh }
+  const setPaused = useCallback(async (id: string, paused: boolean) => {
+    await setDownloadPaused(id, paused)
+    await refresh()
+  }, [refresh])
+
+  return { downloads, download, cancel, refresh, setPaused }
 }

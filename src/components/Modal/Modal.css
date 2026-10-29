@@ -487,7 +487,8 @@
   border-radius: 18%;
 }
 
-.art-crop-preview--hero {
+.art-crop-preview--hero,
+.art-crop-preview--card {
   border-radius: 22px;
 }
 
@@ -626,3 +627,5 @@
     flex: 1 1 calc(50% - 6px);
   }
 }
+
+.art-crop-preview--row { border-radius: 0; }

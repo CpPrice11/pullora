@@ -4,5 +4,7 @@
   "tray.apps": "Quick launch",
   "tray.empty": "No installed apps",
   "tray.visit": "Visit Warframe Arsenal",
-  "tray.quit": "Exit Pullora"
+  "tray.quit": "Exit Pullora",
+  "updates.notificationTitle": "App update available",
+  "updates.notificationBody": "{name} {version} is available. Open Pullora to update."
 }

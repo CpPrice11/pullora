@@ -7,6 +7,8 @@ import sys
 # Current catalog tests retain theme, viewport, keyboard, action and screenshot coverage.
 CHECKS = (
     "scripts/ui/check-library-catalog.py",
+    "scripts/ui/check-project-backgrounds.py",
+    "scripts/ui/check-release-date-pause-notifications.py",
     "scripts/ui/check-library-table.py",
     "scripts/ui/check-card-operations.py",
     "scripts/ui/check-quick-install.py",

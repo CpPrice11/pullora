@@ -180,6 +180,18 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     }
     builder.build(app)?;
 
+    if let Some(window) = app.get_webview_window("main") {
+        let close_window = window.clone();
+        window.on_window_event(move |event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                match close_window.hide() {
+                    Ok(()) => api.prevent_close(),
+                    Err(error) => log::warn!("Failed to hide Pullora in the tray: {error}"),
+                }
+            }
+        });
+    }
+
     let app = app.clone();
     // Native refresh also works while the webview is hidden; no network or running-process polling.
     tauri::async_runtime::spawn(async move {

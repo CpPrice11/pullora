@@ -26,9 +26,11 @@ type SurfaceSetting = 'surfaceTransparency' | 'surfaceBlur'
 
 interface GeneralSettingsSectionProps {
   settings: AppSettings
+  saving: boolean
   launcherBackgrounds: Record<ResolvedTheme, ProjectArt | null>
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
+  onUpdateNotificationsChange: (enabled: boolean) => void
   onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void
@@ -85,7 +87,7 @@ function BackgroundActionsMenu({ themeLabel, onReplace, onReset }: BackgroundAct
 
   const closeMenu = (restoreFocus = true) => {
     setOpen(false)
-    if (restoreFocus) window.requestAnimationFrame(() => triggerRef.current?.focus())
+    if (restoreFocus) window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
   }
 
   const runAction = (action: () => void) => {
@@ -158,9 +160,11 @@ function BackgroundActionsMenu({ themeLabel, onReplace, onReset }: BackgroundAct
 
 function GeneralSettingsSection({
   settings,
+  saving,
   launcherBackgrounds,
   onThemeChange,
   onLanguageChange,
+  onUpdateNotificationsChange,
   onEditLauncherBackground,
   onChangeLauncherBackground,
   onClearLauncherBackground,
@@ -229,6 +233,11 @@ function GeneralSettingsSection({
           />
         </div>
 
+        <div className="form-group compact-control">
+          <label htmlFor="update-notifications">{t('settings.updateNotifications')}</label>
+          <input id="update-notifications" type="checkbox" disabled={saving} checked={settings.updateNotifications !== false} onChange={(event) => onUpdateNotificationsChange(event.target.checked)} aria-describedby="update-notifications-help" />
+          <p id="update-notifications-help" className="setting-description">{t('settings.updateNotificationsHelp')}</p>
+        </div>
         <div className="form-group launcher-background-control">
           <label>{t('settings.launcherBackground')}</label>
           <div className="launcher-background-themes">
@@ -580,6 +589,7 @@ function MaintenanceSettingsSection({
 interface SettingsSectionsProps {
   activeSection: SettingsSectionId
   settings: AppSettings
+  saving: boolean
   language: AppLanguage
   launcherBackgrounds: Record<ResolvedTheme, ProjectArt | null>
   pathValidation: PathValidation
@@ -593,6 +603,7 @@ interface SettingsSectionsProps {
   formatRateLimitReset: MaintenanceSettingsSectionProps['formatRateLimitReset']
   onThemeChange: (theme: ThemePreference) => void
   onLanguageChange: (language: AppLanguage) => void
+  onUpdateNotificationsChange: (enabled: boolean) => void
   onEditLauncherBackground: (theme: ResolvedTheme) => void
   onChangeLauncherBackground: (theme: ResolvedTheme) => void
   onClearLauncherBackground: (theme: ResolvedTheme) => void

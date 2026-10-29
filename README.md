@@ -40,9 +40,11 @@ Pullora показує застосунки `CpPrice11` і працює з їх�
 
 ## Розробка
 
-У `v5.23.0` є швидкий запуск із системного трея та перемикач подання бібліотеки «Картки / Таблиця» з двома іконками. Він замінює компактний режим і зберігає вибір після перезапуску. Обидва подання використовують спільні пошук, папки, дії та прогрес. Меню трея запускає встановлені застосунки, відкриває Warframe Arsenal, показує або приховує вікно й завершує Pullora; звичайна кнопка закриття діє як раніше.
+У `v5.23.0` є швидкий запуск із системного трея та перемикач подання бібліотеки «Картки / Таблиця» з двома іконками. Він замінює компактний режим і зберігає вибір після перезапуску. Обидва подання використовують спільні пошук, папки, дії та прогрес. Меню трея запускає встановлені застосунки, відкриває Warframe Arsenal, показує або приховує вікно й завершує Pullora; у `v5.24.0` хрестик змінено на приховування в трей, а «Вийти» повністю завершує програму.
 
 У `v5.23.0` оновлення також зберігають тип встановлення: EXE, ZIP або інсталятор. Бібліотека автоматично звіряє наявність файлів і Windows-інсталяцій; зниклі програми позначає для відновлення, зберігаючи їхні записи. Підключення знайденої програми потребує явної дії. Ця логіка реалізована на Rust.
+
+У `v5.24.0`: дату релізу додано в картки й таблицю; невідома дата не замінюється датою коміту. Пауза й продовження доступні в картках і списку завантажень. Продовження використовує HTTP Range та сильний ETag; без підтримки або при зміні файла завантаження починається заново. Після перезапуску Pullora залишається звичайний повтор незавершеної операції. Сповіщення перевіряють встановлені програми кожні 30 хвилин роботи Pullora, зберігають історію надісланих версій і вимикаються в налаштуваннях. Windows може приглушувати їх; автоматичного встановлення оновлень немає.
 
 Стек: Tauri 2, Rust, React, TypeScript і Vite. Для нативної збірки потрібні інструменти розробки Windows.
 
@@ -77,10 +79,12 @@ npm run tauri-build
 
 ## English
 
-Version `v5.23.0` adds native tray quick launch and an icon-only Cards / Table switch, replacing compact mode. The selected view persists across restarts; search, folders, actions, and progress are shared. The tray can launch installed apps, visit Warframe Arsenal, show or hide the window, and exit Pullora. Closing the window keeps its previous behavior.
+Version `v5.23.0` adds native tray quick launch and an icon-only Cards / Table switch, replacing compact mode. The selected view persists across restarts; search, folders, actions, and progress are shared. The tray can launch installed apps, visit Warframe Arsenal, show or hide the window, and exit Pullora. In `v5.24.0`, closing the window hides Pullora in the tray; Exit quits the app.
 
 Application authors: see the [packaging and update integration guide](docs/APP_UPDATE_INTEGRATION.md), including checksum generation and a GitHub Actions example.
 
 Pullora is a publicly available Windows 11 launcher for CpPrice11's applications. The author develops it primarily for their own use, and anyone can download and use it. The catalog is fixed to `CpPrice11`; the UI supports Ukrainian and English. Applications are installed from public GitHub Releases, while installed versions and user settings stay on the user's computer.
 
 Installed copies use the signed Tauri updater. Portable copies open the official release page and are updated manually. The EXE files are not Authenticode-signed. The public [pullora-assets](https://github.com/CpPrice11/pullora-assets) repository stores application icons and will also hold screenshots. Version `v5.23.0` includes its launcher integration, screenshot gallery, and revised application cards.
+
+Version `v5.24.0` adds release dates, pause/resume, and optional Windows update notifications. Resume uses HTTP Range with a strong ETag; unsupported or changed downloads restart safely. Restarting Pullora still uses the existing retry flow. Notifications check installed apps every 30 minutes while Pullora runs, remember notified versions, and can be disabled in Settings. Windows may silence them. Updates are not installed automatically.

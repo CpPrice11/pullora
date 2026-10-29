@@ -529,3 +529,45 @@
   .library-toolstrip .library-view-toggle { grid-column: 3; grid-row: 1; }
   .library-toolstrip .search-form { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* Keep custom artwork below content in both the grid and native table rows. */
+.cinematic-shell .library-page.library-catalog .repo-card.has-background {
+  isolation: isolate;
+}
+
+.repo-card-background {
+  border-radius: inherit;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+.repo-card-background img {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+  transform: scale(var(--art-zoom, 1));
+  transform-origin: var(--art-focus-x, 50%) var(--art-focus-y, 50%);
+}
+
+.repo-card-background::after {
+  background: color-mix(in srgb, var(--color-bg-elevated) 84%, transparent);
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+.cinematic-shell .library-page.library-catalog .repo-card.has-background :is(.repo-description, .repo-owner, .repo-card-links a, .repo-meta, .repo-table-date) {
+  color: var(--color-text);
+}
+
+.cinematic-shell .library-page.library-catalog .repo-card-actions:has(.repo-card-operation) {
+  display: grid;
+  grid-template-columns: var(--catalog-control-height) max-content minmax(0, 1fr);
+}
+.repo-card-actions .repo-card-operation { grid-column: 1 / -1; }
+.repo-card-actions:has(.repo-card-operation) .repo-more-action { grid-column: 3; justify-self: end; }

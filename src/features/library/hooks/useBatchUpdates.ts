@@ -42,6 +42,7 @@ export function useBatchUpdates({
     downloads: batchDownloads,
     download: startBatchDownload,
     cancel: cancelDownload,
+    setPaused: setBatchDownloadPaused,
     refresh: refreshBatchDownloads,
   } = useDownload()
   const [batchStarting, setBatchStarting] = useState(false)
@@ -253,6 +254,7 @@ export function useBatchUpdates({
     installingKeys,
     startAutomaticInstall,
     cancelBatchDownload,
+    setBatchDownloadPaused,
     batchUpdating,
     batchUpdateMessage,
     batchUpdateError,

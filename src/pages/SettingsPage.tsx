@@ -203,6 +203,7 @@ function SettingsPage({
     const resetAppearance = normalizeAppearance(DEFAULT_SETTINGS.appearance)
     const resetSettings = normalizeSettings({
       ...settings,
+      updateNotifications: DEFAULT_SETTINGS.updateNotifications,
       theme: DEFAULT_SETTINGS.theme,
       language: DEFAULT_SETTINGS.language,
       appearance: resetAppearance,
@@ -441,6 +442,7 @@ function SettingsPage({
             <SettingsSections
               activeSection={activeSection}
               settings={settings}
+              saving={saving}
               language={language}
               launcherBackgrounds={launcherBackgrounds}
               pathValidation={pathValidation}
@@ -452,6 +454,7 @@ function SettingsPage({
               eventLogError={eventLogError}
               formatRateLimit={formatRateLimit}
               formatRateLimitReset={formatRateLimitReset}
+              onUpdateNotificationsChange={(enabled) => { void persistSettings({ ...settings, updateNotifications: enabled }, settings) }}
               onThemeChange={(theme) => void handleThemeChange(theme)}
               onLanguageChange={(nextLanguage) => void handleLanguageChange(nextLanguage)}
               onEditLauncherBackground={onEditLauncherBackground}

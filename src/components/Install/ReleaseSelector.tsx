@@ -138,7 +138,7 @@ function ReleaseSelector({
 }: ReleaseSelectorProps) {
   const { language, t } = useI18n()
   const { releases, loading, error, fetchReleases } = useReleases(owner, repo)
-  const { downloads, download, cancel, refresh: refreshDownloads } = useDownload()
+  const { downloads, download, cancel, setPaused, refresh: refreshDownloads } = useDownload()
   const { settings } = useSettings()
   const [selectedRelease, setSelectedRelease] = useState<GitHubRelease | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<GitHubAsset | null>(null)
@@ -746,6 +746,7 @@ function ReleaseSelector({
                   <DownloadProgressPanel
                     downloads={shownDownloads}
                     onCancel={cancel}
+                    onSetPaused={setPaused}
                     onLaunch={handleLaunch}
                     onOpenFolder={handleOpenFolder}
                     onBackToLibrary={onClose}

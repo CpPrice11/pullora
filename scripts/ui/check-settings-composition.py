@@ -17,7 +17,7 @@ SECTIONS = (
 )
 VIEWPORTS = ((1000, 700), (1280, 720), (1920, 1080))
 EXPECTED_GROUP_COUNTS = {
-    "settings-general": 5,
+    "settings-general": 6,
     "settings-events": 0,
     "settings-maintenance": 0,
 }
@@ -836,6 +836,8 @@ def check_background_label_contract(page):
         trigger = page.get_by_role("button", name=menu_label, exact=True)
         assert trigger.get_attribute("aria-haspopup") == "menu"
         assert trigger.get_attribute("aria-expanded") == "false"
+        trigger.scroll_into_view_if_needed()
+        page.evaluate("new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
         trigger.click()
         menu = page.get_by_role("menu", name=menu_label, exact=True)
         menu.wait_for()

@@ -4,10 +4,12 @@ import { useI18n } from '../../i18n'
 import { getLocalizedErrorMessage } from '../../services/tauri'
 import { formatBytes } from '../../utils/format'
 import { canCancel, currentStage, downloadPercent, stageLabel } from '../../utils/downloadProgress'
+import DownloadPauseButton from './DownloadPauseButton'
 import './Install.css'
 
 interface DownloadProgressProps {
   downloads: DL[]
+  onSetPaused?: (id: string, paused: boolean) => Promise<void>
   onCancel: (id: string) => void
   onLaunch?: (download: DL) => void
   onOpenFolder?: (download: DL) => void
@@ -45,6 +47,7 @@ function stageDescription(stage: DownloadStage | undefined, t: (key: string) => 
 function DownloadProgressPanel({
   downloads,
   onCancel,
+  onSetPaused,
   onLaunch,
   onOpenFolder,
   onBackToLibrary,
@@ -54,6 +57,7 @@ function DownloadProgressPanel({
   compact = false,
 }: DownloadProgressProps) {
   const { language, t } = useI18n()
+  const [controlError, setControlError] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
 
   if (downloads.length === 0) return null
@@ -65,6 +69,7 @@ function DownloadProgressPanel({
 
   return (
     <div className={`download-panel ${compact ? 'download-panel--compact' : ''}`} aria-busy={busy}>
+      {controlError && <p role="alert">{controlError}</p>}
       <div className="download-panel-head">
         <h3 className="download-panel-title">{t('download.title')}</h3>
         <div className="download-panel-head-actions">
@@ -106,12 +111,13 @@ function DownloadProgressPanel({
                     aria-live="polite"
                     aria-atomic="true"
                   >
-                    {stageLabel(stage, t)}
+                    {download.paused ? t('download.paused') : stageLabel(stage, t)}
                   </span>
                   <span className="download-name" title={download.fileName}>
                     {download.fileName}
                   </span>
                 </div>
+                {onSetPaused && <DownloadPauseButton download={download} onChange={onSetPaused} onError={(error) => setControlError(String(error))} />}
                 {canCancel(download) && (
                   <button
                     type="button"
@@ -125,12 +131,12 @@ function DownloadProgressPanel({
                 )}
               </div>
 
-              <p className="download-stage-note">{stageDescription(stage, t)}</p>
+              <p className="download-stage-note">{download.paused ? t('download.pausedText') : stageDescription(stage, t)}</p>
 
               <div
                 className="progress-bar-wrap"
                 role="progressbar"
-                aria-label={`${download.fileName}: ${stageLabel(stage, t)}`}
+                aria-label={`${download.fileName}: ${download.paused ? t('download.paused') : stageLabel(stage, t)}`}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={progress}

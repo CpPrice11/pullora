@@ -134,6 +134,7 @@ if __name__ == '__main__':
             if custom:
                 assert 'project-art-cover' in image.get_attribute('class')
                 assert image.evaluate("el => el.style.getPropertyValue('--art-zoom')") == '1.2'
+                assert first.locator('.repo-card-background img').get_attribute('src') == '/__media/background-custom.png'
                 first.locator('.repo-name button').click()
                 assert page.locator('.library-hero-background img').get_attribute('src') == '/__media/background-custom.png'
                 page.locator('.library-catalog-details-toolbar button').click()
@@ -141,7 +142,8 @@ if __name__ == '__main__':
                 first.locator('.repo-more-action').click()
                 page.get_by_role('menuitem', name='Обкладинка', exact=True).click()
                 page.get_by_role('menuitem', name='Скинути', exact=True).click()
-                page.wait_for_function("Array.from(document.querySelectorAll('.repo-card')).find(el => el.textContent.includes('steam-achievement-manager')).querySelector('img').getAttribute('src') === '/__media/icon-default.png'")
+                page.wait_for_function("Array.from(document.querySelectorAll('.repo-card')).find(el => el.textContent.includes('steam-achievement-manager')).querySelector('.owner-avatar img').getAttribute('src') === '/__media/icon-default.png'")
+                assert first.locator('.repo-card-background img').get_attribute('src') == '/__media/background-custom.png'
                 first.locator('.repo-name button').click()
                 assert page.locator('.library-hero-background img').get_attribute('src') == '/__media/background-custom.png', 'resetting cover removed custom background'
             else:

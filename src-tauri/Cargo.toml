@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "5.23.1"
+version = "5.24.0"
 description = "Public Windows launcher for CpPrice11's applications, developed primarily for the author's own use."
 authors = ["CpPrice11"]
 license = ""
@@ -35,5 +35,5 @@ keyring = "4.1.5"
 tauri-plugin-updater = "2"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.61.3", features = ["Win32_System_Com", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_Foundation"] }
+windows = { version = "0.61.3", features = ["Foundation", "Data_Xml_Dom", "UI_Notifications", "Win32_System_WinRT", "Win32_System_Com", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_Foundation"] }
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Registry", "Win32_System_Threading", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

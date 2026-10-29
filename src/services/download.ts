@@ -34,6 +34,10 @@ export async function getDownloads(): Promise<DownloadProgress[]> {
   return callTauri<DownloadProgress[]>('get_downloads')
 }
 
+export async function setDownloadPaused(id: string, paused: boolean): Promise<void> {
+  return callTauri('set_download_paused', { id, paused })
+}
+
 export async function cancelDownload(id: string): Promise<void> {
   return callTauri('cancel_download', { id })
 }

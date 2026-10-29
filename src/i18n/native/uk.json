@@ -4,5 +4,7 @@
   "tray.apps": "Швидкий запуск",
   "tray.empty": "Немає встановлених застосунків",
   "tray.visit": "Відвідати Warframe Arsenal",
-  "tray.quit": "Вийти з Pullora"
+  "tray.quit": "Вийти з Pullora",
+  "updates.notificationTitle": "Доступне оновлення програми",
+  "updates.notificationBody": "Доступна {name} {version}. Відкрий Pullora для оновлення."
 }

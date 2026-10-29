@@ -1,4 +1,4 @@
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::download::manager::{DownloadProgress, DownloadRequest};
@@ -138,6 +138,18 @@ pub async fn start_download(
 #[tauri::command]
 pub async fn get_downloads(state: State<'_, AppState>) -> Result<Vec<DownloadProgress>, String> {
     Ok(state.download_manager.get_progress().await)
+}
+
+#[tauri::command]
+pub async fn set_download_paused(
+    app: AppHandle,
+    id: String,
+    paused: bool,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let progress = state.download_manager.set_paused(&id, paused).await?;
+    app.emit("download-progress", progress)
+        .map_err(|_| command_error("errors.commandFailed"))
 }
 
 #[tauri::command]

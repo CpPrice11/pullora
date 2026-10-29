@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   version: 2,
   installationPath: '',
   githubToken: null,
+  updateNotifications: true,
   theme: 'auto',
   language: 'uk',
   appearance: DEFAULT_APPEARANCE,
@@ -42,6 +43,7 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
     language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,
+    updateNotifications: settings?.updateNotifications !== false,
     appearance: normalizeAppearance(settings?.appearance),
   }
 }

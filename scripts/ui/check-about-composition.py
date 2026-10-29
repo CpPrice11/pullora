@@ -4,6 +4,7 @@ import importlib.util
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -261,6 +262,7 @@ def main() -> None:
                     locale="uk-UA",
                 )
                 page = context.new_page()
+                page.clock.set_fixed_time(datetime(2026, 10, 29, 12, 0, tzinfo=timezone.utc))
                 open_about(page, baseline)
                 results.append({"theme": theme, **inspect_composition(page, width, height)})
                 context.close()

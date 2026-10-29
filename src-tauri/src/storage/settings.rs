@@ -12,6 +12,8 @@ pub struct AppSettings {
     pub github_token: Option<String>,
     pub theme: String,
     pub language: String,
+    #[serde(default = "notifications_enabled")]
+    pub update_notifications: bool,
     #[serde(default)]
     pub appearance: Option<AppAppearanceSettings>,
 }
@@ -27,6 +29,10 @@ pub struct AppAppearanceSettings {
     pub surface_transparency: u32,
     #[serde(default = "default_surface_blur")]
     pub surface_blur: u32,
+}
+
+fn notifications_enabled() -> bool {
+    true
 }
 
 fn default_density() -> String {
@@ -126,6 +132,7 @@ impl Default for AppSettings {
             github_token: None,
             theme: "auto".to_string(),
             language: "uk".to_string(),
+            update_notifications: true,
             appearance: None,
         }
     }

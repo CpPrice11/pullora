@@ -69,11 +69,11 @@ with sync_playwright() as p:
                 assert page.evaluate("window.__CATALOG_CALLS__.filter(c=>c.command==='get_releases').length")==before
                 page.evaluate('document.querySelectorAll("*").forEach(el=>{if(el.scrollTop)el.scrollTop=0})')
                 page.screenshot(path=output/f'installation-sync-{theme}-{language}-{width}.png')
-                # Files return externally: Launch returns without reinstallation or losing metadata.
+                # Files return externally: the normal update action returns without losing metadata.
                 page.evaluate('window.__SYNC_CANDIDATE__=null')
                 health(page,'ready')
                 fandom(page).locator('.repo-installation-status').wait_for(state='detached')
-                assert fandom(page).locator('.repo-primary-action').inner_text()==('Launch' if language=='en' else 'Запустити')
+                assert fandom(page).locator('.repo-primary-action').inner_text()==('Update' if language=='en' else 'Оновити')
                 health(page,'unavailable')
                 page.wait_for_function("document.querySelectorAll('.repo-installation-status').length===1")
                 assert fandom(page).locator('.repo-primary-action').is_disabled()

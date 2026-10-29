@@ -84,6 +84,10 @@ export function CloseIcon({ className = 'ui-icon' }: IconProps) {
   )
 }
 
+export function PauseIcon({ className = 'ui-icon' }: IconProps) {
+  return <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 5v10M13 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+}
+
 export function PlayIcon({ className = 'ui-icon' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">

@@ -261,7 +261,7 @@ export default function LibrarySidebar({
                             <th scope="col">{t('library.table.status')}</th>
                             <th scope="col">{t('library.table.installed')}</th>
                             <th scope="col">{t('library.ops.latest')}</th>
-                            <th scope="col" aria-sort={sort === 'updated' ? 'descending' : undefined}>{t('library.table.updated')}</th>
+                            <th scope="col">{t('library.table.updated')}</th>
                             <th scope="col">{t('library.action')}</th>
                           </tr></thead>
                           <tbody>{section.repositories.map(renderRepository)}</tbody>

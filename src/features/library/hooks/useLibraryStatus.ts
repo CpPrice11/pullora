@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp, DetectedInstallation, AppRuntimeState, InstallationSnapshot } from '../../../types'
+import { listen } from '@tauri-apps/api/event'
 import { getReleases } from '../../../services/github'
 import { getInstallationSnapshot, getAppRuntimeStates } from '../../../services/installed'
 import { projectArtKey } from '../../../services/projectArt'
@@ -7,6 +8,7 @@ import { projectArtKey } from '../../../services/projectArt'
 interface LibraryStatusState {
   installedApps: InstalledApp[]
   latestVersions: Map<string, string>
+  releaseDates: Map<string, string | null>
   checkingUpdates: boolean
   latestVersionErrorCount: number
   latestVersionsCheckedAt: Date | null
@@ -16,10 +18,12 @@ interface LibraryStatusState {
 interface LatestVersionCacheEntry {
   checkedAt: number
   latestVersion: string | null
+  publishedAt?: string | null
 }
 
 interface LatestVersionCacheHit {
   latestVersion: string | null
+  publishedAt?: string | null
 }
 
 const latestVersionCacheKey = 'pullora.library.latestVersions.v1'
@@ -46,19 +50,20 @@ function writeLatestVersionCache(cache: Record<string, LatestVersionCacheEntry>)
 
 function readCachedLatestVersion(key: string, allowStale = false): LatestVersionCacheHit | null {
   const entry = readLatestVersionCache()[key]
-  if (!entry) return null
+  if (!entry || (!allowStale && !('publishedAt' in entry))) return null
 
   const isFresh = Date.now() - entry.checkedAt <= latestVersionCacheTtlMs
   if (!isFresh && !allowStale) return null
 
-  return { latestVersion: entry.latestVersion ?? null }
+  return { latestVersion: entry.latestVersion ?? null, publishedAt: entry.publishedAt ?? null }
 }
 
-function writeCachedLatestVersion(key: string, latestVersion: string | null) {
+function writeCachedLatestVersion(key: string, latestVersion: string | null, publishedAt: string | null) {
   const cache = readLatestVersionCache()
   cache[key] = {
     checkedAt: Date.now(),
     latestVersion,
+    publishedAt,
   }
   writeLatestVersionCache(cache)
 }
@@ -98,11 +103,23 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
   const [state, setState] = useState<LibraryStatusState>({
     installedApps: [],
     latestVersions: new Map(),
+    releaseDates: new Map(),
     checkingUpdates: false,
     latestVersionErrorCount: 0,
     latestVersionsCheckedAt: null,
     installedLoadError: null,
   })
+
+  useEffect(() => {
+    let disposed = false
+    let unsubscribe: (() => void) | undefined
+    void listen<{ owner: string; repo: string; version: string; publishedAt: string | null }>('library-release-checked', ({ payload }) => {
+      const key = projectArtKey(payload.owner, payload.repo)
+      writeCachedLatestVersion(key, payload.version, payload.publishedAt)
+      setState(previous => ({ ...previous, latestVersions: new Map(previous.latestVersions).set(key, payload.version), releaseDates: new Map(previous.releaseDates).set(key, payload.publishedAt) }))
+    }).then(stop => { if (disposed) stop(); else unsubscribe = stop }).catch(() => {})
+    return () => { disposed = true; unsubscribe?.() }
+  }, [])
 
   const installedByRepo = useMemo(() => {
     return new Map(
@@ -151,13 +168,18 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
 
   const refreshLatestVersions = useCallback(async (
     apps: InstalledApp[] = state.installedApps,
-    _repoItems?: GitHubSearchResult[],
+    repoItems?: GitHubSearchResult[],
     forceRefresh = false,
   ) => {
-    if (apps.length === 0) {
+    const targets = [...new Map([
+      ...apps.map(app => ({ owner: app.owner, repo: app.repo })),
+      ...(repoItems ?? []).filter(repo => repo.has_releases && !repo.website_url).map(repo => ({ owner: repo.owner.login, repo: repo.name })),
+    ].map(app => [projectArtKey(app.owner, app.repo), app])).values()]
+    if (targets.length === 0) {
       setState((prev) => ({
         ...prev,
         latestVersions: new Map(),
+    releaseDates: new Map(),
         checkingUpdates: false,
         latestVersionErrorCount: 0,
         latestVersionsCheckedAt: new Date(),
@@ -168,11 +190,11 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     setState((prev) => ({ ...prev, checkingUpdates: true }))
 
     const entries = await Promise.all(
-      apps.map(async (app) => {
+      targets.map(async (app) => {
         const key = projectArtKey(app.owner, app.repo)
         const cached = forceRefresh ? null : readCachedLatestVersion(key)
         if (cached) {
-          return cached.latestVersion ? [key, cached.latestVersion] as const : null
+          return cached.latestVersion ? [key, cached.latestVersion, cached.publishedAt ?? null] as const : null
         }
 
         try {
@@ -181,12 +203,12 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
             (release) => !release.draft && !release.prerelease,
           )
           const latestVersion = latest?.tag_name ?? null
-          writeCachedLatestVersion(key, latestVersion)
-          return latestVersion ? [key, latestVersion] as const : null
+          writeCachedLatestVersion(key, latestVersion, latest?.published_at ?? null)
+          return latestVersion ? [key, latestVersion, latest?.published_at ?? null] as const : null
         } catch {
           const stale = readCachedLatestVersion(key, true)
           if (stale) {
-            return stale.latestVersion ? [key, stale.latestVersion] as const : null
+            return stale.latestVersion ? [key, stale.latestVersion, stale.publishedAt ?? null] as const : null
           }
           return 'failed' as const
         }
@@ -194,20 +216,29 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     )
 
     const validEntries = entries.filter(
-      (entry): entry is readonly [string, string] => Array.isArray(entry),
+      (entry): entry is readonly [string, string, string | null] => Array.isArray(entry),
     )
     const failedCount = entries.filter((entry) => entry === 'failed').length
 
-    const latestVersions = new Map(validEntries)
+    const latestVersions = new Map(validEntries.map(([key, tag]) => [key, tag]))
+    const releaseDates = new Map(validEntries.map(([key, , date]) => [key, date]))
     setState((prev) => ({
       ...prev,
       latestVersions,
+      releaseDates,
       checkingUpdates: false,
       latestVersionErrorCount: failedCount,
       latestVersionsCheckedAt: new Date(),
     }))
     return latestVersions
   }, [state.installedApps])
+
+  const metadataTargets = useRef<GitHubSearchResult[] | null>(null)
+  useEffect(() => {
+    if (!_repositories.length || _repositories === metadataTargets.current) return
+    metadataTargets.current = _repositories
+    void refreshLatestVersions(state.installedApps, _repositories)
+  }, [_repositories, refreshLatestVersions, state.installedApps])
 
   const getInstalledApp = useCallback(
     (repo: GitHubSearchResult) => repo.website_url ? undefined : installedByRepo.get(projectArtKey(repo.owner.login, repo.name)),
@@ -230,6 +261,7 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     installedLoadError: state.installedLoadError,
     getInstalledApp,
     getLatestVersion,
+    getReleaseDate: (repo: GitHubSearchResult) => state.releaseDates.get(projectArtKey(repo.owner.login, repo.name)),
     refreshInstalledApps,
     refreshLatestVersions,
   }

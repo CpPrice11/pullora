@@ -29,7 +29,7 @@ const WORKSPACE_PREVIEW_SIZES: Record<Exclude<WorkspacePreviewSize, 'current'>, 
 
 interface ArtCropDialogProps {
   kind: Exclude<ProjectArtKind, 'all'>
-  previewShape?: 'cover' | 'hero' | 'workspace'
+  previewShape?: 'cover' | 'hero' | 'card' | 'row' | 'workspace'
   initialPreviewMode?: 'normal' | 'compact'
   previewAspectRatios?: Partial<Record<'normal' | 'compact', number>>
   previewStyle?: Record<string, string>
@@ -195,9 +195,9 @@ export default function ArtCropDialog({
 
   const targetAspect = previewShape === 'workspace'
     ? workspaceResolution.width / workspaceResolution.height
-    : previewShape === 'hero'
-      ? previewAspectRatios?.[initialPreviewMode] ?? 4
-      : 1
+    : previewShape === 'cover'
+      ? 1
+      : previewAspectRatios?.[initialPreviewMode] ?? 4
   const canvas = containedRect(stageSize, imageSize)
   const frame = frameRect(crop, canvas, targetAspect)
 
@@ -320,7 +320,7 @@ export default function ArtCropDialog({
   const announcedPosition = announcedCrop ? cropPosition(announcedCrop) : null
   const cropTarget = previewShape === 'workspace'
     ? t('art.cropWorkspaceTarget', workspaceResolution)
-    : t(previewShape === 'cover' ? 'art.cropTargetCover' : 'art.cropTargetHero')
+    : t(previewShape === 'cover' ? 'art.cropTargetCover' : previewShape === 'card' ? 'art.cropTargetCard' : previewShape === 'row' ? 'art.cropTargetRow' : 'art.cropTargetHero')
   const frameStyle = {
     left: frame.left,
     top: frame.top,

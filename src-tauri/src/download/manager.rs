@@ -23,6 +23,8 @@ const MAX_PARALLEL_DOWNLOADS: usize = 3;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgress {
+    #[serde(default)]
+    pub paused: bool,
     pub id: String,
     pub file_name: String,
     pub downloaded_size: u64,
@@ -135,6 +137,7 @@ impl DownloadManager {
         let id = request.id.clone();
 
         let progress = DownloadProgress {
+            paused: false,
             id: id.clone(),
             file_name: request.file_name.clone(),
             downloaded_size: 0,
@@ -197,19 +200,15 @@ impl DownloadManager {
             let tag = task.request.tag.clone();
             log_download_event(&owner, &repo, &tag, "download started");
 
-            let result = match download_slots.acquire_owned().await {
-                Ok(_permit) => {
-                    download_task(
-                        app.clone(),
-                        task,
-                        active_clone.clone(),
-                        cancelled_clone.clone(),
-                        operation_lock,
-                    )
-                    .await
-                }
-                Err(error) => Err(error.to_string()),
-            };
+            let result = download_task(
+                app.clone(),
+                task,
+                active_clone.clone(),
+                cancelled_clone.clone(),
+                operation_lock,
+                download_slots,
+            )
+            .await;
 
             match result {
                 Ok(()) => {
@@ -233,6 +232,7 @@ impl DownloadManager {
                     let mut list = active_clone.lock().await;
                     if let Some(p) = list.iter_mut().find(|p| p.id == id_clone) {
                         p.status = DownloadStatus::Failed;
+                        p.paused = false;
                         p.stage = DownloadStage::Failed;
                         p.error = Some(user_error);
                         let _ = app.emit("download-progress", p.clone());
@@ -266,6 +266,17 @@ impl DownloadManager {
             return Err(command_error("errors.installAlreadyRunning"));
         }
         Ok(())
+    }
+
+    pub async fn set_paused(&self, id: &str, paused: bool) -> Result<DownloadProgress, String> {
+        let mut list = self.active.lock().await;
+        let progress = list
+            .iter_mut()
+            .find(|p| p.id == id)
+            .filter(|p| matches!(p.stage, DownloadStage::Queued | DownloadStage::Downloading))
+            .ok_or_else(|| command_error("errors.commandFailed"))?;
+        progress.paused = paused;
+        Ok(progress.clone())
     }
 
     pub async fn cancel(&self, id: &str) {
@@ -424,6 +435,7 @@ async fn download_task(
     active: Arc<Mutex<Vec<DownloadProgress>>>,
     cancelled: Arc<Mutex<HashSet<String>>>,
     operation_lock: Arc<Mutex<()>>,
+    download_slots: Arc<Semaphore>,
 ) -> Result<(), String> {
     let DownloadTask {
         request:
@@ -444,6 +456,7 @@ async fn download_task(
     stop_if_cancelled(&cancelled, &id).await?;
 
     let client = Client::builder()
+        .connect_timeout(Duration::from_secs(15))
         .user_agent("Pullora/0.1.0")
         .build()
         .map_err(|e| e.to_string())?;
@@ -479,14 +492,31 @@ async fn download_task(
         cancelled: &cancelled,
         id: &id,
         total_size,
+        download_slots: &download_slots,
     };
 
+    let mut validator = None;
     let mut attempt = 1;
     let downloaded = loop {
-        match download_asset_once(&client, &url, &tmp_path, &attempt_context).await {
+        match download_asset_once(&client, &url, &tmp_path, &attempt_context, &mut validator).await
+        {
             Ok(downloaded) => break downloaded,
             Err(DownloadAttemptError::Cancelled) => {
+                let _ = fs::remove_file(&tmp_path);
                 return Err("Download canceled".to_string());
+            }
+            Err(DownloadAttemptError::Paused) => {
+                while is_paused(&active, &id).await {
+                    if is_cancelled(&cancelled, &id).await {
+                        let _ = fs::remove_file(&tmp_path);
+                        return Err("Download canceled".into());
+                    }
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                if is_cancelled(&cancelled, &id).await {
+                    let _ = fs::remove_file(&tmp_path);
+                    return Err("Download canceled".into());
+                }
             }
             Err(DownloadAttemptError::Fatal(error)) => return Err(error),
             Err(DownloadAttemptError::Retryable(error)) if attempt < DOWNLOAD_ATTEMPTS => {
@@ -499,11 +529,6 @@ async fn download_task(
                 tokio::time::sleep(Duration::from_millis(500 * u64::from(attempt))).await;
                 stop_if_cancelled(&cancelled, &id).await?;
                 attempt += 1;
-                emit_progress(&app, &active, &id, |p| {
-                    p.downloaded_size = 0;
-                    p.progress = 0.0;
-                })
-                .await;
             }
             Err(DownloadAttemptError::Retryable(error)) => return Err(error),
         }
@@ -864,10 +889,12 @@ async fn download_task(
     Ok(())
 }
 
+#[derive(Debug)]
 enum DownloadAttemptError {
     Retryable(String),
     Fatal(String),
     Cancelled,
+    Paused,
 }
 
 struct DownloadAttemptContext<'a> {
@@ -876,6 +903,73 @@ struct DownloadAttemptContext<'a> {
     cancelled: &'a Arc<Mutex<HashSet<String>>>,
     id: &'a str,
     total_size: u64,
+    download_slots: &'a Arc<Semaphore>,
+}
+
+async fn is_paused(active: &Arc<Mutex<Vec<DownloadProgress>>>, id: &str) -> bool {
+    active.lock().await.iter().any(|p| p.id == id && p.paused)
+}
+
+// Only append a response for the exact byte offset and the same entity.
+fn resume_offset(
+    status: reqwest::StatusCode,
+    headers: &reqwest::header::HeaderMap,
+    offset: u64,
+) -> Result<u64, String> {
+    if status == reqwest::StatusCode::OK {
+        return Ok(0);
+    }
+    if status != reqwest::StatusCode::PARTIAL_CONTENT || offset == 0 {
+        return Err(format!("Unexpected download response: {status}"));
+    }
+    let valid = headers
+        .get(reqwest::header::CONTENT_RANGE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("bytes "))
+        .and_then(|v| v.split_once('/'))
+        .and_then(|(range, total)| Some((range.split_once('-')?, total.parse::<u64>().ok()?)))
+        .and_then(|((start, end), total)| {
+            Some((start.parse::<u64>().ok()?, end.parse::<u64>().ok()?, total))
+        })
+        .is_some_and(|(start, end, total)| {
+            total > 0 && start == offset && end >= start && end == total - 1
+        });
+    if valid {
+        Ok(offset)
+    } else {
+        Err("Invalid download byte range".into())
+    }
+}
+
+async fn request_download(
+    client: &Client,
+    url: &str,
+    offset: u64,
+    validator: Option<&str>,
+) -> Result<reqwest::Response, DownloadAttemptError> {
+    let mut request = client
+        .get(url)
+        .header(reqwest::header::ACCEPT_ENCODING, "identity");
+    if offset > 0 {
+        if let Some(validator) = validator {
+            request = request
+                .header(reqwest::header::RANGE, format!("bytes={offset}-"))
+                .header(reqwest::header::IF_RANGE, validator);
+        }
+    }
+    let mut response = request
+        .send()
+        .await
+        .map_err(|e| DownloadAttemptError::Retryable(e.to_string()))?;
+    if response.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+        response = client
+            .get(url)
+            .header(reqwest::header::ACCEPT_ENCODING, "identity")
+            .send()
+            .await
+            .map_err(|e| DownloadAttemptError::Retryable(e.to_string()))?;
+    }
+    Ok(response)
 }
 
 async fn download_asset_once(
@@ -883,67 +977,142 @@ async fn download_asset_once(
     url: &str,
     tmp_path: &Path,
     context: &DownloadAttemptContext<'_>,
+    validator: &mut Option<String>,
 ) -> Result<u64, DownloadAttemptError> {
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|error| DownloadAttemptError::Retryable(error.to_string()))?;
+    // Paused transfers release their slot so other apps can continue downloading.
+    let _permit = loop {
+        if is_cancelled(context.cancelled, context.id).await {
+            return Err(DownloadAttemptError::Cancelled);
+        }
+        if is_paused(context.active, context.id).await {
+            return Err(DownloadAttemptError::Paused);
+        }
+        tokio::select! {
+            permit = context.download_slots.acquire() => break permit.map_err(|e| DownloadAttemptError::Fatal(e.to_string()))?,
+            _ = tokio::time::sleep(Duration::from_millis(100)) => {}
+        }
+    };
+    let offset = if validator.is_some() {
+        tokio::fs::metadata(tmp_path)
+            .await
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    let request_validator = validator.clone();
+    let send = request_download(client, url, offset, request_validator.as_deref());
+    tokio::pin!(send);
+    let response = loop {
+        if is_cancelled(context.cancelled, context.id).await {
+            return Err(DownloadAttemptError::Cancelled);
+        }
+        if is_paused(context.active, context.id).await {
+            return Err(DownloadAttemptError::Paused);
+        }
+        tokio::select! {
+            response = &mut send => break response?,
+            _ = tokio::time::sleep(Duration::from_millis(100)) => {}
+        }
+    };
     let status = response.status();
     if !status.is_success() {
-        let error = format!("HTTP {}", status);
+        let error = format!("HTTP {status}");
         return Err(if retryable_download_status(status) {
             DownloadAttemptError::Retryable(error)
         } else {
             DownloadAttemptError::Fatal(error)
         });
     }
-
-    let expected_size = response.content_length();
+    let start =
+        resume_offset(status, response.headers(), offset).map_err(DownloadAttemptError::Fatal)?;
+    let next_validator = response
+        .headers()
+        .get(reqwest::header::ETAG)
+        .filter(|v| !v.as_bytes().starts_with(b"W/"))
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned);
+    if start > 0
+        && next_validator
+            .as_ref()
+            .is_some_and(|v| Some(v) != validator.as_ref())
+    {
+        return Err(DownloadAttemptError::Fatal(
+            "Download entity changed during resume".into(),
+        ));
+    }
+    if start == 0 {
+        *validator = next_validator;
+    }
+    let expected_size = if start > 0 {
+        response
+            .headers()
+            .get(reqwest::header::CONTENT_RANGE)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.rsplit('/').next())
+            .and_then(|v| v.parse().ok())
+    } else {
+        response.content_length()
+    };
     let mut stream = response.bytes_stream();
-    let mut out = tokio::fs::File::create(tmp_path)
+    let mut out = tokio::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(start > 0)
+        .truncate(start == 0)
+        .open(tmp_path)
         .await
-        .map_err(|error| DownloadAttemptError::Fatal(install_io_error(&error)))?;
-    let mut downloaded = 0;
-
-    while let Some(chunk) = stream.next().await {
+        .map_err(|e| DownloadAttemptError::Fatal(install_io_error(&e)))?;
+    let mut downloaded = start;
+    loop {
         if is_cancelled(context.cancelled, context.id).await {
+            drop(out);
             let _ = fs::remove_file(tmp_path);
             return Err(DownloadAttemptError::Cancelled);
         }
-
-        let chunk = chunk.map_err(|error| {
-            let _ = fs::remove_file(tmp_path);
-            DownloadAttemptError::Retryable(error.to_string())
-        })?;
+        if is_paused(context.active, context.id).await {
+            tokio::io::AsyncWriteExt::flush(&mut out)
+                .await
+                .map_err(|e| DownloadAttemptError::Fatal(install_io_error(&e)))?;
+            return Err(DownloadAttemptError::Paused);
+        }
+        let chunk = tokio::select! {
+            chunk = stream.next() => chunk,
+            _ = tokio::time::sleep(Duration::from_millis(100)) => continue,
+        };
+        let Some(chunk) = chunk else { break };
+        let chunk = chunk.map_err(|e| DownloadAttemptError::Retryable(e.to_string()))?;
         tokio::io::AsyncWriteExt::write_all(&mut out, &chunk)
             .await
-            .map_err(|error| {
-                let _ = fs::remove_file(tmp_path);
-                DownloadAttemptError::Fatal(install_io_error(&error))
-            })?;
+            .map_err(|e| DownloadAttemptError::Fatal(install_io_error(&e)))?;
         downloaded += chunk.len() as u64;
-
-        let progress = if context.total_size > 0 {
-            (downloaded as f64 / context.total_size as f64) * 100.0
-        } else {
-            0.0
-        };
         emit_progress(context.app, context.active, context.id, |p| {
             p.downloaded_size = downloaded;
-            p.progress = progress;
+            p.progress = if context.total_size > 0 {
+                (downloaded as f64 / context.total_size as f64) * 100.0
+            } else {
+                0.0
+            };
         })
         .await;
     }
-    drop(out);
-
+    tokio::io::AsyncWriteExt::flush(&mut out)
+        .await
+        .map_err(|e| DownloadAttemptError::Fatal(install_io_error(&e)))?;
     if expected_size.is_some_and(|size| size != downloaded) {
-        let _ = fs::remove_file(tmp_path);
         return Err(DownloadAttemptError::Retryable(
-            "Incomplete download".to_string(),
+            "Incomplete download".into(),
         ));
     }
-
+    let mut list = context.active.lock().await;
+    let Some(progress) = list.iter_mut().find(|p| p.id == context.id) else {
+        return Err(DownloadAttemptError::Cancelled);
+    };
+    if progress.paused {
+        return Err(DownloadAttemptError::Paused);
+    }
+    // Atomically close the pause window before checksum/extraction starts.
+    progress.stage = DownloadStage::Verifying;
     Ok(downloaded)
 }
 
@@ -1615,6 +1784,7 @@ mod tests {
 
     fn progress(status: DownloadStatus, tag: &str) -> DownloadProgress {
         DownloadProgress {
+            paused: false,
             id: "job".to_string(),
             file_name: "app-portable.exe".to_string(),
             downloaded_size: 0,
@@ -1804,6 +1974,7 @@ mod tests {
         ));
         let recovery_path = config_dir.join("pending_downloads.json");
         let pending = DownloadProgress {
+            paused: false,
             id: "interrupted".to_string(),
             file_name: "demo-portable.zip".to_string(),
             downloaded_size: 128,
@@ -1840,5 +2011,102 @@ mod tests {
         assert!(manager.get_progress().await.is_empty());
         assert!(!recovery_path.exists());
         std::fs::remove_dir_all(config_dir).unwrap();
+    }
+    use super::*;
+
+    #[tokio::test]
+    async fn pause_preserves_progress_blocks_install_and_can_be_cancelled() {
+        let root = std::env::temp_dir().join(format!("pullora-pause-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).unwrap();
+        let manager = DownloadManager::new(&root);
+        let mut item: DownloadProgress = serde_json::from_value(serde_json::json!({"id":"pause-test", "fileName":"fixture.exe", "downloadedSize":123, "totalSize":456, "progress":25.0, "status":"downloading", "stage":"downloading"})).unwrap();
+        item.stage = DownloadStage::Downloading;
+        item.downloaded_size = 123;
+        let id = item.id.clone();
+        manager.active.lock().await.push(item);
+        let paused = manager.set_paused(&id, true).await.unwrap();
+        assert!(paused.paused);
+        assert_eq!(paused.downloaded_size, 123);
+        assert!(manager.has_running_downloads().await);
+        assert!(!manager.set_paused(&id, false).await.unwrap().paused);
+        manager.active.lock().await[0].stage = DownloadStage::Verifying;
+        assert!(manager.set_paused(&id, true).await.is_err());
+        manager.active.lock().await[0].stage = DownloadStage::Downloading;
+        manager.set_paused(&id, true).await.unwrap();
+        manager.cancel(&id).await;
+        assert!(manager.active.lock().await.is_empty());
+        assert!(is_cancelled(&manager.cancelled, &id).await);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn resume_rejects_wrong_offsets_and_partial_ranges() {
+        use reqwest::{
+            header::{HeaderMap, CONTENT_RANGE},
+            StatusCode,
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_RANGE, "bytes 3-5/6".parse().unwrap());
+        assert_eq!(
+            resume_offset(StatusCode::PARTIAL_CONTENT, &headers, 3).unwrap(),
+            3
+        );
+        assert!(resume_offset(StatusCode::PARTIAL_CONTENT, &headers, 2).is_err());
+        headers.insert(CONTENT_RANGE, "bytes 3-4/6".parse().unwrap());
+        assert!(resume_offset(StatusCode::PARTIAL_CONTENT, &headers, 3).is_err());
+        assert_eq!(resume_offset(StatusCode::OK, &headers, 3).unwrap(), 0);
+        headers.insert(CONTENT_RANGE, "bytes 1-1/0".parse().unwrap());
+        assert!(resume_offset(StatusCode::PARTIAL_CONTENT, &headers, 1).is_err());
+    }
+
+    #[tokio::test]
+    async fn http_resume_sends_range_and_if_range_and_restarts_when_ignored() {
+        use std::io::{Read, Write};
+        let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = server.local_addr().unwrap();
+        let worker = std::thread::spawn(move || {
+            for partial in [true, false] {
+                let (mut socket, _) = server.accept().unwrap();
+                socket
+                    .set_read_timeout(Some(Duration::from_secs(5)))
+                    .unwrap();
+                let mut request = vec![];
+                while !request.ends_with(b"\r\n\r\n") {
+                    let mut byte = [0];
+                    socket.read_exact(&mut byte).unwrap();
+                    request.push(byte[0]);
+                }
+                let request = String::from_utf8(request).unwrap().to_lowercase();
+                assert!(request.contains("range: bytes=3-"));
+                assert!(request.contains("if-range: \"fixture\""));
+                let response = if partial {
+                    "HTTP/1.1 206 Partial Content\r\nContent-Length: 3\r\nContent-Range: bytes 3-5/6\r\nETag: \"fixture\"\r\nConnection: close\r\n\r\ndef"
+                } else {
+                    "HTTP/1.1 200 OK\r\nContent-Length: 6\r\nConnection: close\r\n\r\nabcdef"
+                };
+                socket.write_all(response.as_bytes()).unwrap();
+            }
+        });
+        let client = Client::new();
+        let url = format!("http://{address}/fixture");
+        let response = request_download(&client, &url, 3, Some("\"fixture\""))
+            .await
+            .unwrap();
+        assert_eq!(
+            resume_offset(response.status(), response.headers(), 3).unwrap(),
+            3
+        );
+        let mut bytes = b"abc".to_vec();
+        bytes.extend(response.bytes().await.unwrap());
+        assert_eq!(bytes, b"abcdef");
+        let response = request_download(&client, &url, 3, Some("\"fixture\""))
+            .await
+            .unwrap();
+        assert_eq!(
+            resume_offset(response.status(), response.headers(), 3).unwrap(),
+            0
+        );
+        assert_eq!(response.bytes().await.unwrap().as_ref(), b"abcdef");
+        worker.join().unwrap();
     }
 }
