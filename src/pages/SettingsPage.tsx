@@ -25,7 +25,7 @@ import { applyAppearanceSettings, applyThemePreference, type ResolvedTheme, type
 import { DEFAULT_SETTINGS, normalizeAppearance, normalizeSettings } from '../utils/settingsDefaults'
 import { useI18n, type AppLanguage } from '../i18n'
 import { redactSensitiveText } from '../utils/redactSensitiveText'
-import { formatBytes } from '../utils/format'
+import { appLocale, formatBytes } from '../utils/format'
 import './PageStyles.css'
 
 interface SettingsPageProps {
@@ -322,7 +322,7 @@ function SettingsPage({
   const formatRateLimitReset = (bucket: GitHubRateLimitBucket) => {
     if (!bucket.resetAt) return t('settings.notChecked')
     return new Date(bucket.resetAt * 1000).toLocaleTimeString(
-      language === 'en' ? 'en-US' : 'uk-UA',
+      appLocale(language),
       { hour: '2-digit', minute: '2-digit' },
     )
   }

@@ -13,7 +13,7 @@ import type {
   LauncherStorageInfo,
   ProjectArt,
 } from '../../../types'
-import { formatBytes } from '../../../utils/format'
+import { appLocale, formatBytes } from '../../../utils/format'
 import type { ResolvedTheme, ThemePreference } from '../../../utils/theme'
 import { projectArtBackgroundUrl, projectArtCropStyle } from '../../../services/projectArt'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
@@ -229,6 +229,7 @@ function GeneralSettingsSection({
             options={([
               ['uk', t('settings.ukrainian')],
               ['en', t('settings.english')],
+              ['ru', t('settings.russian')],
             ] as const).map(([value, label]) => ({ value, label }))}
           />
         </div>
@@ -445,7 +446,7 @@ interface EventLogSettingsSectionProps {
 
 function EventLogSettingsSection({ entries, loading, error, onRefresh }: EventLogSettingsSectionProps) {
   const { language, t } = useI18n()
-  const timeFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'uk-UA', {
+  const timeFormatter = new Intl.DateTimeFormat(appLocale(language), {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',

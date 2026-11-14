@@ -10,12 +10,7 @@ use crate::{commands, github::models::website_url, storage, AppState};
 const TRAY_ID: &str = "pullora-quick-launch";
 
 fn labels(language: &str) -> BTreeMap<String, String> {
-    serde_json::from_str(if language == "en" {
-        include_str!("../../src/i18n/native/en.json")
-    } else {
-        include_str!("../../src/i18n/native/uk.json")
-    })
-    .expect("bundled tray translations must be valid JSON")
+    crate::native_i18n::labels(language)
 }
 
 // Keep only launchable library records. Paths and launch guards stay in launch_app.
@@ -24,9 +19,8 @@ fn entries(apps: Vec<storage::installed::InstalledApp>) -> Vec<(String, String)>
         .into_iter()
         .filter(|app| {
             app.owner.eq_ignore_ascii_case("CpPrice11")
-                && !["pullora", "pullora-assets", "warframe-arsenal"]
-                    .iter()
-                    .any(|repo| app.repo.eq_ignore_ascii_case(repo))
+                && !crate::github::models::is_hidden_repository(&app.owner, &app.repo)
+                && !app.repo.eq_ignore_ascii_case("warframe-arsenal")
                 && app
                     .versions
                     .iter()
@@ -249,5 +243,6 @@ mod tests {
             labels("uk").keys().collect::<Vec<_>>()
         );
         assert_eq!(labels("invalid"), labels("uk"));
+        assert_eq!(labels("ru")["tray.show"], "Показать Pullora");
     }
 }

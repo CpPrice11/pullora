@@ -5172,11 +5172,6 @@
   border-color: color-mix(in srgb, var(--color-primary) 38%, var(--surface-border));
 }
 
-:root[data-theme='light'] .cinematic-shell .library-page .library-sort-control select option {
-  background: var(--color-bg-elevated);
-  color: var(--color-text);
-}
-
 :root[data-theme='light'] .cinematic-shell .library-page .library-folder-group-label,
 :root[data-theme='light'] .cinematic-shell .library-page .library-folder-section-header em,
 :root[data-theme='light'] .cinematic-shell .library-page .library-inline-summary span,

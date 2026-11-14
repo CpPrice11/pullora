@@ -36,6 +36,8 @@ pub struct DownloadProgress {
     pub repo: Option<String>,
     pub tag: Option<String>,
     pub install_path: Option<String>,
+    #[serde(default)]
+    pub installer_cache: bool,
     pub executable_path: Option<String>,
     pub error: Option<String>,
     pub source_url: Option<String>,
@@ -148,7 +150,12 @@ impl DownloadManager {
             owner: Some(request.owner.clone()),
             repo: Some(request.repo.clone()),
             tag: Some(request.tag.clone()),
-            install_path: Some(display_install_path(&install_kind, &request.dest_dir)),
+            install_path: Some(if install_kind == "installer" {
+                installer_cache_root().display().to_string()
+            } else {
+                request.dest_dir.display().to_string()
+            }),
+            installer_cache: install_kind == "installer",
             executable_path: None,
             error: None,
             source_url: Some(request.url.clone()),
@@ -390,17 +397,6 @@ fn install_workspace_dir(install_kind: &str) -> PathBuf {
         installer_cache_root()
     } else {
         package_cache_root()
-    }
-}
-
-fn display_install_path(install_kind: &str, dest_dir: &Path) -> String {
-    if install_kind == "installer" {
-        format!(
-            "Системний інсталятор · кеш {}",
-            installer_cache_root().display()
-        )
-    } else {
-        dest_dir.display().to_string()
     }
 }
 
@@ -1796,6 +1792,7 @@ mod tests {
             repo: Some("repo".to_string()),
             tag: Some(tag.to_string()),
             install_path: Some("C:\\Pullora\\Apps".to_string()),
+            installer_cache: false,
             executable_path: None,
             error: None,
             source_url: None,
@@ -1986,6 +1983,7 @@ mod tests {
             repo: Some("demo".to_string()),
             tag: Some("v1.0.0".to_string()),
             install_path: Some(config_dir.join("Apps").display().to_string()),
+            installer_cache: false,
             executable_path: None,
             error: None,
             source_url: Some(

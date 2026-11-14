@@ -56,6 +56,11 @@
   place-items: center;
 }
 
+select option {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text);
+}
+
 /* GitHub + Pullora direction: dense dark workstation, flat controls, blue selection. */
 :root,
 :root[data-theme='dark'] {

@@ -2,29 +2,35 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const keys = { uk: new Set(), en: new Set() }
-const duplicates = { uk: [], en: [] }
+const languages = ['uk', 'en', 'ru']
+const dictionaries = {}
+const errors = []
 
-for (const language of ['uk', 'en']) {
+for (const language of languages) {
   const native = JSON.parse(readFileSync(new URL(`../../src/i18n/native/${language}.json`, import.meta.url), 'utf8'))
-  for (const key of Object.keys(native)) keys[language].add(key)
+  const dictionary = new Map(Object.entries(native))
   const source = readFileSync(new URL(`../../src/i18n/dictionaries/${language}.ts`, import.meta.url), 'utf8')
   for (const line of source.split(/\r?\n/)) {
-    const key = line.match(/^\s*'([^']+)':/i)?.[1]
-    if (!key) continue
-    if (keys[language].has(key)) duplicates[language].push(key)
-    keys[language].add(key)
+    const entry = line.match(/^\s*'([^']+)':\s*(.+),\s*$/)
+    if (!entry) continue
+    const [, key, text] = entry
+    if (dictionary.has(key)) errors.push(`duplicate ${language}: ${key}`)
+    dictionary.set(key, text)
   }
+  dictionaries[language] = dictionary
 }
 
-const missingUk = [...keys.en].filter((key) => !keys.uk.has(key))
-const missingEn = [...keys.uk].filter((key) => !keys.en.has(key))
-const errors = [
-  ...duplicates.uk.map((key) => `duplicate uk: ${key}`),
-  ...duplicates.en.map((key) => `duplicate en: ${key}`),
-  ...missingUk.map((key) => `missing uk: ${key}`),
-  ...missingEn.map((key) => `missing en: ${key}`),
-]
+const keys = new Set(languages.flatMap(language => [...dictionaries[language].keys()]))
+const placeholders = text => [...text.matchAll(/\{\w+\}/g)].map(match => match[0]).sort().join(',')
+for (const language of languages) {
+  for (const key of keys) {
+    const text = dictionaries[language].get(key)
+    if (text === undefined) errors.push(`missing ${language}: ${key}`)
+    else if (dictionaries.en.has(key) && placeholders(text) !== placeholders(dictionaries.en.get(key))) {
+      errors.push(`placeholder mismatch ${language}: ${key}`)
+    }
+  }
+}
 
 function filesIn(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -42,7 +48,9 @@ const rustCodes = new Set(
 )
 
 for (const code of rustCodes) {
-  if (!keys.uk.has(code) || !keys.en.has(code)) errors.push(`missing Rust error translation: ${code}`)
+  if (languages.some(language => !dictionaries[language].has(code))) {
+    errors.push(`missing Rust error translation: ${code}`)
+  }
 }
 
 if (errors.length) {
@@ -50,4 +58,4 @@ if (errors.length) {
   process.exit(1)
 }
 
-console.log(`[i18n] uk=${keys.uk.size}, en=${keys.en.size}, duplicates=0, Rust errors=${rustCodes.size}`)
+console.log(`[i18n] ${languages.map(language => `${language}=${dictionaries[language].size}`).join(', ')}, duplicates=0, Rust errors=${rustCodes.size}`)

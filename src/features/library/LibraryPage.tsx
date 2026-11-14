@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { listen } from '@tauri-apps/api/event'
+import { appLocale } from '../../utils/format'
 import { getLocalizedErrorMessage } from '../../services/tauri'
 import { useOwnerRepositories } from './hooks/useGitHub'
 import { useSettings } from '../../hooks/useSettings'
@@ -61,9 +62,9 @@ const ProjectGallery = lazy(() => import('./components/ProjectGallery'))
 const BatchUpdatePanel = lazy(() => import('./components/BatchUpdatePanel'))
 const CATALOG_OWNER = 'CpPrice11'
 
-function isLauncherRepository(owner: string, repo: string) {
+function isHiddenRepository(owner: string, repo: string) {
   return owner.trim().toLowerCase() === 'cpprice11' &&
-    ['pullora', 'pullora-assets'].includes(repo.trim().toLowerCase())
+    ['pullora', 'pullora-assets', 'applied-systems-analysis-lab-2'].includes(repo.trim().toLowerCase())
 }
 
 function syntheticRepoId(owner: string, repo: string) {
@@ -243,6 +244,7 @@ interface LibraryPageProps {
 const ReleaseSelector = lazy(() => import('../../components/Install/ReleaseSelector'))
 const DownloadProgressPanel = lazy(() => import('../../components/Install/DownloadProgress'))
 const ArtCropDialog = lazy(() => import('../../components/Modal/ArtCropDialog'))
+const StopAppDialog = lazy(() => import('./components/StopAppDialog'))
 const LibraryBulkActions = lazy(() => import('./components/LibraryBulkActions').then((module) => ({
   default: module.LibraryBulkActions,
 })))
@@ -280,6 +282,7 @@ function LibraryPage({
     previewAspectRatios?: Partial<Record<LibraryDensity, number>>
   } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
+  const [stopTarget, setStopTarget] = useState<GitHubSearchResult | null>(null)
   const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
     loadDismissedUpdateKeys,
   )
@@ -463,7 +466,7 @@ function LibraryPage({
 
   useEffect(() => {
     const favoriteRepoKeys = favorites
-      .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
+      .filter((favorite) => !isHiddenRepository(favorite.owner, favorite.repo))
       .map((favorite) => normalizeRepoKey(favorite.owner, favorite.repo))
 
     setLibraryFolders((current) => {
@@ -608,7 +611,7 @@ function LibraryPage({
   }
 
   const formatTime = (date: Date | null) => date
-    ? date.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
+    ? date.toLocaleTimeString(appLocale(language), {
       hour: '2-digit',
       minute: '2-digit',
     })
@@ -687,17 +690,17 @@ function LibraryPage({
   const libraryRepositories = useMemo(() => {
     const reposByKey = new Map(
       state.repositories
-        .filter((repo) => !isLauncherRepository(repo.owner.login, repo.name))
+        .filter((repo) => !isHiddenRepository(repo.owner.login, repo.name))
         .map((repo) => [repoLookupKey(repo.owner.login, repo.name), repo]),
     )
     const favoritesByKey = new Map(
       favorites
-        .filter((favorite) => !isLauncherRepository(favorite.owner, favorite.repo))
+        .filter((favorite) => !isHiddenRepository(favorite.owner, favorite.repo))
         .map((favorite) => [repoLookupKey(favorite.owner, favorite.repo), favorite]),
     )
 
     installedApps.forEach((app) => {
-      if (isLauncherRepository(app.owner, app.repo)) return
+      if (isHiddenRepository(app.owner, app.repo)) return
       const key = repoLookupKey(app.owner, app.repo)
       if (!reposByKey.has(key)) {
         reposByKey.set(key, makeInstalledRepository(app, favoritesByKey.get(key)))
@@ -705,7 +708,7 @@ function LibraryPage({
     })
 
     favorites.forEach((favorite) => {
-      if (isLauncherRepository(favorite.owner, favorite.repo)) return
+      if (isHiddenRepository(favorite.owner, favorite.repo)) return
       const key = repoLookupKey(favorite.owner, favorite.repo)
       if (!reposByKey.has(key)) {
         reposByKey.set(key, makeFavoriteRepository(favorite))
@@ -1476,6 +1479,7 @@ function LibraryPage({
         busy={installingKeys.has(featuredRepoKey ?? '') || batchDownloads.some((d) => projectArtKey(d.owner ?? '', d.repo ?? '') === featuredRepoKey && !['completed', 'failed'].includes(currentStage(d)))}
         onInstall={() => { void handleQuickInstall(featuredRepo, Boolean(installedApp)) }}
         onLaunch={() => handleLaunch(featuredRepo)}
+        onStop={() => setStopTarget(featuredRepo)}
         onToggleFavorite={handleToggleFeaturedFavorite}
         onShowDetails={() => setHeroPanel('details')}
         onOpenFolder={() => handleOpenFolder(featuredRepo)}
@@ -1510,6 +1514,7 @@ function LibraryPage({
           onInstall={() => { void handleQuickInstall(featuredRepo, Boolean(installedApp)) }}
           onUpdate={() => { void handleQuickInstall(featuredRepo, true) }}
           onLaunch={() => handleLaunch(featuredRepo)}
+          onStop={() => setStopTarget(featuredRepo)}
         />
       </>
     )
@@ -1615,6 +1620,7 @@ function LibraryPage({
         }}
         onInstall={() => { void handleQuickInstall(repo, Boolean(getInstalledApp(repo))) }}
         onLaunch={() => handleLaunch(repo)}
+        onStop={() => setStopTarget(repo)}
         onError={(error) => handleInstallError(error instanceof Error ? error.message : t('errors.commandFailed'))}
         busy={Boolean(activeDownload) || installingKeys.has(key) || adoptingKey === key}
         folders={addableFolders}
@@ -1818,6 +1824,17 @@ function LibraryPage({
             onInstalled={handleInstalledFromRelease}
             onError={handleInstallError}
           />
+        </Suspense>
+      )}
+
+      {stopTarget && (
+        <Suspense fallback={null}>
+          <StopAppDialog repo={stopTarget} onCancel={() => setStopTarget(null)} onRefresh={refreshRuntime}
+            onStopped={() => {
+              setStopTarget(null)
+              setLibraryActionError(null)
+              setLibraryActionMessage(t('repo.stopped', { name: stopTarget.name }))
+            }} />
         </Suspense>
       )}
 

@@ -52,17 +52,14 @@ pub struct GitHubClient {
     rate_limit: Arc<Mutex<RateLimitState>>,
 }
 
-fn remove_launcher_repository(mut data: OwnerRepositoriesResponse) -> OwnerRepositoriesResponse {
+fn filter_catalog(mut data: OwnerRepositoriesResponse) -> OwnerRepositoriesResponse {
     // Apply the curated project kind to fresh responses and older cached catalogs alike.
     for repo in &mut data.items {
         repo.website_url =
             super::models::website_url(&repo.owner.login, &repo.name).map(str::to_owned);
     }
-    data.items.retain(|repo| {
-        !(repo.owner.login.eq_ignore_ascii_case("cpprice11")
-            && (repo.name.eq_ignore_ascii_case("pullora")
-                || repo.name.eq_ignore_ascii_case("pullora-assets")))
-    });
+    data.items
+        .retain(|repo| !super::models::is_hidden_repository(&repo.owner.login, &repo.name));
     data
 }
 
@@ -234,7 +231,7 @@ impl GitHubClient {
         if !force_refresh {
             let cache = self.cache.lock().unwrap();
             if let Some(cached) = cache.get_owner_repositories(&cache_key) {
-                return Ok(remove_launcher_repository(cached.clone()));
+                return Ok(filter_catalog(cached.clone()));
             }
         }
 
@@ -279,7 +276,7 @@ impl GitHubClient {
                     .get_owner_repositories_stale(&cache_key)
                     .cloned()
                 {
-                    return Ok(remove_launcher_repository(cached));
+                    return Ok(filter_catalog(cached));
                 }
                 return Err(error.to_string());
             }
@@ -290,7 +287,7 @@ impl GitHubClient {
             let cached = cache.get_owner_repositories_stale(&cache_key).cloned();
             cache.touch_owner_repositories(&cache_key);
             return cached
-                .map(remove_launcher_repository)
+                .map(filter_catalog)
                 .ok_or_else(|| command_error("errors.githubCacheUnavailable"));
         }
         let etag = Self::response_etag(response.headers());
@@ -315,7 +312,7 @@ impl GitHubClient {
             })
             .collect();
 
-        let data = remove_launcher_repository(OwnerRepositoriesResponse {
+        let data = filter_catalog(OwnerRepositoriesResponse {
             items,
             page,
             has_more,

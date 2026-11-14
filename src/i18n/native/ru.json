@@ -1,0 +1,10 @@
+{
+  "tray.show": "Показать Pullora",
+  "tray.hide": "Скрыть Pullora",
+  "tray.apps": "Быстрый запуск",
+  "tray.empty": "Нет установленных приложений",
+  "tray.visit": "Открыть Warframe Arsenal",
+  "tray.quit": "Выйти из Pullora",
+  "updates.notificationTitle": "Доступно обновление приложения",
+  "updates.notificationBody": "Доступна версия {version} приложения {name}. Откройте Pullora, чтобы обновить его."
+}

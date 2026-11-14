@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import { translate, type AppLanguage } from '../i18n'
+import { normalizeLanguage, translate, type AppLanguage } from '../i18n'
 import { formatBytes } from '../utils/format'
 
 // Detect if running inside Tauri or in a plain browser (for dev preview)
@@ -40,7 +40,7 @@ function localizedCommandError(error: unknown) {
   const encodedCode = encoded === null ? null : pipeIndex === -1 ? encoded : encoded.slice(0, pipeIndex)
   const detail = encoded !== null && pipeIndex !== -1 ? encoded.slice(pipeIndex + 1) : null
   const code = encodedCode?.startsWith('errors.') ? encodedCode : 'errors.commandFailed'
-  const language: AppLanguage = document.documentElement.lang === 'en' ? 'en' : 'uk'
+  const language = normalizeLanguage(document.documentElement.lang)
   return new TauriCommandError(code, errorMessage(code, detail, language), rawMessage)
 }
 

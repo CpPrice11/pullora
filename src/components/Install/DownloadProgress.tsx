@@ -172,7 +172,9 @@ function DownloadProgressPanel({
                     {formatBytes(download.downloadedSize, language)} / {formatBytes(download.totalSize, language)}
                   </span>
                 )}
-                {download.installPath && <span>{download.installPath}</span>}
+                {download.installPath && <span>{download.installerCache
+                  ? t('download.installerCache', { path: download.installPath })
+                  : download.installPath}</span>}
                 <span className="download-pct">{progress}%</span>
               </div>
 

@@ -9,7 +9,7 @@ import { canCancel, currentStage, downloadPercent, stageLabel } from '../../../u
 import { getLibraryAppStatus } from '../libraryStatus'
 import type { LibraryViewMode } from '../libraryViewControls'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../../../utils/menuKeyboard'
-import { ChevronRightIcon, MoreHorizontalIcon, PlayIcon, UpdateIcon } from '../../../components/ui/Icons'
+import { ChevronRightIcon, MoreHorizontalIcon, PlayIcon, StopIcon, UpdateIcon } from '../../../components/ui/Icons'
 import { openExternalUrl, openWebsiteUrl, projectWebsiteUrl } from '../../../services/updates'
 import { getLocalizedErrorMessage } from '../../../services/tauri'
 import DownloadPauseButton from '../../../components/Install/DownloadPauseButton'
@@ -57,6 +57,7 @@ interface RepoCardProps {
   onShowVersions?: () => void
   onInstall?: () => void
   onLaunch?: () => void
+  onStop?: () => void
   busy?: boolean
   onError?: (error: unknown) => void
 }
@@ -100,6 +101,7 @@ function RepoCard({
   onShowVersions,
   onInstall,
   onLaunch,
+  onStop,
   busy = false,
   onError,
 }: RepoCardProps) {
@@ -399,10 +401,15 @@ function RepoCard({
   }
   const needsRepair = installationHealth === 'missing'
   const fileCheckBlocked = installationHealth === 'unavailable'
-  const primaryLabel = repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : fileCheckBlocked ? t('repo.filesUnavailable') : needsRepair ? t('repo.reinstall') : failedDownload && onRetryDownload
+  const canStop = !repo.website_url && runtimeStatus === 'running' && Boolean(onStop)
+  const primaryLabel = repo.website_url ? t('repo.visit') : canStop ? t('repo.stop') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : fileCheckBlocked ? t('repo.filesUnavailable') : needsRepair ? t('repo.reinstall') : failedDownload && onRetryDownload
     ? t(isInstalled ? 'repo.launch' : 'download.retry')
     : hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
-  const primaryAction = repo.website_url ? handleInstall : needsRepair ? handleInstall : failedDownload && onRetryDownload
+  const primaryAction = canStop ? (event: React.MouseEvent) => {
+    event.stopPropagation()
+    closeActions()
+    onStop?.()
+  } : repo.website_url ? handleInstall : needsRepair ? handleInstall : failedDownload && onRetryDownload
     ? isInstalled ? handleLaunch : retryFailed
     : isInstalled && !hasUpdate ? handleLaunch : handleInstall
   const operationStage = operation ? operation.paused ? t('download.paused') : stageLabel(currentStage(operation), t) : null
@@ -411,6 +418,7 @@ function RepoCard({
   const progressText = `${formatNumber(progress, language)}%`
   const actionBusy = busy || Boolean(operation) || retrying
   const runtimeBlocked = Boolean(runtimeStatus)
+  const primaryDisabled = actionBusy || (!canStop && (runtimeBlocked || fileCheckBlocked))
   const cancelOperation = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
     if (!operation || !onCancelDownload || cancelling) return
@@ -598,8 +606,8 @@ function RepoCard({
           </span>
         </div>
       ) : (
-        <button type="button" className="repo-primary-action" onClick={primaryAction} disabled={actionBusy || runtimeBlocked || fileCheckBlocked} aria-busy={actionBusy} title={runtimeBlocked ? t('repo.closeToChange') : undefined} aria-describedby={failedDownload ? `${titleId}-install-error` : undefined}>
-          {hasUpdate || actionBusy ? <UpdateIcon /> : isInstalled ? <PlayIcon /> : <ChevronRightIcon />}
+        <button type="button" className="repo-primary-action" onClick={primaryAction} disabled={primaryDisabled} aria-busy={actionBusy} title={runtimeBlocked && !canStop ? t('repo.closeToChange') : undefined} aria-describedby={failedDownload ? `${titleId}-install-error` : undefined}>
+          {canStop ? <StopIcon /> : hasUpdate || actionBusy ? <UpdateIcon /> : isInstalled ? <PlayIcon /> : <ChevronRightIcon />}
           {runtimeBlocked ? primaryLabel : actionBusy ? t('repo.busy') : primaryLabel}
         </button>
       )}
@@ -692,7 +700,7 @@ function RepoCard({
                 type="button"
                 role="menuitem"
                 onClick={primaryAction}
-                disabled={actionBusy || runtimeBlocked || fileCheckBlocked}
+                disabled={primaryDisabled}
               >
                 {primaryLabel}
               </button>

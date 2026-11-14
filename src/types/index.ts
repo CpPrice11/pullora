@@ -207,6 +207,7 @@ export interface DownloadProgress {
   repo?: string
   tag?: string
   installPath?: string
+  installerCache?: boolean
   executablePath?: string
   error?: string
   sourceUrl?: string

@@ -1,3 +1,4 @@
+import { normalizeLanguage } from '../i18n'
 import type { AppAppearanceSettings, AppSettings } from '../types'
 
 export const DEFAULT_APPEARANCE: AppAppearanceSettings = {
@@ -42,7 +43,7 @@ export function normalizeSettings(settings: Partial<AppSettings> | null | undefi
     installationPath: settings?.installationPath || DEFAULT_SETTINGS.installationPath,
     githubToken: settings?.githubToken ?? DEFAULT_SETTINGS.githubToken,
     theme: settings?.theme || DEFAULT_SETTINGS.theme,
-    language: settings?.language === 'en' ? 'en' : DEFAULT_SETTINGS.language,
+    language: normalizeLanguage(settings?.language),
     updateNotifications: settings?.updateNotifications !== false,
     appearance: normalizeAppearance(settings?.appearance),
   }

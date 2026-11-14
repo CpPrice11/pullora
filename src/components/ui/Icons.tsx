@@ -96,6 +96,10 @@ export function PlayIcon({ className = 'ui-icon' }: IconProps) {
   )
 }
 
+export function StopIcon({ className = 'ui-icon' }: IconProps) {
+  return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" /></svg>
+}
+
 export function UpdateIcon({ className = 'ui-icon' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">

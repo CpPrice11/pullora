@@ -1,7 +1,7 @@
 import type { AppLanguage } from '../i18n'
 
 export function appLocale(language: AppLanguage) {
-  return language === 'en' ? 'en-US' : 'uk-UA'
+  return { en: 'en-US', uk: 'uk-UA', ru: 'ru-RU' }[language]
 }
 
 export function formatNumber(value: number, language: AppLanguage) {

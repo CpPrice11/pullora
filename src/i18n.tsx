@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import ukDictionary from './i18n/dictionaries/uk'
 
-export type AppLanguage = 'uk' | 'en'
+export type AppLanguage = 'uk' | 'en' | 'ru'
 
 type Dictionary = Record<string, string>
 
@@ -14,7 +14,9 @@ async function ensureDictionary(language: AppLanguage) {
 
   const dictionary = language === 'en'
     ? (await import('./i18n/dictionaries/en')).default
-    : ukDictionary
+    : language === 'ru'
+      ? (await import('./i18n/dictionaries/ru')).default
+      : ukDictionary
   dictionaries[language] = dictionary
   return dictionary
 }
@@ -39,8 +41,8 @@ export function translate(
   return text
 }
 
-function normalizeLanguage(language: string | null | undefined): AppLanguage {
-  return language === 'en' ? 'en' : 'uk'
+export function normalizeLanguage(language: string | null | undefined): AppLanguage {
+  return language === 'en' || language === 'ru' ? language : 'uk'
 }
 
 export function LanguageProvider({

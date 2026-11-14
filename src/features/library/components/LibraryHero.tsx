@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../i18n'
+import { StopIcon } from '../../../components/ui/Icons'
 import type { GitHubSearchResult, InstalledApp, InstallationStatus } from '../../../types'
 import { formatNumber } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
@@ -22,6 +23,7 @@ interface LibraryHeroProps {
   canResetBackground: boolean
   onInstall: () => void
   onLaunch: () => void
+  onStop?: () => void
   onToggleFavorite: () => void
   onShowDetails: () => void
   onOpenFolder: () => void
@@ -70,6 +72,7 @@ export default function LibraryHero({
   canResetBackground,
   onInstall,
   onLaunch,
+  onStop,
   onToggleFavorite,
   onShowDetails,
   onOpenFolder,
@@ -88,6 +91,8 @@ export default function LibraryHero({
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
   const isInstalled = status !== 'available'
+  const canStop = !repo.website_url && runtimeStatus === 'running' && Boolean(onStop)
+  const primaryDisabled = !repo.website_url && (busy || (!canStop && (Boolean(runtimeStatus) || installationHealth === 'unavailable')))
   const statusLabel = t(repo.website_url ? 'repo.webApp' : `repo.${status}`)
   const primaryLabel = t(repo.website_url ? 'repo.visit' : hasUpdate ? 'repo.updateAction' : isInstalled ? 'repo.launch' : 'repo.install')
 
@@ -161,8 +166,8 @@ export default function LibraryHero({
         </div>
 
         <div className="library-hero-actions library-github-actions">
-          <button type="button" className="hero-primary-btn" disabled={!repo.website_url && (busy || Boolean(runtimeStatus) || installationHealth === 'unavailable')} aria-busy={!repo.website_url && busy} title={runtimeStatus ? t('repo.closeToChange') : undefined} onClick={repo.website_url ? onInstall : isInstalled && !hasUpdate && installationHealth !== 'missing' ? onLaunch : onInstall}>
-            {repo.website_url ? primaryLabel : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : busy ? t('repo.busy') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : installationHealth === 'missing' ? t('repo.reinstall') : primaryLabel}
+          <button type="button" className="hero-primary-btn" disabled={primaryDisabled} aria-busy={!repo.website_url && busy} title={runtimeStatus && !canStop ? t('repo.closeToChange') : undefined} onClick={canStop ? onStop : repo.website_url ? onInstall : isInstalled && !hasUpdate && installationHealth !== 'missing' ? onLaunch : onInstall}>
+            {canStop ? <><StopIcon />{t('repo.stop')}</> : repo.website_url ? primaryLabel : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : busy ? t('repo.busy') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : installationHealth === 'missing' ? t('repo.reinstall') : primaryLabel}
           </button>
           <div className={`project-actions-menu hero-actions-menu ${actionsOpen ? 'open' : ''}`} ref={actionsRef}>
             <button

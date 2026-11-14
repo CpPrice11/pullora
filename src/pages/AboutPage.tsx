@@ -17,14 +17,14 @@ import type { GitHubRelease, LauncherInstallationMode, LauncherStorageInfo } fro
 import { useI18n } from '../i18n'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { useToastPresence } from '../hooks/useToastPresence'
-import { compareVersionTags, formatBytes, formatDate } from '../utils/format'
+import { appLocale, compareVersionTags, formatBytes, formatDate } from '../utils/format'
 import { focusFirstMenuItem, handleMenuKeyboard } from '../utils/menuKeyboard'
 import '../components/Modal/Modal.css'
 import './PageStyles.css'
 
 const LAUNCHER_OWNER = 'CpPrice11'
 const LAUNCHER_REPO = 'pullora'
-const FALLBACK_CURRENT_VERSION = 'v5.24.0'
+const FALLBACK_CURRENT_VERSION = 'v5.25.0'
 type AboutReleaseFilter = 'all' | 'rollback' | 'current'
 type LauncherStatus = 'checking' | 'current' | 'update' | 'localNewer' | 'unknown'
 
@@ -208,7 +208,7 @@ function AboutPage() {
   }, [currentVersion, releaseFilter, releases])
 
   const formattedRefreshTime = lastRefreshedAt
-    ? lastRefreshedAt.toLocaleTimeString(language === 'en' ? 'en-US' : 'uk-UA', {
+    ? lastRefreshedAt.toLocaleTimeString(appLocale(language), {
       hour: '2-digit',
       minute: '2-digit',
     })

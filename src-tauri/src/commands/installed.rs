@@ -769,6 +769,68 @@ fn cleanup_dir_contents(
 }
 
 #[tauri::command]
+pub async fn stop_app(
+    owner: String,
+    repo: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    if !owner.eq_ignore_ascii_case("CpPrice11")
+        || crate::github::models::is_hidden_repository(&owner, &repo)
+        || repo.eq_ignore_ascii_case("warframe-arsenal")
+    {
+        return Err(command_error("errors.appNotInstalled"));
+    }
+    let _guard = state.download_manager.operation_lock.lock().await;
+    let root = state
+        .settings
+        .lock()
+        .await
+        .installation_path
+        .clone()
+        .unwrap_or_default();
+    tokio::task::spawn_blocking(move || {
+        let config = get_config_dir();
+        let app = list_installed(&config)
+            .map_err(|_| command_error("errors.stopFailed"))?
+            .into_iter()
+            .find(|app| {
+                app.owner.eq_ignore_ascii_case(&owner) && app.repo.eq_ignore_ascii_case(&repo)
+            })
+            .ok_or_else(|| command_error("errors.appNotInstalled"))?;
+        let windows =
+            std::env::var_os("SystemRoot").and_then(|path| std::fs::canonicalize(path).ok());
+        let targets: Vec<_> = app
+            .versions
+            .iter()
+            .filter_map(|version| {
+                let dir = version_install_dir(&root, &app.owner, &app.repo, version).ok()?;
+                let image = launch_executable_path(&dir, &app.owner, &app.repo, version).ok()?;
+                if !is_launchable_exe(&image)
+                    || !image
+                        .extension()
+                        .is_some_and(|ext| ext.eq_ignore_ascii_case("exe"))
+                {
+                    return None;
+                }
+                let image = std::fs::canonicalize(image).ok()?;
+                if windows.as_ref().is_some_and(|root| image.starts_with(root)) {
+                    return None;
+                }
+                Some(image)
+            })
+            .collect();
+        if targets.is_empty() {
+            return Err(command_error("errors.stopFailed"));
+        }
+        crate::storage::running_apps::stop(&targets)?;
+        crate::storage::running_apps::ensure_stopped(&config, &app.owner, &app.repo)
+            .map_err(|_| command_error("errors.stopFailed"))
+    })
+    .await
+    .map_err(|_| command_error("errors.stopFailed"))?
+}
+
+#[tauri::command]
 pub async fn launch_app(
     owner: String,
     repo: String,

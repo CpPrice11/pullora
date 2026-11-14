@@ -87,3 +87,13 @@ pub struct Asset {
     #[serde(default)]
     pub digest: Option<String>,
 }
+pub fn is_hidden_repository(owner: &str, repo: &str) -> bool {
+    owner.eq_ignore_ascii_case("CpPrice11")
+        && [
+            "pullora",
+            "pullora-assets",
+            "applied-systems-analysis-lab-2",
+        ]
+        .iter()
+        .any(|name| repo.eq_ignore_ascii_case(name))
+}

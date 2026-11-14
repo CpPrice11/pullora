@@ -24,9 +24,17 @@ def prepare(page,language):
       };
       window.__SAFETY_CANDIDATE__=candidate;
       const invoke=window.__TAURI_INTERNALS__.invoke;
+      const repos=window.__PULLORA_TEST_GITHUB_CACHE__['owner:cpprice11:1:false'].data.items;
+      repos.push({...repos[0], id: 200, name: 'applied-systems-analysis-lab-2', full_name: 'CpPrice11/applied-systems-analysis-lab-2'});
       window.__TAURI_INTERNALS__.invoke=async(command,args={})=>{
         if(command==='plugin:event|listen' && args.event==='download-progress') window.__SAFETY_LISTENERS__.push(args.handler);
         if(command==='get_app_runtime_states') { window.__SAFETY_RUNTIME_CALLS__++; return structuredClone(window.__SAFETY_RUNTIME__); }
+        if(command==='stop_app') {
+          window.__CATALOG_CALLS__.push({command,args});
+          if (window.__SAFETY_STOP_FAIL__) throw 'PULLORA_ERROR:errors.stopFailed';
+          window.__SAFETY_RUNTIME__=window.__SAFETY_RUNTIME__.filter(app=>app.repo!==args.repo);
+          return;
+        }
         if(command==='discover_installed_apps') return window.__SAFETY_ADOPTED__ ? [] : [{...candidate}];
         if(command==='get_downloads') return structuredClone(window.__SAFETY_DOWNLOADS__);
         if(command==='adopt_installed_app') {
@@ -75,7 +83,8 @@ with sync_playwright() as p:
                 sam=card(page,'steam-achievement-manager')
                 fandom=card(page,'fandom-translator')
                 sam.locator('.repo-runtime-status').wait_for()
-                assert sam.locator('.repo-primary-action').is_disabled()
+                assert sam.locator('.repo-primary-action').is_enabled()
+                assert sam.locator('.repo-primary-action').inner_text()==('Stop' if language=='en' else 'Зупинити')
                 sam.locator('.repo-more-action').scroll_into_view_if_needed()
                 page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
                 sam.locator('.repo-more-action').click()
@@ -130,6 +139,23 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':1280,'height':720})
     prepare(page,'uk'); baseline['open_library'](page)
     sam=card(page,'steam-achievement-manager'); fandom=card(page,'fandom-translator')
+    stop=sam.get_by_role('button',name='Зупинити',exact=True)
+    stop.focus(); stop.press('Enter')
+    dialog=page.get_by_role('alertdialog')
+    dialog.get_by_role('button',name='Скасувати',exact=True).wait_for()
+    page.keyboard.press('Escape')
+    dialog.wait_for(state='detached')
+    assert stop.evaluate('el => el === document.activeElement')
+    assert not page.evaluate("window.__CATALOG_CALLS__.some(c=>c.command==='stop_app')")
+    stop.click()
+    page.evaluate('window.__SAFETY_STOP_FAIL__=true')
+    dialog.get_by_role('button',name='Зупинити',exact=True).click()
+    dialog.get_by_role('alert').get_by_text('Не вдалося зупинити програму',exact=False).wait_for()
+    page.evaluate('window.__SAFETY_STOP_FAIL__=false')
+    dialog.get_by_role('button',name='Зупинити',exact=True).click()
+    dialog.wait_for(state='detached')
+    assert page.evaluate("window.__CATALOG_CALLS__.filter(c=>c.command==='stop_app').every(c=>c.args.owner==='CpPrice11' && c.args.repo==='steam-achievement-manager')")
+    stop.wait_for(state='detached')
     wake(page,[{'owner':'CpPrice11','repo':'steam-achievement-manager','running':False,'uncertain':True}])
     page.wait_for_function("document.querySelector('.repo-runtime-status')?.textContent==='Стан невідомий'")
     assert sam.locator('.repo-primary-action').is_disabled()

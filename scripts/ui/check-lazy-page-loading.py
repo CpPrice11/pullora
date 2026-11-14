@@ -39,6 +39,7 @@ def check_source_contract() -> None:
     assert "import UninstallConfirmModal from" not in library
     assert "import ukDictionary from './i18n/dictionaries/uk'" in i18n
     assert "import('./i18n/dictionaries/en')" in i18n
+    assert "import('./i18n/dictionaries/ru')" in i18n
 
     assets = ROOT / "dist" / "assets"
     if assets.exists():
@@ -51,6 +52,7 @@ def check_source_contract() -> None:
         assert any(name.startswith("UninstallConfirmModal-") for name in names), names
         assert any(name.startswith("LibraryBulkActions-") for name in names), names
         assert any(name.startswith("en-") for name in names), names
+        assert any(name.startswith("ru-") for name in names), names
 
         index_html = (ROOT / "dist" / "index.html").read_text(encoding="utf-8")
         main_match = re.search(r'<script[^>]+src="/assets/(index-[^"]+\.js)"', index_html)

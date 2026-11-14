@@ -1,4 +1,5 @@
 import { useI18n } from '../../../i18n'
+import { StopIcon } from '../../../components/ui/Icons'
 import type { GitHubSearchResult, InstalledApp, InstallationStatus } from '../../../types'
 import { formatDate } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
@@ -16,6 +17,7 @@ interface LibraryOperationsPanelProps {
   onInstall: () => void
   onUpdate: () => void
   onLaunch: () => void
+  onStop?: () => void
 }
 
 export default function LibraryOperationsPanel({
@@ -29,11 +31,13 @@ export default function LibraryOperationsPanel({
   onInstall,
   onUpdate,
   onLaunch,
+  onStop,
 }: LibraryOperationsPanelProps) {
   const { language, t } = useI18n()
   const status = getLibraryAppStatus(installedApp, latestVersion)
   const hasUpdate = status === 'update'
-  const actionBusy = !repo.website_url && (updating || Boolean(runtimeStatus) || installationHealth === 'unavailable')
+  const canStop = !repo.website_url && runtimeStatus === 'running' && Boolean(onStop)
+  const actionBusy = !repo.website_url && (updating || (!canStop && (Boolean(runtimeStatus) || installationHealth === 'unavailable')))
   const updatedDate = formatDate(repo.updated_at, language)
   const installPath = installationPath && installedApp
     ? `${installationPath}\\${installedApp.owner}-${installedApp.repo}`
@@ -56,11 +60,11 @@ export default function LibraryOperationsPanel({
           <button
             type="button"
             className="hero-primary-btn"
-            onClick={repo.website_url ? onInstall : installationHealth === 'missing' ? onInstall : hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
+            onClick={canStop ? onStop : repo.website_url ? onInstall : installationHealth === 'missing' ? onInstall : hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
             disabled={actionBusy}
             aria-busy={updating}
           >
-            {repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : actionBusy
+            {canStop ? <><StopIcon />{t('repo.stop')}</> : repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : actionBusy
               ? t('updates.updatingAll')
               : installationHealth === 'missing' ? t('repo.reinstall') : hasUpdate
                 ? t('repo.updateAction')

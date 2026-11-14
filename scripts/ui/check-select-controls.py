@@ -20,6 +20,21 @@ def assert_native_select(select) -> None:
     select.focus()
     assert select.evaluate("el => el === document.activeElement")
     assert select.evaluate("el => el.matches(':focus-visible')")
+    colors = select.locator("option").first.evaluate("""option => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--color-text)'
+      probe.style.backgroundColor = 'var(--color-bg-elevated)'
+      option.closest('select').parentElement.append(probe)
+      const read = element => {
+        const style = getComputedStyle(element)
+        return [style.color, style.backgroundColor]
+      }
+      const result = [read(option), read(probe)]
+      probe.remove()
+      return result
+    }""")
+    assert colors[0] == colors[1], colors
+    assert colors[0][1] != "rgba(0, 0, 0, 0)", colors
 
 
 def option_values(select) -> list[str]:
@@ -85,13 +100,13 @@ with sync_playwright() as playwright:
             assert_native_select(theme_select)
             assert_native_select(language_select)
             assert option_values(theme_select) == ["light", "dark", "auto"]
-            assert option_values(language_select) == ["uk", "en"]
+            assert option_values(language_select) == ["uk", "en", "ru"]
 
-            theme_select.focus()
-            theme_select.press("Alt+ArrowDown")
+            language_select.focus()
+            language_select.press("Alt+ArrowDown")
             page.screenshot(path=OUTPUT_DIR / f"settings-select-native-open-{suffix}.png")
             page.keyboard.press("Escape")
-            assert theme_select.evaluate("el => el === document.activeElement")
+            assert language_select.evaluate("el => el === document.activeElement")
 
             context.close()
 

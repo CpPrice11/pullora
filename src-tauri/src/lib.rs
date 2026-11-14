@@ -10,6 +10,7 @@ mod commands;
 mod download;
 mod error;
 mod github;
+mod native_i18n;
 mod storage;
 mod tray;
 mod update_notifications;
@@ -111,6 +112,7 @@ pub fn run() {
             commands::installed::uninstall_version,
             commands::installed::uninstall_app,
             commands::installed::launch_app,
+            commands::installed::stop_app,
             commands::project_art::list_project_art_assets,
             commands::default_media::list_default_project_icons,
             commands::default_media::get_default_project_screenshots,

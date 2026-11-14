@@ -33,6 +33,10 @@ export async function launchApp(owner: string, repo: string): Promise<void> {
   return callTauri('launch_app', { owner, repo })
 }
 
+export async function stopApp(owner: string, repo: string): Promise<void> {
+  return callTauri('stop_app', { owner, repo })
+}
+
 export async function openInstalledAppDir(owner: string, repo: string): Promise<void> {
   return callTauri('open_installed_app_dir', { owner, repo })
 }

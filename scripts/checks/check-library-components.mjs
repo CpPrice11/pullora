@@ -678,7 +678,7 @@ try {
   assert.match(libraryPageSource, /onUpdate=\{\(repo\) => \{ void handleQuickInstall\(repo, true\) \}\}/)
   assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleQuickInstall\(featuredRepo, true\) \}\}/)
   assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
-  assert.match(libraryOperationsSource, /onClick=\{repo\.website_url \? onInstall : installationHealth === 'missing' \? onInstall : hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
+  assert.match(libraryOperationsSource, /onClick=\{canStop \? onStop : repo\.website_url \? onInstall : installationHealth === 'missing' \? onInstall : hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
   assert.match(batchUpdatesSource, /!item\.draft && !item\.prerelease && item\.tag_name === latestVersion/)
   assert.match(batchUpdatesSource, /planReleaseInstallation\(repo\.owner\.login, repo\.name, release\.tag_name\)/)
   assert.match(batchUpdatesSource, /await startBatchUpdateJob\(/)

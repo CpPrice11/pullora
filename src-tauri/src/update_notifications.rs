@@ -119,9 +119,8 @@ pub fn start(app: &AppHandle) {
                     .unwrap_or_default();
                 for installed in apps.into_iter().filter(|a| {
                     a.owner.eq_ignore_ascii_case("CpPrice11")
-                        && !["pullora", "pullora-assets", "warframe-arsenal"]
-                            .iter()
-                            .any(|r| a.repo.eq_ignore_ascii_case(r))
+                        && !crate::github::models::is_hidden_repository(&a.owner, &a.repo)
+                        && !a.repo.eq_ignore_ascii_case("warframe-arsenal")
                 }) {
                     if !state.settings.lock().await.update_notifications {
                         break;
@@ -158,13 +157,7 @@ pub fn start(app: &AppHandle) {
                     if !settings.update_notifications {
                         break;
                     }
-                    let text: std::collections::BTreeMap<String, String> =
-                        serde_json::from_str(if settings.language == "en" {
-                            include_str!("../../src/i18n/native/en.json")
-                        } else {
-                            include_str!("../../src/i18n/native/uk.json")
-                        })
-                        .unwrap();
+                    let text = crate::native_i18n::labels(&settings.language);
                     let title = text["updates.notificationTitle"].clone();
                     let body = text["updates.notificationBody"]
                         .replace("{name}", &installed.name)
