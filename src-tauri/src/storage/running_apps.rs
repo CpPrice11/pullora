@@ -167,7 +167,7 @@ pub fn stop(targets: &[PathBuf]) -> Result<(), String> {
             denied = true;
             continue;
         };
-        if !matches(&image) {
+        if !matches(&image) && !std::fs::canonicalize(&image).is_ok_and(|image| matches(&image)) {
             continue;
         }
         if unsafe { TerminateProcess(process.0, 1) } != 0 {
@@ -367,8 +367,31 @@ mod tests {
             .children
             .iter_mut()
             .all(|child| child.try_wait().unwrap().is_none()));
+        let names = std::collections::HashSet::from(["pullora-stop-fixture.exe".to_string()]);
+        let expected = fixture.children[0].id();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        loop {
+            let processes = super::processes(&names).unwrap();
+            if processes.iter().any(|(pid, _, image)| {
+                *pid == expected
+                    && image
+                        .as_ref()
+                        .is_some_and(|path| super::same_image(path, &images[0]))
+            }) {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "Cannot resolve fixture image {:?}: {processes:?}",
+                images[0]
+            );
+            std::thread::sleep(std::time::Duration::from_millis(25));
+        }
         super::stop(&images[..1]).unwrap();
-        assert!(fixture.children[0].try_wait().unwrap().is_some());
+        assert!(
+            fixture.children[0].try_wait().unwrap().is_some(),
+            "The registered fixture must exit"
+        );
         assert!(fixture.children[1].try_wait().unwrap().is_none());
         super::stop(&images[..1]).unwrap();
     }

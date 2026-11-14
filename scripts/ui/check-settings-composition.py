@@ -355,7 +355,7 @@ def check_select_contract(page):
         "light", "dark", "auto"
     ]
     assert [option["value"] for option in select_state(page, "#language")["options"]] == [
-        "uk", "en"
+        "uk", "en", "ru"
     ]
     assert [option["value"] for option in select_state(page, "#effectsLevel")["options"]] == [
         "off", "balanced", "high"
@@ -386,6 +386,9 @@ def check_select_contract(page):
     language_select.select_option("en")
     page.get_by_role("heading", name="Settings", exact=True).wait_for()
     assert language_select.input_value() == "en"
+    language_select.select_option("ru")
+    page.get_by_role("heading", name="Настройки", exact=True).wait_for()
+    assert language_select.input_value() == "ru"
     language_select.select_option("uk")
     page.get_by_role("heading", name="Налаштування", exact=True).wait_for()
 
