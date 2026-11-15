@@ -59,7 +59,8 @@ def check_gallery(page, language, theme):
     gallery.wait_for()
     assert gallery.locator('li').count() == 2
     assert gallery.locator('h3').inner_text() == ('Скриншоти' if language == 'uk' else 'Screenshots')
-    assert page.locator('.project-gallery img').first.evaluate('el => el.complete && el.naturalWidth > 0')
+    gallery.locator('img').first.scroll_into_view_if_needed()
+    page.wait_for_function("document.querySelector('.project-gallery img')?.naturalWidth > 0")
     thumbnail = gallery.get_by_role('button').first
     thumbnail.click()
     dialog = page.locator('.project-gallery-dialog')

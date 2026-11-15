@@ -70,8 +70,10 @@ with sync_playwright() as playwright:
             assert sort_select.evaluate("el => el === document.activeElement")
 
             filter_buttons = page.locator(".library-sidebar-filter-nav .library-sidebar-nav-btn")
-            assert filter_buttons.count() == 3
-            assert filter_buttons.locator(".library-filter-icon").count() == 2
+            assert filter_buttons.count() == 2
+            assert filter_buttons.locator(".library-filter-icon").count() == 1
+            refresh = page.locator(".library-sidebar-filter-nav .library-refresh-btn")
+            assert refresh.count() == 1 and refresh.get_attribute("aria-pressed") is None
             filter_buttons.nth(1).click()
             assert filter_buttons.nth(1).get_attribute("aria-pressed") == "true"
             filter_buttons.first.click()
