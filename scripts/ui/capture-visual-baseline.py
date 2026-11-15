@@ -310,29 +310,25 @@ def seed_installed_update(page: Page, *, reset_view: bool = True) -> None:
 
 def capture_one_click_update(page: Page, suffix: str) -> None:
     open_library(page)
-    page.get_by_role("button", name="Оновлення", exact=True).click()
-    center = page.locator(".updates-center")
-    center.wait_for()
-    center.get_by_role("button", name="Перевірити", exact=True).click()
-    row = center.locator(".updates-center-row")
-    row.wait_for()
-    assert "v0.2.0" in row.inner_text() and "v0.2.3" in row.inner_text()
+    page.locator(".library-refresh-btn").click()
+    card = page.locator('[data-repo-key="cpprice11/steam-achievement-manager"]')
+    card.locator(".repo-launch-action").wait_for()
+    assert "v0.2.0" in card.inner_text() and "v0.2.3" in card.inner_text()
     page.screenshot(path=OUTPUT_DIR / f"one-click-update-{suffix}.png")
 
     apply_custom_background(page)
     page.screenshot(path=OUTPUT_DIR / f"one-click-update-custom-{suffix}.png")
     clear_custom_background(page)
 
-    page.get_by_role("switch", name="Компактний").click()
-    page.locator(".library-page.library-density-compact").wait_for()
-    page.screenshot(path=OUTPUT_DIR / f"one-click-update-compact-{suffix}.png")
+    page.locator(".library-view-toggle button").last.click()
+    row = page.locator('tr[data-repo-key="cpprice11/steam-achievement-manager"]')
+    row.locator(".repo-launch-action").wait_for()
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-table-{suffix}.png")
     apply_custom_background(page)
-    page.screenshot(path=OUTPUT_DIR / f"one-click-update-compact-custom-{suffix}.png")
+    page.screenshot(path=OUTPUT_DIR / f"one-click-update-table-custom-{suffix}.png")
 
-    row.locator(".updates-center-row-actions .secondary-btn").first.click()
-    center.locator('[aria-busy="true"]').first.wait_for()
+    row.locator(".repo-primary-action").click()
     assert page.locator(".release-modal").count() == 0
-    page.screenshot(path=OUTPUT_DIR / f"one-click-update-busy-{suffix}.png")
 
 
 def capture(page: Page, theme: str, width: int, height: int, scale: float) -> dict:

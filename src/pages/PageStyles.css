@@ -4550,16 +4550,6 @@
   min-height: 46px;
 }
 
-.cinematic-shell .library-page .library-ops-action-row .secondary-btn {
-  background: rgba(255, 255, 255, 0.07);
-  color: #dfe3e6;
-}
-
-.cinematic-shell .library-page .library-ops-action-row .secondary-btn.active-soft {
-  background: rgba(102, 192, 244, 0.24);
-  color: #ffffff;
-}
-
 .cinematic-shell .library-page .library-ops-rail {
   background: rgba(0, 0, 0, 0.14);
   display: flex;
@@ -4958,6 +4948,28 @@
   gap: 10px;
   grid-template-columns: minmax(190px, 280px) repeat(3, minmax(126px, 1fr));
   padding: var(--library-ops-padding);
+}
+
+.library-ops-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.library-ops-buttons > button {
+  flex: 1 0 auto;
+}
+
+.library-ops-buttons .repo-launch-action {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+.library-ops-buttons .repo-launch-action svg {
+  width: var(--spacing-md);
+  height: var(--spacing-md);
 }
 
 .cinematic-shell .library-page .library-ops-action-row .hero-primary-btn,

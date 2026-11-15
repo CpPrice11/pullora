@@ -5,7 +5,6 @@ import { CardsIcon, TableIcon, PlayIcon, UpdateIcon } from '../../../components/
 import { useI18n } from '../../../i18n'
 import type { GitHubSearchResult } from '../../../types'
 import {
-  LIBRARY_FILTERS,
   LIBRARY_SORTS,
   type LibraryFilter,
   type LibrarySort,
@@ -35,7 +34,6 @@ interface LibrarySidebarProps {
   notices?: ReactNode
   bulkActions?: ReactNode
   details?: ReactNode
-  summary?: ReactNode
   showLoading: boolean
   showEmpty: boolean
   emptyTitle: string
@@ -88,24 +86,35 @@ function LibrarySidebarControls({
   return (
     <section className="library-toolstrip" aria-label={t('library.filterLabel')}>
       <div className="library-sidebar-nav library-sidebar-filter-nav" aria-label={t('library.sidebar.navigation')}>
-        {LIBRARY_FILTERS.map((mode) => {
-          const label = t(`library.${mode}`)
-          const Icon = mode === 'updates' ? UpdateIcon : mode === 'installed' ? PlayIcon : null
-
-          return (
-            <button
-              key={mode}
-              type="button"
-              className={`library-sidebar-nav-btn ${Icon ? 'icon-only' : ''} ${filter === mode ? 'active' : ''}`}
-              aria-label={Icon ? label : undefined}
-              aria-pressed={filter === mode}
-              title={Icon ? label : undefined}
-              onClick={() => onFilterChange(mode)}
-            >
-              {Icon ? <Icon className="library-filter-icon" /> : label}
-            </button>
-          )
-        })}
+        <button
+          type="button"
+          className={`library-sidebar-nav-btn ${filter === 'all' ? 'active' : ''}`}
+          aria-pressed={filter === 'all'}
+          onClick={() => onFilterChange('all')}
+        >
+          {t('library.all')}
+        </button>
+        <button
+          type="button"
+          className={`library-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
+          aria-label={refreshing ? t('library.refreshing') : t('library.refresh')}
+          aria-busy={refreshing}
+          title={refreshing ? t('library.refreshing') : t('library.refresh')}
+          disabled={refreshing}
+          onClick={onRefresh}
+        >
+          <UpdateIcon className="library-refresh-icon" />
+        </button>
+        <button
+          type="button"
+          className={`library-sidebar-nav-btn icon-only ${filter === 'installed' ? 'active' : ''}`}
+          aria-label={t('library.installed')}
+          aria-pressed={filter === 'installed'}
+          title={t('library.installed')}
+          onClick={() => onFilterChange('installed')}
+        >
+          <PlayIcon className="library-filter-icon" />
+        </button>
       </div>
 
       <label className="library-sort-control">
@@ -133,17 +142,6 @@ function LibrarySidebarControls({
           className="search-input"
           aria-label={t('library.searchLabel')}
         />
-        <button
-          type="button"
-          className={`library-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
-          aria-label={refreshing ? t('library.refreshing') : t('library.refresh')}
-          aria-busy={refreshing}
-          title={refreshing ? t('library.refreshing') : t('library.refresh')}
-          disabled={refreshing}
-          onClick={onRefresh}
-        >
-          <UpdateIcon className="library-refresh-icon" />
-        </button>
       </div>
 
       <div className="library-view-toggle" role="group" aria-label={t('library.viewMode')}>
@@ -166,7 +164,6 @@ export default function LibrarySidebar({
   notices,
   bulkActions,
   details,
-  summary,
   showLoading,
   showEmpty,
   emptyTitle,
@@ -206,7 +203,6 @@ export default function LibrarySidebar({
 
       <div className="search-results" ref={resultsRef} onScroll={onResultsScroll}>
         {notices}
-        {summary}
         {details}
 
         {showLoading && <StatePanel kind="loading" title={t('library.loading')} skeletonCount={3} />}

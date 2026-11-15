@@ -402,22 +402,21 @@ function RepoCard({
   const needsRepair = installationHealth === 'missing'
   const fileCheckBlocked = installationHealth === 'unavailable'
   const canStop = !repo.website_url && runtimeStatus === 'running' && Boolean(onStop)
-  const primaryLabel = repo.website_url ? t('repo.visit') : canStop ? t('repo.stop') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : fileCheckBlocked ? t('repo.filesUnavailable') : needsRepair ? t('repo.reinstall') : failedDownload && onRetryDownload
-    ? t(isInstalled ? 'repo.launch' : 'download.retry')
-    : hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : t('repo.install')
+  const primaryLabel = repo.website_url ? t('repo.visit') : canStop ? t('repo.stop') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : fileCheckBlocked ? t('repo.filesUnavailable') : needsRepair ? t('repo.reinstall') : hasUpdate ? t('repo.updateAction') : isInstalled ? t('repo.launch') : failedDownload && onRetryDownload ? t('download.retry') : t('repo.install')
   const primaryAction = canStop ? (event: React.MouseEvent) => {
     event.stopPropagation()
     closeActions()
     onStop?.()
-  } : repo.website_url ? handleInstall : needsRepair ? handleInstall : failedDownload && onRetryDownload
-    ? isInstalled ? handleLaunch : retryFailed
-    : isInstalled && !hasUpdate ? handleLaunch : handleInstall
+  } : repo.website_url || needsRepair || hasUpdate ? handleInstall
+    : isInstalled ? handleLaunch
+    : failedDownload && onRetryDownload ? retryFailed : handleInstall
   const operationStage = operation ? operation.paused ? t('download.paused') : stageLabel(currentStage(operation), t) : null
   const progress = operation ? downloadPercent(operation) : 0
   const progressKnown = Boolean(operation && operation.totalSize > 0)
   const progressText = `${formatNumber(progress, language)}%`
   const actionBusy = busy || Boolean(operation) || retrying
   const runtimeBlocked = Boolean(runtimeStatus)
+  const showLaunchAlongsideUpdate = hasUpdate && !repo.website_url && !needsRepair && !fileCheckBlocked && !runtimeBlocked && Boolean(onLaunch)
   const primaryDisabled = actionBusy || (!canStop && (runtimeBlocked || fileCheckBlocked))
   const cancelOperation = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
@@ -611,6 +610,11 @@ function RepoCard({
           {runtimeBlocked ? primaryLabel : actionBusy ? t('repo.busy') : primaryLabel}
         </button>
       )}
+      {!operation && showLaunchAlongsideUpdate && (
+        <button type="button" className="repo-launch-action secondary-btn" onClick={handleLaunch} disabled={actionBusy}>
+          <PlayIcon />{t('repo.launch')}
+        </button>
+      )}
       {operation && onSetDownloadPaused && <DownloadPauseButton download={operation} onChange={onSetDownloadPaused} onError={(error) => onError?.(error)} />}
       {operation && canCancel(operation) && onCancelDownload && (
         <button type="button" className="repo-cancel-download" aria-label={t('repo.cancelFor', { name: repo.name })} disabled={cancelling} aria-busy={cancelling} onClick={(event) => { void cancelOperation(event) }}>
@@ -704,11 +708,6 @@ function RepoCard({
               >
                 {primaryLabel}
               </button>
-            {isInstalled && hasUpdate && (
-              <button type="button" role="menuitem" onClick={handleLaunch} disabled={runtimeBlocked || needsRepair || fileCheckBlocked}>
-                {t('repo.launch')}
-              </button>
-            )}
             {isInstalled && onOpenFolder && (
               <button type="button" role="menuitem" onClick={handleOpenFolder}>
                 {t('download.openFolder')}

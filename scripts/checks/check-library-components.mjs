@@ -33,11 +33,10 @@ try {
   const { default: VersionPanel } = await server.ssrLoadModule('/src/features/library/components/VersionPanel.tsx')
   const { default: ApplicationDetails } = await server.ssrLoadModule('/src/features/library/components/ApplicationDetails.tsx')
   const { default: FolderManager } = await server.ssrLoadModule('/src/features/library/components/FolderManager.tsx')
-  const { default: BatchUpdatePanel, BatchUpdateConfirmDialog } = await server.ssrLoadModule('/src/features/library/components/BatchUpdatePanel.tsx')
   const { default: DownloadProgressPanel } = await server.ssrLoadModule('/src/components/Install/DownloadProgress.tsx')
   const { default: StatePanel } = await server.ssrLoadModule('/src/components/State/StatePanel.tsx')
   const { default: ArtCropDialog } = await server.ssrLoadModule('/src/components/Modal/ArtCropDialog.tsx')
-  const { getLibraryAppStatus, getLibraryStatusRank, getUpdateDismissKey } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
+  const { getLibraryAppStatus, getLibraryStatusRank } = await server.ssrLoadModule('/src/features/library/libraryStatus.ts')
   const { normalizeSettings } = await server.ssrLoadModule('/src/utils/settingsDefaults.ts')
   const { default: ukDictionary } = await server.ssrLoadModule('/src/i18n/dictionaries/uk.ts')
   const { default: enDictionary } = await server.ssrLoadModule('/src/i18n/dictionaries/en.ts')
@@ -121,7 +120,6 @@ try {
   assert.equal(getLibraryAppStatus(installedApp, 'v1.0.0'), 'installed')
   assert.equal(getLibraryAppStatus(installedApp, 'v2.0.0'), 'update')
   assert.deepEqual(['update', 'installed', 'available'].map(getLibraryStatusRank), [0, 1, 2])
-  assert.equal(getUpdateDismissKey('CpPrice11', 'Demo-App', 'V2'), 'cpprice11/demo-app@v2')
   assert.deepEqual(
     ['ArrowDown', 'ArrowUp', 'Home', 'End'].map((key) => nextMenuItemIndex(key, 0, 4)),
     [1, 3, 0, 3],
@@ -334,7 +332,8 @@ try {
   assert.equal(parseLibraryViewState(JSON.stringify({ ...savedView, filter: 'favorites' })).filter, 'all')
   assert.equal(parseLibraryViewState(JSON.stringify({ ...savedView, viewMode: 'table' })).viewMode, 'table')
   assert.equal(parseLibraryViewState(JSON.stringify({ ...savedView, viewMode: 'invalid' })).viewMode, 'cards')
-  assert.deepEqual([...LIBRARY_FILTERS], ['all', 'updates', 'installed'])
+  assert.equal(parseLibraryViewState(JSON.stringify({ ...savedView, filter: 'updates' })).filter, 'all')
+  assert.deepEqual([...LIBRARY_FILTERS], ['all', 'installed'])
   assert.deepEqual([...LIBRARY_SORTS], ['name', 'launched', 'installed', 'updated'])
   assert.deepEqual([...LIBRARY_DENSITIES], ['normal', 'compact'])
 
@@ -483,7 +482,7 @@ try {
   assert.doesNotMatch(projectArtServiceSource, /URL\.(?:createObjectURL|revokeObjectURL)/)
   assert.match(modalFocusSource, /document\.addEventListener\('keydown', handleKeyDown\)[\s\S]*?window\.clearTimeout\(focusTimer\)[\s\S]*?document\.removeEventListener\('keydown', handleKeyDown\)/)
   assert.match(libraryPageSource, /onError=\{handleInstallError\}/)
-  assert.match(libraryPageSource, /await clearGithubCache\(\)[\s\S]*?refreshRepositories\(\)[\s\S]*?refreshLatestVersions\([\s\S]*?true,/)
+  assert.match(libraryPageSource, /refreshRepositories\(\)[\s\S]*?refreshLatestVersions\([\s\S]*?true,/)
   assert.match(libraryStatusSource, /getReleases\(app\.owner, app\.repo, forceRefresh\)/)
   assert.match(libraryPageSource, /useToastPresence\(libraryToastMessage\)[\s\S]*?library-toast--\$\{libraryToastToneRef\.current\}/)
   assert.doesNotMatch(libraryHeroSource, /artError|library-hero-error/)
@@ -562,31 +561,11 @@ try {
   assert.match(libraryPageSource, /installationPath=\{settings\.installationPath\}/)
   assert.match(
     libraryPageSource,
-    /summary=\{[\s\S]*?renderUpdatesCenter\(\)[\s\S]*?details=\{detailsOpen[\s\S]*?renderHero\(\)[\s\S]*?renderOperationsPanel\(\)/,
-  )
-  assert.match(
-    libraryPageSource,
-    /initialLibraryView\.filter === 'updates' \? 0 : initialLibraryView\.detailsScrollTop/,
-  )
-  assert.match(
-    libraryPageSource,
-    /nextFilter === 'updates'[\s\S]*?detailsScrollTopRef\.current = 0[\s\S]*?detailsPaneRef\.current\.scrollTop = 0/,
-  )
-  assert.match(
-    libraryPageSource,
     /useToastPresence\(libraryToastMessage\)[\s\S]*?createPortal\([\s\S]*?library-toast--\$\{libraryToastToneRef\.current\}[\s\S]*?updates\.chooseFile[\s\S]*?document\.body/,
   )
   assert.match(libraryPageSource, /handleAutomaticUpdates[\s\S]*?result\.skippedKeys[\s\S]*?setManualUpdateRepo/)
   assert.doesNotMatch(batchUpdatesSource, /failedResults\[0\]\?\.error \?\? t\('updates\.noPortableAssets'\)/)
   assert.match(pageStylesSource, /\.library-toast--warning\s*\{[^}]*var\(--color-warning\)/s)
-  assert.match(
-    searchComponentsStyles,
-    /\.updates-center[\s\S]*?box-sizing: border-box;[\s\S]*?width: 100%;/,
-  )
-  assert.match(
-    searchComponentsStyles,
-    /@media \(max-width: 1180px\)[\s\S]*?\.updates-center-main[\s\S]*?grid-template-columns: 1fr;/,
-  )
   assert.match(
     installStyles,
     /\.download-panel--compact[\s\S]*?min-width: 0;[\s\S]*?width: 100%;/,
@@ -675,7 +654,6 @@ try {
   })
   assert.match(updatingOperationsPanel, /disabled="" aria-busy="true"/)
   assert.ok(updatingOperationsPanel.includes(ukDictionary['updates.updatingAll']))
-  assert.match(libraryPageSource, /onUpdate=\{\(repo\) => \{ void handleQuickInstall\(repo, true\) \}\}/)
   assert.match(libraryPageSource, /onUpdate=\{\(\) => \{ void handleQuickInstall\(featuredRepo, true\) \}\}/)
   assert.doesNotMatch(libraryPageSource, /onUpdate=\{setSelectedRepo\}/)
   assert.match(libraryOperationsSource, /onClick=\{canStop \? onStop : repo\.website_url \? onInstall : installationHealth === 'missing' \? onInstall : hasUpdate \? onUpdate : installedApp \? onLaunch : onInstall\}/)
@@ -685,7 +663,7 @@ try {
   assert.match(batchUpdatesSource, /job\.size,\s*preferExistingInstall,/)
   assert.match(batchUpdatesSource, /job\.size,\s*true,/)
   const retrySource = batchUpdatesSource.match(
-    /const handleBatchRetry[\s\S]*?\n  const handleBatchOpenFolder/,
+    /const handleBatchRetry[\s\S]*?\n  useEffect/,
   )?.[0]
   assert.ok(retrySource)
   assert.match(retrySource, /batchUpdateJobs\[download\.id\]/)
@@ -721,13 +699,13 @@ try {
   })
   assert.match(sidebar, /library-sam-list-pane/)
   const filterNav = sidebar.match(/library-sidebar-filter-nav[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? ''
-  const filterLabels = ['library.all', 'library.updates', 'library.installed']
+  const filterLabels = ['library.all', 'library.refresh', 'library.installed']
     .map((key) => ukDictionary[key])
   assert.equal((filterNav.match(/<button/g) ?? []).length, 3)
   assert.doesNotMatch(filterNav, /Favorites/)
   assert.ok(filterNav.indexOf(filterLabels[0]) < filterNav.indexOf(filterLabels[1]))
   assert.ok(filterNav.indexOf(filterLabels[1]) < filterNav.indexOf(filterLabels[2]))
-  assert.equal((filterNav.match(/library-filter-icon/g) ?? []).length, 2)
+  assert.equal((filterNav.match(/library-filter-icon/g) ?? []).length, 1)
   for (const label of filterLabels.slice(1)) {
     assert.ok(filterNav.includes(`aria-label="${label}"`))
     assert.ok(filterNav.includes(`title="${label}"`))
@@ -843,98 +821,6 @@ try {
   assert.match(folderManagerSource, /className="secondary-btn"[\s\S]*?className="primary-btn"/)
   assert.match(installationPathModalSource, /className="secondary-btn"[\s\S]*?type="submit"[\s\S]*?className="primary-btn"/)
   assert.doesNotMatch(uninstallConfirmSource, /uninstall-danger-btn primary-btn|primary-btn uninstall-danger-btn/)
-  const batchPanel = render(BatchUpdatePanel, {
-    items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
-    skippedCount: 1,
-    lastChecked: '12:34',
-    checking: false,
-    updating: false,
-    versionErrorCount: 0,
-    onCheck: noop,
-    onUpdateAll: noop,
-    onClearSkipped: noop,
-    onUpdate: noop,
-    onShowDetails: noop,
-    onSkip: noop,
-  })
-  assert.match(batchPanel, /updates-center-row/)
-  assert.match(batchPanel, /updates-center-row-main/)
-  assert.match(batchPanel, /updates-center-version-change/)
-  assert.match(batchPanel, /updates-center-row-status/)
-  assert.match(batchPanel, /v1\.0\.0[^<]*→[^<]*v2\.0\.0/)
-  assert.equal((batchPanel.match(/class="updates-center-status"/g) ?? []).length, 3)
-  assert.match(batchPanel, /updates-center-statuses" role="status" aria-live="polite"/)
-  assert.doesNotMatch(batchPanel, /updates-center-stats/)
-  assert.doesNotMatch(batchPanel, /Перевіряй усі встановлені застосунки тут/)
-  assert.match(batchPanel, /aria-haspopup="dialog"/)
-  assert.match(batchPanel, /aria-busy="false"/)
-  assert.match(batchPanel, /updates-clear-skipped/)
-
-  const updatingBatchPanel = render(BatchUpdatePanel, {
-    items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
-    skippedCount: 0,
-    lastChecked: '12:34',
-    checking: false,
-    updating: true,
-    versionErrorCount: 0,
-    onCheck: noop,
-    onUpdateAll: noop,
-    onClearSkipped: noop,
-    onUpdate: noop,
-    onShowDetails: noop,
-    onSkip: noop,
-  })
-  assert.match(updatingBatchPanel, /disabled="" aria-busy="true"/)
-  assert.ok(updatingBatchPanel.includes(ukDictionary['updates.updatingAll']))
-
-  const busyBatchPanel = render(BatchUpdatePanel, {
-    items: [],
-    skippedCount: 0,
-    checking: true,
-    updating: false,
-    versionErrorCount: 0,
-    updateMessage: 'Updated',
-    onCheck: noop,
-    onUpdateAll: noop,
-    onClearSkipped: noop,
-    onUpdate: noop,
-    onShowDetails: noop,
-    onSkip: noop,
-  })
-  assert.match(busyBatchPanel, /aria-busy="true"/)
-  assert.match(busyBatchPanel, /role="status" aria-live="polite"/)
-  assert.ok(busyBatchPanel.includes(ukDictionary['updates.emptyChecking']))
-  assert.doesNotMatch(busyBatchPanel, /role="alert"/)
-  assert.doesNotMatch(busyBatchPanel, /updates-clear-skipped/)
-
-  const emptyBatchPanelProps = {
-    items: [],
-    skippedCount: 0,
-    checking: false,
-    updating: false,
-    versionErrorCount: 0,
-    onCheck: noop,
-    onUpdateAll: noop,
-    onClearSkipped: noop,
-    onUpdate: noop,
-    onShowDetails: noop,
-    onSkip: noop,
-  }
-  const notCheckedBatchPanel = render(BatchUpdatePanel, emptyBatchPanelProps)
-  const currentBatchPanel = render(BatchUpdatePanel, { ...emptyBatchPanelProps, lastChecked: '12:34' })
-  const partialBatchPanel = render(BatchUpdatePanel, {
-    ...emptyBatchPanelProps,
-    lastChecked: '12:34',
-    versionErrorCount: 2,
-  })
-  assert.ok(notCheckedBatchPanel.includes(ukDictionary['updates.emptyNotChecked'].split('"')[0]))
-  assert.ok(currentBatchPanel.includes(ukDictionary['updates.emptyCurrent']))
-  assert.ok(partialBatchPanel.includes(ukDictionary['updates.emptyPartial'].replace('{count}', '2')))
-  assert.match(notCheckedBatchPanel, /class="hero-primary-btn"[^>]*disabled=""/)
-  assert.equal((notCheckedBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
-  assert.equal((currentBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
-  assert.equal((partialBatchPanel.match(/updates-center-empty/g) ?? []).length, 1)
-
   const download = render(DownloadProgressPanel, {
     downloads: [{
       id: 'download-1',
@@ -1048,15 +934,6 @@ try {
   const errorState = render(StatePanel, { kind: 'error', title: 'Failed' })
   assert.match(errorState, /role="alert" aria-live="assertive"/)
   assert.match(render(StatePanel, { kind: 'loading', title: 'Loading' }), /role="status" aria-live="polite" aria-busy="true"/)
-
-  const batchConfirmation = render(BatchUpdateConfirmDialog, {
-    items: [{ repo, currentVersion: 'v1.0.0', latestVersion: 'v2.0.0' }],
-    onCancel: noop,
-    onConfirm: noop,
-  })
-  assert.match(batchConfirmation, /role="dialog"/)
-  assert.match(batchConfirmation, /aria-modal="true"/)
-  assert.match(batchConfirmation, /demo-app/)
 
   console.log('[components] library panels and status rules: ok')
 } finally {

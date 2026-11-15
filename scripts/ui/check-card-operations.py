@@ -59,8 +59,6 @@ def batch_cancel(page):
     card(page).get_by_role('progressbar').wait_for()
     card(page).locator('.repo-cancel-download').click()
     card(page).get_by_role('progressbar').wait_for(state='detached')
-    page.locator('.library-sidebar-filter-nav').get_by_role('button', name='Оновлення', exact=True).click()
-    page.wait_for_function("document.querySelector('.updates-center')?.getAttribute('aria-busy') === 'false'")
 
 
 def restored_completion(page):

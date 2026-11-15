@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDownload } from '../../../hooks/useDownload'
 import { getReleases } from '../../../services/github'
 import { planReleaseInstallation } from '../../../services/download'
-import { cleanupIncompleteInstalls, openInstalledAppDir } from '../../../services/installed'
 import type { DownloadProgress, GitHubSearchResult } from '../../../types'
 import { useI18n } from '../../../i18n'
 import { currentStage } from '../../../utils/downloadProgress'
@@ -17,7 +16,6 @@ interface BatchUpdateJob {
 }
 
 interface UseBatchUpdatesOptions {
-  repositories: GitHubSearchResult[]
   getLatestVersion: (repo: GitHubSearchResult) => string | undefined
   refreshLocalStatus: () => Promise<void>
 }
@@ -33,7 +31,6 @@ function repositoryKey(repo: GitHubSearchResult) {
 }
 
 export function useBatchUpdates({
-  repositories,
   getLatestVersion,
   refreshLocalStatus,
 }: UseBatchUpdatesOptions) {
@@ -43,15 +40,12 @@ export function useBatchUpdates({
     download: startBatchDownload,
     cancel: cancelDownload,
     setPaused: setBatchDownloadPaused,
-    refresh: refreshBatchDownloads,
   } = useDownload()
   const [batchStarting, setBatchStarting] = useState(false)
   const startingInstalls = useRef(new Set<string>())
   const [installingKeys, setInstallingKeys] = useState<Set<string>>(new Set())
   const [batchUpdateJobs, setBatchUpdateJobs] = useState<Record<string, BatchUpdateJob>>({})
-  const [batchUpdateMessage, setBatchUpdateMessage] = useState<string | null>(null)
   const [batchUpdateError, setBatchUpdateError] = useState<string | null>(null)
-  const [batchCleanupMessage, setBatchCleanupMessage] = useState<string | null>(null)
   const seenCompletedDownloads = useRef(new Set<string>())
   const batchUpdating = batchStarting || installingKeys.size > 0 || batchDownloads.some((download) =>
     !['completed', 'failed'].includes(currentStage(download)),
@@ -105,14 +99,11 @@ export function useBatchUpdates({
   }
 
   const handleUpdateAllPortable = useCallback(async (
-    selectedRepositories: GitHubSearchResult[] = repositories,
+    selectedRepositories: GitHubSearchResult[],
   ): Promise<BatchUpdateStartResult> => {
     setBatchUpdateError(null)
-    setBatchUpdateMessage(null)
-    setBatchCleanupMessage(null)
 
     if (selectedRepositories.length === 0) {
-      setBatchUpdateMessage(t('updates.noneReady'))
       return { startedKeys: [], skippedKeys: [], failedKeys: [] }
     }
 
@@ -157,22 +148,9 @@ export function useBatchUpdates({
     const skippedKeys = results.filter((item) => item.status === 'skipped').map((item) => item.key)
     const failedResults = results.filter((item) => item.status === 'failed')
     const failedKeys = failedResults.map((item) => item.key)
-    if (startedKeys.length === 0) {
-      if (failedResults.length > 0) {
-        setBatchUpdateError(failedResults[0].error)
-      } else {
-        setBatchUpdateMessage(t('updates.noPortableAssets'))
-      }
-      return { startedKeys, skippedKeys, failedKeys }
-    }
-
-    setBatchUpdateMessage(t('updates.batchStarted', {
-      started: startedKeys.length,
-      skipped: skippedKeys.length + failedKeys.length,
-    }))
     if (failedResults.length > 0) setBatchUpdateError(failedResults[0].error)
     return { startedKeys, skippedKeys, failedKeys }
-  }, [getLatestVersion, repositories, startBatchUpdateJob, t])
+  }, [getLatestVersion, startBatchUpdateJob, t])
 
   const handleBatchRetry = async (download: DownloadProgress) => {
     const job = batchUpdateJobs[download.id] ?? (
@@ -215,26 +193,6 @@ export function useBatchUpdates({
     }
   }
 
-  const handleBatchOpenFolder = (download: DownloadProgress) => {
-    if (!download.owner || !download.repo) return
-    openInstalledAppDir(download.owner, download.repo)
-      .catch((error) => setBatchUpdateError(
-        error instanceof Error ? error.message : t('installed.openFolderError'),
-      ))
-  }
-
-  const handleBatchCleanup = async () => {
-    setBatchUpdateError(null)
-    try {
-      const count = await cleanupIncompleteInstalls()
-      await refreshBatchDownloads()
-      setBatchCleanupMessage(t('download.cleanupDone', { count }))
-    } catch (error) {
-      setBatchCleanupMessage(null)
-      setBatchUpdateError(error instanceof Error ? error.message : t('download.cleanupError'))
-    }
-  }
-
   useEffect(() => {
     if (!batchUpdateError) return
     const timer = window.setTimeout(() => setBatchUpdateError(null), 6000)
@@ -256,12 +214,8 @@ export function useBatchUpdates({
     cancelBatchDownload,
     setBatchDownloadPaused,
     batchUpdating,
-    batchUpdateMessage,
     batchUpdateError,
-    batchCleanupMessage,
     handleUpdateAllPortable,
     handleBatchRetry,
-    handleBatchOpenFolder,
-    handleBatchCleanup,
   }
 }

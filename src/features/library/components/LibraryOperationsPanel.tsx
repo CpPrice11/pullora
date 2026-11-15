@@ -1,5 +1,5 @@
 import { useI18n } from '../../../i18n'
-import { StopIcon } from '../../../components/ui/Icons'
+import { PlayIcon, StopIcon } from '../../../components/ui/Icons'
 import type { GitHubSearchResult, InstalledApp, InstallationStatus } from '../../../types'
 import { formatDate } from '../../../utils/format'
 import { getLibraryAppStatus } from '../libraryStatus'
@@ -57,21 +57,28 @@ export default function LibraryOperationsPanel({
         </div>
 
         <div className="library-ops-action-row" aria-label={t('library.action')}>
-          <button
-            type="button"
-            className="hero-primary-btn"
-            onClick={canStop ? onStop : repo.website_url ? onInstall : installationHealth === 'missing' ? onInstall : hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
-            disabled={actionBusy}
-            aria-busy={updating}
-          >
-            {canStop ? <><StopIcon />{t('repo.stop')}</> : repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : actionBusy
-              ? t('updates.updatingAll')
-              : installationHealth === 'missing' ? t('repo.reinstall') : hasUpdate
-                ? t('repo.updateAction')
-                : installedApp
-                  ? t('repo.launch')
-                  : t('repo.install')}
-          </button>
+          <div className="library-ops-buttons">
+            <button
+              type="button"
+              className="hero-primary-btn"
+              onClick={canStop ? onStop : repo.website_url ? onInstall : installationHealth === 'missing' ? onInstall : hasUpdate ? onUpdate : installedApp ? onLaunch : onInstall}
+              disabled={actionBusy}
+              aria-busy={updating}
+            >
+              {canStop ? <><StopIcon />{t('repo.stop')}</> : repo.website_url ? t('repo.visit') : runtimeStatus ? t(runtimeStatus === 'running' ? 'repo.running' : 'repo.runtimeUnknown') : installationHealth === 'unavailable' ? t('repo.filesUnavailable') : actionBusy
+                ? t('updates.updatingAll')
+                : installationHealth === 'missing' ? t('repo.reinstall') : hasUpdate
+                  ? t('repo.updateAction')
+                  : installedApp
+                    ? t('repo.launch')
+                    : t('repo.install')}
+            </button>
+            {hasUpdate && !repo.website_url && !runtimeStatus && installationHealth !== 'missing' && installationHealth !== 'unavailable' && (
+              <button type="button" className="secondary-btn repo-launch-action" onClick={onLaunch} disabled={actionBusy}>
+                <PlayIcon />{t('repo.launch')}
+              </button>
+            )}
+          </div>
           <div className="library-play-status">
             <span>{t('library.ops.updated')}</span>
             <strong>{updatedDate}</strong>

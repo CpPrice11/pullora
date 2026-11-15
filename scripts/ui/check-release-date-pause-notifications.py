@@ -68,17 +68,6 @@ def run(page,language,theme,width):
     # Native polling events update the visible release date without reopening Library.
     page.evaluate("""() => {for(const id of window.__RELEASE_LISTENERS__)window.__TAURI_INTERNALS__.runCallback(id,{event:'library-release-checked',id,payload:{owner:'CpPrice11',repo:'steam-achievement-manager',version:'v0.2.3',publishedAt:'2025-05-06T00:00:00Z'}});} """)
     page.wait_for_function("document.querySelector('[data-repo-key=\"cpprice11/steam-achievement-manager\"] .repo-table-date time')?.dateTime==='2025-05-06T00:00:00Z'")
-    page.locator('.library-sidebar-filter-nav').get_by_role('button',name='Оновлення' if language=='uk' else 'Updates',exact=True).click()
-    panel=page.locator('.download-panel');panel.wait_for()
-    panel.locator('.repo-pause-download').click()
-    page.wait_for_function("document.querySelector('.download-panel .download-status')?.textContent.includes('"+('На паузі' if language=='uk' else 'Paused')+"')")
-    assert panel.locator('.download-stage-note').inner_text()==('Можна продовжити завантаження або скасувати його.' if language=='uk' else 'Resume the download when ready, or cancel it.')
-    if width==1280:
-        page.add_script_tag(path='.codex-tools/axe/package/axe.min.js')
-        assert not page.evaluate("async()=> (await axe.run(document.querySelector('.download-panel'),{runOnly:{type:'tag',values:['wcag2a','wcag2aa']}})).violations")
-    page.screenshot(path=output/f'pause-panel-{theme}-{language}-{width}.png')
-    panel.locator('.repo-pause-download').click()
-    page.locator('.library-sidebar-filter-nav').get_by_role('button',name='Усі' if language=='uk' else 'All',exact=True).click()
     page.get_by_role('button',name='Налаштування' if language=='uk' else 'Settings',exact=True).first.click()
     checkbox=page.locator('#update-notifications');checkbox.wait_for();assert checkbox.is_checked()
     checkbox.uncheck();page.wait_for_function("window.__CATALOG_CALLS__.length>=0")

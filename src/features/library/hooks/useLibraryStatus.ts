@@ -68,7 +68,7 @@ function writeCachedLatestVersion(key: string, latestVersion: string | null, pub
   writeLatestVersionCache(cache)
 }
 
-export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
+export function useLibraryStatus(repositories: GitHubSearchResult[], refreshingLibrary: boolean) {
   const [runtimeStates, setRuntimeStates] = useState<AppRuntimeState[]>([])
   const [runtimeError, setRuntimeError] = useState<string | null>(null)
   const [discoveredApps, setDiscoveredApps] = useState<DetectedInstallation[]>([])
@@ -171,24 +171,29 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     repoItems?: GitHubSearchResult[],
     forceRefresh = false,
   ) => {
+    const knownVersions = readLatestVersionCache()
     const targets = [...new Map([
       ...apps.map(app => ({ owner: app.owner, repo: app.repo })),
-      ...(repoItems ?? []).filter(repo => repo.has_releases && !repo.website_url).map(repo => ({ owner: repo.owner.login, repo: repo.name })),
+      ...(repoItems ?? [])
+        .filter(repo => !repo.website_url && (forceRefresh || repo.has_releases ||
+          knownVersions[projectArtKey(repo.owner.login, repo.name)]?.latestVersion))
+        .map(repo => ({ owner: repo.owner.login, repo: repo.name })),
     ].map(app => [projectArtKey(app.owner, app.repo), app])).values()]
     if (targets.length === 0) {
       setState((prev) => ({
         ...prev,
         latestVersions: new Map(),
-    releaseDates: new Map(),
+        releaseDates: new Map(),
         checkingUpdates: false,
         latestVersionErrorCount: 0,
         latestVersionsCheckedAt: new Date(),
       }))
-      return new Map<string, string>()
+      return 0
     }
 
     setState((prev) => ({ ...prev, checkingUpdates: true }))
 
+    let failedCount = 0
     const entries = await Promise.all(
       targets.map(async (app) => {
         const key = projectArtKey(app.owner, app.repo)
@@ -206,11 +211,9 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
           writeCachedLatestVersion(key, latestVersion, latest?.published_at ?? null)
           return latestVersion ? [key, latestVersion, latest?.published_at ?? null] as const : null
         } catch {
+          failedCount++
           const stale = readCachedLatestVersion(key, true)
-          if (stale) {
-            return stale.latestVersion ? [key, stale.latestVersion, stale.publishedAt ?? null] as const : null
-          }
-          return 'failed' as const
+          return stale?.latestVersion ? [key, stale.latestVersion, stale.publishedAt ?? null] as const : null
         }
       }),
     )
@@ -218,7 +221,6 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
     const validEntries = entries.filter(
       (entry): entry is readonly [string, string, string | null] => Array.isArray(entry),
     )
-    const failedCount = entries.filter((entry) => entry === 'failed').length
 
     const latestVersions = new Map(validEntries.map(([key, tag]) => [key, tag]))
     const releaseDates = new Map(validEntries.map(([key, , date]) => [key, date]))
@@ -230,15 +232,15 @@ export function useLibraryStatus(_repositories: GitHubSearchResult[]) {
       latestVersionErrorCount: failedCount,
       latestVersionsCheckedAt: new Date(),
     }))
-    return latestVersions
+    return failedCount
   }, [state.installedApps])
 
   const metadataTargets = useRef<GitHubSearchResult[] | null>(null)
   useEffect(() => {
-    if (!_repositories.length || _repositories === metadataTargets.current) return
-    metadataTargets.current = _repositories
-    void refreshLatestVersions(state.installedApps, _repositories)
-  }, [_repositories, refreshLatestVersions, state.installedApps])
+    if (!repositories.length || repositories === metadataTargets.current) return
+    metadataTargets.current = repositories
+    if (!refreshingLibrary) void refreshLatestVersions(state.installedApps, repositories)
+  }, [repositories, refreshingLibrary, refreshLatestVersions, state.installedApps])
 
   const getInstalledApp = useCallback(
     (repo: GitHubSearchResult) => repo.website_url ? undefined : installedByRepo.get(projectArtKey(repo.owner.login, repo.name)),

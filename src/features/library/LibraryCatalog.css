@@ -307,6 +307,14 @@
   min-width: 0;
 }
 
+.cinematic-shell .library-page.library-catalog .repo-card-actions:has(.repo-launch-action) {
+  flex-wrap: wrap;
+}
+
+.cinematic-shell .library-page.library-catalog .repo-card-actions:has(.repo-launch-action) :is(.repo-primary-action, .repo-launch-action) {
+  flex: 1 0 auto;
+}
+
 .cinematic-shell .library-page.library-catalog .repo-more-action {
   background: var(--color-control);
   border: 1px solid var(--color-border);

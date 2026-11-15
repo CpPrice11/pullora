@@ -13,7 +13,3 @@ export function getLibraryAppStatus(
 export function getLibraryStatusRank(status: LibraryAppStatus) {
   return status === 'update' ? 0 : status === 'installed' ? 1 : 2
 }
-
-export function getUpdateDismissKey(owner: string, repo: string, latestVersion: string) {
-  return `${owner}/${repo}@${latestVersion}`.toLowerCase()
-}

@@ -33,6 +33,9 @@ def prepare(page, language="uk", *, reset_view=True):
       window.__TAURI_INTERNALS__.invoke = async (command, args) => {
         window.__CATALOG_CALLS__.push({ command, args });
         if (command === 'open_website_url' && window.__WEBSITE_ERROR__) throw 'PULLORA_ERROR:errors.commandFailed';
+        if (command === 'get_releases' && args.forceRefresh && args.repo === 'steam-achievement-manager' && window.__CATALOG_NEW_RELEASE__) {
+          window.__PULLORA_TEST_RELEASES__ = {'cpprice11/steam-achievement-manager': [window.__CATALOG_NEW_RELEASE__]};
+        }
         return invoke(command, args);
       };
     })()""")
@@ -96,14 +99,24 @@ def interactions(page):
     page.keyboard.press("Escape")
     assert page.locator('.repo-card input:checked').count() == 0
 
-    page.locator('.library-refresh-btn').click()
     first.locator('.repo-update-version').wait_for()
     assert 'v0.2.3' in first.locator('.repo-update-version').inner_text()
+    page.evaluate("release => { window.__CATALOG_CALLS__ = []; window.__CATALOG_NEW_RELEASE__ = release; }", baseline["release"]("v0.2.4"))
+    refresh = page.locator('.library-sidebar-filter-nav .library-refresh-btn')
+    assert page.locator('.library-refresh-btn').count() == 1
+    refresh.focus()
+    refresh.press('Enter')
+    page.wait_for_function("document.querySelector('[data-repo-key=\"cpprice11/steam-achievement-manager\"] .repo-update-version')?.textContent.includes('v0.2.4')")
+    assert page.evaluate("window.__CATALOG_CALLS__.some(x => x.command === 'list_owner_repositories' && x.args.forceRefresh)")
+    assert page.evaluate("window.__CATALOG_CALLS__.filter(x => x.command === 'get_releases' && x.args.repo === 'steam-achievement-manager').map(x => x.args.forceRefresh).join() === 'true'")
+    launch = first.locator('.repo-launch-action')
+    launch.focus()
+    launch.press('Enter')
+    page.wait_for_function("window.__CATALOG_CALLS__.some(x => x.command === 'launch_app' && x.args.repo === 'steam-achievement-manager')")
+    assert not page.evaluate("window.__CATALOG_CALLS__.some(x => x.command === 'start_download')")
     first.locator('.repo-primary-action').click()
-    page.wait_for_function("window.__CATALOG_CALLS__.some(x => x.command === 'start_download')")
-    page.locator('.library-sidebar-filter-nav button[aria-label="Оновлення"]').click()
-    page.locator('.updates-center').wait_for()
-    page.locator('.library-sidebar-filter-nav button').first.click()
+    page.wait_for_function("window.__CATALOG_CALLS__.some(x => x.command === 'start_download' && x.args.tag === 'v0.2.4')")
+    assert page.locator('.updates-center').count() == 0
 
     page.locator(".repo-card").filter(has=page.locator(".repo-name", has_text="fandom-translator")).locator(".repo-primary-action").click()
     page.wait_for_function("window.__CATALOG_CALLS__.some(x => x.command === 'start_download' && x.args.repo === 'fandom-translator')")
@@ -127,6 +140,16 @@ def accessibility(page):
     for selector in ('.repo-name button', '.repo-description', '.repo-owner', '.repo-status', '.repo-meta', '.repo-card-links a', '.repo-primary-action'):
         contrast_checks['assert_text_contrast'](session, page.locator(selector).first, canvas, selector)
     contrast_checks['assert_focus_contrast'](page, session, page.locator('.repo-primary-action').first, canvas, 'card primary focus')
+    card = page.locator('[data-repo-key="cpprice11/steam-achievement-manager"]')
+    launch = card.locator('.repo-launch-action')
+    launch.wait_for()
+    contrast_checks['assert_text_contrast'](session, launch, canvas, 'card launch action')
+    card.locator('.repo-name button').click()
+    details = page.locator('.library-catalog-details')
+    launch = details.locator('.repo-launch-action')
+    launch.wait_for()
+    contrast_checks['assert_text_contrast'](session, launch, canvas, 'details launch action')
+    details.locator('.library-catalog-details-toolbar button').click()
     session.detach()
 
 

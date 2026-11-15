@@ -12,12 +12,10 @@ import { useBatchUpdates } from './hooks/useBatchUpdates'
 import { useLibraryBulkSelection } from './hooks/useLibraryBulkSelection'
 import RepoCard from './components/RepoCard'
 import LibrarySidebar, { type LibrarySection } from './components/LibrarySidebar'
-import type { BatchUpdateItem } from './components/BatchUpdatePanel'
 import StatePanel from '../../components/State/StatePanel'
 import { launchApp, openInstalledAppDir, uninstallApp, uninstallVersion, adoptInstalledApp } from '../../services/installed'
 import { addToFavorites, getFavorites, removeFromFavorites } from '../../services/favorites'
 import { getLibraryFolders, saveLibraryFolders } from '../../services/libraryFolders'
-import { clearGithubCache } from '../../services/github'
 import { openWebsiteUrl } from '../../services/updates'
 import { getDefaultProjectScreenshots, listDefaultProjectIcons } from '../../services/defaultMedia'
 import { pickImageFile } from '../../services/dialog'
@@ -34,7 +32,7 @@ import {
 } from '../../services/projectArt'
 import type { ArtCrop, FavoriteApp, GitHubSearchResult, InstalledApp, LibraryFolder, ProjectArt, DetectedInstallation } from '../../types'
 import { useI18n } from '../../i18n'
-import { getLibraryAppStatus, getUpdateDismissKey } from './libraryStatus'
+import { getLibraryAppStatus } from './libraryStatus'
 import { useToastPresence } from '../../hooks/useToastPresence'
 import { getInactiveInstalledVersions, runSequentialBulk } from './libraryBulkOperations'
 import {
@@ -59,7 +57,6 @@ const repoLookupKey = projectArtKey
 const LibraryHero = lazy(() => import('./components/LibraryHero'))
 const LibraryOperationsPanel = lazy(() => import('./components/LibraryOperationsPanel'))
 const ProjectGallery = lazy(() => import('./components/ProjectGallery'))
-const BatchUpdatePanel = lazy(() => import('./components/BatchUpdatePanel'))
 const CATALOG_OWNER = 'CpPrice11'
 
 function isHiddenRepository(owner: string, repo: string) {
@@ -134,7 +131,6 @@ function makeFavoriteRepository(favorite: FavoriteApp): GitHubSearchResult {
 const favoritesFolderId = 'favorites'
 const uncategorizedFolderId = 'uncategorized'
 const collapsedFoldersStorageKey = 'pullora-library-collapsed-folders-v1'
-const dismissedUpdatesStorageKey = 'pullora-dismissed-update-versions-v1'
 
 const normalizeRepoKey = projectArtKey
 
@@ -189,18 +185,6 @@ function loadCollapsedFolderIds() {
   }
 }
 
-function loadDismissedUpdateKeys() {
-  if (typeof window === 'undefined') return new Set<string>()
-
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(dismissedUpdatesStorageKey) ?? '[]') as unknown
-    if (!Array.isArray(parsed)) return new Set<string>()
-    return new Set(parsed.filter((key): key is string => typeof key === 'string').slice(-500))
-  } catch {
-    return new Set<string>()
-  }
-}
-
 function classifyLibraryError(error: string | null): LibraryErrorKind {
   const normalized = error?.toLowerCase() ?? ''
   if (normalized.includes('rate limit') || normalized.includes('403')) return 'rateLimit'
@@ -242,7 +226,6 @@ interface LibraryPageProps {
 }
 
 const ReleaseSelector = lazy(() => import('../../components/Install/ReleaseSelector'))
-const DownloadProgressPanel = lazy(() => import('../../components/Install/DownloadProgress'))
 const ArtCropDialog = lazy(() => import('../../components/Modal/ArtCropDialog'))
 const StopAppDialog = lazy(() => import('./components/StopAppDialog'))
 const LibraryBulkActions = lazy(() => import('./components/LibraryBulkActions').then((module) => ({
@@ -283,9 +266,6 @@ function LibraryPage({
   } | null>(null)
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [stopTarget, setStopTarget] = useState<GitHubSearchResult | null>(null)
-  const [dismissedUpdateKeys, setDismissedUpdateKeys] = useState<Set<string>>(
-    loadDismissedUpdateKeys,
-  )
   const [uninstallTarget, setUninstallTarget] = useState<UninstallTarget | null>(null)
   const [uninstallBusy, setUninstallBusy] = useState(false)
   const [uninstallError, setUninstallError] = useState<string | null>(null)
@@ -327,40 +307,33 @@ function LibraryPage({
     refreshLatestVersions,
     discoveredApps, discoveryError, refreshDiscovered, healthByRepo,
     runtimeByRepo, runtimeError, refreshRuntime,
-  } = useLibraryStatus(state.repositories)
+  } = useLibraryStatus(state.repositories, refreshingLibrary)
 
   const handleRefresh = async () => {
-    if (refreshingLibrary) return
+    if (refreshingLibrary || state.loading || checkingUpdates) return
 
     setRefreshingLibrary(true)
     setLibraryActionMessage(null)
     setLibraryActionError(null)
     try {
-      await clearGithubCache()
       const [freshRepositories, freshInstalledApps] = await Promise.all([
         refreshRepositories(),
         refreshInstalledApps(),
         listDefaultProjectIcons(true).then(setDefaultIcons).catch(() => {}),
-        refreshDiscovered(),
         refreshRuntime(),
       ])
-      await refreshLatestVersions(
+      const failedCount = await refreshLatestVersions(
         freshInstalledApps,
         freshRepositories ?? state.repositories,
         true,
       )
-      if (freshRepositories) setLibraryActionMessage(t('library.refreshDone'))
+      if (freshRepositories && failedCount === 0) setLibraryActionMessage(t('library.refreshDone'))
     } catch (err) {
       setLibraryActionError(err instanceof Error ? err.message : t('refresh.error'))
     } finally {
       setRefreshingLibrary(false)
     }
   }
-
-  const handleCheckUpdates = useCallback(async () => {
-    const freshInstalledApps = await refreshInstalledApps()
-    await refreshLatestVersions(freshInstalledApps, state.repositories, true)
-  }, [refreshInstalledApps, refreshLatestVersions, state.repositories])
 
   const handleInstalledFromRelease = async () => {
     if (selectedRepo) {
@@ -403,20 +376,6 @@ function LibraryPage({
     }
   }
 
-  const handleSkipUpdate = (repo: GitHubSearchResult) => {
-    const latestVersion = getLatestVersion(repo)
-    if (!latestVersion) return
-    setDismissedUpdateKeys((current) => {
-      const next = new Set(current)
-      next.add(getUpdateDismissKey(repo.owner.login, repo.name, latestVersion))
-      return next
-    })
-  }
-
-  const handleClearSkippedUpdates = () => {
-    setDismissedUpdateKeys(new Set())
-  }
-
   useEffect(() => {
     let cancelled = false
 
@@ -451,18 +410,6 @@ function LibraryPage({
       JSON.stringify(Array.from(collapsedFolderIds)),
     )
   }, [collapsedFolderIds])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      window.localStorage.setItem(
-        dismissedUpdatesStorageKey,
-        JSON.stringify(Array.from(dismissedUpdateKeys)),
-      )
-    } catch {
-      // Пропуск у поточному сеансі працює навіть без доступу до сховища.
-    }
-  }, [dismissedUpdateKeys])
 
   useEffect(() => {
     const favoriteRepoKeys = favorites
@@ -718,17 +665,6 @@ function LibraryPage({
     return Array.from(reposByKey.values())
   }, [favorites, installedApps, state.repositories])
 
-  const updateRepositories = useMemo(() => {
-    return libraryRepositories.filter((repo) => {
-      const installedApp = getInstalledApp(repo)
-      const latestVersion = getLatestVersion(repo)
-      if (getLibraryAppStatus(installedApp, latestVersion) !== 'update' || !latestVersion) return false
-      return !dismissedUpdateKeys.has(
-        getUpdateDismissKey(repo.owner.login, repo.name, latestVersion),
-      )
-    })
-  }, [dismissedUpdateKeys, getInstalledApp, getLatestVersion, libraryRepositories])
-
   const {
     batchDownloads,
     installingKeys,
@@ -736,21 +672,16 @@ function LibraryPage({
     cancelBatchDownload,
     setBatchDownloadPaused,
     batchUpdating,
-    batchUpdateMessage,
     batchUpdateError,
-    batchCleanupMessage,
     handleUpdateAllPortable,
     handleBatchRetry,
-    handleBatchOpenFolder,
-    handleBatchCleanup,
   } = useBatchUpdates({
-    repositories: updateRepositories,
     getLatestVersion,
     refreshLocalStatus,
   })
 
   const handleAutomaticUpdates = async (
-    repositories: GitHubSearchResult[] = updateRepositories,
+    repositories: GitHubSearchResult[],
   ) => {
     setManualUpdateRepo(null)
     const result = await handleUpdateAllPortable(repositories)
@@ -760,15 +691,6 @@ function LibraryPage({
     )) ?? null)
     return result
   }
-
-  const activeDismissedUpdateCount = useMemo(() => libraryRepositories.reduce((count, repo) => {
-    const latestVersion = getLatestVersion(repo)
-    return latestVersion && dismissedUpdateKeys.has(
-      getUpdateDismissKey(repo.owner.login, repo.name, latestVersion),
-    )
-      ? count + 1
-      : count
-  }, 0), [dismissedUpdateKeys, getLatestVersion, libraryRepositories])
 
   const displayFolders = useMemo(() => cleanLibraryFolders(libraryFolders), [libraryFolders])
   const {
@@ -782,9 +704,7 @@ function LibraryPage({
     changeSort: handleSortChange,
   } = useLibraryFiltering({
     repositories: libraryRepositories,
-    dismissedUpdateKeys,
     getInstalledApp,
-    getLatestVersion,
     initialQuery: initialLibraryView.query,
     initialFilter: initialLibraryView.filter,
     initialSort: initialLibraryView.sort,
@@ -835,9 +755,7 @@ function LibraryPage({
     detailsPaneRef.current?.scrollIntoView({ block: 'start' })
   }, [detailsOpen, featuredRepo?.id])
   const sidebarScrollTopRef = useRef(initialLibraryView.sidebarScrollTop)
-  const detailsScrollTopRef = useRef(
-    initialLibraryView.filter === 'updates' ? 0 : initialLibraryView.detailsScrollTop,
-  )
+  const detailsScrollTopRef = useRef(initialLibraryView.detailsScrollTop)
   const lastFeaturedRepoKeyRef = useRef(initialLibraryView.featuredRepoKey)
   const viewPersistenceTimerRef = useRef<number | null>(null)
   const scrollRestoredRef = useRef(false)
@@ -1323,71 +1241,12 @@ function LibraryPage({
     }
   }
 
-  const renderUpdatesCenter = () => {
-    if (filter !== 'updates') return null
-
-    const items = updateRepositories.flatMap((repo): BatchUpdateItem[] => {
-      const installedApp = getInstalledApp(repo)
-      const latestVersion = getLatestVersion(repo)
-      return installedApp && latestVersion
-        ? [{ repo, currentVersion: installedApp.activeVersion, latestVersion }]
-        : []
-    })
-    const failedDownload = batchDownloads.find((download) => download.status === 'failed')
-    const chooseAnotherRepo = failedDownload
-      ? state.repositories.find((repo) =>
-        repo.owner.login === failedDownload.owner && repo.name === failedDownload.repo,
-      )
-      : updateRepositories[0]
-
-    return (
-      <BatchUpdatePanel
-        items={items}
-        skippedCount={activeDismissedUpdateCount}
-        lastChecked={formattedLatestVersionsTime}
-        checking={checkingUpdates}
-        updating={batchUpdating}
-        versionErrorCount={latestVersionErrorCount}
-        updateMessage={batchUpdateMessage}
-        cleanupMessage={batchCleanupMessage}
-        onCheck={handleCheckUpdates}
-        onUpdateAll={() => { void handleAutomaticUpdates() }}
-        onClearSkipped={handleClearSkippedUpdates}
-        onUpdate={(repo) => { void handleQuickInstall(repo, true) }}
-        onShowDetails={(repo) => {
-          detailsReturnFocus.current = document.activeElement as HTMLElement
-          selectFeaturedRepo(repo, 'details')
-          setDetailsOpen(true)
-        }}
-        onSkip={handleSkipUpdate}
-      >
-        <Suspense fallback={null}>
-          <DownloadProgressPanel
-            compact
-            downloads={batchDownloads}
-            onCancel={cancelBatchDownload}
-            onSetPaused={setBatchDownloadPaused}
-            onLaunch={(download) => {
-              if (!download.owner || !download.repo) return
-              launchApp(download.owner, download.repo).catch(() => {})
-            }}
-            onOpenFolder={handleBatchOpenFolder}
-            onRetry={handleBatchRetry}
-            onChooseAnother={() => chooseAnotherRepo && setSelectedRepo(chooseAnotherRepo)}
-            onCleanup={handleBatchCleanup}
-          />
-        </Suspense>
-      </BatchUpdatePanel>
-    )
-  }
-
   const renderLibraryTrustPanel = () => {
     if (suppressDiagnostics || libraryTrustKind === 'fresh') return null
 
     const canRetry = !state.loading && !checkingUpdates
     const retryInstalled = Boolean(installedLoadError) && canRetry
-    const shouldOfferRetry = Boolean(state.error)
-    const shouldOfferUpdateCheck = latestVersionErrorCount > 0 || !latestVersionsCheckedAt
+    const shouldOfferRetry = Boolean(state.error) || latestVersionErrorCount > 0 || !latestVersionsCheckedAt
 
     return (
       <section
@@ -1404,16 +1263,6 @@ function LibraryPage({
           </span>
         )}
         <div className="library-trust-inline-actions">
-          {shouldOfferUpdateCheck && (
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={handleCheckUpdates}
-              disabled={!canRetry}
-            >
-              {checkingUpdates ? t('library.refreshing') : t('updates.checkAll')}
-            </button>
-          )}
           {shouldOfferRetry && libraryTrustKind !== 'checking' && (
             <button
               type="button"
@@ -1656,7 +1505,6 @@ function LibraryPage({
             sort={sort}
             viewMode={libraryViewMode}
             query={query}
-            summary={<Suspense fallback={<StatePanel kind="loading" title={t('library.loading')} />}>{renderUpdatesCenter()}</Suspense>}
             details={detailsOpen && (
               <aside
                 className="library-sam-details-pane library-catalog-details"
@@ -1760,10 +1608,6 @@ function LibraryPage({
             onFilterChange={(nextFilter) => {
               setDetailsOpen(false)
               bulkSelection.clear()
-              if (nextFilter === 'updates') {
-                detailsScrollTopRef.current = 0
-                if (detailsPaneRef.current) detailsPaneRef.current.scrollTop = 0
-              }
               handleFilterChange(nextFilter)
             }}
             onSortChange={(nextSort) => {

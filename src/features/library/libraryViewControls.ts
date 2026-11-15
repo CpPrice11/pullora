@@ -1,4 +1,4 @@
-export const LIBRARY_FILTERS = ['all', 'updates', 'installed'] as const
+export const LIBRARY_FILTERS = ['all', 'installed'] as const
 export const LIBRARY_SORTS = ['name', 'launched', 'installed', 'updated'] as const
 export const LIBRARY_DENSITIES = ['normal', 'compact'] as const
 export const LIBRARY_VIEW_MODES = ['cards', 'table'] as const

@@ -1,13 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { GitHubSearchResult, InstalledApp } from '../../../types'
-import { getLibraryAppStatus, getUpdateDismissKey } from '../libraryStatus'
 import type { LibraryFilter, LibrarySort } from '../libraryViewControls'
 
 interface UseLibraryFilteringOptions {
   repositories: GitHubSearchResult[]
-  dismissedUpdateKeys: Set<string>
   getInstalledApp: (repo: GitHubSearchResult) => InstalledApp | undefined
-  getLatestVersion: (repo: GitHubSearchResult) => string | undefined
   initialQuery?: string
   initialFilter?: LibraryFilter
   initialSort?: LibrarySort
@@ -15,9 +12,7 @@ interface UseLibraryFilteringOptions {
 
 export function useLibraryFiltering({
   repositories,
-  dismissedUpdateKeys,
   getInstalledApp,
-  getLatestVersion,
   initialQuery = '',
   initialFilter = 'all',
   initialSort = 'updated',
@@ -35,18 +30,7 @@ export function useLibraryFiltering({
   const visibleRepositories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
     const filtered = repositories.filter((repo) => {
-      if (repo.website_url && filter !== 'all') return false
-      const installedApp = getInstalledApp(repo)
-      const latestVersion = getLatestVersion(repo)
-      const status = getLibraryAppStatus(installedApp, latestVersion)
-      const updateDismissed = Boolean(
-        latestVersion && dismissedUpdateKeys.has(
-          getUpdateDismissKey(repo.owner.login, repo.name, latestVersion),
-        ),
-      )
-
-      if (filter === 'installed' && status === 'available') return false
-      if (filter === 'updates' && (status !== 'update' || updateDismissed)) return false
+      if (filter === 'installed' && (repo.website_url || !getInstalledApp(repo))) return false
       if (!normalizedQuery) return true
 
       return [
@@ -60,10 +44,8 @@ export function useLibraryFiltering({
 
     return sortLibraryRepositories(filtered, sort, getInstalledApp)
   }, [
-    dismissedUpdateKeys,
     filter,
     getInstalledApp,
-    getLatestVersion,
     query,
     repositories,
     sort,
