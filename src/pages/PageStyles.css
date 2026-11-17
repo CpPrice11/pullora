@@ -4957,17 +4957,15 @@
 }
 
 .library-ops-buttons > button {
-  flex: 1 0 auto;
-}
-
-.library-ops-buttons .repo-launch-action {
   align-items: center;
   display: inline-flex;
+  flex: 1 0 auto;
   gap: var(--spacing-sm);
   justify-content: center;
 }
 
-.library-ops-buttons .repo-launch-action svg {
+.library-ops-buttons > button > svg {
+  flex: none;
   width: var(--spacing-md);
   height: var(--spacing-md);
 }

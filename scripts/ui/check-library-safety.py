@@ -85,6 +85,16 @@ with sync_playwright() as p:
                 sam.locator('.repo-runtime-status').wait_for()
                 assert sam.locator('.repo-primary-action').is_enabled()
                 assert sam.locator('.repo-primary-action').inner_text()==('Stop' if language=='en' else 'Зупинити')
+                sam.locator('.repo-name button').click()
+                details = page.locator('.library-catalog-details')
+                detail_stop = details.get_by_role('button', name='Stop' if language=='en' else 'Зупинити', exact=True)
+                detail_stop.wait_for()
+                icon = detail_stop.locator('svg')
+                icon_size = icon.bounding_box()
+                assert 0 < icon_size['width'] <= 24 and 0 < icon_size['height'] <= 24, icon_size
+                assert detail_stop.bounding_box()['height'] <= 64
+                assert icon.get_attribute('aria-hidden') == 'true'
+                details.locator('.library-catalog-details-toolbar button').click()
                 sam.locator('.repo-more-action').scroll_into_view_if_needed()
                 page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
                 sam.locator('.repo-more-action').click()
